@@ -339,13 +339,58 @@ class RomanSourceCatalog:
             setattr(self, name, getattr(nn_cat, name))
 
     @lazyproperty
-    def flagged_spatial_index(self):
+    def flagged_spatial_id(self):
         """
         The spatial index bit flag encoding the projection, skycell,
         and (x, y) pixel coordinate of the source and whether the
         object is inside the skycell core region.
         """
-        return np.zeros(self.n_sources, dtype=np.int64)
+        bad_return = np.zeros(self.n_sources, dtype=np.int64)
+
+        try:
+            skycell_name = self.model.meta.wcsinfo.skycell_name
+            pixel_scale = self.model.meta.wcsinfo.pixel_scale_ref
+        except AttributeError:  # L2 image or unrecognized schema, give up
+            return bad_return
+
+        from romancal.skycell import skymap
+        import re
+        try:
+            sc = skymap.SkyCells.from_names([skycell_name])
+        except KeyError:
+            log.warning('Could not find skycell ' + skycell_name +
+                        ', not filling out out flagged_spatial_index.')
+            return bad_return
+
+        core_indices = sc.cores_containing(np.array(self.ra, self.dec).T)
+        if len(core_indices.keys()) > 0:
+            raise ValueError('should only be one sky cell here?')
+        this_cell_idx = list(core_indices.keys())[0]
+        in_core = np.zeros(len(self.ra), dtype='bool')
+        core_indices = core_indices[this_cell_idx]
+        in_core[core_indices] = True
+        projection_idx = sc.projection_regions[0]
+        pattern = r"x(\d+)y(\d+)"
+        match = re.search(pattern, skycell_name)
+        if not match:
+            log.warning('Invalid skycell name ', skycell_name)
+            return bad_return
+        skycell_x_idx = int(match.group(1))
+        skycell_y_idx = int(match.group(2))
+
+        def convert_to_pixel_idx(val):
+            return np.clip(int(val * pixel_scale / 0.05), 0, 2**16)
+
+        pixel_x_idx = convert_to_pixel_idx(self.x_centroid)
+        pixel_y_idx = convert_to_pixel_idx(self.y_centroid)
+        spatial_id = (in_core * 2 ** 62 +
+                      projection_idx * 2 ** 48 + 
+                      skycell_y_idx * 2 ** 40 +
+                      skycell_x_idx * 2 ** 32 +
+                      pixel_y_idx * 2 ** 16 +
+                      pixel_x_idx)
+        spatial_id = spatial_id.astype(np.int64)
+        return spatial_id
 
     @lazyproperty
     def ra(self):
@@ -520,7 +565,7 @@ class RomanSourceCatalog:
         """
         base_colnames = [
             "label",
-            "flagged_spatial_index",
+            "flagged_spatial_id",
             "x_centroid",
             "y_centroid",
             "x_centroid_err",
