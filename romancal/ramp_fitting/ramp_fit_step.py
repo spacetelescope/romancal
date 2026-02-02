@@ -311,8 +311,12 @@ class RampFitStep(RomanStep):
             [input_model.data.shape[2], input_model.data.shape[3]]
         )
 
+        # Setup jump data to handle snowballs and other special situations handled by
+        # the likelihood algorithm
+        jump_data = self._setup_jump_data(input_model, readnoise_model, gain_model)
+
         image_info, _, _ = likely_ramp_fit(
-            input_model, readnoise_model.data, gain_model.data
+            input_model, readnoise_model.data, gain_model.data, jump_data=jump_data
         )
 
         out_model = create_image_model(
@@ -321,6 +325,49 @@ class RampFitStep(RomanStep):
         out_model.meta.cal_step.ramp_fit = "COMPLETE"
 
         return out_model
+
+
+    def _setup_jump_data(self, result, rnoise_m, gain_m):
+        """
+        Create a JumpData instance to be used by STCAL jump.
+
+        Parameters
+        ----------
+        result : RampModel
+            The ramp model input from the previous step.
+
+        rnoise_m : ReadNoise model
+            Readnoise reference model
+
+        gain_m : GainModel
+            Gain reference model
+
+        Returns
+        -------
+        jump_data : JumpData
+            The data container to be used to run the STCAL detect_jumps_data.
+        """
+
+        # Instantiate a JumpData class and populate it based on the input RampModel.
+        jump_data = JumpData(result, gain_m.data, rnoise_m.data, pixel)
+
+        # Setup snowball detection
+        sat_expand = self.sat_expand * 2
+        jump_data.set_snowball_info(
+            self.expand_large_events,
+            self.min_jump_area,
+            self.min_sat_area,
+            self.expand_factor,
+            self.sat_required_snowball,
+            self.min_sat_radius_extend,
+            sat_expand,
+            self.edge_size,
+        )
+
+        # Performance setup
+        jump_data.max_cores = self.maximum_cores
+
+        return jump_data
 
 
 # #########
