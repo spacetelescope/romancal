@@ -165,16 +165,20 @@ class ExposurePipeline(RomanPipeline):
         """
         Create zeroed-out image file
         """
-        # The set order is: data, dq, var_poisson, var_rnoise, err
+        # Create a dictionary for fully saturated data
+        slopes = np.zeros(input_model.data.shape[1:], dtype=input_model.data.dtype)
+        dq = input_model.pixeldq | input_model.groupdq[0] | group.SATURATED
+        err = np.zeros(input_model.err.shape[1:], dtype=input_model.err.dtype)
+        image_info_allsat = {
+            "slope": slopes,
+            "dq": dq,
+            "var_poisson": err,
+            "var_rnoise": err,
+            "err": err,
+        }
+
         fully_saturated_model = ramp_fit_step.create_image_model(
-            input_model,
-            (
-                np.zeros(input_model.data.shape[1:], dtype=input_model.data.dtype),
-                input_model.pixeldq | input_model.groupdq[0] | group.SATURATED,
-                np.zeros(input_model.err.shape[1:], dtype=input_model.err.dtype),
-                np.zeros(input_model.err.shape[1:], dtype=input_model.err.dtype),
-                np.zeros(input_model.err.shape[1:], dtype=input_model.err.dtype),
-            ),
+            input_model, image_info_allsat
         )
 
         # Set all subsequent steps to skipped
