@@ -906,9 +906,9 @@ class SkyMap:
 
         return projregions
 
-    def __getitem__(self, index: int) -> SkyCell:
-        """`SkyCell` at the given index in the skycells array"""
-        return SkyCell(index)
+    def __getitem__(self, indices: int) -> SkyCells:
+        """`SkyCells` at the given indices in the sky cells array"""
+        return SkyCells(indices)
 
     def __str__(self) -> str:
         return f"skymap {self.path}"

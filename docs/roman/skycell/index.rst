@@ -1,8 +1,8 @@
-.. _skycell:
+.. _skymap:
 
-=======
-SkyCell
-=======
+======
+SkyMap
+======
 
 .. toctree::
    :maxdepth: 2
