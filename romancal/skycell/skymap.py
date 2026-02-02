@@ -174,7 +174,7 @@ class SkyCells:
         self,
     ) -> NDArray[float]:
         """corners in right ascension and declination in the order given by the loaded sky map (Nx4x2 array of floats)"""
-        return np.reshape(
+        return np.stack(
             (
                 np.stack(
                     [self.data[f"ra_corn{index}"] for index in range(1, 5)], axis=1

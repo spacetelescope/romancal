@@ -259,7 +259,7 @@ def find_skycell_matches(
         if footprint.polygon.intersects_poly(projregion.polygon):
             # query the LOCAL k-d tree of skycells for possible intersection candidates in (normalized) 3D space
             projregion_nearby_skycell_indices = np.array(
-                projregion.skycells_kdtree.query_ball_point(
+                projregion.skycells.kdtree.query_ball_point(
                     footprint.vectorpoint_center,
                     r=footprint.possible_intersecting_skycell_distance * 1.1,
                 )

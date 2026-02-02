@@ -117,10 +117,9 @@ def test_skycell_from_asn(skymap_subset):
 def test_skycell_from_projregion(skymap_subset):
     projregion = skymap.ProjectionRegion(0, skymap=skymap_subset)
 
-    assert (
-        projregion.skycells[100]
-        == skymap.SkyCells.from_names(["135p90x30y44"], skymap=skymap_subset).data
-    )
+    assert skymap.SkyCells(
+        projregion.skycell_indices[100], skymap=skymap_subset
+    ) == skymap.SkyCells.from_names(["135p90x30y44"], skymap=skymap_subset)
 
     assert (
         projregion.skycell_indices[-1]
