@@ -218,114 +218,12 @@ class RampFitStep(RomanStep):
             input_model, readnoise_model.data, gain_model.data, jump_data=jump_data
         )
 
-        # Flag pixels that have only a single resultant.
-        oneresultant = (
-            np.sum(
-                input_model.groupdq[0] & (group.SATURATED | group.DO_NOT_USE), axis=0
-            )
-            <= 1
-        )
-        input_model.pixeldq |= pixel.DO_NOT_USE * oneresultant
-
         out_model = create_image_model(
             input_model, image_info, include_var_rnoise=self.include_var_rnoise
         )
         out_model.meta.cal_step.ramp_fit = "COMPLETE"
 
         return out_model
-
-    def _setup_jump_data(self, result, rnoise_m, gain_m):
-        """
-        Create a JumpData instance to be used by STCAL jump.
-
-        Parameters
-        ----------
-        result : RampModel
-            The ramp model input from the previous step.
-
-        rnoise_m : ReadNoise model
-            Readnoise reference model
-
-        gain_m : GainModel
-            Gain reference model
-
-        Returns
-        -------
-        jump_data : JumpData
-            The data container to be used to run the STCAL detect_jumps_data.
-        """
-
-        # Instantiate a JumpData class and populate it based on the input RampModel.
-        jump_data = JumpData(result, gain_m.data, rnoise_m.data, pixel)
-
-        # Setup snowball detection
-        sat_expand = self.sat_expand * 2
-        jump_data.set_snowball_info(
-            self.expand_large_events,
-            self.min_jump_area,
-            self.min_sat_area,
-            self.expand_factor,
-            self.sat_required_snowball,
-            self.min_sat_radius_extend,
-            sat_expand,
-            self.edge_size,
-        )
-
-        # Performance setup
-        jump_data.max_cores = self.maximum_cores
-
-        return jump_data
-
-
-    def likely(self, input_model, readnoise_model, gain_model):
-        """Perform Maximum Likelihood Algorithm
-
-        Parameters
-        ----------
-        input_model : RampModel
-            Model containing ramps.
-
-        readnoise_model : ReadnoiseRefModel
-            Model with the read noise reference information.
-
-        gain_model : GainRefModel
-            Model with the gain reference information.
-
-        Returns
-        -------
-        out_model : ImageModel
-            Model containing a count-rate image.
-        """
-        # Add the needed components to the input model.
-        input_model["flags_do_not_use"] = pixel.DO_NOT_USE
-        input_model["flags_saturated"] = pixel.SATURATED
-        input_model["rejection_threshold"] = None
-        input_model["flags_jump_det"] = pixel.JUMP_DET
-        # Add an axis to match the JWST data cube
-        input_model.data = input_model.data[np.newaxis, :, :, :]
-        input_model.groupdq = input_model.groupdq[np.newaxis, :, :, :]
-        # add ancillary information needed by likelihood fitting
-        input_model.read_pattern = get_readtimes(input_model)
-        input_model.zeroframe = None
-        input_model.average_dark_current = np.zeros(
-            [input_model.data.shape[2], input_model.data.shape[3]]
-        )
-
-        # Setup jump data to handle snowballs and other special situations handled by
-        # the likelihood algorithm
-        jump_data = self._setup_jump_data(input_model, readnoise_model, gain_model)
-
-        image_info, _, _ = likely_ramp_fit(
-            input_model, readnoise_model.data, gain_model.data, jump_data=jump_data
-        )
-
-        out_model = create_image_model(
-            input_model, image_info, include_var_rnoise=self.include_var_rnoise
-        )
-        out_model.meta.cal_step.ramp_fit = "COMPLETE"
-
-        return out_model
-
 
     def _setup_jump_data(self, result, rnoise_m, gain_m):
         """
