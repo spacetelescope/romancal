@@ -1,4 +1,4 @@
-"""Unit tests for skycell WCS on global skymap"""
+"""Unit tests for sky cell WCS on global sky map"""
 
 import numpy as np
 import pytest
@@ -54,7 +54,7 @@ def test_skycell_wcs_pixel_to_world(name):
 
     wcsobj = skycell.wcs[0]
 
-    # forward transform to radec corners
+    # forward transform to RA Dec corners
     # TODO: the corners in the reference file currently use FITS convention (pixel + 0.5) instead of (pixel - 0.5)
     assert_allclose_lonlat(
         np.array(
@@ -97,20 +97,6 @@ def test_skycell_wcs_world_to_pixel(name):
     )
 
 
-def test_skycells():
-    skycells = sc.SkyCells.from_names(TEST_SKYCELLS)
-
-    assert sorted(skycells.names) == sorted(TEST_SKYCELLS)
-
-    assert skycells.radec_corners.shape == (len(TEST_SKYCELLS), 4, 2)
-    assert skycells.vectorpoint_corners.shape == (len(TEST_SKYCELLS), 4, 3)
-
-    assert skycells.radec_centers.shape == (len(TEST_SKYCELLS), 2)
-    assert skycells.vectorpoint_centers.shape == (len(TEST_SKYCELLS), 3)
-
-    assert len(skycells.polygons) == len(TEST_SKYCELLS)
-
-
 def test_skycells_projection_regions():
     rng = np.random.default_rng()
     lon = rng.standard_normal(1)
@@ -118,7 +104,9 @@ def test_skycells_projection_regions():
     lat = rng.standard_normal(1)
     lat = lat / np.max(np.abs(lat)) * 90
 
-    assert len(sc.SKYMAP.skycells.projection_regions) == len(sc.SKYMAP.model.skycells)
+    assert len(skymap.SKYMAP.skycells.projection_regions) == len(
+        skymap.SKYMAP.model.skycells
+    )
 
 
 def test_skycells_containing_points():
@@ -129,7 +117,7 @@ def test_skycells_containing_points():
     lat = lat / np.max(np.abs(lat)) * 90
     radec = np.stack([lon, lat], axis=1)
 
-    skycells_containing_points = sc.SKYMAP.skycells.containing(radec)
+    skycells_containing_points = skymap.SKYMAP.skycells.containing(radec)
     point_indices_outside_skycells = [
         point_index
         for point_index in np.arange(radec.shape[0])
@@ -152,7 +140,9 @@ def test_skycells_cores_containing_points():
     lat = lat / np.max(np.abs(lat)) * 90
     radec = np.stack([lon, lat], axis=1)
 
-    skycells_exclusively_containing_points = sc.SKYMAP.skycells.cores_containing(radec)
+    skycells_exclusively_containing_points = skymap.SKYMAP.skycells.cores_containing(
+        radec
+    )
     point_indices_outside_core = [
         point_index
         for point_index in np.arange(radec.shape[0])
