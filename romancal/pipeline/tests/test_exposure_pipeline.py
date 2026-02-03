@@ -70,13 +70,13 @@ def test_elp_save_results(function_jail, save_results, monkeypatch):
 
     model = rdm.ScienceRawModel.create_fake_data()
     model.meta.filename = "test_uncal.asdf"
-    model.meta.exposure.read_pattern = [[1], [2]]  # truncated for 2 groups below
+    model.meta.exposure.read_pattern = [[1], [2], [3], [4]]  # truncated for 4 groups below
     model.meta.exposure.ma_table_number = 5
     model.meta.exposure.start_time = Time(
         "2024-01-03T00:00:00.0", format="isot", scale="utc"
     )
-    model.data = np.zeros((2, 4096, 4096), dtype=model.data.dtype)
-    model.amp33 = np.zeros((2, 4096, 128), dtype=model.amp33.dtype)
+    model.data = np.zeros((4, 4096, 4096), dtype=model.data.dtype)
+    model.amp33 = np.zeros((4, 4096, 128), dtype=model.amp33.dtype)
 
     pipeline = ExposurePipeline()
     pipeline.output_dir = str(output_path)
