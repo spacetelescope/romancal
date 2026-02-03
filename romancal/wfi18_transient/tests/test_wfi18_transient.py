@@ -1,10 +1,8 @@
 import numpy as np
 from roman_datamodels import datamodels, dqflags
+from romancal.lib.basic_utils import frame_read_times
 
-from romancal.wfi18_transient.wfi18_transient import (
-    _double_exp,
-    _wfi18_frame_read_times,
-)
+from romancal.wfi18_transient.wfi18_transient import _double_exp
 from romancal.wfi18_transient.wfi18_transient_step import WFI18TransientStep
 
 MASK_FLAG = dqflags.group.DO_NOT_USE | dqflags.group.WFI18_TRANSIENT
@@ -44,7 +42,7 @@ def create_ramp_model(nresultants, nrows=4096, ncols=4096):
 
 
 def transient_glow():
-    read_times = _wfi18_frame_read_times(1.0)
+    read_times = frame_read_times(1.0, 18)
     glow = _double_exp(read_times, 0.1, 0.01, 0.01, 0.01)
     return glow
 

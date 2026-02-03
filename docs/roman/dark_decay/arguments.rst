@@ -2,4 +2,4 @@
 
 Step Arguments
 ==============
-The ``dark_decay`` step has no step-specific arguments.
+The ``dark_decay`` step has no step-specific arguments at present.

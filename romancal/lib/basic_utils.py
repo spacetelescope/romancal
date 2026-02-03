@@ -152,7 +152,7 @@ def parse_visitID(visit_id):
     return visit_id_parts
 
 
-def frame_read_times(frame_time, sca):
+def frame_read_times(frame_time, sca, frame_number=0):
     """
     Compute the pixel read times for a single frame.
 
@@ -170,6 +170,8 @@ def frame_read_times(frame_time, sca):
         The frame time for the exposure, in seconds.
     sca : int
         The SCA number (1-18) for the detector.
+    frame_number : int, optional
+        The frame number (0-indexed). Default is 0.
 
     Returns
     -------
@@ -190,6 +192,8 @@ def frame_read_times(frame_time, sca):
         read_times = read_times[:, ::-1]
     else:
         read_times = read_times[::-1, :]
+
+    read_times += frame_number * frame_time
 
     return read_times
 
