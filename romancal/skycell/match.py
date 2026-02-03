@@ -171,7 +171,7 @@ class ImageFootprint:
     @cached_property
     def possibly_intersecting_projregions(self) -> int:
         """number of possibly intersecting projection regions"""
-        if self.area > sc.SkyCell.area:
+        if self.area > sc.SkyCells.area:
             return (
                 # the number of times the smallest projection region could fit in the image footprint
                 np.ceil(self.area / sc.ProjectionRegion.MIN_AREA)
@@ -185,10 +185,10 @@ class ImageFootprint:
     @cached_property
     def possibly_intersecting_skycells(self) -> int:
         """number of possibly intersecting skycells"""
-        if self.polygon.area() > sc.SkyCell.area:
+        if self.polygon.area() > sc.SkyCells.area:
             return (
                 # number of times a skycell could fit in the image footprint
-                np.ceil(self.polygon.area() / sc.SkyCell.area)
+                np.ceil(self.polygon.area() / sc.SkyCells.area)
                 # plus multiplier for partial intersections on the perimeter
                 * 8
             )
@@ -197,14 +197,14 @@ class ImageFootprint:
             return 4
 
     @cached_property
-    def possible_intersecting_projregion_distance(self) -> int:
+    def possible_intersecting_projregion_distance(self) -> float:
         """maximum possible distance to the center of an intersecting projection region"""
         return (self.length + sc.ProjectionRegion.MAX_LENGTH) / 2.0
 
     @cached_property
-    def possible_intersecting_skycell_distance(self) -> int:
+    def possible_intersecting_skycell_distance(self) -> float:
         """maximum possible distance to the center of an intersecting sky cell"""
-        return (self.length + sc.SkyCell.length) / 2.0
+        return (self.length + sc.SkyCells.length) / 2.0
 
     def __str__(self) -> str:
         return f"footprint {self.radec_corners}"
@@ -226,13 +226,11 @@ def find_skycell_matches(
         equivalent 2-d numpy array, or a GWCS instance.
         A GWCS instance must have `.bounding_box` or `.pixel_shape` attribute defined.
     skymap : sc.SkyMap :
-        sky map instance; defaults to global SKYMAP (Default value = None)
+        skymap instance; defaults to global SKYMAP (Default value = None)
 
     Returns
     -------
-    A sequence of the indices of all sky cells that overlap the supplied image
-    (in the referenced sky map). The indices may be used to obtain all
-    necessary information about the sky cells, by calling `romancal.skycell.skymap.SkyCell(index)`.
+    Indices of all skycells (from the loaded skymap reference file) that overlap the supplied image.
     """
 
     if isinstance(image_corners, WCS):
@@ -247,16 +245,13 @@ def find_skycell_matches(
 
     # query the global k-d tree of projection regions for possible intersection candidates in (normalized) 3D space
     nearby_projregion_indices = np.array(
-        skymap.projection_regions_kdtree.query(
+        skymap.projection_regions_kdtree.query_ball_point(
             footprint.vectorpoint_center,
-            # NOTE: `k` can be `footprint.possibly_intersecting_projregions` if we assume non-degenerate tesselation
-            k=100,
-            distance_upper_bound=footprint.possible_intersecting_projregion_distance
-            * 1.1,
-        )[1]
+            r=footprint.possible_intersecting_projregion_distance * 1.1,
+        )
     )
     nearby_projregion_indices = nearby_projregion_indices[
-        np.where(nearby_projregion_indices != len(skymap.model.projection_regions))
+        nearby_projregion_indices != len(skymap.model.projection_regions)
     ]
 
     for projregion_index in nearby_projregion_indices:
@@ -264,31 +259,29 @@ def find_skycell_matches(
         if footprint.polygon.intersects_poly(projregion.polygon):
             # query the LOCAL k-d tree of skycells for possible intersection candidates in (normalized) 3D space
             projregion_nearby_skycell_indices = np.array(
-                projregion.skycells.kdtree.query(
+                projregion.skycells.kdtree.query_ball_point(
                     footprint.vectorpoint_center,
-                    # NOTE: `k` can be `footprint.possibly_intersecting_skycells` if we assume non-degenerate tesselation
-                    k=100,
-                    distance_upper_bound=footprint.possible_intersecting_skycell_distance
-                    * 1.1,
-                )[1]
-            )
-            projregion_nearby_skycell_indices = np.array(
-                projregion_nearby_skycell_indices[
-                    np.where(
-                        projregion_nearby_skycell_indices != len(projregion.skycells)
-                    )
-                ]
+                    r=footprint.possible_intersecting_skycell_distance * 1.1,
+                )
             )
 
-            # convert to absolute indices over the full skycell table
-            projregion_nearby_skycell_indices += projregion.data["skycell_start"]
+            projregion_nearby_skycells = sc.SkyCells(
+                np.array(
+                    projregion_nearby_skycell_indices[
+                        projregion_nearby_skycell_indices != len(projregion.skycells)
+                    ]
+                )
+                + projregion.data["skycell_start"],
+                skymap=skymap,
+            )
 
             # find polygons that intersect the image footprint
-            for skycell_index in projregion_nearby_skycell_indices:
-                # print(nearby_skycell_index)
-                skycell = sc.SkyCell(skycell_index)
-                if footprint.polygon.intersects_poly(skycell.polygon):
-                    # print(f"candidate {nearby_skycell_index} intersects")
+            for skycell_index, skycell_polygon in zip(
+                projregion_nearby_skycells.indices,
+                projregion_nearby_skycells.polygons,
+                strict=True,
+            ):
+                if footprint.polygon.intersects_poly(skycell_polygon):
                     intersecting_skycell_indices.append(skycell_index)
 
-    return np.array(intersecting_skycell_indices)
+    return intersecting_skycell_indices
