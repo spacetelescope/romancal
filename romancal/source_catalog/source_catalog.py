@@ -386,7 +386,7 @@ class RomanSourceCatalog:
 
         pixel_x_idx = convert_to_pixel_idx(self.x_centroid)
         pixel_y_idx = convert_to_pixel_idx(self.y_centroid)
-        spatial_id = (in_core * 2 ** 62 +
+        spatial_id = (~in_core * 2 ** 62 +
                       projection_idx * 2 ** 48 + 
                       skycell_y_idx * 2 ** 40 +
                       skycell_x_idx * 2 ** 32 +
