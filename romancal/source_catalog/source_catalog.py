@@ -353,19 +353,24 @@ class RomanSourceCatalog:
         except AttributeError:  # L2 image or unrecognized schema, give up
             return bad_return
 
-        from romancal.skycell import skymap
         import re
+
+        from romancal.skycell import skymap
+
         try:
             sc = skymap.SkyCells.from_names([skycell_name])
         except KeyError:
-            log.warning('Could not find skycell ' + skycell_name +
-                        ', not filling out out flagged_spatial_index.')
+            log.warning(
+                "Could not find skycell "
+                + skycell_name
+                + ", not filling out out flagged_spatial_index."
+            )
             return bad_return
 
         core_indices = sc.cores_containing(np.array([self.ra, self.dec]).T)
         if len(core_indices.keys()) > 1:
-            raise ValueError('should only be one sky cell here?')
-        in_core = np.zeros(len(self.ra), dtype='bool')
+            raise ValueError("should only be one sky cell here?")
+        in_core = np.zeros(len(self.ra), dtype="bool")
         if len(core_indices.keys()) == 1:
             this_cell_idx = list(core_indices.keys())[0]
             core_indices = core_indices[this_cell_idx]
@@ -375,23 +380,25 @@ class RomanSourceCatalog:
         pattern = r"x(\d+)y(\d+)"
         match = re.search(pattern, skycell_name)
         if not match:
-            log.warning('Invalid skycell name ', skycell_name)
+            log.warning("Invalid skycell name ", skycell_name)
             return bad_return
         skycell_x_idx = int(match.group(1))
         skycell_y_idx = int(match.group(2))
 
         def convert_to_pixel_idx(val):
-            idx = (val.value * pixel_scale * 3600 / 0.05).astype('i4')
+            idx = (val.value * pixel_scale * 3600 / 0.05).astype("i4")
             return np.clip(idx, 0, 2**16)
 
         pixel_x_idx = convert_to_pixel_idx(self.x_centroid)
         pixel_y_idx = convert_to_pixel_idx(self.y_centroid)
-        spatial_id = (in_core * 2 ** 62 +
-                      projection_idx * 2 ** 48 + 
-                      skycell_y_idx * 2 ** 40 +
-                      skycell_x_idx * 2 ** 32 +
-                      pixel_y_idx * 2 ** 16 +
-                      pixel_x_idx)
+        spatial_id = (
+            in_core * 2**62
+            + projection_idx * 2**48
+            + skycell_y_idx * 2**40
+            + skycell_x_idx * 2**32
+            + pixel_y_idx * 2**16
+            + pixel_x_idx
+        )
         spatial_id = spatial_id.astype(np.int64)
         return spatial_id
 
