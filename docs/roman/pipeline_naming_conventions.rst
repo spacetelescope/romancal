@@ -75,6 +75,7 @@ Uncalibrated raw input                         `_uncal`
 DQ initialization                              `_dqinit`
 Saturation detection                           `_saturation`
 Reference Pixel Correction                     `_refpix`
+Dark Decay Correction                          `_dark_decay`
 WFI18 Transient Anomaly Correction             `_wfi18_transient`
 Linearity correction                           `_linearity`
 Dark current                                   `_darkcurrent`
