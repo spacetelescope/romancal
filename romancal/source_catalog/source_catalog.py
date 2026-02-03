@@ -362,13 +362,15 @@ class RomanSourceCatalog:
                         ', not filling out out flagged_spatial_index.')
             return bad_return
 
-        core_indices = sc.cores_containing(np.array(self.ra, self.dec).T)
-        if len(core_indices.keys()) > 0:
+        core_indices = sc.cores_containing(np.array([self.ra, self.dec]).T)
+        if len(core_indices.keys()) > 1:
             raise ValueError('should only be one sky cell here?')
-        this_cell_idx = list(core_indices.keys())[0]
         in_core = np.zeros(len(self.ra), dtype='bool')
-        core_indices = core_indices[this_cell_idx]
-        in_core[core_indices] = True
+        if len(core_indices.keys()) == 1:
+            this_cell_idx = list(core_indices.keys())[0]
+            core_indices = core_indices[this_cell_idx]
+            in_core[core_indices] = True
+
         projection_idx = sc.projection_regions[0]
         pattern = r"x(\d+)y(\d+)"
         match = re.search(pattern, skycell_name)
@@ -379,7 +381,8 @@ class RomanSourceCatalog:
         skycell_y_idx = int(match.group(2))
 
         def convert_to_pixel_idx(val):
-            return np.clip(int(val * pixel_scale / 0.05), 0, 2**16)
+            idx = (val.value * pixel_scale * 3600 / 0.05).astype('i4')
+            return np.clip(idx, 0, 2**16)
 
         pixel_x_idx = convert_to_pixel_idx(self.x_centroid)
         pixel_y_idx = convert_to_pixel_idx(self.y_centroid)
