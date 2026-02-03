@@ -40,7 +40,7 @@ class DarkDecayStep(RomanStep):
 
         # Get the reference file
         reffile = self.get_reference_file(input_model, "darkdecaysignal")
-        log.info("Using DARKDECAY reference file: %s", reffile)
+        log.info("Using DARKDECAYSIGNAL reference file: %s", reffile)
 
         # Get the detector-specific decay table
         detector = input_model.meta.instrument.detector

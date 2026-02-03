@@ -9,7 +9,7 @@ decay, with a time constant and amplitude that varies from detector to detector,
 which affects all pixels on each detector in the same way.  As the detector reads out,
 time passes and the contribution of the dark decay signal becomes steadily smaller.
 
-This step works by using the ``darkdecay`` reference files in CRDS to obtain the
+This step works by using the ``darkdecaysignal`` reference files in CRDS to obtain the
 measured amplitude and time constant for a given detector.  It loops over resultants,
 and determines when each pixel in each frame in a resultant was read out.  It evaluates
 the dark decay signal at that time.  It then averages the dark decay signal over the

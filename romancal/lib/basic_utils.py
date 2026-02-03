@@ -169,7 +169,7 @@ def frame_read_times(frame_time, sca, frame_number=0):
     frame_time : float
         The frame time for the exposure, in seconds.
     sca : int
-        The SCA number (1-18) for the detector.
+        The WFI detector number (1-18).
     frame_number : int, optional
         The frame number (0-indexed). Default is 0.
 

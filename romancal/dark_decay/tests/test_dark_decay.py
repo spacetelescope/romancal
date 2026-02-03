@@ -1,6 +1,5 @@
 import numpy as np
 from roman_datamodels import datamodels
-from romancal.lib.basic_utils import frame_read_times
 
 from romancal.dark_decay.dark_decay import subtract_dark_decay
 from romancal.dark_decay.dark_decay_step import DarkDecayStep
@@ -50,7 +49,8 @@ def test_dark_decay():
     DarkDecayStep.call(model, override_darkdecaysignal=decayref)
     delta = model.data - origdata
 
-    # check that we did just subtract off the relevant signal
+    # check that we did just subtract off the relevant signal;
+    # i.e., the calling the step does what we expect
     expectation = np.zeros_like(model.data)
     subtract_dark_decay(
         expectation, amplitude, time_constant, model.meta.exposure.frame_time,
@@ -69,6 +69,9 @@ def test_dark_decay():
     assert np.all(np.abs(expectation[0]) >= np.abs(expectation[1]))
 
     # check that the signal dilutes when adding later frames to a resultant
+    # expectation1: resultant 0 is frame 1 only
+    # expectation2: resultant 0 is average of frames 1 and 2
+    # averaging with a later frame should reduce the dark decay signal
     expectation1 = np.zeros_like(model.data)
     subtract_dark_decay(
         expectation1, amplitude, time_constant, model.meta.exposure.frame_time,
@@ -77,6 +80,6 @@ def test_dark_decay():
     subtract_dark_decay(
         expectation2, amplitude, time_constant, model.meta.exposure.frame_time,
         [[1, 2], [3]], 1)
-    assert np.all(np.abs(expectation[0]) >= np.abs(expectation[1]))
+    assert np.all(np.abs(expectation1[0]) >= np.abs(expectation2[0]))
     
 
