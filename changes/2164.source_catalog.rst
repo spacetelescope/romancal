@@ -1,0 +1,2 @@
+Add flagged_spatial_id to source_catalog.
+
