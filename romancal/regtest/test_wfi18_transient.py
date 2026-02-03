@@ -11,8 +11,8 @@ from .regtestdata import compare_asdf
 # mark all tests in this module
 pytestmark = [pytest.mark.bigdata]
 
-WFI18_FILENAME = "TVAC2_NOMOPS_TTNOISE_20240418084515_WFI18_refpix.asdf"
-WFI01_FILENAME = "r0000101001001001001_0001_wfi01_f158_refpix.asdf"
+WFI18_FILENAME = "TVAC2_NOMOPS_TTNOISE_20240418084515_WFI18_dark_decay.asdf"
+WFI01_FILENAME = "r0000101001001001001_0001_wfi01_f158_dark_decay.asdf"
 
 
 @pytest.fixture(
