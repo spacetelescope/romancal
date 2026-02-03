@@ -152,6 +152,48 @@ def parse_visitID(visit_id):
     return visit_id_parts
 
 
+def frame_read_times(frame_time, sca):
+    """
+    Compute the pixel read times for a single frame.
+
+    This is a placeholder function that assumes a uniform read
+    across each channel within the frame time.  A more careful
+    treatment will need to account for time spent reading out the
+    guide window.
+
+    Data shape for the frame is assumed to be 4096 x 4096, with
+    32 channels along the columns.
+
+    Parameters
+    ----------
+    frame_time : float
+        The frame time for the exposure, in seconds.
+    sca : int
+        The SCA number (1-18) for the detector.
+
+    Returns
+    -------
+    read_times : `~numpy.ndarray`
+        A 4096 x 4096 array containing the read time in seconds for each pixel.
+    """
+    nchannel = 32
+    nrow = 4096
+    ncol = 128
+    channel_read_times = (
+        np.arange(nrow * ncol).reshape(nrow, ncol) / (nrow * ncol) * frame_time
+    )
+    read_times = np.tile(channel_read_times, (1, nchannel))
+
+    # Apply science -> detector flipping for read order.
+    # Detectors with SCA % 3 == 0 flip columns; others flip rows.
+    if sca % 3 == 0:
+        read_times = read_times[:, ::-1]
+    else:
+        read_times = read_times[::-1, :]
+
+    return read_times
+
+
 def compute_var_rnoise(model):
     """Compute read noise variance from model data.
 
