@@ -36,4 +36,3 @@ def subtract_dark_decay(data, amplitude, time_constant, frame_time,
             corrections.append(amplitude * np.exp(-read_times / time_constant))
 
         data[i] -= np.mean(corrections, axis=0)
-    import pdb
