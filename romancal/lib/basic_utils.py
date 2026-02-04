@@ -181,10 +181,11 @@ def frame_read_times(frame_time, sca, frame_number=0):
     nchannel = 32
     nrow = 4096
     ncol = 128
-    channel_read_times = (
-        np.arange(nrow * ncol).reshape(nrow, ncol) / (nrow * ncol) * frame_time
-    )
-    read_times = np.tile(channel_read_times, (1, nchannel))
+    one_channel_read_time = np.linspace(
+        0, frame_time, nrow * ncol, endpoint=False).reshape(nrow, ncol)
+    two_channel_read_times = np.concatenate(
+        [one_channel_read_time, one_channel_read_time[:, ::-1]], axis=1)
+    read_times = np.tile(two_channel_read_times, (1, nchannel // 2))
 
     # Apply science -> detector flipping for read order.
     # Detectors with SCA % 3 == 0 flip columns; others flip rows.

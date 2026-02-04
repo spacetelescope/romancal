@@ -49,6 +49,6 @@ than to set the ``cal_step`` metadata keyword to "N/A".
 References
 ----------
 
-The WFI18 transient correction algorithm is based on work by T. Brandt and T. Perera,
+The WFI18 transient correction algorithm is based on work by T. Brandt,
 "Characterizing and Correcting the Anomalous First Read of Detector 18 on Roman-WFI",
 STScI Technical Document, 2025 (in prep).
