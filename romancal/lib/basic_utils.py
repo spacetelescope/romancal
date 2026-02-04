@@ -170,8 +170,9 @@ def frame_read_times(frame_time, sca, frame_number=0):
         The frame time for the exposure, in seconds.
     sca : int
         The WFI detector number (1-18).
-    frame_number : int, optional
-        The frame number (0-indexed). Default is 0.
+    frame_number : float, optional
+        The frame number.  Default of zero means that pixels start
+        reading out at t=0.
 
     Returns
     -------
