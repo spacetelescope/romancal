@@ -24,9 +24,9 @@ from .wfi18_transient.wfi18_transient_step import WFI18TransientStep
 
 __all__ = [
     "AssignWcsStep",
+    "DQInitStep",
     "DarkCurrentStep",
     "DarkDecayStep",
-    "DQInitStep",
     "FlatFieldStep",
     "FluxStep",
     "LinearityStep",

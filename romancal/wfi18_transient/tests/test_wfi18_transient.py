@@ -1,7 +1,7 @@
 import numpy as np
 from roman_datamodels import datamodels, dqflags
-from romancal.lib.basic_utils import frame_read_times
 
+from romancal.lib.basic_utils import frame_read_times
 from romancal.wfi18_transient.wfi18_transient import _double_exp
 from romancal.wfi18_transient.wfi18_transient_step import WFI18TransientStep
 

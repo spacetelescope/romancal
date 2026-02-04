@@ -39,13 +39,14 @@ def create_ramp_model(nresultants, nrows=4096, ncols=4096):
 
 def test_dark_decay():
     model = create_ramp_model(2, nrows=4096, ncols=4096)
-    model.meta.instrument.detector = 'WFI01'
+    model.meta.instrument.detector = "WFI01"
     origdata = model.data.copy()
     decayref = datamodels.DarkdecaysignalRefModel.create_fake_data()
     amplitude = 1
     time_constant = 23
-    decayref.decay_table['WFI01'] = dict(
-        amplitude=amplitude, time_constant=time_constant)
+    decayref.decay_table["WFI01"] = dict(
+        amplitude=amplitude, time_constant=time_constant
+    )
     DarkDecayStep.call(model, override_darkdecaysignal=decayref)
     delta = model.data - origdata
 
@@ -53,15 +54,25 @@ def test_dark_decay():
     # i.e., the calling the step does what we expect
     expectation = np.zeros_like(model.data)
     subtract_dark_decay(
-        expectation, amplitude, time_constant, model.meta.exposure.frame_time,
-        model.meta.exposure.read_pattern, 1)
+        expectation,
+        amplitude,
+        time_constant,
+        model.meta.exposure.frame_time,
+        model.meta.exposure.read_pattern,
+        1,
+    )
     assert np.allclose(expectation, delta)
 
     # check that if the amplitude doubles the subtraction doubles
     expectation = np.zeros_like(model.data)
     subtract_dark_decay(
-        expectation, 2 * amplitude, time_constant, model.meta.exposure.frame_time,
-        model.meta.exposure.read_pattern, 1)
+        expectation,
+        2 * amplitude,
+        time_constant,
+        model.meta.exposure.frame_time,
+        model.meta.exposure.read_pattern,
+        1,
+    )
     assert np.allclose(expectation, delta * 2)
 
     # check that early times have larger corrections than late times
@@ -74,12 +85,20 @@ def test_dark_decay():
     # averaging with a later frame should reduce the dark decay signal
     expectation1 = np.zeros_like(model.data)
     subtract_dark_decay(
-        expectation1, amplitude, time_constant, model.meta.exposure.frame_time,
-        [[1], [2, 3]], 1)
+        expectation1,
+        amplitude,
+        time_constant,
+        model.meta.exposure.frame_time,
+        [[1], [2, 3]],
+        1,
+    )
     expectation2 = np.zeros_like(model.data)
     subtract_dark_decay(
-        expectation2, amplitude, time_constant, model.meta.exposure.frame_time,
-        [[1, 2], [3]], 1)
+        expectation2,
+        amplitude,
+        time_constant,
+        model.meta.exposure.frame_time,
+        [[1, 2], [3]],
+        1,
+    )
     assert np.all(np.abs(expectation1[0]) >= np.abs(expectation2[0]))
-    
-

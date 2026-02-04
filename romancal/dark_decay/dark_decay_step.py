@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING
 
 from roman_datamodels import datamodels as rdd
 
+from romancal.dark_decay.dark_decay import subtract_dark_decay
 from romancal.datamodels.fileio import open_dataset
 from romancal.stpipe import RomanStep
-from romancal.dark_decay.dark_decay import subtract_dark_decay
 
 if TYPE_CHECKING:
     from typing import ClassVar

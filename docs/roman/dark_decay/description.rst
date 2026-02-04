@@ -21,4 +21,4 @@ References
 
 The dark decay correction is based on work by S. Betti et al,  See `The Statistical Properties of Dark Ramps for
 the Roman-WFI Detectors (STScI Technical Document, 2025) <https://www.stsci.edu/files/live/sites/www/files/home/roman/documentation/technical-documentation/_documents/Roman-STScI-000814.pdf>`_
-for more information.  
+for more information.
