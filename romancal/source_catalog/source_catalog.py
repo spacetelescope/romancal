@@ -372,7 +372,7 @@ class RomanSourceCatalog:
             raise ValueError("should only be one sky cell here?")
         in_core = np.zeros(len(self.ra), dtype="bool")
         if len(core_indices.keys()) == 1:
-            this_cell_idx = list(core_indices.keys())[0]
+            this_cell_idx = next(iter(core_indices.keys()))
             core_indices = core_indices[this_cell_idx]
             in_core[core_indices] = True
 
