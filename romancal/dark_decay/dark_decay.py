@@ -5,8 +5,9 @@ from romancal.lib.basic_utils import frame_read_times
 __all__ = ["subtract_dark_decay"]
 
 
-def subtract_dark_decay(data, amplitude, time_constant, frame_time,
-                        read_pattern, sca, frame_offset=1.5):
+def subtract_dark_decay(
+    data, amplitude, time_constant, frame_time, read_pattern, sca, frame_offset=1.5
+):
     """
     Subtract dark decay correction in place.
 
