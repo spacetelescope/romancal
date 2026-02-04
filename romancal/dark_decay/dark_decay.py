@@ -5,7 +5,8 @@ from romancal.lib.basic_utils import frame_read_times
 __all__ = ["subtract_dark_decay"]
 
 
-def subtract_dark_decay(data, amplitude, time_constant, frame_time, read_pattern, sca):
+def subtract_dark_decay(data, amplitude, time_constant, frame_time,
+                        read_pattern, sca, frame_offset=1.5):
     """
     Subtract dark decay correction in place.
 
@@ -23,10 +24,16 @@ def subtract_dark_decay(data, amplitude, time_constant, frame_time, read_pattern
         The read pattern for the exposure.
     sca : int
         The number of the WFI detector (1-18).
+    frame_offset : float
+        The number of reads that the decay amplitude corresponds to.
+        Default of 1.5 corresponds to the middle of the first read.
     """
     for i in range(data.shape[0]):  # loop over resultants
-        corrections = [
-            amplitude * np.exp(-frame_read_times(frame_time, sca, j) / time_constant)
-            for j in read_pattern[i]
-        ]
+        corrections = list()
+
+        for read in read_pattern[i]:
+            read_times = frame_read_times(frame_time, sca, read - frame_offset)
+            corrections.append(amplitude * np.exp(-read_times / time_constant))
+
         data[i] -= np.mean(corrections, axis=0)
+    import pdb

@@ -102,3 +102,8 @@ def test_dark_decay():
         1,
     )
     assert np.all(np.abs(expectation1[0]) >= np.abs(expectation2[0]))
+
+    # check that the amplitude is about right in the first read.
+    # frame time of 1 is much smaller than the time constant of 23.
+    # amplitude should correspond closely to an average of the first read
+    assert np.abs(np.mean(expectation1[0]) + amplitude) < 0.001
