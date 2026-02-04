@@ -273,7 +273,7 @@ class SkyCells:
                 ),
                 "orientat_projection_center": self._skymap.model.projection_regions[
                     "orientat"
-                ][projregion_index],
+                ][projregion_index].astype(np.float64),
             }
             for skycell_index, projregion_index in zip(
                 self.indices, self.projection_regions, strict=True
