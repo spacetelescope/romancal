@@ -185,6 +185,9 @@ def frame_read_times(frame_time, sca, frame_number=0):
     one_channel_read_time = np.linspace(
         0, frame_time, nrow * ncol, endpoint=False
     ).reshape(nrow, ncol)
+
+    # WFI channels alternate readout direction in the +x and -x directions
+    # we implement this by flipping the x direction of every other channel
     two_channel_read_times = np.concatenate(
         [one_channel_read_time, one_channel_read_time[:, ::-1]], axis=1
     )
