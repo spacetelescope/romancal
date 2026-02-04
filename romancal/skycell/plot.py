@@ -21,7 +21,7 @@ __all__ = [
     "plot_field",
     "plot_image_footprint_and_skycells",
     "plot_projregion",
-    "plot_skycell",
+    "plot_skycells",
     "veccoords_to_tangent_plane",
 ]
 
@@ -39,21 +39,20 @@ def find_intersecting_projregions(
     footprint: sm.ImageFootprint :
         sequence of points (ra, dec) or an `ImageFootprint` object
     skymap: sc.SkyMap :
-        sky map instance; defaults to global SKYMAP (Default value = None)
+        skymap instance; defaults to global SKYMAP (Default value = None)
 
     Returns
     -------
-    indices of projection regions in the sky map that intersect the given footprint
+    indices of projection regions in the skymap that intersect the given footprint
     """
 
     if skymap is None:
         skymap = sc.SKYMAP
 
     # find the closest projection regions to the image center
-    _, nearby_projregion_indices = skymap.projection_regions_kdtree.query(
+    nearby_projregion_indices = skymap.projection_regions_kdtree.query_ball_point(
         footprint.vectorpoint_center,
-        k=footprint.possibly_intersecting_projregions,
-        distance_upper_bound=footprint.possible_intersecting_projregion_distance * 1.1,
+        r=footprint.possible_intersecting_projregion_distance * 1.1,
     )
 
     intersecting_projregion_indices = []
@@ -126,37 +125,64 @@ def plot_projregion(
         )
 
 
-def plot_skycell(
-    skycell: sc.SkyCell,
+def plot_skycells(
+    skycells: sc.SkyCells,
     tangent_vectorpoint: tuple[float, float, float],
-    color=None,
-    label: str | None = None,
-    annotation: str | None = None,
+    colors=None,
+    labels: list[str] | None = None,
+    annotations: list[str] | None = None,
     axis=None,
 ):
     if axis is None:
         axis = plt
 
-    corners = skycell.vectorpoint_corners
-    corners = np.concatenate([corners, corners[0, :].reshape((1, 3))], axis=0)
-    corners_tangentplane = veccoords_to_tangent_plane(
-        corners,
-        tangent_vectorpoint,
-    )
+    for index, corners in enumerate(skycells.vectorpoint_corners):
+        if not colors:
+            color = None
+        if isinstance(colors, str):
+            color = colors
+        elif len(colors) == 1:
+            color = colors[0]
+        else:
+            color = colors[index]
 
-    axis.plot(
-        corners_tangentplane[:, 0], corners_tangentplane[:, 1], color=color, label=label
-    )
+        if not labels:
+            label = None
+        if isinstance(labels, str):
+            label = labels
+        elif len(labels) == 1:
+            label = labels[0]
+        else:
+            label = labels[index]
 
-    if annotation:
-        center = np.mean(corners_tangentplane[:-1], axis=0)
-        axis.annotate(
-            annotation, center, va="center", ha="center", size=10, color=color
+        corners = np.concat([corners, corners[0, :].reshape((1, 3))], axis=0)
+        corners_tangentplane = veccoords_to_tangent_plane(
+            corners,
+            tangent_vectorpoint,
         )
+
+        axis.plot(
+            corners_tangentplane[:, 0],
+            corners_tangentplane[:, 1],
+            color=color,
+            label=label,
+        )
+
+        if annotations:
+            center = np.mean(corners_tangentplane[:-1], axis=0)
+            axis.annotate(
+                annotations,
+                center,
+                va="center",
+                ha="center",
+                size=10,
+                color=color,
+            )
 
 
 def plot_image_footprint_and_skycells(
     footprint: list[tuple[float, float]] | sm.ImageFootprint,
+    skycells: sc.SkyCells,
     skymap: sc.SkyMap = None,
 ) -> list[tuple[Axis, tuple[float, float, float]]]:
     """This plots a list of skycell footprints against the image footprint.
@@ -168,7 +194,7 @@ def plot_image_footprint_and_skycells(
     footprint : list | sm.ImageFootprint :
         sequence of points (ra, dec) or an `ImageFootprint` object
     skymap : sc.SkyMap :
-        sky map instance; defaults to global SKYMAP (Default value = None)
+        skymap instance; defaults to global SKYMAP (Default value = None)
     """
 
     if not isinstance(footprint, sm.ImageFootprint):
@@ -189,6 +215,9 @@ def plot_image_footprint_and_skycells(
         axis = figure.subplots(1, 1)
         axis.plot(0, 0, "+", markersize=10)
 
+        projregion_intersecting_skycells = skycells[
+            skycells.projection_regions == projregion_index
+        ]
         projregion = sc.ProjectionRegion(projregion_index, skymap=skymap)
 
         tangent_vectorpoint = sgv.normalize_vector(
@@ -200,36 +229,20 @@ def plot_image_footprint_and_skycells(
         )
         plot_field(image_corners_tangentplane, fill="lightgrey", color="black")
 
-        for skycell_index in projregion.skycell_indices:
-            skycell = sc.SkyCell(skycell_index, skymap=skymap)
-            plot_skycell(
-                skycell,
-                tangent_vectorpoint,
-                color="lightgrey",
-            )
+        plot_projregion(projregion, color="lightgrey")
 
-        plot_projregion(projregion, color="darkgrey")
-
-        _, nearby_skycell_indices = projregion.skycells_kdtree.query(
-            footprint.vectorpoint_center,
-            k=footprint.possibly_intersecting_skycells,
-            distance_upper_bound=footprint.length + sc.SkyCell.length,
+        plot_skycells(
+            sc.SkyCells(projregion.skycell_indices, skymap=skymap),
+            tangent_vectorpoint,
+            colors="darkgrey",
         )
 
-        for skycell_index in nearby_skycell_indices:
-            skycell = sc.SkyCell(
-                projregion.data["skycell_start"] + skycell_index, skymap=skymap
-            )
-            plot_skycell(
-                skycell,
-                tangent_vectorpoint,
-                color="red",
-            )
-
-            if footprint.polygon.intersects_poly(skycell.polygon):
-                plot_skycell(
-                    skycell, tangent_vectorpoint, color="blue", annotation=skycell.name
-                )
+        plot_skycells(
+            projregion_intersecting_skycells,
+            tangent_vectorpoint,
+            colors="red",
+            annotations=projregion_intersecting_skycells.names,
+        )
 
         axis.set_xlabel("Offset from nearest tangent point in arcsec")
         axis.set_ylabel("Offset from nearest tangent point in arcsec")
