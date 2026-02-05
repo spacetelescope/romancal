@@ -171,7 +171,7 @@ class ExposurePipeline(RomanPipeline):
         # Create a dictionary for fully saturated data
         slopes = np.zeros(input_model.data.shape[1:], dtype=fake_model.data.dtype)
         dq = input_model.pixeldq | input_model.groupdq[0] | group.SATURATED
-        err = np.zeros(input_model.err.shape[1:], dtype=fake_model.err.dtype)
+        err = np.zeros(input_model.data.shape[1:], dtype=fake_model.err.dtype)
         image_info_allsat = {
             "slope": slopes,
             "dq": dq,
