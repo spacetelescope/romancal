@@ -3,8 +3,8 @@ Module to calculate the source catalog.
 """
 
 import logging
-
 import re
+
 import astropy.units as u
 import numpy as np
 from astropy.table import QTable, Table
