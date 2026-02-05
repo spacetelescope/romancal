@@ -1,0 +1,1 @@
+Add new dark_decay step to correct for decaying signal in early resultants.

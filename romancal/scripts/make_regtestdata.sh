@@ -42,7 +42,7 @@ mkdir -p $outdir/roman-pipeline/dev/references
 for fn in r0000101001001001001_0001_wfi01_f158 r0000201001001001001_0001_wfi01_grism
 do
     echo "Running pipeline on ${fn}..."
-    strun roman_elp ${fn}_uncal.asdf --steps.dq_init.save_results True --steps.saturation.save_results True --steps.wfi18_transient.save_results True --steps.linearity.save_results True --steps.dark_current.save_results True --steps.rampfit.save_results True --steps.assign_wcs.save_results True --steps.photom.save_results True --steps.refpix.save_results True --steps.flatfield.save_results True --steps.assign_wcs.save_results True
+    strun roman_elp ${fn}_uncal.asdf --steps.dq_init.save_results True --steps.saturation.save_results True --steps.dark_decay.save_results True --steps.wfi18_transient.save_results True --steps.linearity.save_results True --steps.dark_current.save_results True --steps.rampfit.save_results True --steps.assign_wcs.save_results True --steps.photom.save_results True --steps.refpix.save_results True --steps.flatfield.save_results True --steps.assign_wcs.save_results True
     [[ ${fn} = r00002* ]] && dirname="grism" || dirname="image"
     cp ${fn}_*.asdf $outdir/roman-pipeline/dev/WFI/$dirname/
     cp ${fn}_*.asdf $outdir/roman-pipeline/dev/truth/WFI/$dirname/
@@ -240,13 +240,10 @@ out = test_psf_library.render_psfs_for_filename(
 asdf.dump(out, open('psf_render.asdf', 'wb'))"
 cp psf_render.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
-# tests for wfi18_transient step: uses WFI18 TVAC data as well as the default WFI01 data
+# tests for wfi18_transient step: uses WFI18 TVAC data
 jf rt dl roman-pipeline/dev/WFI/image/TVAC2_NOMOPS_TTNOISE_20240418084515_WFI18_uncal.asdf --flat
 cp TVAC2_NOMOPS_TTNOISE_20240418084515_WFI18_uncal.asdf $outdir/roman-pipeline/dev/WFI/image/
-strun roman_elp TVAC2_NOMOPS_TTNOISE_20240418084515_WFI18_uncal.asdf --steps.refpix.save_results=true --steps.wfi18_transient.skip=true --steps.linearity.skip=true --steps.dark_current.skip=True --steps.rampfit.skip=true --steps.assign_wcs.skip=true --steps.flatfield.skip=true --steps.photom.skip=true --steps.source_catalog.skip=true --steps.tweakreg.skip=true
-cp TVAC2_NOMOPS_TTNOISE_20240418084515_WFI18_refpix.asdf $outdir/roman-pipeline/dev/WFI/image/
-strun romancal.step.WFI18TransientStep TVAC2_NOMOPS_TTNOISE_20240418084515_WFI18_refpix.asdf
+strun roman_elp TVAC2_NOMOPS_TTNOISE_20240418084515_WFI18_uncal.asdf --steps.dark_decay.save_results=true --steps.wfi18_transient.skip=true --steps.linearity.skip=true --steps.dark_current.skip=True --steps.rampfit.skip=true --steps.assign_wcs.skip=true --steps.flatfield.skip=true --steps.photom.skip=true --steps.source_catalog.skip=true --steps.tweakreg.skip=true
+cp TVAC2_NOMOPS_TTNOISE_20240418084515_WFI18_dark_decay.asdf $outdir/roman-pipeline/dev/WFI/image/
+strun romancal.step.WFI18TransientStep TVAC2_NOMOPS_TTNOISE_20240418084515_WFI18_dark_decay.asdf
 cp TVAC2_NOMOPS_TTNOISE_20240418084515_WFI18_wfi18_transient.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
-
-strun romancal.step.WFI18TransientStep r0000101001001001001_0001_wfi01_f158_refpix.asdf
-cp r0000101001001001001_0001_wfi01_f158_wfi18_transient.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
