@@ -38,6 +38,7 @@ class ResampleData(Resample):
         resample_on_skycell,
         wcs_kwargs=None,
         variance_array_names=None,
+        propagate_dq=False,
     ):
         """
         See the base class `stcal.resample.resample.Resample` for more details.
@@ -99,6 +100,11 @@ class ResampleData(Resample):
             `romancal.resample.resample_utils.make_output_wcs`
             for supported options.
 
+        propagate_dq : bool
+            If `True`, propagate DQ during resampling. DQ flags are propagated
+            by bitwise OR of all input DQ flags that contribute
+            to a given output pixel.
+
         variance_array_names : list, None
             Variance arrays to resample.  If None, use stcal default.
         """
@@ -152,6 +158,7 @@ class ResampleData(Resample):
             enable_ctx=enable_ctx,
             enable_var=enable_var,
             compute_err=compute_err,
+            propagate_dq=propagate_dq,
         )
 
     @property
@@ -283,8 +290,11 @@ class ResampleData(Resample):
             output_model.meta.coadd_info.max_exposure_time = max_exposure_time
             output_model.meta.coadd_info.exposure_time = total_exposure_time
 
-        if self._enable_ctx:
+        if self.enable_ctx:
             output_model.context = self.output_model["con"].astype(np.uint32)
+
+        if self.propagate_dq:
+            output_model.dq = self.output_model["dq"].astype(np.uint32)
 
         for arr_name in ["err", *self.variance_array_names]:
             if arr_name in self.output_model:
