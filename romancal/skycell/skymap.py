@@ -273,7 +273,9 @@ class SkyCells:
                 ),
                 "orientat_projection_center": self._skymap.model.projection_regions[
                     "orientat"
-                ][projregion_index].astype(np.float64),
+                ][projregion_index].astype(
+                    np.float64
+                ),  # hotfix for `TypeError: Object of type float32 is not JSON serializable`
             }
             for skycell_index, projregion_index in zip(
                 self.indices, self.projection_regions, strict=True
