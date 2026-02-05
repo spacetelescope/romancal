@@ -4,6 +4,7 @@ Module to calculate the source catalog.
 
 import logging
 
+import re
 import astropy.units as u
 import numpy as np
 from astropy.table import QTable, Table
@@ -12,6 +13,7 @@ from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.dqflags import pixel
 
 from romancal import __version__ as romancal_version
+from romancal.skycell import skymap
 from romancal.source_catalog.aperture import ApertureCatalog
 from romancal.source_catalog.daofind import DAOFindCatalog
 from romancal.source_catalog.neighbors import NNCatalog
@@ -352,10 +354,6 @@ class RomanSourceCatalog:
             pixel_scale = self.model.meta.wcsinfo.pixel_scale_ref
         except AttributeError:  # L2 image or unrecognized schema, give up
             return bad_return
-
-        import re
-
-        from romancal.skycell import skymap
 
         try:
             sc = skymap.SkyCells.from_names([skycell_name])
