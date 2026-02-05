@@ -111,33 +111,6 @@ def test_groupdq():
     )
 
 
-def test_err():
-    """Check that a 3-D ERR array is initialized and all values are zero."""
-
-    # size of integration
-    instrument = "WFI"
-    nresultants = 5
-    xsize = 1032
-    ysize = 1024
-    csize = (nresultants, ysize, xsize)
-
-    # create raw input data for step
-    dm_ramp = make_ramp(csize, instrument)
-
-    # create a MaskModel elements for the dq input mask
-    ref_data = MaskRefModel.create_fake_data(shape=csize[1:])
-    ref_data["meta"]["instrument"]["name"] = instrument
-
-    # run correction step
-    outfile = do_dqinit(dm_ramp, ref_data)
-
-    # check that ERR array was created and initialized to zero
-    errarr = outfile.err
-
-    assert errarr.ndim == 3  # check that output err array is 3-D
-    assert np.all(errarr == 0)  # check that values are 0
-
-
 def test_dq_add1_groupdq():
     """
     Test if the dq_init code set the groupdq flag on the first
@@ -236,7 +209,6 @@ def test_dqinit_step_interface(instrument, exptype):
     assert result.pixeldq.shape == shape[1:]
     assert result.meta.cal_step.dq_init == "COMPLETE"
     assert result.data.dtype == np.float32
-    assert result.err.dtype == np.float32
     assert result.pixeldq.dtype == np.uint32
     assert result.groupdq.dtype == np.uint8
     # check that extra value came through
