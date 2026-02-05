@@ -73,7 +73,7 @@ class WfiSca:
                 "var_rnoise": rng.normal(1, 0.05, size=self.shape).astype(np.float32),
                 "var_poisson": rng.poisson(1, size=self.shape).astype(np.float32),
                 "var_flat": rng.uniform(0, 1, size=self.shape).astype(np.float32),
-                "dq": 2**rng.integers(3, 16, size=self.shape).astype(np.uint32)
+                "dq": 2 ** rng.integers(3, 16, size=self.shape).astype(np.uint32),
             },
             shape=self.shape,
         )
@@ -577,9 +577,7 @@ def test_resampledata_do_drizzle_default_single_exposure_weight_array(
     good_bits = sum([2**i for i in range(3, 16)])
 
     output_model = ResampleStep(
-        weight_type=weight_type,
-        propagate_dq=propagate_dq,
-        good_bits=str(good_bits)
+        weight_type=weight_type, propagate_dq=propagate_dq, good_bits=str(good_bits)
     ).run(input_models)
     assert np.any(output_model.weight > 0)
     if propagate_dq:
