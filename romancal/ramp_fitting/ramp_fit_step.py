@@ -135,20 +135,18 @@ class RampFitStep(RomanStep):
         if self.threshold_constant is not None:
             kwargs["threshold_constant"] = self.threshold_constant
 
-        resultants = input_model.data
-        dq = input_model.groupdq
-        read_noise = readnoise_model.data
         gain = gain_model.data
         read_time = input_model.meta.exposure.frame_time
+
+        # Account for the gain.  Do not modify input_model.
+        resultants = input_model.data * gain
+        read_noise = readnoise_model.data * gain
+        dq = input_model.groupdq
 
         # Force read pattern to be pure lists not LNodes
         read_pattern = [list(reads) for reads in input_model.meta.exposure.read_pattern]
         if len(read_pattern) != resultants.shape[0]:
             raise RuntimeError("mismatch between resultants shape and read_pattern.")
-
-        # account for the gain
-        resultants *= gain
-        read_noise *= gain
 
         # Fit the ramps
         output = ols_cas22_fit.fit_ramps_casertano(
@@ -161,28 +159,27 @@ class RampFitStep(RomanStep):
             **kwargs,
         )
 
-        # Break out the information and fix units
-        slopes = output.parameters[..., Parameter.slope]
-        var_rnoise = output.variances[..., Variance.read_var]
-        var_poisson = output.variances[..., Variance.poisson_var]
+        # Break out the information and fix units back to DN/s
+        slopes = output.parameters[..., Parameter.slope] / gain
+        var_rnoise = output.variances[..., Variance.read_var] / gain**2
+        var_poisson = output.variances[..., Variance.poisson_var] / gain**2
         err = np.sqrt(var_poisson + var_rnoise)
         dq = output.dq.astype(np.uint32)
 
         # Propagate DQ flags forward.
         ramp_dq = get_pixeldq_flags(dq, input_model.pixeldq, slopes, err, gain)
 
-        # Create the image model
-        image_info = (slopes, ramp_dq, var_poisson, var_rnoise, err)
+        # Create the image model.  Rescale by the gain back to DN/s
+        image_info = {
+            "slope": slopes,
+            "dq": ramp_dq,
+            "var_poisson": var_poisson,
+            "var_rnoise": var_rnoise,
+            "err": err,
+        }
         image_model = create_image_model(
             input_model, image_info, include_var_rnoise=include_var_rnoise
         )
-
-        # Rescale by the gain back to DN/s
-        image_model.data /= gain[4:-4, 4:-4]
-        image_model.err /= gain[4:-4, 4:-4]
-        image_model.var_poisson /= gain[4:-4, 4:-4] ** 2
-        if include_var_rnoise:
-            image_model.var_rnoise /= gain[4:-4, 4:-4] ** 2
 
         # That's all folks
         return image_model
@@ -199,7 +196,7 @@ def create_image_model(input_model, image_info, include_var_rnoise=False):
     input_model : `~roman_datamodels.datamodels.RampModel`
         Input ``RampModel`` for which the output ``ImageModel`` is created.
 
-    image_info : tuple
+    image_info : dict
         The ramp fitting arrays needed for the ``ImageModel``.
 
     include_var_rnoise : bool
@@ -211,7 +208,6 @@ def create_image_model(input_model, image_info, include_var_rnoise=False):
         The output ``ImageModel`` to be returned from the ramp fit step.
 
     """
-    data, dq, var_poisson, var_rnoise, err = image_info
     im = rdm.ImageModel()
     # use getitem here to avoid copying the DNode
     im.meta = copy.deepcopy(input_model["meta"])
@@ -246,21 +242,71 @@ def create_image_model(input_model, image_info, include_var_rnoise=False):
 
     # trim off border reference pixels from science data, dq, err
     # and var_poisson/var_rnoise
-    im.data = data[4:-4, 4:-4].copy()
-    if dq is not None:
-        im.dq = dq[4:-4, 4:-4].copy()
+    im.data = image_info["slope"][4:-4, 4:-4].copy()
+    if image_info["dq"] is not None:
+        im.dq = image_info["dq"][4:-4, 4:-4].copy()
     else:
         im.dq = np.zeros(im.data.shape, dtype="u4")
-    im.err = err[4:-4, 4:-4].copy().astype("float16")
-    im.var_poisson = var_poisson[4:-4, 4:-4].copy().astype("float16")
-    if include_var_rnoise:
-        im.var_rnoise = var_rnoise[4:-4, 4:-4].copy().astype("float16")
 
-    # Add required chisq and dumo fields (currently set to zero)
-    im.chisq = np.zeros(im.data.shape, dtype=np.float16)
-    im.dumo = np.zeros(im.data.shape, dtype=np.float16)
+    im.err = image_info["err"][4:-4, 4:-4].copy().astype("float16")
+    im.var_poisson = image_info["var_poisson"][4:-4, 4:-4].copy().astype("float16")
+    if include_var_rnoise:
+        im.var_rnoise = image_info["var_rnoise"][4:-4, 4:-4].copy().astype("float16")
+
+    # Add required chisq and dumo fields.  chisq will be populated with zeroes
+    # if the likelihood algorithm was not run, so that "chisq" is not a key in
+    # image_info.
+
+    if "chisq" in image_info.keys() and image_info["chisq"] is not None:
+        im.chisq = image_info["chisq"][4:-4, 4:-4].copy().astype("float16")
+    else:
+        im.chisq = np.zeros(im.data.shape, dtype=np.float16)
+
+    slopes_alt = slopes_uniform_weights(input_model)
+
+    # Add this to the optimal-weighted slopes to get the uniform-weighted slopes
+    im.dumo = (slopes_alt[4:-4, 4:-4] - im.data).astype("float16")
 
     return im
+
+
+def slopes_uniform_weights(input_model):
+    """
+    Compute ramp slopes using uniform (read-noise-limited) weights.
+
+    Parameters
+    ----------
+    input_model : RampModel
+        Model containing ramps.
+
+    Returns
+    -------
+    slopes : ndarray
+        The slope for each pixel under uniform weighting, which is optimal
+        in the read noise limit.  All flags, including saturation and
+        jump, will be ignored.
+    """
+
+    # The lines below compute the weight for each resultant in the case
+    # of uniform weighting (a diagonal covariance matrix consisting only
+    # of read noise).
+
+    readtimes = get_readtimes(input_model)
+
+    ni = np.array([len(t) for t in readtimes])
+    ti = np.array([np.mean(t) for t in readtimes])
+    N = np.sum(ni)
+    Nt = np.sum(ni * ti)
+    Ntt = np.sum(ni * ti**2)
+    weights = (N * ni * ti - Nt * ni) / (N * Ntt - Nt**2)
+
+    # We want the weighted sum over reads.
+    if len(input_model.data.shape) == 3:
+        return np.sum(weights[:, None, None] * input_model.data, axis=0)
+    elif len(input_model.data.shape) == 4:
+        return np.sum(weights[:, None, None] * input_model.data[0], axis=0)
+    else:
+        raise ValueError("Unexpected shape for input_model.data")
 
 
 def get_pixeldq_flags(groupdq, pixeldq, slopes, err, gain):

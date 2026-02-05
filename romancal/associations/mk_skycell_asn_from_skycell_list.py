@@ -53,11 +53,12 @@ def mk_skycell_asn_from_skycell_list(
     skycell_indices_array = [item[1] for item in skycell_indices]
 
     logger.debug(f"All Skycells: {skycell_indices_array}")
-    unique_skycell_indices = np.unique(np.concatenate(skycell_indices_array))
-    logger.info(f"Unique Skycells: {unique_skycell_indices}")
-    for skycell_index in unique_skycell_indices:
+    skycells = sc.SkyCells(np.unique(np.concatenate(skycell_indices_array)))
+    logger.info(f"Unique Skycells: {skycells}")
+    for skycell_index, skycell_name, skycell_wcs_info in zip(
+        skycells.indices, skycells.names, skycells.wcs_infos, strict=True
+    ):
         member_list = []
-        skycell = sc.SkyCell(skycell_index)
         for entry in skycell_indices:
             if np.isin(skycell_index, entry[1]):
                 member_list.append(os.path.basename(entry[0]).split(".")[0])
@@ -72,7 +73,7 @@ def mk_skycell_asn_from_skycell_list(
             optical_element,
             release_product,
             product_type,
-            skycell.name,
+            skycell_name,
         )
 
         prompt_product_asn = asn_from_list.asn_from_list(
@@ -80,8 +81,8 @@ def mk_skycell_asn_from_skycell_list(
         )
         prompt_product_asn["asn_type"] = "image"
         prompt_product_asn["program"] = program_id
-        prompt_product_asn["target"] = skycell.name
-        prompt_product_asn["skycell_wcs_info"] = skycell.wcs_info
+        prompt_product_asn["target"] = skycell_name
+        prompt_product_asn["skycell_wcs_info"] = skycell_wcs_info
 
         _, serialized = prompt_product_asn.dump(format="json")
 
