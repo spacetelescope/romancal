@@ -35,6 +35,18 @@ SIMPLE_RESULTANTS = np.array(
 # #########
 # Utilities
 # #########
+
+def create_linear_ramp(n_resultants=4, nrows=2, ncols=2, rate=2, pedistal=1):
+    """Create linear resultants"""
+    r1 = np.array(list(range(n_resultants)), dtype=np.float32) * rate + pedistal
+    r2 = r1[:, np.newaxis]
+    r2 = np.repeat(r2, repeats=nrows, axis=1)
+    ramps = r2[:, np.newaxis]
+    ramps = np.repeat(ramps, repeats=ncols, axis=1)
+
+    return ramps
+
+
 def make_data(resultants, ingain, rnoise, randomize):
     """Create test input data
 
