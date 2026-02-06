@@ -4,8 +4,9 @@ import numpy as np
 import pytest
 
 from romancal.ramp_fitting import RampFitStep
+from roman_datamodels.dqflags import pixel
 
-from .common import SIMPLE_RESULTANTS, make_data
+from .common import SIMPLE_RESULTANTS, create_linear_ramp, make_data
 
 SIMPLE_EXPECTED_DEFAULT = {
     "data": np.array(
@@ -75,6 +76,65 @@ def test_bad_readpattern():
             override_gain=gain_model,
             override_readnoise=readnoise_model,
         )
+
+
+def test_flag_large_events_withsnowball():
+    """Test that large events are flagged"""
+    resultants = create_linear_ramp(n_resultants=20, nrows=100, ncols=100)
+    model, m_gain, m_rnoise, m_dark = make_data(resultants, 6, 0.01, False)
+
+    # square of saturation surrounded by jump -> snowball
+    # 112 pixels (121 minus 9) initially have a jump.
+    model.data[10:, 46:57, 46:57] += 300
+    model.data[10:, 50:53, 50:53] = 1e5
+    model.groupdq[10:, 50:53, 50:53] = pixel.SATURATED
+
+    m_image = RampFitStep.call(
+        model,
+        algorithm='likely',
+        override_gain=m_gain,
+        override_readnoise=m_rnoise,
+        expand_large_events = True,
+        min_sat_area = 1,
+        min_jump_area = 6,
+        expand_factor = 1.9,
+        edge_size = 0,
+        sat_required_snowball = True,
+        min_sat_radius_extend = 0.5,
+        sat_expand = 2,
+    )
+    assert np.std(m_image.data) < 1e-5
+    n_jump_expanded = np.sum(m_image.dq == pixel.JUMP_DET)
+
+    # Check that the uncertainties are the same for all pixels with jumps
+    # and save this average uncertainty
+    meanerr_jumppixels_new = np.mean(m_image.err[m_image.dq == pixel.JUMP_DET])
+    assert np.std(m_image.err[m_image.dq == pixel.JUMP_DET]) < 1e-6
+
+    # Now without snowball flagging
+    model, m_gain, m_rnoise, m_dark = make_data(resultants, 6, 0.01, False)
+    model.data[10:, 46:57, 46:57] += 300
+    model.data[10:, 50:53, 50:53] = 1e5
+    model.groupdq[10:, 50:53, 50:53] = pixel.SATURATED
+
+    m_image = RampFitStep.call(
+        model,
+        algorithm='likely',
+        override_gain=m_gain,
+        override_readnoise=m_rnoise,
+        expand_large_events = False,
+    )
+    assert np.std(m_image.data) < 1e-5
+    n_jump_original = np.sum(m_image.dq == pixel.JUMP_DET)
+
+    # Check that the uncertainties are the same for all pixels with jumps
+    # originally flagged.  Check that this uncertainty matches the new value.
+
+    meanerr_jumppixels_orig = np.mean(m_image.err[m_image.dq == pixel.JUMP_DET])
+    assert np.std(m_image.err[m_image.dq == pixel.JUMP_DET]) < 1e-6
+    assert np.abs(meanerr_jumppixels_orig - meanerr_jumppixels_new) < 1e-5
+
+    assert n_jump_original == 112 and n_jump_expanded > 300 and n_jump_expanded < 600
 
 
 def test_uniformweighting():
