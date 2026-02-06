@@ -246,10 +246,10 @@ def setup_source_catalog(img, bias_value=None):
     # read in the mock table
     source_catalog = Table.read("img_1", format="ascii.ecsv")
     # rename columns to match expected column names
-    source_catalog.rename_columns(["x", "y"], ["xcentroid", "ycentroid"])
+    source_catalog.rename_columns(["x", "y"], ["x_centroid", "y_centroid"])
     # add mock PSF coordinates
-    source_catalog["x_psf"] = source_catalog["xcentroid"]
-    source_catalog["y_psf"] = source_catalog["ycentroid"]
+    source_catalog["x_psf"] = source_catalog["x_centroid"]
+    source_catalog["y_psf"] = source_catalog["y_centroid"]
 
     # Define known biases (in pixels) to add to shifts
     if bias_value is not None:
@@ -269,8 +269,8 @@ def setup_source_catalog(img, bias_value=None):
     shift_x = rng.uniform(-0.5, 0.5, size=len(source_catalog)) + bias_xcentroid
     shift_y = rng.uniform(-0.5, 0.5, size=len(source_catalog)) + bias_ycentroid
     # add random fraction of a pixel shifts to the centroid coordinates
-    source_catalog["xcentroid"] += shift_x
-    source_catalog["ycentroid"] += shift_y
+    source_catalog["x_centroid"] += shift_x
+    source_catalog["y_centroid"] += shift_y
 
     # generate another set of random shifts to be added to the original coordinates
     seed = 5
@@ -283,8 +283,8 @@ def setup_source_catalog(img, bias_value=None):
 
     # calculate centroid world coordinates
     centroid = img.meta.wcs(
-        source_catalog["xcentroid"],
-        source_catalog["ycentroid"],
+        source_catalog["x_centroid"],
+        source_catalog["y_centroid"],
     )
     # calculate PSF world coordinates
     psf = img.meta.wcs(
@@ -421,24 +421,18 @@ def test_update_source_catalog_coordinates(function_jail, tweakreg_image):
 
     img = tweakreg_image(shift_1=1000, shift_2=1000, catalog_filename="img_1")
 
+    # Use a known bias of 1 pixel for the centroid coordinates
+    bias_value = 1.0  # pixels
+
     # create ImageSourceCatalogModel (no bias for this test)
-    source_catalog = setup_source_catalog(img)
+    source_catalog = setup_source_catalog(img, bias_value=bias_value)
     source_catalog.write("img_1_cat.parquet", overwrite=True)
 
     # update tweakreg catalog name
     img.meta.source_catalog.tweakreg_catalog_name = "img_1_cat.parquet"
 
     # run TweakRegStep
-    res = TweakRegStep.call([img])
-
-    # tweak the current WCS using TweakRegStep and save the updated cat file
-    with res:
-        dm = res.borrow(0)
-        assert dm.meta.source_catalog.tweakreg_catalog_name == "img_1_cat.parquet"
-        TweakRegStep().update_catalog_coordinates(
-            dm.meta.source_catalog.tweakreg_catalog_name, dm.meta.wcs
-        )
-        res.shelve(dm, 0)
+    TweakRegStep.call([img], update_source_catalog_coordinates=True)
 
     # read in saved catalog coords
     cat = Table.read("img_1_cat.parquet")
@@ -448,7 +442,7 @@ def test_update_source_catalog_coordinates(function_jail, tweakreg_image):
     cat_dec_psf = cat["dec_psf"]
 
     # calculate world coords using tweaked WCS
-    expected_centroid = img.meta.wcs(cat["xcentroid"], cat["ycentroid"])
+    expected_centroid = img.meta.wcs(cat["x_centroid"], cat["y_centroid"])
     expected_psf = img.meta.wcs(cat["x_psf"], cat["y_psf"])
 
     # compare coordinates (make sure tweaked WCS was applied to cat file coords)
@@ -475,12 +469,12 @@ def test_source_catalog_coordinates_have_changed(function_jail, tweakreg_image):
 
     # Store the original pixel coordinates before any shifts
     original_source_catalog = Table.read("img_1", format="ascii.ecsv")
-    original_source_catalog.rename_columns(["x", "y"], ["xcentroid", "ycentroid"])
+    original_source_catalog.rename_columns(["x", "y"], ["x_centroid", "y_centroid"])
 
     # Calculate expected world coordinates using the original WCS
     # These are the coordinates WITHOUT the bias
     expected_original_centroid = img.meta.wcs(
-        original_source_catalog["xcentroid"], original_source_catalog["ycentroid"]
+        original_source_catalog["x_centroid"], original_source_catalog["y_centroid"]
     )
 
     # Read the original catalog data into memory before updating
@@ -546,7 +540,7 @@ def test_source_catalog_coordinates_have_changed(function_jail, tweakreg_image):
 
 
 def test_parquet_metadata_preserved_after_update(function_jail, tweakreg_image):
-    """Test that parquet metadata survives the coordinate update operation."""
+    """Test that parquet metadata is properly preserved with IVOA-compliant units after coordinate update."""
 
     img = tweakreg_image(shift_1=1000, shift_2=1000, catalog_filename="img_1")
 
@@ -555,25 +549,29 @@ def test_parquet_metadata_preserved_after_update(function_jail, tweakreg_image):
     source_catalog.write("img_1_cat.parquet", overwrite=True)
     img.meta.source_catalog.tweakreg_catalog_name = "img_1_cat.parquet"
 
-    # Read original metadata using pyarrow
+    # Read original catalog using astropy to get unit information
+    original_astropy = Table.read("img_1_cat.parquet")
     original_table = pq.read_table("img_1_cat.parquet")
-    original_schema_metadata = original_table.schema.metadata
     original_schema = original_table.schema
 
     # Run TweakRegStep with coordinate updates and save updated catalog to disk
     TweakRegStep.call([img], update_source_catalog_coordinates=True)
 
-    # Read updated file's metadata
+    # Read updated file
+    updated_astropy = Table.read("img_1_cat.parquet")
     updated_table = pq.read_table("img_1_cat.parquet")
-    updated_schema_metadata = updated_table.schema.metadata
     updated_schema = updated_table.schema
 
-    # Verify schema metadata is preserved
-    assert original_schema_metadata == updated_schema_metadata
-
-    # Verify column schemas match (types, names, field metadata)
+    # Verify column schemas match (types, names)
     for orig_field, updated_field in zip(original_schema, updated_schema, strict=False):
         assert orig_field.name == updated_field.name
         # Note: We expect RA/Dec columns to have the same type, just different values
         # So schema types should still match
         assert orig_field.type == updated_field.type
+
+    # Verify units are preserved and IVOA-compliant when read by astropy
+    # For columns with units, astropy should be able to read them correctly
+    for col in original_astropy.colnames:
+        # Check that units are readable (not None or empty when they should have units)
+        if col in ["ra_centroid", "dec_centroid", "ra_psf", "dec_psf"]:
+            assert updated_astropy[col].unit == u.deg
