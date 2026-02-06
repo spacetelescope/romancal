@@ -2,9 +2,9 @@
 
 import numpy as np
 import pytest
+from roman_datamodels.dqflags import pixel
 
 from romancal.ramp_fitting import RampFitStep
-from roman_datamodels.dqflags import pixel
 
 from .common import SIMPLE_RESULTANTS, create_linear_ramp, make_data
 
@@ -91,17 +91,17 @@ def test_flag_large_events_withsnowball():
 
     m_image = RampFitStep.call(
         model,
-        algorithm='likely',
+        algorithm="likely",
         override_gain=m_gain,
         override_readnoise=m_rnoise,
-        expand_large_events = True,
-        min_sat_area = 1,
-        min_jump_area = 6,
-        expand_factor = 1.9,
-        edge_size = 0,
-        sat_required_snowball = True,
-        min_sat_radius_extend = 0.5,
-        sat_expand = 2,
+        expand_large_events=True,
+        min_sat_area=1,
+        min_jump_area=6,
+        expand_factor=1.9,
+        edge_size=0,
+        sat_required_snowball=True,
+        min_sat_radius_extend=0.5,
+        sat_expand=2,
     )
     assert np.std(m_image.data) < 1e-5
     n_jump_expanded = np.sum(m_image.dq == pixel.JUMP_DET)
@@ -119,10 +119,10 @@ def test_flag_large_events_withsnowball():
 
     m_image = RampFitStep.call(
         model,
-        algorithm='likely',
+        algorithm="likely",
         override_gain=m_gain,
         override_readnoise=m_rnoise,
-        expand_large_events = False,
+        expand_large_events=False,
     )
     assert np.std(m_image.data) < 1e-5
     n_jump_original = np.sum(m_image.dq == pixel.JUMP_DET)
