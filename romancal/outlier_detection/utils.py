@@ -195,7 +195,14 @@ def _flag_resampled_model_crs(
         fillval = 0
     else:
         fillval = float(fillval)
-    blot = gwcs_blot(median_data, median_wcs, image.data.shape, image.meta.wcs, fillval)
+
+    blot = gwcs_blot(
+        median_data=median_data,
+        median_wcs=median_wcs,
+        blot_shape=image.data.shape,
+        blot_wcs=image.meta.wcs,
+        fillval=fillval,
+    )
 
     # Get background level of science data if it has not been subtracted, so it
     # can be added into the level of the blotted data, which has been
