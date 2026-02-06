@@ -330,7 +330,7 @@ class TweakRegStep(RomanStep):
 
         # Extract columns as numpy arrays for WCS calculation
         colname_mapping = {
-            ("xcentroid", "ycentroid"): ("ra_centroid", "dec_centroid"),
+            ("x_centroid", "y_centroid"): ("ra_centroid", "dec_centroid"),
             ("x_psf", "y_psf"): ("ra_psf", "dec_psf"),
         }
 

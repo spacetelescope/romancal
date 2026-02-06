@@ -483,16 +483,7 @@ def test_source_catalog_coordinates_have_changed(function_jail, tweakreg_image):
     # update tweakreg catalog name
     img.meta.source_catalog.tweakreg_catalog_name = "img_1_cat.parquet"
 
-    res = TweakRegStep.call([img])
-
-    # tweak the current WCS using TweakRegStep and save the updated cat file
-    with res:
-        dm = res.borrow(0)
-        assert dm.meta.source_catalog.tweakreg_catalog_name == "img_1_cat.parquet"
-        TweakRegStep().update_catalog_coordinates(
-            dm.meta.source_catalog.tweakreg_catalog_name, dm.meta.wcs
-        )
-        res.shelve(dm, 0)
+    TweakRegStep.call([img], update_source_catalog_coordinates=True)
 
     # Read the updated catalog
     cat_updated = Table.read("img_1_cat.parquet")
