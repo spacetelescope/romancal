@@ -210,6 +210,9 @@ class RampFitStep(RomanStep):
             [input_model.data.shape[2], input_model.data.shape[3]]
         )
 
+        # Flag pixels that have only a single resultant.
+        input_model.pixeldq |= np.sum(input_model.groupdq[0] & (group.SATURATED | group.DO_NOT_USE), axis=0)
+
         # Setup jump data to handle snowballs and other special situations handled by
         # the likelihood algorithm
         jump_data = self._setup_jump_data(input_model, readnoise_model, gain_model)
