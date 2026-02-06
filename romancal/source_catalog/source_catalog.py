@@ -358,8 +358,10 @@ class RomanSourceCatalog:
         try:
             sc = skymap.SkyCells.from_names([skycell_name])
         except KeyError:
-            log.warning(f"Could not find skycell {skycell_name}, "
-                        "not filling out flagged_spatial_index.")
+            log.warning(
+                f"Could not find skycell {skycell_name}, "
+                "not filling out flagged_spatial_index."
+            )
             return bad_return
 
         core_indices = sc.cores_containing(np.array([self.ra, self.dec]).T)
