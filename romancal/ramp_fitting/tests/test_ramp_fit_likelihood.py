@@ -5,7 +5,6 @@ import pytest
 from roman_datamodels.dqflags import pixel
 
 from romancal.ramp_fitting import RampFitStep
-from roman_datamodels.dqflags import pixel
 
 from .common import SIMPLE_RESULTANTS, create_linear_ramp, make_data
 
