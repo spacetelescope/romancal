@@ -36,7 +36,6 @@ SIMPLE_RESULTANTS = np.array(
 # Utilities
 # #########
 
-
 def create_linear_ramp(n_resultants=4, nrows=2, ncols=2, rate=2, pedistal=1):
     """Create linear resultants"""
     r1 = np.array(list(range(n_resultants)), dtype=np.float32) * rate + pedistal
