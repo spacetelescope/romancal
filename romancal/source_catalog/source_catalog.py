@@ -358,11 +358,8 @@ class RomanSourceCatalog:
         try:
             sc = skymap.SkyCells.from_names([skycell_name])
         except KeyError:
-            log.warning(
-                "Could not find skycell "
-                + skycell_name
-                + ", not filling out out flagged_spatial_index."
-            )
+            log.warning(f"Could not find skycell {skycell_name}, "
+                        "not filling out out flagged_spatial_index.")
             return bad_return
 
         core_indices = sc.cores_containing(np.array([self.ra, self.dec]).T)
@@ -378,13 +375,14 @@ class RomanSourceCatalog:
         pattern = r"x(\d+)y(\d+)"
         match = re.search(pattern, skycell_name)
         if not match:
-            log.warning("Invalid skycell name ", skycell_name)
+            log.warning(f"Invalid skycell name: {skycell_name}")
             return bad_return
         skycell_x_idx = int(match.group(1))
         skycell_y_idx = int(match.group(2))
 
         def convert_to_pixel_idx(val):
-            idx = (val.value * pixel_scale * 3600 / 0.05).astype("i4")
+            virtual_scale = 0.05  # virtual pixel scale used for id computation
+            idx = (val.value * pixel_scale * 3600 / virtual_scale).astype("i4")
             return np.clip(idx, 0, 2**16)
 
         pixel_x_idx = convert_to_pixel_idx(self.x_centroid)
