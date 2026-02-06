@@ -69,6 +69,7 @@ class ResampleStep(RomanStep):
         in_memory = boolean(default=True)
         good_bits = string(default='~DO_NOT_USE+NON_SCIENCE')  # The good bits to use for building the resampling mask.
         include_var_flat = boolean(default=False)  # include var_flat in output image
+        propagate_dq = boolean(default=False)  # propagate DQ during resampling
     """
 
     reference_file_types: ClassVar = []
@@ -138,22 +139,24 @@ class ResampleStep(RomanStep):
 
         # Call the resampling routine
         resamp = ResampleData(
-            input_models,
-            output_wcs,
-            self.pixfrac,
-            self.kernel,
-            self.fillval,
-            self.weight_type,
-            self.good_bits,
-            True,
-            True,
-            "from_var",
-            True,
-            True,
-            self.resample_on_skycell,
-            wcs_kwargs,
+            input_models=input_models,
+            output_wcs=output_wcs,
+            pixfrac=self.pixfrac,
+            kernel=self.kernel,
+            fillval=self.fillval,
+            weight_type=self.weight_type,
+            good_bits=self.good_bits,
+            enable_ctx=True,
+            enable_var=True,
+            compute_err="from_var",
+            compute_exptime=True,
+            blend_meta=True,
+            resample_on_skycell=self.resample_on_skycell,
+            wcs_kwargs=wcs_kwargs,
             variance_array_names=variance_array_names,
+            propagate_dq=self.propagate_dq,
         )
+
         result = resamp.resample_group(range(len(input_models)))
         result.meta.filename = output_filename
 
