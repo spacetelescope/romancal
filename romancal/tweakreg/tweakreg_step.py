@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
+import pyarrow as pa
+import pyarrow.parquet as pq
 from astropy.table import Table
 from roman_datamodels import datamodels as rdm
 from stcal.tweakreg import tweakreg
@@ -276,6 +278,20 @@ class TweakRegStep(RomanStep):
                         image_model.meta.wcs = imcat.wcs
                         # update S_REGION
                         add_s_region(image_model)
+                        # update source catalog coordinates if requested
+                        if self.update_source_catalog_coordinates:
+                            try:
+                                self.update_catalog_coordinates(
+                                    image_model.meta.source_catalog[
+                                        "tweakreg_catalog_name"
+                                    ],
+                                    imcat.wcs,
+                                )
+                            except Exception as e:
+                                log.error(
+                                    f"Failed to update source catalog coordinates: {e}"
+                                )
+                                raise e
 
                     images.shelve(image_model, imcat.meta["model_index"])
 
@@ -288,47 +304,72 @@ class TweakRegStep(RomanStep):
 
     def update_catalog_coordinates(self, tweakreg_catalog_name, tweaked_wcs):
         """
-        Update the source catalog coordinates using the tweaked WCS.
+        Update the source catalog coordinates using the tweaked WCS while strictly preserving original file metadata.
 
         Parameters
         ----------
         tweakreg_catalog_name : str
-            The name of the TweakReg catalog file produced by `SourceCatalog`.
-        tweaked_wcs : `gwcs.wcs.WCS`
-            The tweaked World Coordinate System (WCS) object.
+            Path to the source catalog file (in Parquet format) to be updated.
+        tweaked_wcs : callable
+            A WCS transformation function that takes x and y coordinates and returns updated (RA, Dec) values.
 
         Returns
         -------
         None
+            The function updates the catalog file in place; it does not return a value.
+
+        Notes
+        -----
+        The method preserves all original file metadata by reading and re-attaching it after coordinate updates.
+        Only the coordinate columns are modified; all other data and metadata remain unchanged.
         """
-        # read in cat file
-        with rdm.open(tweakreg_catalog_name) as source_catalog_model:
-            # get catalog
-            catalog = source_catalog_model.source_catalog
 
-            # define mapping between pixel and world coordinates
-            colname_mapping = {
-                ("xcentroid", "ycentroid"): ("ra_centroid", "dec_centroid"),
-                ("x_psf", "y_psf"): ("ra_psf", "dec_psf"),
-            }
+        # Read the existing catalog using PyArrow
+        pa_table = pq.read_table(tweakreg_catalog_name)
+        original_metadata = pa_table.schema.metadata
 
-            for k, v in colname_mapping.items():
-                # get column names
-                x_colname, y_colname = k
-                ra_colname, dec_colname = v
+        # Extract columns as numpy arrays for WCS calculation
+        colname_mapping = {
+            ("x_centroid", "y_centroid"): ("ra_centroid", "dec_centroid"),
+            ("x_psf", "y_psf"): ("ra_psf", "dec_psf"),
+        }
 
-                # calculate new coordinates using tweaked WCS and update catalog coordinates
-                catalog[ra_colname], catalog[dec_colname] = tweaked_wcs(
-                    catalog[x_colname], catalog[y_colname]
-                )
+        # Build list of updated columns
+        updated_columns = {}
 
-            # save updated catalog (overwrite cat file)
-            self.save_model(
-                source_catalog_model,
-                output_file=source_catalog_model.meta.filename,
-                suffix="cat",
-                force=True,
-            )
+        for (x_col, y_col), (ra_col, dec_col) in colname_mapping.items():
+            # Get pixel coordinates as numpy arrays
+            x_values = pa_table[x_col].to_numpy()
+            y_values = pa_table[y_col].to_numpy()
+
+            # Calculate new sky coordinates
+            new_ra, new_dec = tweaked_wcs(x_values, y_values)
+
+            # Store updated columns (will replace old ones)
+            updated_columns[ra_col] = pa.array(new_ra)
+            updated_columns[dec_col] = pa.array(new_dec)
+
+        # Create new table with updated columns
+        # Keep all original columns, replacing only the updated ones
+        new_columns = []
+        new_names = []
+
+        for i, field in enumerate(pa_table.schema):
+            col_name = field.name
+            if col_name in updated_columns:
+                # Use updated column
+                new_columns.append(updated_columns[col_name])
+            else:
+                # Keep original column
+                new_columns.append(pa_table.column(i))
+            new_names.append(col_name)
+
+        # Create new table with original schema metadata
+        final_table = pa.table(new_columns, names=new_names)
+        final_table = final_table.replace_schema_metadata(original_metadata)
+
+        # Write back to file
+        pq.write_table(final_table, tweakreg_catalog_name)
 
     def read_catalog(self, catalog_name):
         """

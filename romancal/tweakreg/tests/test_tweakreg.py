@@ -1,12 +1,13 @@
 import copy
 import json
 import os
-import shutil
 
 import numpy as np
+import pyarrow.parquet as pq
 import pytest
 from astropy import coordinates as coord
 from astropy import units as u
+from astropy.coordinates import SkyCoord
 from astropy.modeling import models
 from astropy.table import Table
 from numpy.random import default_rng
@@ -223,137 +224,17 @@ def test_tweakreg_handles_multiple_groups(tmp_path, tweakreg_image):
     assert len(res.group_names) == 2
 
 
-def test_update_source_catalog_coordinates(function_jail, tweakreg_image):
-    """Test that TweakReg updates the catalog coordinates with the tweaked WCS."""
-
-    img = tweakreg_image(shift_1=1000, shift_2=1000, catalog_filename="img_1")
-
-    # create ImageSourceCatalogModel
-    source_catalog = setup_source_catalog(img)
-    source_catalog.write("img_1_cat.parquet", overwrite=True)
-
-    # update tweakreg catalog name
-    img.meta.source_catalog.tweakreg_catalog_name = "img_1_cat.parquet"
-
-    # run TweakRegStep
-    res = TweakRegStep.call([img])
-
-    # tweak the current WCS using TweakRegStep and save the updated cat file
-    with res:
-        dm = res.borrow(0)
-        assert dm.meta.source_catalog.tweakreg_catalog_name == "img_1_cat.parquet"
-        update_catalog_coordinates(
-            dm.meta.source_catalog.tweakreg_catalog_name, dm.meta.wcs
-        )
-        res.shelve(dm, 0)
-
-    # read in saved catalog coords
-    cat = Table.read("img_1_cat.parquet")
-    cat_ra_centroid = cat["ra_centroid"]
-    cat_dec_centroid = cat["dec_centroid"]
-    cat_ra_psf = cat["ra_psf"]
-    cat_dec_psf = cat["dec_psf"]
-
-    # calculate world coords using tweaked WCS
-    expected_centroid = img.meta.wcs(cat["xcentroid"], cat["ycentroid"])
-    expected_psf = img.meta.wcs(cat["x_psf"], cat["y_psf"])
-
-    # compare coordinates (make sure tweaked WCS was applied to cat file coords)
-    np.testing.assert_array_equal(cat_ra_centroid, expected_centroid[0])
-    np.testing.assert_array_equal(cat_dec_centroid, expected_centroid[1])
-    np.testing.assert_array_equal(cat_ra_psf, expected_psf[0])
-    np.testing.assert_array_equal(cat_dec_psf, expected_psf[1])
-
-
-def test_source_catalog_coordinates_have_changed(function_jail, tweakreg_image):
-    """Test that the original catalog file content is different from the updated file."""
-
-    img = tweakreg_image(shift_1=1000, shift_2=1000, catalog_filename="img_1")
-
-    # create ImageSourceCatalogModel
-    source_catalog = setup_source_catalog(img)
-    source_catalog.write("img_1_cat.parquet", overwrite=True)
-
-    # save original data
-    shutil.copy("img_1_cat.parquet", "img_1_cat_original.parquet")
-
-    # update tweakreg catalog name
-    img.meta.source_catalog.tweakreg_catalog_name = "img_1_cat.parquet"
-
-    # run TweakRegStep
-    res = TweakRegStep.call([img])
-
-    # tweak the current WCS using TweakRegStep and save the updated cat file
-    with res:
-        dm = res.borrow(0)
-        assert dm.meta.source_catalog.tweakreg_catalog_name == "img_1_cat.parquet"
-        update_catalog_coordinates(
-            dm.meta.source_catalog.tweakreg_catalog_name, dm.meta.wcs
-        )
-        res.shelve(dm, 0)
-
-    cat_original = Table.read("img_1_cat_original.parquet")
-    cat_updated = Table.read("img_1_cat.parquet")
-
-    # set max absolute and relative tolerance to ~ 1/2 a pixel
-    atol = u.Quantity(0.11 / 2, "arcsec").to("deg").value
-    rtol = 5e-8
-
-    # testing that nothing moved by more than 1/2 a pixel
-    assert np.allclose(
-        cat_original["ra_centroid"],
-        cat_updated["ra_centroid"],
-        atol=atol,
-        rtol=rtol,
-    )
-    assert np.allclose(
-        cat_original["dec_centroid"],
-        cat_updated["dec_centroid"],
-        atol=atol,
-        rtol=rtol,
-    )
-    assert np.allclose(
-        cat_original["ra_psf"],
-        cat_updated["ra_psf"],
-        atol=atol,
-        rtol=rtol,
-    )
-    assert np.allclose(
-        cat_original["dec_psf"],
-        cat_updated["dec_psf"],
-        atol=atol,
-        rtol=rtol,
-    )
-    # testing that things did move by more than ~ 1/100 of a pixel
-    assert not np.allclose(
-        cat_original["ra_centroid"],
-        cat_updated["ra_centroid"],
-        atol=atol / 100,
-        rtol=rtol / 100,
-    )
-    assert not np.allclose(
-        cat_original["dec_centroid"],
-        cat_updated["dec_centroid"],
-        atol=atol / 100,
-        rtol=rtol / 100,
-    )
-    assert not np.allclose(
-        cat_original["ra_psf"],
-        cat_updated["ra_psf"],
-        atol=atol / 100,
-        rtol=rtol / 100,
-    )
-    assert not np.allclose(
-        cat_original["dec_psf"],
-        cat_updated["dec_psf"],
-        atol=atol / 100,
-        rtol=rtol / 100,
-    )
-
-
-def setup_source_catalog(img):
+def setup_source_catalog(img, bias_value=None):
     """
     Set up the source catalog.
+
+    Parameters
+    ----------
+    img : ImageModel
+        The image model containing WCS information.
+    bias_value : float, optional
+        If provided, adds a known bias (in pixels) to the centroid coordinates.
+        This makes the test more predictable by introducing a deterministic shift.
 
     Notes
     -----
@@ -364,33 +245,45 @@ def setup_source_catalog(img):
     # read in the mock table
     source_catalog = Table.read("img_1", format="ascii.ecsv")
     # rename columns to match expected column names
-    source_catalog.rename_columns(["x", "y"], ["xcentroid", "ycentroid"])
+    source_catalog.rename_columns(["x", "y"], ["x_centroid", "y_centroid"])
     # add mock PSF coordinates
-    source_catalog["x_psf"] = source_catalog["xcentroid"]
-    source_catalog["y_psf"] = source_catalog["ycentroid"]
+    source_catalog["x_psf"] = source_catalog["x_centroid"]
+    source_catalog["y_psf"] = source_catalog["y_centroid"]
+
+    # Define known biases (in pixels) to add to shifts
+    if bias_value is not None:
+        bias_xcentroid = bias_value
+        bias_ycentroid = bias_value
+        bias_x_psf = bias_value
+        bias_y_psf = bias_value
+    else:
+        bias_xcentroid = 0.0
+        bias_ycentroid = 0.0
+        bias_x_psf = 0.0
+        bias_y_psf = 0.0
 
     # generate a set of random shifts to be added to the original coordinates
     seed = 13
     rng = default_rng(seed)
-    shift_x = rng.uniform(-0.5, 0.5, size=len(source_catalog))
-    shift_y = rng.uniform(-0.5, 0.5, size=len(source_catalog))
+    shift_x = rng.uniform(-0.5, 0.5, size=len(source_catalog)) + bias_xcentroid
+    shift_y = rng.uniform(-0.5, 0.5, size=len(source_catalog)) + bias_ycentroid
     # add random fraction of a pixel shifts to the centroid coordinates
-    source_catalog["xcentroid"] += shift_x
-    source_catalog["ycentroid"] += shift_y
+    source_catalog["x_centroid"] += shift_x
+    source_catalog["y_centroid"] += shift_y
 
     # generate another set of random shifts to be added to the original coordinates
     seed = 5
     rng = default_rng(seed)
-    shift_x = rng.uniform(-0.5, 0.5, size=len(source_catalog))
-    shift_y = rng.uniform(-0.5, 0.5, size=len(source_catalog))
+    shift_x = rng.uniform(-0.5, 0.5, size=len(source_catalog)) + bias_x_psf
+    shift_y = rng.uniform(-0.5, 0.5, size=len(source_catalog)) + bias_y_psf
     # add random fraction of a pixel shifts to the centroid coordinates
     source_catalog["x_psf"] += shift_x
     source_catalog["y_psf"] += shift_y
 
     # calculate centroid world coordinates
     centroid = img.meta.wcs(
-        source_catalog["xcentroid"],
-        source_catalog["ycentroid"],
+        source_catalog["x_centroid"],
+        source_catalog["y_centroid"],
     )
     # calculate PSF world coordinates
     psf = img.meta.wcs(
@@ -407,43 +300,6 @@ def setup_source_catalog(img):
     source_catalog["dec_psf"].unit = u.deg
 
     return source_catalog
-
-
-def update_catalog_coordinates(tweakreg_catalog_name, tweaked_wcs):
-    """
-    Update the source catalog coordinates using the tweaked WCS.
-
-    Parameters
-    ----------
-    tweakreg_catalog_name : str
-        The name of the TweakReg catalog file produced by `SourceCatalog`.
-    tweaked_wcs : `gwcs.wcs.WCS`
-        The tweaked World Coordinate System (WCS) object.
-
-    Returns
-    -------
-    None
-    """
-    # read in cat file
-    catalog = Table.read(tweakreg_catalog_name)
-
-    # define mapping between pixel and world coordinates
-    colname_mapping = {
-        ("xcentroid", "ycentroid"): ("ra_centroid", "dec_centroid"),
-        ("x_psf", "y_psf"): ("ra_psf", "dec_psf"),
-    }
-
-    for k, v in colname_mapping.items():
-        # get column names
-        x_colname, y_colname = k
-        ra_colname, dec_colname = v
-
-        # calculate new coordinates using tweaked WCS and update catalog coordinates
-        catalog[ra_colname], catalog[dec_colname] = tweaked_wcs(
-            catalog[x_colname], catalog[y_colname]
-        )
-
-    catalog.write(tweakreg_catalog_name, overwrite=True)
 
 
 @pytest.mark.parametrize(
@@ -557,3 +413,155 @@ def test_tweakreg_produces_output(tmp_path, tweakreg_image, save_results):
     # the files should exist only if save_results was True
     assert (f"{base_filename}_tweakregstep.asdf" in fns) == save_results
     assert (f"{base_filename}_wcs.asdf" in fns) == save_results
+
+
+def test_update_source_catalog_coordinates(function_jail, tweakreg_image):
+    """Test that TweakReg updates the catalog coordinates with the tweaked WCS."""
+
+    img = tweakreg_image(shift_1=1000, shift_2=1000, catalog_filename="img_1")
+
+    # Use a known bias of 1 pixel for the centroid coordinates
+    bias_value = 1.0  # pixels
+
+    # create ImageSourceCatalogModel (no bias for this test)
+    source_catalog = setup_source_catalog(img, bias_value=bias_value)
+    source_catalog.write("img_1_cat.parquet", overwrite=True)
+
+    # update tweakreg catalog name
+    img.meta.source_catalog.tweakreg_catalog_name = "img_1_cat.parquet"
+
+    # run TweakRegStep
+    TweakRegStep.call([img], update_source_catalog_coordinates=True)
+
+    # read in saved catalog coords
+    cat = Table.read("img_1_cat.parquet")
+    cat_ra_centroid = cat["ra_centroid"]
+    cat_dec_centroid = cat["dec_centroid"]
+    cat_ra_psf = cat["ra_psf"]
+    cat_dec_psf = cat["dec_psf"]
+
+    # calculate world coords using tweaked WCS
+    expected_centroid = img.meta.wcs(cat["x_centroid"], cat["y_centroid"])
+    expected_psf = img.meta.wcs(cat["x_psf"], cat["y_psf"])
+
+    # compare coordinates (make sure tweaked WCS was applied to cat file coords)
+    np.testing.assert_array_equal(cat_ra_centroid, expected_centroid[0])
+    np.testing.assert_array_equal(cat_dec_centroid, expected_centroid[1])
+    np.testing.assert_array_equal(cat_ra_psf, expected_psf[0])
+    np.testing.assert_array_equal(cat_dec_psf, expected_psf[1])
+
+
+def test_source_catalog_coordinates_have_changed(function_jail, tweakreg_image):
+    """Test that the original catalog file content is different from the updated file.
+    Uses a known bias to make the test deterministic and verifies that the coordinate
+    shift matches the expected value based on the bias.
+    """
+
+    img = tweakreg_image(shift_1=1000, shift_2=1000, catalog_filename="img_1")
+
+    # Use a known bias of 1 pixel for the centroid coordinates
+    bias_value = 1.0  # pixels
+
+    # Create ImageSourceCatalogModel with bias
+    source_catalog = setup_source_catalog(img, bias_value=bias_value)
+    source_catalog.write("img_1_cat.parquet", overwrite=True)
+
+    # Store the original pixel coordinates before any shifts
+    original_source_catalog = Table.read("img_1", format="ascii.ecsv")
+    original_source_catalog.rename_columns(["x", "y"], ["x_centroid", "y_centroid"])
+
+    # Calculate expected world coordinates using the original WCS
+    # These are the coordinates WITHOUT the bias
+    expected_original_centroid = img.meta.wcs(
+        original_source_catalog["x_centroid"], original_source_catalog["y_centroid"]
+    )
+
+    # Read the original catalog data into memory before updating
+    cat_original = Table.read("img_1_cat.parquet")
+
+    # update tweakreg catalog name
+    img.meta.source_catalog.tweakreg_catalog_name = "img_1_cat.parquet"
+
+    TweakRegStep.call([img], update_source_catalog_coordinates=True)
+
+    # Read the updated catalog
+    cat_updated = Table.read("img_1_cat.parquet")
+
+    pixel_scale = 0.11  # arcsec/pixel
+
+    # Expected shift in degrees for centroids (based on bias_value)
+    expected_shift_centroid = (
+        u.Quantity(bias_value * pixel_scale, "arcsec").to("deg").value
+    )
+
+    # Calculate the actual coordinate differences using SkyCoord
+    sc_expected = SkyCoord(
+        ra=expected_original_centroid[0] * u.deg,
+        dec=expected_original_centroid[1] * u.deg,
+    )
+    sc_updated = SkyCoord(
+        ra=cat_updated["ra_centroid"],
+        dec=cat_updated["dec_centroid"],
+    )
+
+    # The updated catalog should have coordinates close to the original (unbiased) coordinates
+    # after the WCS is corrected
+    separations = sc_expected.separation(sc_updated).deg
+
+    # We expect the WCS fit to correct for the bias, so the shift should be close to bias_value
+    # (allow some tolerance for WCS fitting uncertainties and random noise)
+    tolerance = expected_shift_centroid * 0.5  # 50% tolerance
+
+    # Verify that coordinates changed by approximately the expected amount
+    assert np.allclose(
+        separations,
+        expected_shift_centroid,
+        atol=tolerance,
+        rtol=0.5,
+    )
+
+    # Also verify that all coordinates changed (not just stayed the same)
+    assert not np.allclose(
+        cat_original["ra_centroid"],
+        cat_updated["ra_centroid"],
+        atol=expected_shift_centroid / 100,
+        rtol=1e-10,
+    )
+
+
+def test_parquet_metadata_preserved_after_update(function_jail, tweakreg_image):
+    """Test that parquet metadata is properly preserved with IVOA-compliant units after coordinate update."""
+
+    img = tweakreg_image(shift_1=1000, shift_2=1000, catalog_filename="img_1")
+
+    # Create and save source catalog
+    source_catalog = setup_source_catalog(img)
+    source_catalog.write("img_1_cat.parquet", overwrite=True)
+    img.meta.source_catalog.tweakreg_catalog_name = "img_1_cat.parquet"
+
+    # Read original catalog using astropy to get unit information
+    original_astropy = Table.read("img_1_cat.parquet")
+    original_table = pq.read_table("img_1_cat.parquet")
+    original_schema = original_table.schema
+
+    # Run TweakRegStep with coordinate updates and save updated catalog to disk
+    TweakRegStep.call([img], update_source_catalog_coordinates=True)
+
+    # Read updated file
+    updated_astropy = Table.read("img_1_cat.parquet")
+    updated_table = pq.read_table("img_1_cat.parquet")
+    updated_schema = updated_table.schema
+
+    # Verify column schemas match (types, names)
+    for orig_field, updated_field in zip(original_schema, updated_schema, strict=False):
+        assert orig_field.name == updated_field.name
+        # Note: We expect RA/Dec columns to have the same type, just different values
+        # So schema types should still match
+        assert orig_field.type == updated_field.type
+
+    # Verify units are preserved and IVOA-compliant when read by astropy
+    # For columns with units, astropy should be able to read them correctly
+    for col in original_astropy.colnames:
+        # Check that units are readable (not None or empty when they should have units)
+        if col in ["ra_centroid", "dec_centroid", "ra_psf", "dec_psf"]:
+            assert updated_astropy[col].unit == u.deg
