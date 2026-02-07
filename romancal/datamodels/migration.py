@@ -38,6 +38,13 @@ def update_model_version(model, *, close_on_update=False):
     ):
         updated_model.meta.observation.wfi_parallel = visit_file_sequence > 1
 
+    new_ref_files = ["darkdecaysignal", "integralnonlinearity", "inverselinearity"]
+    ref_file = model.meta.get("ref_file", None)
+    if ref_file is not None:
+        for new_file in new_ref_files:
+            if new_file not in ref_file:
+                setattr(updated_model.meta.ref_file, new_file, "?")
+
     if close_on_update:
         model.close()
 
