@@ -61,7 +61,7 @@ You can also use the Python API:
 
     # Or use a wildcard pattern
     # multiband = MultibandAssociation(["r00001_p_full_270p65x48y69_f*_coadd.asdf"])
-    
+
     multiband.create_multiband_asn()
     # This will create: r00001_p_full_270p65x48y69_asn.json
 
