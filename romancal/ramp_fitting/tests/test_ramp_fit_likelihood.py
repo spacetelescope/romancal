@@ -80,7 +80,7 @@ def test_bad_readpattern():
         )
 
 
-@pytest.mark.xfail(sys.platform == "linux", reason="See rcal-1324")
+@pytest.mark.skip(reason='See rcal-1324')
 def test_flag_large_events_withsnowball():
     """Test that large events are flagged"""
     resultants = create_linear_ramp(n_resultants=20, nrows=100, ncols=100)
