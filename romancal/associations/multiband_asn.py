@@ -13,11 +13,6 @@ logger.setLevel("INFO")
 __all__ = ["MultibandAssociation"]
 
 
-_COADD_RE = re.compile(
-    r"^(?P<prefix>.*_)(?P<skycell>[0-9p]*x[0-9]*y[0-9]*)_(?P<filter>f[0-9]+)_coadd\.asdf$"
-)
-
-
 class MultibandAssociation:
     """A class to create multiband associations."""
 
@@ -50,76 +45,51 @@ class MultibandAssociation:
     def _get_skycell_groups(self, filelist):
         """
         Create skycell groups based on the unique skycell identifiers from a list of filenames.
-
         Parameters
         ----------
         filelist : list of str
             List of filenames.
-
         Returns
         -------
         dict
             Dictionary mapping skycell identifiers to lists of filenames.
         """
+        pattern = re.compile(
+            r".*_(?P<skycells>[0-9p]*x[0-9]*y[0-9]*)_f[0-9]*_coadd\.asdf$"
+        )
         groups = {}
         for filename in filelist:
-            match = _COADD_RE.match(filename)
+            match = pattern.match(filename)
             if match:
-                key = match.group("skycell")
+                key = match.group("skycells")
                 groups.setdefault(key, []).append(filename)
         return groups
 
     def create_multiband_asn(self):
-        """Create a multiband association from a list of files."""
+        """
+        Create a multiband association from a list of files.
+
+        Parameters:
+        files (list): List of file paths or pattern to include in the association.
+
+        Returns:
+        dict: The created association.
+        """
         for skycell_id, filenames in self.skycell_groups.items():
-            # Group by the file prefix (everything up to and including the underscore
-            # before the skycell id). This prefix encodes program, data_release_id,
-            # and product type (e.g. visit/full/pass).
-            prefixes = set()
-            for filename in filenames:
-                match = _COADD_RE.match(filename)
-                if match:
-                    prefixes.add(match.group("prefix"))
-
+            # Get prefixes for all combinations of data_release_id and product_type from filenames
+            # (r00001_{data_release_id}_{product_type}_{skycell_id}_asn.json)
+            prefixes = {x.split(skycell_id)[0] for x in filenames}
             for prefix in prefixes:
-                # Get all files that match this prefix (data_release_id + product_type)
-                # and this skycell.
+                # Get all files that match this prefix (data_release_id + product_type) and skycell
                 files = [x for x in filenames if x.startswith(f"{prefix}{skycell_id}")]
-
-                # Determine data release id from the prefix: rPPPPP_<data_release_id>_...
-                # If parsing fails, fall back to 'p'.
-                try:
-                    data_release_id = prefix.split("_")[1]
-                except IndexError:
-                    data_release_id = "p"
-
-                # Determine which filters are present in the input list.
-                filter_ids = []
-                for f in files:
-                    match = _COADD_RE.match(f)
-                    if match:
-                        filter_ids.append(match.group("filter"))
-                unique_filters = sorted(set(filter_ids))
-
-                # Roman naming conventions for the archive catalog (Level 4):
-                # - Prompt products include optical element
-                # - Data release products omit optical element
-                # For multiband catalogs, if multiple filters are present, omit
-                # the filter even for prompt-style names.
-                include_filter = data_release_id == "p" and len(unique_filters) == 1
-                filter_part = f"_{unique_filters[0]}" if include_filter else ""
-
-                product_name = f"{prefix}{skycell_id}{filter_part}"
-                output_asn = f"{product_name}_asn.json"
-
                 args = [
                     *files,
                     "-o",
-                    output_asn,
+                    f"{prefix}{skycell_id}_asn.json",
                     "--product-name",
-                    product_name,
+                    f"{skycell_id}",
                     "--data-release-id",
-                    data_release_id,
+                    prefix.split("_")[1],
                 ]
                 asn_from_list._cli(args)
 
