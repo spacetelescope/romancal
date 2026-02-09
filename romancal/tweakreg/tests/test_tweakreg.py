@@ -3,15 +3,14 @@ import json
 import os
 
 import numpy as np
+import pyarrow.parquet as pq
 import pytest
 from astropy import coordinates as coord
 from astropy import units as u
+from astropy.coordinates import SkyCoord
 from astropy.modeling import models
 from astropy.table import Table
 from numpy.random import default_rng
-import pyarrow.parquet as pq
-from astropy.coordinates import SkyCoord
-
 
 from romancal.datamodels import ModelLibrary
 from romancal.tweakreg.tweakreg_step import TweakRegStep, _validate_catalog_columns

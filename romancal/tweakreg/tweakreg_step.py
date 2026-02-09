@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
+import pyarrow as pa
+import pyarrow.parquet as pq
 from astropy.table import Table
 from roman_datamodels import datamodels as rdm
 from stcal.tweakreg import tweakreg
@@ -18,8 +20,6 @@ from stcal.tweakreg.tweakreg import TweakregError
 from romancal.assign_wcs.utils import add_s_region
 from romancal.datamodels.fileio import open_dataset
 from romancal.lib.save_wcs import save_wfiwcs
-import pyarrow.parquet as pq
-import pyarrow as pa
 
 # LOCAL
 from ..datamodels import ModelLibrary
