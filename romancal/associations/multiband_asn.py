@@ -93,23 +93,11 @@ class MultibandAssociation:
                 except IndexError:
                     data_release_id = "p"
 
-                # Determine which filters are present in the input list.
-                filter_ids = []
-                for f in files:
-                    match = _COADD_RE.match(f)
-                    if match:
-                        filter_ids.append(match.group("filter"))
-                unique_filters = sorted(set(filter_ids))
-
                 # Roman naming conventions for the archive catalog (Level 4):
-                # - Prompt products include optical element
-                # - Data release products omit optical element
-                # For multiband catalogs, if multiple filters are present, omit
-                # the filter even for prompt-style names.
-                include_filter = data_release_id == "p" and len(unique_filters) == 1
-                filter_part = f"_{unique_filters[0]}" if include_filter else ""
-
-                product_name = f"{prefix}{skycell_id}{filter_part}"
+                # - Multiband catalogs always omit the optical element (filter)
+                #   regardless of whether they contain single or multiple filters.
+                # - This distinguishes multiband products from single-band products.
+                product_name = f"{prefix}{skycell_id}"
                 output_asn = f"{product_name}_asn.json"
 
                 args = [
