@@ -332,6 +332,7 @@ class TweakRegStep(RomanStep):
         colname_mapping = {
             ("x_centroid", "y_centroid"): ("ra_centroid", "dec_centroid"),
             ("x_psf", "y_psf"): ("ra_psf", "dec_psf"),
+            ("x_centroid_win", "y_centroid_win"): ("ra_centroid_win", "dec_centroid_win"),
         }
 
         # Build list of updated columns
