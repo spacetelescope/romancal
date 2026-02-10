@@ -3,6 +3,7 @@ Module to calculate the source catalog.
 """
 
 import logging
+import re
 
 import astropy.units as u
 import numpy as np
@@ -12,6 +13,7 @@ from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.dqflags import pixel
 
 from romancal import __version__ as romancal_version
+from romancal.skycell import skymap
 from romancal.source_catalog.aperture import ApertureCatalog
 from romancal.source_catalog.daofind import DAOFindCatalog
 from romancal.source_catalog.neighbors import NNCatalog
@@ -353,17 +355,12 @@ class RomanSourceCatalog:
         except AttributeError:  # L2 image or unrecognized schema, give up
             return bad_return
 
-        import re
-
-        from romancal.skycell import skymap
-
         try:
             sc = skymap.SkyCells.from_names([skycell_name])
         except KeyError:
             log.warning(
-                "Could not find skycell "
-                + skycell_name
-                + ", not filling out out flagged_spatial_index."
+                f"Could not find skycell {skycell_name}, "
+                "not filling out flagged_spatial_index."
             )
             return bad_return
 
@@ -380,13 +377,14 @@ class RomanSourceCatalog:
         pattern = r"x(\d+)y(\d+)"
         match = re.search(pattern, skycell_name)
         if not match:
-            log.warning("Invalid skycell name ", skycell_name)
+            log.warning(f"Invalid skycell name: {skycell_name}")
             return bad_return
         skycell_x_idx = int(match.group(1))
         skycell_y_idx = int(match.group(2))
 
         def convert_to_pixel_idx(val):
-            idx = (val.value * pixel_scale * 3600 / 0.05).astype("i4")
+            virtual_scale = 0.05  # virtual pixel scale used for id computation
+            idx = (val.value * pixel_scale * 3600 / virtual_scale).astype("i4")
             return np.clip(idx, 0, 2**16)
 
         pixel_x_idx = convert_to_pixel_idx(self.x_centroid)
