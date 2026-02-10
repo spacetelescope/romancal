@@ -124,31 +124,8 @@ Example 1: Prompt Multi-Filter Product
 
     r00001_p_visit_x001y001_asn.json
 
-Example 2: Prompt Single-Filter Product
-""""""""""""""""""""""""""""""""""""""""
 
-**Input files:**
-
-.. code-block:: text
-
-    r00001_p_full_x002y003_f184_coadd.asdf
-
-**Command:**
-
-.. code-block:: bash
-
-    multiband_asn r00001_p_full_x002y003_f184_coadd.asdf
-
-**Output association:**
-
-.. code-block:: text
-
-    r00001_p_full_x002y003_asn.json
-
-Note: Even with a single filter, the filter identifier is omitted from the
-multiband association filename to distinguish it from single-band products.
-
-Example 3: Data Release Product
+Example 2: Data Release Product
 """"""""""""""""""""""""""""""""
 
 **Input files:**
