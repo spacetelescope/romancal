@@ -7,9 +7,8 @@ import logging
 from typing import TYPE_CHECKING
 
 import asdf
-from astropy.utils.decorators import deprecated
 import numpy as np
-
+from astropy.utils.decorators import deprecated
 from roman_datamodels import datamodels as rdm
 from roman_datamodels.dqflags import group, pixel
 from stcal.jump.jump_class import JumpData
@@ -94,7 +93,7 @@ class RampFitStep(RomanStep):
 
         return out_model
 
-    @deprecated('0.22.0')
+    @deprecated("0.22.0")
     def ols_cas22(
         self, input_model, readnoise_model, gain_model, include_var_rnoise=False
     ):
