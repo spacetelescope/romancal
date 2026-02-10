@@ -7,7 +7,6 @@ import pyarrow.parquet as pq
 import pytest
 from astropy import coordinates as coord
 from astropy import units as u
-from astropy.coordinates import SkyCoord
 from astropy.modeling import models
 from astropy.table import Table
 from numpy.random import default_rng
