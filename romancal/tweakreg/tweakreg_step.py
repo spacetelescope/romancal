@@ -13,7 +13,8 @@ import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
 from astropy.table import Table
-from roman_datamodels import dqflags, datamodels as rdm
+from roman_datamodels import datamodels as rdm
+from roman_datamodels import dqflags
 from stcal.tweakreg import tweakreg
 from stcal.tweakreg.tweakreg import TweakregError
 
@@ -660,7 +661,7 @@ def _filter_catalog(catalog):
     The filtered catalog
     """
 
-    if 'warning_flags' in catalog.dtype.names:
-        bad = (catalog['warning_flags'] & dqflags.pixel.DO_NOT_USE) != 0
+    if "warning_flags" in catalog.dtype.names:
+        bad = (catalog["warning_flags"] & dqflags.pixel.DO_NOT_USE) != 0
         catalog = catalog[~bad]
     return catalog

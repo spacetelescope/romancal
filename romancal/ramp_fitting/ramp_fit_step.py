@@ -224,12 +224,13 @@ class RampFitStep(RomanStep):
         # Flag pixels that have only a single resultant.
         oneresultant = (
             np.sum(
-                (input_model.groupdq[0] & (group.SATURATED | group.DO_NOT_USE)) == 0, axis=0
+                (input_model.groupdq[0] & (group.SATURATED | group.DO_NOT_USE)) == 0,
+                axis=0,
             )
             <= 1
         )
         # we need to revisit the pixeldq handling!
-        image_info['dq'] |= pixel.DO_NOT_USE * oneresultant
+        image_info["dq"] |= pixel.DO_NOT_USE * oneresultant
 
         out_model = create_image_model(
             input_model, image_info, include_var_rnoise=self.include_var_rnoise
