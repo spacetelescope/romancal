@@ -27,6 +27,9 @@ the observed resultants based on the read pattern. This simulation requires
 inverse linearity polynomials. The corrections are applied to each simulated
 read, and then the reads are re-averaged into corrected resultants.
 
+Upon successful completion of the linearity correction, "cal_step" in the
+metadata is set to "COMPLETE".
+
 Classical Nonlinearity Correction
 +++++++++++++++++++++++++++++++++
 The classical nonlinearity correction is represented by an nth-order polynomial
@@ -49,14 +52,11 @@ The integral nonlinearity (INL) correction addresses nonlinearity in the
 analog-to-digital converter. Each of the 32 readout channels (128 columns each)
 has its own correction table that maps observed DN values to a correction
 offset. See `Brandt & Perera (2025)
-<https://www.stsci.edu/files/live/sites/www/files/home/roman/documentation/technical-documentation/_documents/Roman-STScI-000866.pdf>`_
+<https://www.stsci.edu/files/live/sites/www/files/home/roman/documentation/technical-documentation/_documents/Roman-STScI–000866.pdf>`_
 for details.
 
 The INL correction is optional; if no integral nonlinearity reference file is
 available, only the classical polynomial correction is applied.
-
-Upon successful completion of the linearity correction, "cal_step" in the
-metadata is set to "COMPLETE".
 
 Special Handling
 ++++++++++++++++

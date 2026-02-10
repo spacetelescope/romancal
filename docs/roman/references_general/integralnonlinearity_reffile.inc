@@ -32,8 +32,8 @@ lookup value array and correction tables for each of the 32 readout channels.
 ========================================  ============  ==============  ===========
 Data                                      Array Type    Dimensions      Data type
 ========================================  ============  ==============  ===========
-value                                     NDArray       65536           float32
-inl_table.science_channel_NN.correction   NDArray       65536           float32
+value                                     NDArray       65536           float64
+inl_table.science_channel_NN.correction   NDArray       65536           float64
 ========================================  ============  ==============  ===========
 
 The ``value`` array contains the DN values (0-65535) used as lookup indices.
