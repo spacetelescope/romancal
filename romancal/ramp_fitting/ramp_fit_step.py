@@ -7,7 +7,9 @@ import logging
 from typing import TYPE_CHECKING
 
 import asdf
+from astropy.utils.decorators import deprecated
 import numpy as np
+
 from roman_datamodels import datamodels as rdm
 from roman_datamodels.dqflags import group, pixel
 from stcal.jump.jump_class import JumpData
@@ -37,7 +39,7 @@ class RampFitStep(RomanStep):
     class_alias = "ramp_fit"
 
     spec = """
-        algorithm = option('ols_cas22', 'likely', default='likely')  # Algorithm to use to fit.
+        algorithm = option('ols_cas22', 'likely', default='likely')  # Algorithm to use to fit. Note: `ols_cas22` is deprecated and will be removed in a future version
         suffix = string(default='rampfit')  # Default suffix of results
         use_ramp_jump_detection = boolean(default=True) # Use jump detection during ramp fitting
         threshold_intercept = float(default=None) # Override the intercept parameter for the threshold function in the jump detection algorithm.
@@ -92,6 +94,7 @@ class RampFitStep(RomanStep):
 
         return out_model
 
+    @deprecated('0.22.0')
     def ols_cas22(
         self, input_model, readnoise_model, gain_model, include_var_rnoise=False
     ):
