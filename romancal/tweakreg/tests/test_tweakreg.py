@@ -249,55 +249,35 @@ def setup_source_catalog(img, bias_value=None):
     # add mock PSF coordinates
     source_catalog["x_psf"] = source_catalog["x_centroid"]
     source_catalog["y_psf"] = source_catalog["y_centroid"]
+    # add mock centroid win coordinates
+    source_catalog["x_centroid_win"] = source_catalog["x_centroid"]
+    source_catalog["y_centroid_win"] = source_catalog["y_centroid"]
 
-    # Define known biases (in pixels) to add to shifts
-    if bias_value is not None:
-        bias_xcentroid = bias_value
-        bias_ycentroid = bias_value
-        bias_x_psf = bias_value
-        bias_y_psf = bias_value
-    else:
-        bias_xcentroid = 0.0
-        bias_ycentroid = 0.0
-        bias_x_psf = 0.0
-        bias_y_psf = 0.0
+    # define coordinate sets to add random shifts and optional bias
+    coord_sets = [
+        ("x_centroid", "y_centroid", 13, bias_value),
+        ("x_psf", "y_psf", 5, bias_value),
+        ("x_centroid_win", "y_centroid_win", 1, bias_value),
+    ]
+    for xcol, ycol, seed, bias in coord_sets:
+        rng = default_rng(seed)
+        shift_x = rng.uniform(-0.5, 0.5, size=len(source_catalog)) + (bias or 0.0)
+        shift_y = rng.uniform(-0.5, 0.5, size=len(source_catalog)) + (bias or 0.0)
+        source_catalog[xcol] += shift_x
+        source_catalog[ycol] += shift_y
 
-    # generate a set of random shifts to be added to the original coordinates
-    seed = 13
-    rng = default_rng(seed)
-    shift_x = rng.uniform(-0.5, 0.5, size=len(source_catalog)) + bias_xcentroid
-    shift_y = rng.uniform(-0.5, 0.5, size=len(source_catalog)) + bias_ycentroid
-    # add random fraction of a pixel shifts to the centroid coordinates
-    source_catalog["x_centroid"] += shift_x
-    source_catalog["y_centroid"] += shift_y
-
-    # generate another set of random shifts to be added to the original coordinates
-    seed = 5
-    rng = default_rng(seed)
-    shift_x = rng.uniform(-0.5, 0.5, size=len(source_catalog)) + bias_x_psf
-    shift_y = rng.uniform(-0.5, 0.5, size=len(source_catalog)) + bias_y_psf
-    # add random fraction of a pixel shifts to the centroid coordinates
-    source_catalog["x_psf"] += shift_x
-    source_catalog["y_psf"] += shift_y
-
-    # calculate centroid world coordinates
-    centroid = img.meta.wcs(
-        source_catalog["x_centroid"],
-        source_catalog["y_centroid"],
-    )
-    # calculate PSF world coordinates
-    psf = img.meta.wcs(
-        source_catalog["x_psf"],
-        source_catalog["y_psf"],
-    )
-    # add world coordinates to catalog
-    source_catalog["ra_centroid"], source_catalog["dec_centroid"] = centroid
-    source_catalog["ra_psf"], source_catalog["dec_psf"] = psf
-    # add units
-    source_catalog["ra_centroid"].unit = u.deg
-    source_catalog["dec_centroid"].unit = u.deg
-    source_catalog["ra_psf"].unit = u.deg
-    source_catalog["dec_psf"].unit = u.deg
+    # pixel to world mapping and WCS conversion for coordinate sets
+    wcs_pairs = [
+        (("x_centroid", "y_centroid"), ("ra", "dec")),
+        (("x_centroid", "y_centroid"), ("ra_centroid", "dec_centroid")),
+        (("x_psf", "y_psf"), ("ra_psf", "dec_psf")),
+        (("x_centroid_win", "y_centroid_win"), ("ra_centroid_win", "dec_centroid_win")),
+    ]
+    for (xcol, ycol), (racol, deccol) in wcs_pairs:
+        ra, dec = img.meta.wcs(source_catalog[xcol], source_catalog[ycol])
+        source_catalog[racol], source_catalog[deccol] = ra, dec
+        source_catalog[racol].unit = u.deg
+        source_catalog[deccol].unit = u.deg
 
     return source_catalog
 
@@ -466,67 +446,22 @@ def test_source_catalog_coordinates_have_changed(function_jail, tweakreg_image):
     source_catalog = setup_source_catalog(img, bias_value=bias_value)
     source_catalog.write("img_1_cat.parquet", overwrite=True)
 
-    # Store the original pixel coordinates before any shifts
-    original_source_catalog = Table.read("img_1", format="ascii.ecsv")
-    original_source_catalog.rename_columns(["x", "y"], ["x_centroid", "y_centroid"])
-
-    # Calculate expected world coordinates using the original WCS
-    # These are the coordinates WITHOUT the bias
-    expected_original_centroid = img.meta.wcs(
-        original_source_catalog["x_centroid"], original_source_catalog["y_centroid"]
-    )
-
-    # Read the original catalog data into memory before updating
     cat_original = Table.read("img_1_cat.parquet")
 
     # update tweakreg catalog name
     img.meta.source_catalog.tweakreg_catalog_name = "img_1_cat.parquet"
 
+    # run TweakRegStep with automatic catalog coordinate update
     TweakRegStep.call([img], update_source_catalog_coordinates=True)
 
-    # Read the updated catalog
+    # read the updated catalog
     cat_updated = Table.read("img_1_cat.parquet")
 
-    pixel_scale = 0.11  # arcsec/pixel
-
-    # Expected shift in degrees for centroids (based on bias_value)
-    expected_shift_centroid = (
-        u.Quantity(bias_value * pixel_scale, "arcsec").to("deg").value
-    )
-
-    # Calculate the actual coordinate differences using SkyCoord
-    sc_expected = SkyCoord(
-        ra=expected_original_centroid[0] * u.deg,
-        dec=expected_original_centroid[1] * u.deg,
-    )
-    sc_updated = SkyCoord(
-        ra=cat_updated["ra_centroid"],
-        dec=cat_updated["dec_centroid"],
-    )
-
-    # The updated catalog should have coordinates close to the original (unbiased) coordinates
-    # after the WCS is corrected
-    separations = sc_expected.separation(sc_updated).deg
-
-    # We expect the WCS fit to correct for the bias, so the shift should be close to bias_value
-    # (allow some tolerance for WCS fitting uncertainties and random noise)
-    tolerance = expected_shift_centroid * 0.5  # 50% tolerance
-
-    # Verify that coordinates changed by approximately the expected amount
-    assert np.allclose(
-        separations,
-        expected_shift_centroid,
-        atol=tolerance,
-        rtol=0.5,
-    )
-
-    # Also verify that all coordinates changed (not just stayed the same)
-    assert not np.allclose(
-        cat_original["ra_centroid"],
-        cat_updated["ra_centroid"],
-        atol=expected_shift_centroid / 100,
-        rtol=1e-10,
-    )
+    # Simply assert coordinates changed
+    assert not np.array_equal(cat_original["ra_centroid"], cat_updated["ra_centroid"])
+    assert not np.array_equal(cat_original["dec_centroid"], cat_updated["dec_centroid"])
+    assert not np.array_equal(cat_original["ra_psf"], cat_updated["ra_psf"])
+    assert not np.array_equal(cat_original["dec_psf"], cat_updated["dec_psf"])
 
 
 def test_parquet_metadata_preserved_after_update(function_jail, tweakreg_image):

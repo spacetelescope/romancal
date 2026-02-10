@@ -328,30 +328,47 @@ class TweakRegStep(RomanStep):
         pa_table = pq.read_table(tweakreg_catalog_name)
         original_metadata = pa_table.schema.metadata
 
-        # Extract columns as numpy arrays for WCS calculation
-        colname_mapping = {
-            ("x_centroid", "y_centroid"): ("ra_centroid", "dec_centroid"),
-            ("x_psf", "y_psf"): ("ra_psf", "dec_psf"),
-            ("x_centroid_win", "y_centroid_win"): (
+        # Determine which coordinate columns are present and update them from pixel-space
+        # coordinates using the tweaked WCS.
+        available_cols = set(pa_table.schema.names)
+
+        # (x_col, y_col) -> (ra_col, dec_col)
+        updates = [
+            ("x_centroid", "y_centroid", "ra_centroid", "dec_centroid"),
+            ("x_centroid", "y_centroid", "ra", "dec"),
+            (
+                "x_centroid_win",
+                "y_centroid_win",
                 "ra_centroid_win",
                 "dec_centroid_win",
             ),
-        }
+            ("x_psf", "y_psf", "ra_psf", "dec_psf"),
+        ]
 
-        # Build list of updated columns
-        updated_columns = {}
+        updated_columns: dict[str, pa.Array] = {}
 
-        for (x_col, y_col), (ra_col, dec_col) in colname_mapping.items():
-            # Get pixel coordinates as numpy arrays
-            x_values = pa_table[x_col].to_numpy()
-            y_values = pa_table[y_col].to_numpy()
+        for x_col, y_col, ra_col, dec_col in updates:
+            # Only update existing columns to preserve the file schema.
+            if (
+                x_col in available_cols
+                or y_col in available_cols
+                or ra_col in available_cols
+                or dec_col in available_cols
+            ):
+                x_values = pa_table[x_col].to_numpy()
+                y_values = pa_table[y_col].to_numpy()
 
-            # Calculate new sky coordinates
-            new_ra, new_dec = tweaked_wcs(x_values, y_values)
+                new_ra, new_dec = tweaked_wcs(x_values, y_values)
+                new_ra = np.asarray(getattr(new_ra, "value", new_ra))
+                new_dec = np.asarray(getattr(new_dec, "value", new_dec))
 
-            # Store updated columns (will replace old ones)
-            updated_columns[ra_col] = pa.array(new_ra)
-            updated_columns[dec_col] = pa.array(new_dec)
+                # Preserve the original column types.
+                updated_columns[ra_col] = pa.array(
+                    new_ra, type=pa_table.schema.field(ra_col).type
+                )
+                updated_columns[dec_col] = pa.array(
+                    new_dec, type=pa_table.schema.field(dec_col).type
+                )
 
         # Create new table with updated columns
         # Keep all original columns, replacing only the updated ones
