@@ -1,6 +1,3 @@
-.. _linearity_selectors:
-.. _inverselinearity_selectors:
-
 Reference Selection Keywords for LINEARITY and INVERSELINEARITY
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 CRDS selects appropriate LINEARITY and INVERSELINEARITY references based on the

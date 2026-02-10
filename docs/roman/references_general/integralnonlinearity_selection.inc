@@ -1,5 +1,3 @@
-.. _integralnonlinearity_selectors:
-
 Reference Selection Keywords for INTEGRALNONLINEARITY
 +++++++++++++++++++++++++++++++++++++++++++++++++++++
 CRDS selects appropriate INTEGRALNONLINEARITY references based on the
