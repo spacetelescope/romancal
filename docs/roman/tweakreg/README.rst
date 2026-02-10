@@ -251,6 +251,12 @@ Parameters used for absolute astrometry to a reference catalog.
 * ``save_abs_catalog``: A boolean specifying whether or not to write out the
   astrometric catalog used for the fit as a separate product (Default=False).
 
+* ``update_source_catalog_coordinates``: A boolean indicating whether to update
+  the source catalog coordinates after applying the WCS corrections (Default=False).
+
+  .. note::
+    If `True`, the source catalog coordinates will be updated to reflect
+    the new positions based on the corrected WCS of the input image.
 
 Further Documentation
 ---------------------
