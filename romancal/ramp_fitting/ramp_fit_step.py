@@ -200,6 +200,7 @@ class RampFitStep(RomanStep):
         # Add the needed components to the input model.
         input_model["flags_do_not_use"] = pixel.DO_NOT_USE
         input_model["flags_saturated"] = pixel.SATURATED
+        # FIXME: needs to exposed in the spec
         input_model["rejection_threshold"] = None
         input_model["flags_jump_det"] = pixel.JUMP_DET
         # Add an axis to match the JWST data cube
@@ -223,15 +224,17 @@ class RampFitStep(RomanStep):
         # Flag pixels that have only a single resultant.
         oneresultant = (
             np.sum(
-                input_model.groupdq[0] & (group.SATURATED | group.DO_NOT_USE), axis=0
+                (input_model.groupdq[0] & (group.SATURATED | group.DO_NOT_USE)) == 0, axis=0
             )
             <= 1
         )
-        input_model.pixeldq |= pixel.DO_NOT_USE * oneresultant
+        # we need to revisit the pixeldq handling!
+        image_info['dq'] |= pixel.DO_NOT_USE * oneresultant
 
         out_model = create_image_model(
             input_model, image_info, include_var_rnoise=self.include_var_rnoise
         )
+
         out_model.meta.cal_step.ramp_fit = "COMPLETE"
 
         return out_model

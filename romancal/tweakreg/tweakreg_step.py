@@ -13,7 +13,7 @@ import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
 from astropy.table import Table
-from roman_datamodels import datamodels as rdm
+from roman_datamodels import dqflags, datamodels as rdm
 from stcal.tweakreg import tweakreg
 from stcal.tweakreg.tweakreg import TweakregError
 
@@ -37,7 +37,7 @@ log = logging.getLogger(__name__)
 
 class TweakRegStep(RomanStep):
     """
-    TweakRegStep: Image alignment based on catalogs of sources detected in
+    TweakRegStep: Image alignment based on catalogs of sources from in
     input images.
     """
 
@@ -177,6 +177,7 @@ class TweakRegStep(RomanStep):
                     catalog = tweakreg.filter_catalog_by_bounding_box(
                         catalog, image_model.meta.wcs.bounding_box
                     )
+                    catalog = _filter_catalog(catalog)
 
                     if self.save_abs_catalog:
                         output_name = os.path.join(
@@ -189,7 +190,7 @@ class TweakRegStep(RomanStep):
                     image_model.meta["tweakreg_catalog"] = catalog.as_array()
                     nsources = len(catalog)
                     log.info(
-                        f"Detected {nsources} sources in {image_model.meta.filename}."
+                        f"Using {nsources} sources from {image_model.meta.filename}."
                         if nsources
                         else f"No sources found in {image_model.meta.filename}."
                     )
@@ -640,3 +641,26 @@ def _add_required_columns(catalog):
     """
     catalog["x"] = catalog["x_centroid"]
     catalog["y"] = catalog["y_centroid"]
+
+
+def _filter_catalog(catalog):
+    """
+    Remove flagged sources from catalog for tweakreg purposes.
+
+    This presently removes only sources whose central cores are flagged
+    DO_NOT_USE.
+
+    Parameters
+    ----------
+    catalog : Table
+        The catalog from which to filter flagged sources.
+
+    Returns
+    -------
+    The filtered catalog
+    """
+
+    if 'warning_flags' in catalog.dtype.names:
+        bad = (catalog['warning_flags'] & dqflags.pixel.DO_NOT_USE) != 0
+        catalog = catalog[~bad]
+    return catalog
