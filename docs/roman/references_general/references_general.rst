@@ -47,6 +47,8 @@ documentation on each reference file.
 +---------------------------------------------+--------------------------------------------------+
 | :ref:`dark_current <dark_current_step>`     | :ref:`DARK <dark_reffile>`                       |
 +---------------------------------------------+--------------------------------------------------+
+| :ref:`dark_decay <dark_decay_step>`         | :ref:`DARKDECAYSIGNAL <darkdecaysignal_reffile>` |
++---------------------------------------------+--------------------------------------------------+
 | :ref:`dq_init <dq_init_step>`               | :ref:`MASK <mask_reffile>`                       |
 +---------------------------------------------+--------------------------------------------------+
 | :ref:`flatfield <flatfield_step>`           | :ref:`FLAT <flat_reffile>`                       |
@@ -69,6 +71,8 @@ documentation on each reference file.
 | Reference File Type (reftype)                    | Pipeline Step                               |
 +==================================================+=============================================+
 | :ref:`DARK <dark_reffile>`                       | :ref:`dark_current <dark_current_step>`     |
++--------------------------------------------------+---------------------------------------------+
+| :ref:`DARKDECAYSIGNAL <darkdecaysignal_reffile>` | :ref:`dark_decay <dark_decay_step>`         |
 +--------------------------------------------------+---------------------------------------------+
 | :ref:`DISTORTION <distortion_reffile>`           | :ref:`assign_wcs <assign_wcs_step>`         |
 +--------------------------------------------------+---------------------------------------------+

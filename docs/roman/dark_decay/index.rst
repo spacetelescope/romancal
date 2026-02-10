@@ -9,5 +9,6 @@ Dark Decay Correction
 
    description.rst
    arguments.rst
+   reference_files.rst
 
 .. automodapi:: romancal.dark_decay
