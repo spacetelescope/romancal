@@ -137,6 +137,17 @@ class LinearityStep(RomanStep):
             input_model.data = new_data[0, :, :, :]
             input_model.pixeldq = new_pdq
 
+        # FIXME: force all values in array to be at least vaguely sane.
+        # This should not happen for good linearity corrections and linearity
+        # correction flagging, but current reference files have issues that
+        # cause more problems downstream.
+        # Full well is 65k DN.  After linearity correction we can't be more than
+        # a factor of several away from this.
+        # Any points larger than 1e6 should be flagged.
+        m = np.abs(input_model.data) > 1e6
+        input_model.data[m] = np.sign(input_model.data[m]) * 1e6
+        input_model.pixeldq[m] |= pixel.DO_NOT_USE
+
         # Update the step status
         input_model.meta.cal_step["linearity"] = "COMPLETE"
 
