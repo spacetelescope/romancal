@@ -10,6 +10,7 @@ from astropy.table import Table
 from astropy.time import Time
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
+from numpy.testing import assert_allclose, assert_equal
 from roman_datamodels import datamodels
 
 from romancal.assign_wcs.utils import add_s_region
@@ -315,3 +316,37 @@ def test_populate_mosaic_metadata(base_image, meta_overrides, expected):
         for sub_path in path:
             obj = obj[sub_path]
         assert obj[final] == value
+
+
+@pytest.mark.parametrize("pixmap_order", [1, 3])
+@pytest.mark.parametrize("pixmap_stepsize", [2, 15])
+@pytest.mark.parametrize("border", [0, 3])
+def test_resample_with_sparse_pixmap(base_image, pixmap_order, pixmap_stepsize, border):
+    model = base_image()
+    model.meta.wcsinfo["vparity"] = -1
+    model.meta.wcs.bounding_box = 2 * ((-0.5 + border, 99.5 - border),)
+
+    img = datamodels.ImageModel(model)
+    img.meta.background.level = 0
+    img.data[:, :] = np.pi
+    img.dq[:, :] = 0
+    img.var_poisson[:, :] = 1
+    img.var_flat[:, :] = 0.001
+    img.err[:, :] = 1.001
+    img.meta.photometry.pixel_area = 1
+    img.meta.exposure.effective_exposure_time = 1
+    add_s_region(img)
+
+    ref_step = ResampleStep(pixmap_order=1, pixmap_stepsize=1)
+    ref = ref_step.run(img)
+
+    step = ResampleStep(pixmap_order=pixmap_order, pixmap_stepsize=pixmap_stepsize)
+    res = step.run(img)
+
+    m1 = np.isfinite(res.data)
+    m2 = np.isfinite(ref.data)
+    assert_equal(m1, m2)
+    if border > 0:
+        assert not np.all(m1)
+
+    assert_allclose(res.data, ref.data, rtol=4.0e-7, atol=1.0e-9)

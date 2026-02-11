@@ -36,8 +36,8 @@ class OutlierDetectionStep(RomanStep):
         pixfrac = float(default=1.0) # Fraction by which input pixels are shrunk before being drizzled onto the output image grid
         kernel = string(default='square') # Shape of the kernel used for flux distribution onto output images
         fillval = string(default='NaN') # Value assigned to output pixels that have zero weight or no flux during drizzling
-        stepsize = integer(default=10, min=1) # Grid sparseness to calculate WCS values, using interpolation to fill in the image
-        order = integer(default=3, min=1) # Order of the 2D spline to interpolate the sparse pixel mapping if stepsize>1.  Supported values are: 1 (bilinear) or 3 (bicubic).
+        pixmap_stepsize = float(default=1.0)  # step size for computation of the pixel map
+        pixmap_order = integer(1, 3, default=1)  # interpolating spline order (1 or 3) used when pixmap_stepsize > 1
         maskpt = float(default=0.7) # Percentage of weight image values below which they are flagged as bad pixels
         snr = string(default='5.0 4.0') # The signal-to-noise values to use for bad pixel identification
         scale = string(default='1.2 0.7') # The scaling factor applied to derivative used to identify bad pixels
@@ -51,6 +51,12 @@ class OutlierDetectionStep(RomanStep):
 
     def process(self, dataset):
         """Perform outlier detection processing on input data."""
+
+        if self.pixmap_order not in [1, 3]:
+            raise ValueError(
+                "Supported 'pixmap_order' values are 1 or 3. Provided value: "
+                f"{self.pixmap_order:d} is not supported."
+            )
 
         library = open_dataset(
             dataset,
@@ -107,12 +113,12 @@ class OutlierDetectionStep(RomanStep):
             scale1,
             scale2,
             self.backg,
-            self.stepsize,
-            self.order,
             self.save_intermediate_results,
             self.resample_data,
             self.good_bits,
             self.resample_on_skycell,
             self.make_output_path,
+            pixmap_stepsize=self.pixmap_stepsize,
+            pixmap_order=int(self.pixmap_order),
         )
         return library
