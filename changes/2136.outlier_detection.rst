@@ -1,0 +1,1 @@
+Add parameters ``pixmap_stepsize`` and ``pixmap_order`` to the ``outlier_detection`` step to support faster pixel map computations.

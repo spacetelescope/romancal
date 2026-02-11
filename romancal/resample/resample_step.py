@@ -70,6 +70,8 @@ class ResampleStep(RomanStep):
         good_bits = string(default='~DO_NOT_USE+NON_SCIENCE')  # The good bits to use for building the resampling mask.
         include_var_flat = boolean(default=False)  # include var_flat in output image
         propagate_dq = boolean(default=False)  # propagate DQ during resampling
+        pixmap_stepsize = float(default=10)  # step size for computation of the pixel map
+        pixmap_order = integer(1, 3, default=3)  # interpolating spline order (1 or 3) used when pixmap_stepsize > 1
     """
 
     reference_file_types: ClassVar = []
@@ -83,6 +85,12 @@ class ResampleStep(RomanStep):
                     raise ValueError(
                         f"output shape values must be >= 1: {self.output_shape}"
                     )
+
+        if self.pixmap_order not in [1, 3]:
+            raise ValueError(
+                "Supported 'pixmap_order' values are 1 or 3. Provided value: "
+                f"{self.pixmap_order:d} is not supported."
+            )
 
         input_models = open_dataset(
             dataset,
@@ -155,6 +163,8 @@ class ResampleStep(RomanStep):
             wcs_kwargs=wcs_kwargs,
             variance_array_names=variance_array_names,
             propagate_dq=self.propagate_dq,
+            pixmap_stepsize=self.pixmap_stepsize,
+            pixmap_order=int(self.pixmap_order),
         )
 
         result = resamp.resample_group(range(len(input_models)))

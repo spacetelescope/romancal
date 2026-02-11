@@ -39,6 +39,8 @@ class ResampleData(Resample):
         wcs_kwargs=None,
         variance_array_names=None,
         propagate_dq=False,
+        pixmap_stepsize=1,
+        pixmap_order=1,
     ):
         """
         See the base class `stcal.resample.resample.Resample` for more details.
@@ -105,6 +107,26 @@ class ResampleData(Resample):
             by bitwise OR of all input DQ flags that contribute
             to a given output pixel.
 
+        pixmap_stepsize : float
+            If ``pixmap_stepsize>1``, when computing pixel map used for
+            resampling, perform the full WCS calculation on a sparser grid
+            and use interpolation to fill in the rest of the pixels. This
+            option speeds up pixel map computation by reducing the number of
+            WCS calls, though at the cost of reduced pixel map accuracy.
+            The loss of accuracy is typically negligible if the underlying
+            distortion correction is smooth, but if the distortion is
+            non-smooth, ``pixmap_stepsize>1`` is not recommended.
+            Large ``pixmap_stepsize`` values are automatically reduced to
+            no more than 1/10 of image size.
+            Default 1.
+
+        pixmap_order : int
+            Order of the 2D spline to interpolate the sparse pixel mapping
+            if ``pixmap_stepsize>1``.  Supported values are: 1 (bilinear) or
+            3 (bicubic). This parameter is ignored when
+            ``pixmap_stepsize <= 1``.
+            Default 1.
+
         variance_array_names : list, None
             Variance arrays to resample.  If None, use stcal default.
         """
@@ -159,6 +181,8 @@ class ResampleData(Resample):
             enable_var=enable_var,
             compute_err=compute_err,
             propagate_dq=propagate_dq,
+            pixmap_stepsize=pixmap_stepsize,
+            pixmap_order=pixmap_order,
         )
 
     @property
@@ -274,6 +298,10 @@ class ResampleData(Resample):
         # every resampling will generate these
         output_model.data = self.output_model["data"]
         output_model.weight = self.output_model["wht"]
+
+        # WCS interpolation
+        output_model.meta.resample.pixmap_stepsize = self.pixmap_stepsize
+        output_model.meta.resample.pixmap_order = self.pixmap_order
 
         # some things are conditional
         if self.compute_exptime and hasattr(self, "_exptime_resampler"):
