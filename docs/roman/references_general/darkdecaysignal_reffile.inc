@@ -8,7 +8,8 @@ The DARKDECAYSIGNAL reference file contains amplitudes and time
 constants for the exponential model for dark decay for each of
 the 18 WFI detectors.  Time zero is referenced to the middle of
 the first science read, so the typical amplitude of the signal
-in the first read should be given by the amplitude.  Decay times
+in the first read should correspond to the value of the amplitude
+given in the reference file.  Decay times
 are in seconds and amplitudes are in DN.
 
 .. include:: ../references_general/darkdecaysignal_selection.inc
