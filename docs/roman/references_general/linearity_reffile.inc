@@ -1,11 +1,15 @@
-LINEARITY Reference File
--------------------------
+LINEARITY and INVERSELINEARITY Reference Files
+----------------------------------------------
 
-:REFTYPE: LINEARITY
-:Data model: `~roman_datamodels.datamodels.LinearityModel`
+:REFTYPE: LINEARITY, INVERSELINEARITY
+:Data models: `~roman_datamodels.datamodels.LinearityRefModel`,
+              `~roman_datamodels.datamodels.InverselinearityRefModel`
 
-The LINEARITY reference file contains pixel-by-pixel polynomial correction
-coefficients.
+The LINEARITY reference file contains pixel-by-pixel polynomial coefficients
+that map observed DN to linearized DN. The INVERSELINEARITY reference file
+has the same format but contains coefficients for the inverse transformation
+(linearized DN to observed DN), used internally to simulate individual reads
+from observed resultants.
 
 .. include:: ../references_general/linearity_selection.inc
 
