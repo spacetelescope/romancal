@@ -36,8 +36,6 @@ class OutlierDetectionStep(RomanStep):
         pixfrac = float(default=1.0) # Fraction by which input pixels are shrunk before being drizzled onto the output image grid
         kernel = string(default='square') # Shape of the kernel used for flux distribution onto output images
         fillval = string(default='NaN') # Value assigned to output pixels that have zero weight or no flux during drizzling
-        pixmap_stepsize = float(default=1.0)  # step size for computation of the pixel map
-        pixmap_order = integer(1, 3, default=1)  # interpolating spline order (1 or 3) used when pixmap_stepsize > 1
         maskpt = float(default=0.7) # Percentage of weight image values below which they are flagged as bad pixels
         snr = string(default='5.0 4.0') # The signal-to-noise values to use for bad pixel identification
         scale = string(default='1.2 0.7') # The scaling factor applied to derivative used to identify bad pixels
@@ -47,6 +45,8 @@ class OutlierDetectionStep(RomanStep):
         resample_on_skycell = boolean(default=True) # if association contains skycell information use the skycell wcs for resampling
         good_bits = string(default="~DO_NOT_USE+NON_SCIENCE")  # DQ bit value to be considered 'good'
         in_memory = boolean(default=True) # Specifies whether or not to keep all intermediate products and datamodels in memory, ignored if run as part of a pipeline
+        pixmap_stepsize = float(default=10)  # step size for computation of the pixel map
+        pixmap_order = integer(1, 3, default=3)  # interpolating spline order (1 or 3) used when pixmap_stepsize > 1
     """
 
     def process(self, dataset):
