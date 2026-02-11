@@ -147,6 +147,9 @@ class LinearityStep(RomanStep):
         m = np.abs(input_model.data) > 1e6
         input_model.data[m] = np.clip(input_model.data[m], -1e6, 1e6)
         input_model.groupdq[m] |= group.DO_NOT_USE
+        nbad = np.sum(m)
+        log.warning(f"Flagged {nbad} spurious values outside remotely "
+                    "plausible range.")
 
         # Update the step status
         input_model.meta.cal_step["linearity"] = "COMPLETE"
