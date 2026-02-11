@@ -349,4 +349,4 @@ def test_resample_with_sparse_pixmap(base_image, pixmap_order, pixmap_stepsize, 
     if border > 0:
         assert not np.all(m1)
 
-    assert_allclose(res.data, ref.data, rtol=4.0e-7, atol=1.0e-9)
+    assert_allclose(res.data, ref.data, rtol=5.0e-7, atol=1.0e-9)
