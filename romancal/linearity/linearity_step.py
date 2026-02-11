@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from roman_datamodels import datamodels as rdd
-from roman_datamodels.dqflags import pixel
+from roman_datamodels.dqflags import pixel, group
 from stcal.linearity.linearity import linearity_correction
 
 from romancal.datamodels.fileio import open_dataset
@@ -146,7 +146,7 @@ class LinearityStep(RomanStep):
         # Any points larger than 1e6 should be flagged.
         m = np.abs(input_model.data) > 1e6
         input_model.data[m] = np.clip(input_model.data[m], -1e6, 1e6)
-        input_model.pixeldq[m] |= pixel.DO_NOT_USE
+        input_model.groupdq[m] |= group.DO_NOT_USE
 
         # Update the step status
         input_model.meta.cal_step["linearity"] = "COMPLETE"
