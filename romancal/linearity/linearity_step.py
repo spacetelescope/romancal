@@ -145,7 +145,7 @@ class LinearityStep(RomanStep):
         # a factor of several away from this.
         # Any points larger than 1e6 should be flagged.
         m = np.abs(input_model.data) > 1e6
-        input_model.data[m] = np.sign(input_model.data[m]) * 1e6
+        input_model.data[m] = np.clip(input_model.data[m], -1e6, 1e6)
         input_model.pixeldq[m] |= pixel.DO_NOT_USE
 
         # Update the step status
