@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from roman_datamodels import datamodels as rdd
-from roman_datamodels.dqflags import pixel, group
+from roman_datamodels.dqflags import group, pixel
 from stcal.linearity.linearity import linearity_correction
 
 from romancal.datamodels.fileio import open_dataset
