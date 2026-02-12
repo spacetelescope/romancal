@@ -110,8 +110,10 @@ def test_outlier_do_detection_write_files_to_custom_location(tmp_path, base_imag
     assert all(x.exists() for x in outlier_files_path)
 
 
+@pytest.mark.parametrize("pixmap_order", [1, 3])
+@pytest.mark.parametrize("pixmap_stepsize", [1, 10])
 @pytest.mark.parametrize("on_disk", (True, False))
-def test_find_outliers(tmp_path, base_image, on_disk):
+def test_find_outliers(tmp_path, base_image, on_disk, pixmap_order, pixmap_stepsize):
     """
     Test that OutlierDetection can find outliers.
     """
@@ -165,6 +167,8 @@ def test_find_outliers(tmp_path, base_image, on_disk):
     outlier_step.output_dir = tmp_path.as_posix()
     # make sure files are written out to disk
     outlier_step.in_memory = not on_disk
+    outlier_step.pixmap_order = pixmap_order
+    outlier_step.pixmap_stepsize = pixmap_stepsize
 
     result = outlier_step.run(input_models)
 

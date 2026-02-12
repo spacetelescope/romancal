@@ -45,10 +45,18 @@ class OutlierDetectionStep(RomanStep):
         resample_on_skycell = boolean(default=True) # if association contains skycell information use the skycell wcs for resampling
         good_bits = string(default="~DO_NOT_USE+NON_SCIENCE")  # DQ bit value to be considered 'good'
         in_memory = boolean(default=True) # Specifies whether or not to keep all intermediate products and datamodels in memory, ignored if run as part of a pipeline
+        pixmap_stepsize = float(default=10)  # step size for computation of the pixel map
+        pixmap_order = integer(1, 3, default=3)  # interpolating spline order (1 or 3) used when pixmap_stepsize > 1
     """
 
     def process(self, dataset):
         """Perform outlier detection processing on input data."""
+
+        if self.pixmap_order not in [1, 3]:
+            raise ValueError(
+                "Supported 'pixmap_order' values are 1 or 3. Provided value: "
+                f"{self.pixmap_order:d} is not supported."
+            )
 
         library = open_dataset(
             dataset,
@@ -110,5 +118,7 @@ class OutlierDetectionStep(RomanStep):
             self.good_bits,
             self.resample_on_skycell,
             self.make_output_path,
+            pixmap_stepsize=self.pixmap_stepsize,
+            pixmap_order=int(self.pixmap_order),
         )
         return library
