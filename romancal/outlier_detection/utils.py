@@ -190,6 +190,8 @@ def _flag_resampled_model_crs(
     fillval,
     save_intermediate_results,
     make_output_path,
+    pixmap_stepsize=1,
+    pixmap_order=1,
 ):
     if fillval is None or fillval.strip().upper() == "INDEF":
         fillval = 0
@@ -202,6 +204,8 @@ def _flag_resampled_model_crs(
         blot_shape=image.data.shape,
         blot_wcs=image.meta.wcs,
         fillval=fillval,
+        pixmap_stepsize=pixmap_stepsize,
+        pixmap_order=pixmap_order,
     )
 
     # Get background level of science data if it has not been subtracted, so it
@@ -252,6 +256,8 @@ def detect_outliers(
     good_bits,
     resample_on_skycell,
     make_output_path,
+    pixmap_stepsize,
+    pixmap_order,
 ):
     # setup ResampleData
     # call
@@ -274,6 +280,8 @@ def detect_outliers(
             False,
             False,
             resample_on_skycell,
+            pixmap_stepsize=pixmap_stepsize,
+            pixmap_order=pixmap_order,
         )
         median_data, median_wcs = _median_with_resampling(
             library,
@@ -309,6 +317,8 @@ def detect_outliers(
                     fillval,
                     save_intermediate_results,
                     make_output_path,
+                    pixmap_stepsize=pixmap_stepsize,
+                    pixmap_order=pixmap_order,
                 )
             else:
                 _flag_model_crs(image, median_data, snr1)

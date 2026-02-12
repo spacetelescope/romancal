@@ -152,6 +152,59 @@ def parse_visitID(visit_id):
     return visit_id_parts
 
 
+def frame_read_times(frame_time, sca, frame_number=0):
+    """
+    Compute the pixel read times for a single frame.
+
+    This is a placeholder function that assumes a uniform read
+    across each channel within the frame time.  A more careful
+    treatment will need to account for time spent reading out the
+    guide window.
+
+    Data shape for the frame is assumed to be 4096 x 4096, with
+    32 channels along the columns.
+
+    Parameters
+    ----------
+    frame_time : float
+        The frame time for the exposure, in seconds.
+    sca : int
+        The WFI detector number (1-18).
+    frame_number : float, optional
+        The frame number.  Default of zero means that pixels start
+        reading out at t=0.
+
+    Returns
+    -------
+    read_times : `~numpy.ndarray`
+        A 4096 x 4096 array containing the read time in seconds for each pixel.
+    """
+    nchannel = 32
+    nrow = 4096
+    ncol = 128
+    one_channel_read_time = np.linspace(
+        0, frame_time, nrow * ncol, endpoint=False
+    ).reshape(nrow, ncol)
+
+    # WFI channels alternate readout direction in the +x and -x directions
+    # we implement this by flipping the x direction of every other channel
+    two_channel_read_times = np.concatenate(
+        [one_channel_read_time, one_channel_read_time[:, ::-1]], axis=1
+    )
+    read_times = np.tile(two_channel_read_times, (1, nchannel // 2))
+
+    # Apply science -> detector flipping for read order.
+    # Detectors with SCA % 3 == 0 flip columns; others flip rows.
+    if sca % 3 == 0:
+        read_times = read_times[:, ::-1]
+    else:
+        read_times = read_times[::-1, :]
+
+    read_times += frame_number * frame_time
+
+    return read_times
+
+
 def compute_var_rnoise(model):
     """Compute read noise variance from model data.
 

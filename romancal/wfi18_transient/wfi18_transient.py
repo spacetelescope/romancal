@@ -6,6 +6,8 @@ from astropy.stats import sigma_clipped_stats
 from roman_datamodels import dqflags
 from scipy import optimize
 
+from romancal.lib.basic_utils import frame_read_times
+
 __all__ = ["correct_anomaly", "mask_affected_rows"]
 
 log = logging.getLogger(__name__)
@@ -23,47 +25,6 @@ def mask_affected_rows(groupdq):
         The group DQ image.  Updated in place.
     """
     groupdq[0, :1000, :] |= dqflags.group.DO_NOT_USE | dqflags.group.WFI18_TRANSIENT
-
-
-def _wfi18_frame_read_times(frame_time):
-    """
-    Compute the WFI18 read times for a single frame.
-
-    This is a placeholder function that assumes a uniform read
-    across each channel within the frame time.  A more careful
-    treatment will need to account for time spent reading out the
-    guide window.
-
-    Data shape for the frame is assumed to be 4096 x 4096, with
-    32 channels along the columns.
-
-    Read order direction assumes the WFI18 detector.  Other detectors
-    may need different handling.
-
-    Parameters
-    ----------
-    frame_time : float
-        The frame time for the exposure, in seconds.
-
-    Returns
-    -------
-    read_times : `~numpy.ndarray`
-        A 4096 x 4096 array containing the read time in seconds for each pixel.
-    """
-    nchannel = 32
-    nrow = 4096
-    ncol = 128
-    channel_read_times = (
-        np.arange(nrow * ncol).reshape(nrow, ncol) / (nrow * ncol) * frame_time
-    )
-    read_times = np.tile(channel_read_times, (1, nchannel))
-
-    # Apply science -> detector flipping for read order
-    # This order is appropriate for detectors with SCA % 3 == 0.
-    # Other detectors would use read_times[::-1, :].
-    read_times = read_times[:, ::-1]
-
-    return read_times
 
 
 def _resultant_read_times(read_pattern, frame_time):
@@ -148,7 +109,7 @@ def correct_anomaly(input_model, mask_rows=False):
     # Get the read times for all pixels and resultants
     frame_time = input_model.meta.exposure.frame_time
     read_pattern = input_model.meta.exposure.read_pattern
-    t_pixel = _wfi18_frame_read_times(frame_time)
+    t_pixel = frame_read_times(frame_time, 18)
     t_resultant = _resultant_read_times(read_pattern, frame_time)
 
     # Input data without reference pixels

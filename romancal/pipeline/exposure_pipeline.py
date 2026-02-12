@@ -11,6 +11,7 @@ from roman_datamodels.dqflags import group
 # step imports
 from romancal.assign_wcs import AssignWcsStep
 from romancal.dark_current import DarkCurrentStep
+from romancal.dark_decay import DarkDecayStep
 from romancal.datamodels.fileio import open_dataset
 from romancal.dq_init import dq_init_step
 from romancal.flatfield import FlatFieldStep
@@ -56,6 +57,7 @@ class ExposurePipeline(RomanPipeline):
         "dq_init": dq_init_step.DQInitStep,
         "saturation": SaturationStep,
         "refpix": RefPixStep,
+        "dark_decay": DarkDecayStep,
         "wfi18_transient": WFI18TransientStep,
         "linearity": LinearityStep,
         "dark_current": DarkCurrentStep,
@@ -112,6 +114,7 @@ class ExposurePipeline(RomanPipeline):
                     )
                 else:
                     result = self.refpix.run(result)
+                    result = self.dark_decay.run(result)
                     result = self.wfi18_transient.run(result)
                     result = self.linearity.run(result)
                     result = self.rampfit.run(result)
@@ -187,6 +190,7 @@ class ExposurePipeline(RomanPipeline):
         # Set all subsequent steps to skipped
         for step_str in [
             "refpix",
+            "dark_decay",
             "wfi18_transient",
             "linearity",
             "dark",

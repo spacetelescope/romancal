@@ -4,6 +4,7 @@
    assign_wcs/index.rst
    associations/index.rst
    dark_current/index.rst
+   dark_decay/index.rst
    dq_init/index.rst
    flatfield/index.rst
    flux/index.rst
