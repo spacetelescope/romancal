@@ -5,6 +5,7 @@ made available by this package.
 
 from .assign_wcs.assign_wcs_step import AssignWcsStep
 from .dark_current.dark_current_step import DarkCurrentStep
+from .dark_decay.dark_decay_step import DarkDecayStep
 from .dq_init.dq_init_step import DQInitStep
 from .flatfield.flat_field_step import FlatFieldStep
 from .flux import FluxStep
@@ -25,6 +26,7 @@ __all__ = [
     "AssignWcsStep",
     "DQInitStep",
     "DarkCurrentStep",
+    "DarkDecayStep",
     "FlatFieldStep",
     "FluxStep",
     "LinearityStep",

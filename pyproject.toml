@@ -299,6 +299,11 @@ name = "``refpix`` (WFI-Image, WFI-Prism, WFI-Grism)"
 showcontent = true
 
 [[tool.towncrier.type]]
+directory = "dark_decay"
+name = "``dark_decay`` (WFI-Image, WFI-Prism, WFI-Grism)"
+showcontent = true
+
+[[tool.towncrier.type]]
 directory = "wfi18_transient"
 name = "``wfi18_transient`` (WFI-Image, WFI-Prism, WFI-Grism)"
 showcontent = true

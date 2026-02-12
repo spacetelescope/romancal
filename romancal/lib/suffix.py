@@ -55,6 +55,7 @@ SUFFIXES_TO_ADD = [
     "saturation",
     "dark_current",
     "darkcurrent",
+    "dark_decay",
     "outlier_detection",
     "skymatch",
     "refpix",
@@ -73,6 +74,7 @@ SUFFIXES_TO_DISCARD = ["mosaicpipeline", "pipeline", "step"]
 _calculated_suffixes = {
     "saturationstep",
     "darkcurrentstep",
+    "darkdecaystep",
     "rampfit",
     "dark_current",
     "assignwcsstep",
