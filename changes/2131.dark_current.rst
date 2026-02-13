@@ -1,1 +1,0 @@
-Do not include systematic uncertainty in dark reference file in total uncertainty.

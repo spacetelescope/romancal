@@ -1,1 +1,0 @@
-Allow user to update the source catalog coordinates with the WCS corrections determined by TweakRegStep.

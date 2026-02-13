@@ -1,1 +1,0 @@
-Remove a reference to metadata not available in the schema.

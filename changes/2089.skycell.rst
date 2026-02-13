@@ -1,1 +1,0 @@
-Deprecate `SkyCell` object in favor of the vectorized `SkyCells` object

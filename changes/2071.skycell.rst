@@ -1,1 +1,0 @@
-vectorize skycell selection and operations with `SkyCells` object

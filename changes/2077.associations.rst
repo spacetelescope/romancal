@@ -1,1 +1,0 @@
-Implemented MultibandAssociation class to create multiband catalog association files.

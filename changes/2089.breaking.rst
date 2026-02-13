@@ -1,1 +1,0 @@
-Removed `romancal.skycell.SkyCell`; use `romancal.skycell.SkyCells` instead
