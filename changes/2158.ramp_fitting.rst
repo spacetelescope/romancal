@@ -1,1 +1,0 @@
-Include correct chi squared in ramp fitting outputs when using likelihood-based ramp fitting, include the correct difference between slopes computed using uniform and optimal weights.

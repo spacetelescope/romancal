@@ -1,1 +1,0 @@
-add function to query if a pixel coordinate belongs to the exclusive region of a skycell, for tesselation flagging

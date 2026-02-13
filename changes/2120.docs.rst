@@ -1,1 +1,0 @@
-Update docs removing mention of non-existent JumpStep, exit status 64 and deprecated stpipe logcfg.

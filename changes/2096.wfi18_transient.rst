@@ -1,1 +1,0 @@
-Add the new ``wfi18_transient`` step to the exposure level pipeline to correct an anomalous first read signal in detector WFI18.

@@ -1,1 +1,0 @@
-Add parameters ``pixmap_stepsize`` and ``pixmap_order`` to the ``resample`` step to support faster pixel map computations.
