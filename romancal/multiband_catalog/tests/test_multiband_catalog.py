@@ -262,7 +262,7 @@ def make_si_test_image():
     data = np.zeros(shape=(500, 500))
     data = np.tile(smalldata, (5, 5))
 
-    rng = np.random.default_rng(seed=123)
+    rng = np.random.default_rng(seed=42)
     noise_scale = 0.01 * 0.2
     noise = rng.normal(0, noise_scale, size=data.shape)
     data += noise

@@ -280,7 +280,10 @@ def make_source_injected_library(library, seed=None):
 
             # Poisson variance required for source injection
             if "var_poisson" not in si_model:
-                si_model.var_poisson = si_model.err**2
+                # si_model.var_poisson = si_model.err**2
+                # XXX UNDO
+                # si_model.var_poisson = si_model.err**2
+                si_model.var_poisson = np.zeros_like(si_model.err.shape)
 
             # Set parameters for source injection
             # This only needs to be done once per library
