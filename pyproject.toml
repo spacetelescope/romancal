@@ -27,7 +27,8 @@ dependencies = [
     # roman_datamodels release.
     "roman_datamodels>=0.30.0,<0.31",
     # "roman_datamodels@git+https://github.com/spacetelescope/roman_datamodels.git",
-    "romanisim>=0.13.0,<0.14",
+    #"romanisim>=0.13.0,<0.14",
+    "romanisim",
     "asdf>=4.1.0,<6",
     "crds>=13.0.2",
     "drizzle>=2.2.0,<2.3.0",

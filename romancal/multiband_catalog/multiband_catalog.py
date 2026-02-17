@@ -244,7 +244,7 @@ def multiband_catalog(self, library, example_model, cat_model, ee_spline):
     return segment_img, cat_model, None
 
 
-def make_source_injected_library(library):
+def make_source_injected_library(library, seed=None):
     """
     Create a library of source injected models.
 
@@ -318,7 +318,7 @@ def make_source_injected_library(library):
                 si_cat["label"] = np.arange(len(si_x_pos))
 
             # Inject sources into the detection image
-            si_model = injection.inject_sources(si_model, si_cat)
+            si_model = injection.inject_sources(si_model, si_cat, seed,)
 
             # Add model to list for new library
             si_model_lst.append(si_model)
