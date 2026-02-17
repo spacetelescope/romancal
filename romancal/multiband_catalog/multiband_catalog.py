@@ -280,10 +280,7 @@ def make_source_injected_library(library, seed=None):
 
             # Poisson variance required for source injection
             if "var_poisson" not in si_model:
-                # si_model.var_poisson = si_model.err**2
-                # XXX UNDO
-                # si_model.var_poisson = si_model.err**2
-                si_model.var_poisson = np.zeros_like(si_model.err.shape)
+                si_model.var_poisson = si_model.err**2
 
             # Set parameters for source injection
             # This only needs to be done once per library
@@ -294,6 +291,7 @@ def make_source_injected_library(library, seed=None):
                     yxmax=si_model.data.shape,
                     yxoffset=(50, 50),
                     yxgrid=(20, 20),
+                    seed=seed,
                 )
 
                 si_cen = coordinates.SkyCoord(
@@ -313,6 +311,7 @@ def make_source_injected_library(library, seed=None):
                     ra=si_ra,
                     dec=si_dec,
                     exptimes=si_exptimes,
+                    seed=seed,
                 )
 
                 # Additional useful parameters
