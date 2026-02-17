@@ -61,10 +61,14 @@ def inject_sources(model, si_cat, seed=None, **kwargs):
 
     if isinstance(model, ImageModel):
         #  inject_sources_into_l2
-        new_model = inject_sources_into_l2(model, si_cat, psftype="epsf", seed=seed, **kwargs)
+        new_model = inject_sources_into_l2(
+            model, si_cat, psftype="epsf", seed=seed, **kwargs
+        )
     elif isinstance(model, MosaicModel):
         #  inject_sources_into_l3
-        new_model = inject_sources_into_l3(model, si_cat, psftype="epsf", seed=seed, **kwargs)
+        new_model = inject_sources_into_l3(
+            model, si_cat, psftype="epsf", seed=seed, **kwargs
+        )
     else:
         raise ValueError("The input model must be an ImageModel or MosaicModel.")
 

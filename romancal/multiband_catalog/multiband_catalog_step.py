@@ -100,7 +100,9 @@ class MultibandCatalogStep(RomanStep):
 
         # Set up source injection library and injection catalog
         if self.inject_sources:
-            si_library, si_cat = make_source_injected_library(library, seed=self.inject_seed)
+            si_library, si_cat = make_source_injected_library(
+                library, seed=self.inject_seed
+            )
 
         # Create catalog of library images
         segment_img, cat_model, msg = multiband_catalog(

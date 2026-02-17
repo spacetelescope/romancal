@@ -320,7 +320,11 @@ def make_source_injected_library(library, seed=None):
                 si_cat["label"] = np.arange(len(si_x_pos))
 
             # Inject sources into the detection image
-            si_model = injection.inject_sources(si_model, si_cat, seed,)
+            si_model = injection.inject_sources(
+                si_model,
+                si_cat,
+                seed,
+            )
 
             # Add model to list for new library
             si_model_lst.append(si_model)
