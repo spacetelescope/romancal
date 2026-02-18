@@ -1,0 +1,1 @@
+Update documentation to make the Likelihood Fitting algorithm the primary ramp fittting algorithm. Added new argument `rejections_threshold`.
