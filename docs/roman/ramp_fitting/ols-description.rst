@@ -1,7 +1,16 @@
 .. _rampfit-algorithm-ols:
 
 Optimized Least-squares with Uneven Ramps
-==========================================
+#########################################
+
+.. deprecated:: 0.22.0
+
+   The Optimized Least-squares algorithm is being deprecated in favor of the
+   :ref:`Likelihood Fitting <rampfit-algorithm-like>`. Expect the Optimized
+   Least-squares algorithm to be removed in a future build.
+
+Algorithm
+=========
 
 This step determines the mean count rate, in units of counts per second, for
 each pixel by performing a linear fit to the data in the input file.  The fit
