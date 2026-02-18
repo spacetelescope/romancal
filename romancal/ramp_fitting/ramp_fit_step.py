@@ -40,6 +40,7 @@ class RampFitStep(RomanStep):
     spec = """
         algorithm = option('ols_cas22', 'likely', default='likely')  # Algorithm to use to fit. Note: `ols_cas22` is deprecated and will be removed in a future version
         suffix = string(default='rampfit')  # Default suffix of results
+        rejection_threshold = float(default=4.0,min=0) # CR sigma rejection threshold
         use_ramp_jump_detection = boolean(default=True) # Use jump detection during ramp fitting
         threshold_intercept = float(default=None) # Override the intercept parameter for the threshold function in the jump detection algorithm.
         threshold_constant = float(default=None) # Override the constant parameter for the threshold function in the jump detection algorithm.
@@ -200,8 +201,7 @@ class RampFitStep(RomanStep):
         # Add the needed components to the input model.
         input_model["flags_do_not_use"] = pixel.DO_NOT_USE
         input_model["flags_saturated"] = pixel.SATURATED
-        # FIXME: needs to exposed in the spec
-        input_model["rejection_threshold"] = None
+        input_model["rejection_threshold"] = self.rejection_threshold
         input_model["flags_jump_det"] = pixel.JUMP_DET
         # Add an axis to match the JWST data cube
         input_model.data = input_model.data[np.newaxis, :, :, :]

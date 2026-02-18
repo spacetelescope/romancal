@@ -14,6 +14,8 @@ The ramp fitting step has the following optional argument that can be set by the
 
 * ``--include_var_rnoise``: boolean indicating whether to include var_rnoise in output (can be reconstructed from err and other variances)
 
+* ``--rejection_threshold``: float specifying the CR sigma rejection threshold.
+
 * ``--threshold_intercept``: float overriding the intercept parameter for the threshold function in the jump detection algorithm.
 
 * ``--threshold_constant``: float overriding the constant parameter for the threshold function in the jump detection algorithm.
