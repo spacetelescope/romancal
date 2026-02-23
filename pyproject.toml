@@ -134,7 +134,6 @@ norecursedirs = [
 filterwarnings = [
     "error::ResourceWarning",
     "error::DeprecationWarning",
-    # astropy triggers an unhandled warning in dev numpy: https://github.com/astropy/astropy/issues/19216
 ]
 junit_family = "xunit2"
 inputs_root = ["roman-pipeline"]
