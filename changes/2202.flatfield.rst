@@ -1,0 +1,1 @@
+Update exposure type so exclude WFI_SPECTRAL from the flat field correction
