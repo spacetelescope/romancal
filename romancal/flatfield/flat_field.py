@@ -58,7 +58,7 @@ def do_flat_field(output_model, flat_model, include_var_flat=False):
         log.warning("Flat data array is not the same shape as the science data")
         log.warning("Step will be skipped")
         output_model.meta.cal_step.flat_field = "SKIPPED"
-    elif output_model.meta.exposure.type != "WFI_IMAGE":
+    elif output_model.meta.exposure.type == "WFI_SPECTRAL":
         # Check to see if attempt to flatten non-Image data
         log.info("Skipping flat field for spectral exposure.")
         output_model.meta.cal_step.flat_field = "SKIPPED"
