@@ -135,9 +135,6 @@ norecursedirs = [
 filterwarnings = [
     "error::ResourceWarning",
     "error::DeprecationWarning",
-    "ignore:invalid escape:DeprecationWarning",
-    # dev numpy deprecated shape assignment which astropy still uses
-    "ignore:Setting the shape on a NumPy array has been deprecated:DeprecationWarning:astropy.*",
 ]
 junit_family = "xunit2"
 inputs_root = ["roman-pipeline"]
