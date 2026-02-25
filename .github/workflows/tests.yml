@@ -38,7 +38,9 @@ jobs:
         - linux: check-dependencies
           python-version: '3.13'
   latest_crds_contexts:
-    uses: ./.github/workflows/contexts.yml
+    uses: spacetelescope/crds/.github/workflows/contexts.yml@main
+    with:
+      observatory: jwst
   crds_context:
     needs: [ latest_crds_contexts ]
     runs-on: ubuntu-latest
