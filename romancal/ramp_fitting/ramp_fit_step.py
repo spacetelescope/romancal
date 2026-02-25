@@ -40,7 +40,7 @@ class RampFitStep(RomanStep):
     spec = """
         algorithm = option('ols_cas22', 'likely', default='likely')  # Algorithm to use to fit. Note: `ols_cas22` is deprecated and will be removed in a future version
         suffix = string(default='rampfit')  # Default suffix of results
-        rejection_threshold = float(default=4.0,min=0) # CR sigma rejection threshold
+        rejection_threshold = float(default=4.5,min=0) # CR sigma rejection threshold
         use_ramp_jump_detection = boolean(default=True) # Use jump detection during ramp fitting
         threshold_intercept = float(default=None) # Override the intercept parameter for the threshold function in the jump detection algorithm.
         threshold_constant = float(default=None) # Override the constant parameter for the threshold function in the jump detection algorithm.
