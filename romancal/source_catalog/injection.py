@@ -39,7 +39,7 @@ HRGALMAGLIMIT = {
 }
 
 
-def inject_sources(model, si_cat, **kwargs):
+def inject_sources(model, si_cat, seed=None, **kwargs):
     """
     Convolve the background-subtracted model image with a Gaussian
     kernel.
@@ -61,17 +61,21 @@ def inject_sources(model, si_cat, **kwargs):
 
     if isinstance(model, ImageModel):
         #  inject_sources_into_l2
-        new_model = inject_sources_into_l2(model, si_cat, psftype="epsf", **kwargs)
+        new_model = inject_sources_into_l2(
+            model, si_cat, psftype="epsf", seed=seed, **kwargs
+        )
     elif isinstance(model, MosaicModel):
         #  inject_sources_into_l3
-        new_model = inject_sources_into_l3(model, si_cat, psftype="epsf", **kwargs)
+        new_model = inject_sources_into_l3(
+            model, si_cat, psftype="epsf", seed=seed, **kwargs
+        )
     else:
         raise ValueError("The input model must be an ImageModel or MosaicModel.")
 
     return new_model
 
 
-def make_cosmoslike_catalog(cen, ra, dec, exptimes, filters=None, seed=50, **kwargs):
+def make_cosmoslike_catalog(cen, ra, dec, exptimes, filters=None, seed=None, **kwargs):
     """
     Generate a catalog of cosmos galaxies and stars, with the following assumptions:
     - 75% of objects will be galaxies, 25% will be point sources
@@ -122,7 +126,7 @@ def make_cosmoslike_catalog(cen, ra, dec, exptimes, filters=None, seed=50, **kwa
     # uniformly distributed position angles. Radius and area are set to return
     # a full sample (~346k galaxies)
     gal_cat = catalog.make_cosmos_galaxies(
-        cen, radius=1.0, bandpasses=filters, cat_area=(np.pi), **kwargs
+        cen, radius=1.0, bandpasses=filters, cat_area=(np.pi), seed=seed, **kwargs
     )
 
     # Trim to the required number of objects
@@ -219,7 +223,7 @@ def make_cosmoslike_catalog(cen, ra, dec, exptimes, filters=None, seed=50, **kwa
 
 
 def make_source_grid(
-    model, yxmax=(5000, 5000), yxoffset=(50, 50), yxgrid=(20, 20), seed=50, **kwargs
+    model, yxmax=(5000, 5000), yxoffset=(50, 50), yxgrid=(20, 20), seed=None, **kwargs
 ):
     """
     Generate a grid of points to inject sources onto. The grid is set to the yxmax
