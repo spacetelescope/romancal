@@ -1,7 +1,6 @@
 import numpy as np
-from astropy.modeling.fitting import SplineSplrepFitter
-from astropy.modeling.models import Spline1D
 from roman_datamodels import datamodels
+from scipy.interpolate import PchipInterpolator
 
 
 def copy_mosaic_meta(model, cat_model):
@@ -50,6 +49,12 @@ def get_ee_spline(input_model, apcorr_file):
         ee_fractions = getattr(ee_ref.data, optical_element).ee_fractions
         ee_radii = getattr(ee_ref.data, optical_element).ee_radii
 
-        # Fit a spline model to the ee_fraction vs radius data so that we
-        # can interpolate the values for arbitrary radii
-        return SplineSplrepFitter()(Spline1D(), ee_radii, ee_fractions)
+        # Make sure that we have a monotonically increasing radius array for spline
+        x = [ee_radii[0]]
+        y = [ee_fractions[0]]
+        for radius, fraction in zip(ee_radii[1:], ee_fractions[1:], strict=True):
+            if radius > x[-1]:
+                x.append(radius)
+                y.append(fraction)
+
+        return PchipInterpolator(x, y)
