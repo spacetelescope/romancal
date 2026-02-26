@@ -371,10 +371,9 @@ def test_multiband_source_injection_catalog(
         assert isinstance(segm_mod.injected_sources, Table)
         assert len(segm_mod.injected_sources[0]) <= len(si_cat)
 
-        assert (
-            np.count_nonzero(segm_mod.recovered_sources["best_injected_index"] != -1)
-            >= (400 / 2)
-        )
+        assert np.count_nonzero(
+            segm_mod.recovered_sources["best_injected_index"] != -1
+        ) >= (400 / 2)
 
     # Old lines from other MBC tests
     shared_tests(
