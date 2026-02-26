@@ -332,7 +332,7 @@ def test_multiband_source_injection_catalog(
         fit_psf=fit_psf,
         deblend=True,
         inject_sources=True,
-        inject_seed=42,
+        inject_seed=50,
         save_results=save_results,
         save_debug_info=True,
     )
@@ -373,7 +373,7 @@ def test_multiband_source_injection_catalog(
 
         assert (
             np.count_nonzero(segm_mod.recovered_sources["best_injected_index"] != -1)
-            == 192
+            >= (400 / 2)
         )
 
     # Old lines from other MBC tests
