@@ -17,7 +17,8 @@ dependencies = [
     "numpy>1.26",
     "scipy>=1.14.1",
     "requests>=2.26",
-    "photutils>=2.3.0",
+    # Temporarily use GH main until 3.0 release
+    "photutils@git+https://github.com/astropy/photutils.git",
     "pyarrow>=10.0.1",  # for Table.read(...) support in astropy for parquet files
     "pandas>=2.0.0",  # for Table.read(...) support in astropy for parquet files
     "pyyaml>=6.0",
