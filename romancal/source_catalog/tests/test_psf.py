@@ -13,6 +13,7 @@ from astropy.convolution import convolve
 from astropy.modeling.models import Gaussian2D
 from astropy.stats import mad_std
 from astropy.table import QTable
+from astropy.time import Time
 from photutils.datasets import make_model_image
 from photutils.psf import PSFPhotometry
 from roman_datamodels.datamodels import ImageModel
@@ -38,6 +39,9 @@ def setup_inputs(
     Return ImageModel of level 2 image.
     """
     mod = ImageModel.create_fake_data(shape=shape)
+    mod.meta.exposure.start_time = Time(
+        "2024-01-03T00:00:00.0", format="isot", scale="utc"
+    )
     mod.data = np.ones(shape, dtype=np.float32)
     mod.meta.filename = "filename"
     mod.meta.instrument["optical_element"] = "F087"

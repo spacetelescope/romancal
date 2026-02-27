@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 import roman_datamodels as rdm
 
+from romancal.datamodels.fileio import open_dataset
 from romancal.refpix import refpix
 from romancal.stpipe import RomanStep
 
@@ -38,17 +39,14 @@ class RefPixStep(RomanStep):
 
     reference_file_types: ClassVar = ["refpix"]
 
-    def process(self, input):
+    def process(self, dataset):
         """
         Perform the reference pixel correction
         """
 
         # open the input data model
-        log.debug(f"Opening the science data: {input}")
-        if isinstance(input, rdm.DataModel):
-            datamodel = input
-        else:
-            datamodel = rdm.open(input)
+        log.debug(f"Opening the science data: {dataset}")
+        datamodel = open_dataset(dataset, update_version=self.update_version)
 
         # Get the reference file
         ref_file = self.get_reference_file(datamodel, "refpix")
@@ -57,15 +55,14 @@ class RefPixStep(RomanStep):
         if ref_file == "N/A":
             log.warning("No REFPIX reference file found")
             log.warning("Reference pixel correction step will be skipped")
-            result = datamodel
-            result.meta.cal_step.refpix = "SKIPPED"
-            return result
+            datamodel.meta.cal_step.refpix = "SKIPPED"
+            return datamodel
 
         log.debug(f"Opening the reference file: {ref_file}")
         with rdm.open(ref_file) as refs:
             # Run the correction
             log.debug("Running the reference pixel correction")
-            output = refpix.run_steps(
+            refpix.run_steps(
                 datamodel,
                 refs,
                 self.remove_offset,
@@ -74,10 +71,10 @@ class RefPixStep(RomanStep):
                 self.fft_interpolate,
             )
             # Update the step status
-            output.meta.cal_step["refpix"] = "COMPLETE"
+            datamodel.meta.cal_step["refpix"] = "COMPLETE"
             if self.save_results:
                 try:
                     self.suffix = "refpix"
                 except AttributeError:
                     self["suffix"] = "refpix"
-        return output
+        return datamodel

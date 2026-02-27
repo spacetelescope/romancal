@@ -5,13 +5,11 @@ Roman Calibration Pipeline base class
 import importlib.metadata
 import logging
 import time
-from pathlib import Path
 
-import roman_datamodels as rdm
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from stpipe import Pipeline, Step, crds_client
 
-from romancal.datamodels.library import ModelLibrary
+from romancal.datamodels.fileio import open_dataset
 
 from ..lib.suffix import remove_suffix
 
@@ -32,7 +30,8 @@ class RomanStep(Step):
     """
 
     spec = """
-    output_ext =  string(default='.asdf')    # Default type of output
+    output_ext =  string(default='.asdf') # Default type of output
+    update_version = boolean(default=False) # Update old versions of datamodels to newest version
     """
 
     _log_records_formatter = _LOG_FORMATTER
@@ -44,19 +43,7 @@ class RomanStep(Step):
         so that the stpipe infrastructure knows how to instantiate
         models and containers.
         """
-        if isinstance(init, str):
-            init = Path(init)
-        if isinstance(init, Path):
-            ext = init.suffix.lower()
-            if ext == ".asdf":
-                return rdm.open(init, **kwargs)
-            if ext in (".json", ".yaml"):
-                return ModelLibrary(init, **kwargs)
-        if isinstance(init, rdm.DataModel):
-            return rdm.open(init, **kwargs)
-        if isinstance(init, ModelLibrary):
-            return ModelLibrary(init)
-        raise TypeError(f"Invalid input: {init}")
+        return open_dataset(init, open_kwargs=kwargs)
 
     @classmethod
     def _get_crds_parameters(cls, dataset):

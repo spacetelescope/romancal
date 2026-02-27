@@ -10,12 +10,29 @@ from romancal.skycell import skymap
 
 DATA_DIRECTORY = Path(__file__).parent / "data"
 
+SAMPLE_SKYCELL_NAMES = [
+    "000p86x30y34",
+    "000p86x50y65",
+    "000p86x59y38",
+    # north pole
+    "135p90x25y49",
+    "135p90x30y51",
+    "135p90x33y62",
+    "135p90x39y33",
+    "135p90x43y65",
+    "135p90x48y41",
+    "135p90x52y59",
+    "135p90x57y35",
+    "135p90x61y67",
+    "135p90x67y38",
+]
+
 
 def assert_allclose_lonlat(actual: np.ndarray, desired: np.ndarray, rtol=1e-7, atol=0):
     assert_allclose(actual, desired)
 
 
-@pytest.fixture()
+@pytest.fixture(scope="module")
 def skymap_subset() -> skymap.SkyMap:
     """
     smaller subset to allow these tests
@@ -24,10 +41,15 @@ def skymap_subset() -> skymap.SkyMap:
     return skymap.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf")
 
 
-def test_skycell_from_name(skymap_subset):
-    skycell = skymap.SkyCell.from_name("135p90x50y57", skymap=skymap_subset)
+@pytest.fixture()
+def sample_skycells(skymap_subset) -> skymap.SkyCells:
+    return skymap.SkyCells.from_names(SAMPLE_SKYCELL_NAMES, skymap=skymap_subset)
 
-    assert skycell == skymap.SkyCell(999, skymap=skymap_subset)
+
+def test_skycell_from_name(skymap_subset):
+    skycell = skymap.SkyCells.from_names(["135p90x50y57"], skymap=skymap_subset)
+
+    assert skycell == skymap.SkyCells([999], skymap=skymap_subset)
 
     assert skycell.data == np.void(
         (
@@ -64,37 +86,40 @@ def test_skycell_from_name(skymap_subset):
         ],
     )
 
-    with pytest.raises(ValueError):
-        skymap.SkyCell.from_name("r274dp63x63y81", skymap=skymap_subset)
+    with pytest.raises(KeyError):
+        skymap.SkyCells.from_names(["r274dp63x63y81"], skymap=skymap_subset)
 
-    with pytest.raises(ValueError):
-        skymap.SkyCell.from_name("notaskycellname", skymap=skymap_subset)
+    with pytest.raises(KeyError):
+        skymap.SkyCells.from_names(["notaskycellname"], skymap=skymap_subset)
 
 
 def test_skycell_from_asn(skymap_subset):
-    skycell = skymap.SkyCell.from_asn(
-        DATA_DIRECTORY / "L3_mosaic_asn.json", skymap=skymap_subset
+    skycell = skymap.SkyCells.from_asns(
+        [DATA_DIRECTORY / "L3_mosaic_asn.json"], skymap=skymap_subset
     )
-    assert skycell.name == "000p86x69y62"
+    assert skycell.names == ["000p86x69y62"]
 
     with pytest.raises(ValueError):
-        skymap.SkyCell.from_asn(
-            DATA_DIRECTORY / "L3_regtest_asn.json", skymap=skymap_subset
+        skymap.SkyCells.from_asns(
+            [DATA_DIRECTORY / "L3_regtest_asn.json"], skymap=skymap_subset
         )
 
     with pytest.raises(ValueError):
-        skymap.SkyCell.from_asn(
-            DATA_DIRECTORY / "L3_skycell_mbcat_asn.json", skymap=skymap_subset
+        skymap.SkyCells.from_asns(
+            [DATA_DIRECTORY / "L3_skycell_mbcat_asn.json"], skymap=skymap_subset
+        )
+    with pytest.raises(ValueError):
+        skymap.SkyCells.from_asns(
+            DATA_DIRECTORY.glob("*_asn.json"), skymap=skymap_subset
         )
 
 
 def test_skycell_from_projregion(skymap_subset):
     projregion = skymap.ProjectionRegion(0, skymap=skymap_subset)
 
-    assert (
-        projregion.skycells[100]
-        == skymap.SkyCell.from_name("135p90x30y44", skymap=skymap_subset).data
-    )
+    assert skymap.SkyCells(
+        projregion.skycell_indices[100], skymap=skymap_subset
+    ) == skymap.SkyCells.from_names(["135p90x30y44"], skymap=skymap_subset)
 
     assert (
         projregion.skycell_indices[-1]
@@ -103,12 +128,13 @@ def test_skycell_from_projregion(skymap_subset):
 
 
 def test_projregion_from_skycell(skymap_subset):
-    skycell = skymap.SkyCell.from_name("135p90x50y57", skymap=skymap_subset)
+    skycell = skymap.SkyCells.from_names(["135p90x50y57"], skymap=skymap_subset)
 
     projregion0 = skymap.ProjectionRegion(0, skymap=skymap_subset)
     projregion1 = skymap.ProjectionRegion(1, skymap=skymap_subset)
 
-    assert skycell.projection_region == projregion0  # this calls CRDS!
+    assert len(skycell.projection_regions) == 1
+    assert skycell.projection_regions[0] == projregion0.index  # this calls CRDS!
 
     assert (
         skymap.ProjectionRegion.from_skycell_index(107, skymap=skymap_subset)
@@ -134,35 +160,17 @@ def test_projregion_from_skycell(skymap_subset):
         skymap.ProjectionRegion.from_skycell_index(10000, skymap=skymap_subset)
 
 
-@pytest.mark.parametrize(
-    "name",
-    [
-        "000p86x30y34",
-        "000p86x50y65",
-        "000p86x59y38",
-        # north pole
-        "135p90x25y49",
-        "135p90x30y51",
-        "135p90x33y62",
-        "135p90x39y33",
-        "135p90x43y65",
-        "135p90x48y41",
-        "135p90x52y59",
-        "135p90x57y35",
-        "135p90x61y67",
-        "135p90x67y38",
-    ],
-)
+@pytest.mark.parametrize("name", SAMPLE_SKYCELL_NAMES)
 def test_skycell_wcs_pixel_to_world(name, skymap_subset):
-    skycell = skymap.SkyCell.from_name(name, skymap=skymap_subset)
+    skycell = skymap.SkyCells.from_names([name], skymap=skymap_subset)
 
-    wcs = skycell.wcs
+    wcsobj = skycell.wcs[0]
 
     # forward transform to radec corners
     # TODO: the corners in the reference file currently use FITS convention (pixel + 0.5) instead of (pixel - 0.5)
     assert_allclose_lonlat(
         np.array(
-            wcs(
+            wcsobj(
                 *np.array(
                     [
                         (-0.5, -0.5),
@@ -174,102 +182,102 @@ def test_skycell_wcs_pixel_to_world(name, skymap_subset):
                 with_bounding_box=False,
             )
         ).T,
-        skycell.radec_corners,
+        skycell.radec_corners[0],
         rtol=1e-7,
     )
 
 
-@pytest.mark.parametrize(
-    "name",
-    [
-        "000p86x30y34",
-        "000p86x50y65",
-        "000p86x59y38",
-        # north pole
-        "135p90x25y49",
-        "135p90x30y51",
-        "135p90x33y62",
-        "135p90x39y33",
-        "135p90x43y65",
-        "135p90x48y41",
-        "135p90x52y59",
-        "135p90x57y35",
-        "135p90x61y67",
-        "135p90x67y38",
-    ],
-)
+@pytest.mark.parametrize("name", SAMPLE_SKYCELL_NAMES)
 def test_skycell_wcs_world_to_pixel(name, skymap_subset):
-    skycell = skymap.SkyCell.from_name(name, skymap=skymap_subset)
+    skycell = skymap.SkyCells.from_names([name], skymap=skymap_subset)
 
-    wcs = skycell.wcs
+    wcsobj = skycell.wcs[0]
 
     # inverse transform to pixel corners
     # TODO: the corners in the reference file currently use FITS convention (pixel + 0.5) instead of (pixel - 0.5)
     assert_allclose(
-        np.array(wcs.invert(*skycell.radec_corners.T, with_bounding_box=False)).T,
-        (
+        np.array(wcsobj.invert(*skycell.radec_corners.T, with_bounding_box=False)).T,
+        [
             [
                 (-0.5, -0.5),
                 (skycell.pixel_shape[0] - 0.5, -0.5),
                 (skycell.pixel_shape[0] - 0.5, skycell.pixel_shape[1] - 0.5),
                 (-0.5, skycell.pixel_shape[1] - 0.5),
             ]
-        ),
+        ],
         rtol=1e-5,
     )
 
 
-@pytest.mark.parametrize(
-    "name",
-    [
-        "000p86x30y34",
-        "000p86x50y65",
-        "000p86x59y38",
-        # north pole
-        "135p90x25y49",
-        "135p90x30y51",
-        "135p90x33y62",
-        "135p90x39y33",
-        "135p90x43y65",
-        "135p90x48y41",
-        "135p90x52y59",
-        "135p90x57y35",
-        "135p90x61y67",
-        "135p90x67y38",
-    ],
-)
+@pytest.mark.parametrize("name", SAMPLE_SKYCELL_NAMES)
 def test_skycell_wcsinfo(name, skymap_subset):
-    skycell = skymap.SkyCell.from_name(name, skymap=skymap_subset)
+    skycell = skymap.SkyCells.from_names([name], skymap=skymap_subset)
 
-    wcs = skycell.wcs
-    wcsinfo = skycell.wcs_info
+    wcsobj = skycell.wcs[0]
+    wcs_info = skycell.wcs_infos[0]
 
     assert_allclose(
-        wcs(
-            (wcsinfo["nx"] / 2.0) - 0.5,
-            (wcsinfo["ny"] / 2.0) - 0.5,
+        wcsobj(
+            (wcs_info["nx"] / 2.0) - 0.5,
+            (wcs_info["ny"] / 2.0) - 0.5,
         ),
-        (wcsinfo["ra_center"], wcsinfo["dec_center"]),
+        (wcs_info["ra_center"], wcs_info["dec_center"]),
         rtol=1e-7,
     )
 
     assert_allclose_lonlat(
         np.array(
-            wcs(
+            wcsobj(
                 *np.array(
                     [
                         (-0.5, -0.5),
-                        (wcsinfo["nx"] - 0.5, -0.5),
+                        (wcs_info["nx"] - 0.5, -0.5),
                         (
-                            wcsinfo["nx"] - 0.5,
-                            wcsinfo["ny"] - 0.5,
+                            wcs_info["nx"] - 0.5,
+                            wcs_info["ny"] - 0.5,
                         ),
-                        (-0.5, wcsinfo["ny"] - 0.5),
+                        (-0.5, wcs_info["ny"] - 0.5),
                     ]
                 ).T,
                 with_bounding_box=False,
             )
         ).T,
-        skycell.radec_corners,
+        skycell.radec_corners[0],
         rtol=1e-7,
     )
+
+
+def test_skycells(skymap_subset):
+    skycells = skymap.SkyCells.from_names(SAMPLE_SKYCELL_NAMES, skymap=skymap_subset)
+
+    assert sorted(skycells.names) == sorted(SAMPLE_SKYCELL_NAMES)
+
+    assert skycells.radec_corners.shape == (len(SAMPLE_SKYCELL_NAMES), 4, 2)
+    assert skycells.vectorpoint_corners.shape == (len(SAMPLE_SKYCELL_NAMES), 4, 3)
+
+    assert skycells.radec_centers.shape == (len(SAMPLE_SKYCELL_NAMES), 2)
+    assert skycells.vectorpoint_centers.shape == (len(SAMPLE_SKYCELL_NAMES), 3)
+
+    assert len(skycells.polygons) == len(SAMPLE_SKYCELL_NAMES)
+
+
+def test_skycells_cores_containing_center(sample_skycells):
+    assert np.all(sample_skycells.containing(sample_skycells.radec_centers))
+    assert sample_skycells.cores_containing(sample_skycells.radec_centers) != {}
+
+
+@pytest.mark.parametrize(
+    "radec,expected",
+    [
+        (
+            [68.5, 3.0],
+            {},
+        ),
+        (
+            [17.00495323, 86.23671728],
+            {3190: [0]},
+        ),
+    ],
+)
+def test_skycells_cores_containing(radec, expected, sample_skycells):
+    assert sample_skycells.cores_containing(radec) == expected

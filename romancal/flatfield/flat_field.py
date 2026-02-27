@@ -58,7 +58,7 @@ def do_flat_field(output_model, flat_model, include_var_flat=False):
         log.warning("Flat data array is not the same shape as the science data")
         log.warning("Step will be skipped")
         output_model.meta.cal_step.flat_field = "SKIPPED"
-    elif output_model.meta.exposure.type != "WFI_IMAGE":
+    elif output_model.meta.exposure.type == "WFI_SPECTRAL":
         # Check to see if attempt to flatten non-Image data
         log.info("Skipping flat field for spectral exposure.")
         output_model.meta.cal_step.flat_field = "SKIPPED"
@@ -119,9 +119,12 @@ def apply_flat_field(science, flat, include_var_flat=False):
     # not gone through ramp fitting so there is no Poisson noise or readnoise
     flat_data_squared = flat_data**2
     science.var_poisson /= flat_data_squared
-    science.var_rnoise /= flat_data_squared
+    if hasattr(science, "var_rnoise"):
+        science.var_rnoise /= flat_data_squared
 
-    total_var = science.var_poisson + science.var_rnoise
+    # Scale err by flat (err = sqrt(variance), so divide by flat not flat^2)
+    science.err /= flat_data
+
     if include_var_flat:
         var_flat = science.data**2 / flat_data_squared * flat_err**2
         try:
@@ -129,9 +132,8 @@ def apply_flat_field(science, flat, include_var_flat=False):
         except AttributeError:
             science["var_flat"] = np.zeros(shape=science.data.shape, dtype=np.float32)
             science.var_flat = var_flat
-        total_var += science.var_flat
-
-    science.err = np.sqrt(total_var)
+        # Add var_flat contribution to err
+        science.err = np.sqrt(science.err**2 + var_flat)
 
     # Combine the science and flat DQ arrays
     science.dq = np.bitwise_or(science.dq, flat_dq)

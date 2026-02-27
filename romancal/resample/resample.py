@@ -5,6 +5,7 @@ from roman_datamodels import datamodels, dqflags
 from stcal.resample import Resample
 
 import romancal.skycell.skymap as sc
+from romancal.lib.basic_utils import compute_var_rnoise
 
 from .exptime_resampler import ExptimeResampler
 from .l3_wcs import assign_l3_wcs
@@ -37,6 +38,9 @@ class ResampleData(Resample):
         resample_on_skycell,
         wcs_kwargs=None,
         variance_array_names=None,
+        propagate_dq=False,
+        pixmap_stepsize=1,
+        pixmap_order=1,
     ):
         """
         See the base class `stcal.resample.resample.Resample` for more details.
@@ -98,6 +102,31 @@ class ResampleData(Resample):
             `romancal.resample.resample_utils.make_output_wcs`
             for supported options.
 
+        propagate_dq : bool
+            If `True`, propagate DQ during resampling. DQ flags are propagated
+            by bitwise OR of all input DQ flags that contribute
+            to a given output pixel.
+
+        pixmap_stepsize : float
+            If ``pixmap_stepsize>1``, when computing pixel map used for
+            resampling, perform the full WCS calculation on a sparser grid
+            and use interpolation to fill in the rest of the pixels. This
+            option speeds up pixel map computation by reducing the number of
+            WCS calls, though at the cost of reduced pixel map accuracy.
+            The loss of accuracy is typically negligible if the underlying
+            distortion correction is smooth, but if the distortion is
+            non-smooth, ``pixmap_stepsize>1`` is not recommended.
+            Large ``pixmap_stepsize`` values are automatically reduced to
+            no more than 1/10 of image size.
+            Default 1.
+
+        pixmap_order : int
+            Order of the 2D spline to interpolate the sparse pixel mapping
+            if ``pixmap_stepsize>1``.  Supported values are: 1 (bilinear) or
+            3 (bicubic). This parameter is ignored when
+            ``pixmap_stepsize <= 1``.
+            Default 1.
+
         variance_array_names : list, None
             Variance arrays to resample.  If None, use stcal default.
         """
@@ -114,15 +143,15 @@ class ResampleData(Resample):
         if output_wcs is None and resample_on_skycell:
             # first try to retrieve a sky cell name from the association
             try:
-                skycell = sc.SkyCell.from_asn(self.input_models.asn)
+                skycell = sc.SkyCells.from_asns([self.input_models.asn])
 
                 log.info(f"Skycell record: {skycell.data}")
 
                 log.info(
-                    f"Creating skycell image at ra: {skycell.radec_center[0]}  dec {skycell.radec_center[1]}",
+                    f"Creating skycell image at ra: {skycell.radec_centers[0, 0]}  dec {skycell.radec_centers[0, 1]}",
                 )
                 log.info("Resampling to skycell wcs")
-                output_wcs = {"wcs": skycell.wcs}
+                output_wcs = {"wcs": skycell.wcs[0]}
             except ValueError as err:
                 log.warning(f"Unable to compute skycell from input association: {err}")
                 log.warning("Computing output wcs from all input wcses")
@@ -151,6 +180,9 @@ class ResampleData(Resample):
             enable_ctx=enable_ctx,
             enable_var=enable_var,
             compute_err=compute_err,
+            propagate_dq=propagate_dq,
+            pixmap_stepsize=pixmap_stepsize,
+            pixmap_order=pixmap_order,
         )
 
     @property
@@ -180,7 +212,7 @@ class ResampleData(Resample):
         return {
             "data": model.data,
             "dq": model.dq,
-            "var_rnoise": model.var_rnoise,
+            "var_rnoise": compute_var_rnoise(model),
             "var_poisson": model.var_poisson,
             "var_sky": compute_var_sky(model)
             if self.weight_type == "ivm-sky"
@@ -205,7 +237,18 @@ class ResampleData(Resample):
         # always provide 1: https://github.com/spacetelescope/romancal/issues/1637
         return 1
 
-    def add_model_hook(self, model, pixmap, iscale, weight_map, xmin, xmax, ymin, ymax):
+    def add_model_hook(
+        self,
+        model,
+        pixmap,
+        pixel_scale_ratio,
+        iscale,
+        weight_map,
+        xmin,
+        xmax,
+        ymin,
+        ymax,
+    ):
         if self.compute_exptime:
             if not hasattr(self, "_exptime_resampler"):
                 self._exptime_resampler = ExptimeResampler(
@@ -214,7 +257,15 @@ class ResampleData(Resample):
                     self.good_bits,
                     self.kernel,
                 )
-            self._exptime_resampler.add_image(model, pixmap, xmin, xmax, ymin, ymax)
+            self._exptime_resampler.add_image(
+                model=model,
+                pixmap=pixmap,
+                pixel_scale_ratio=pixel_scale_ratio,
+                xmin=xmin,
+                xmax=xmax,
+                ymin=ymin,
+                ymax=ymax,
+            )
 
     def add_model(self, model):
         model_dict = self._input_model_to_dict(model)
@@ -248,6 +299,10 @@ class ResampleData(Resample):
         output_model.data = self.output_model["data"]
         output_model.weight = self.output_model["wht"]
 
+        # WCS interpolation
+        output_model.meta.resample.pixmap_stepsize = self.pixmap_stepsize
+        output_model.meta.resample.pixmap_order = self.pixmap_order
+
         # some things are conditional
         if self.compute_exptime and hasattr(self, "_exptime_resampler"):
             exptime_total = self._exptime_resampler.finalize()
@@ -263,8 +318,11 @@ class ResampleData(Resample):
             output_model.meta.coadd_info.max_exposure_time = max_exposure_time
             output_model.meta.coadd_info.exposure_time = total_exposure_time
 
-        if self._enable_ctx:
+        if self.enable_ctx:
             output_model.context = self.output_model["con"].astype(np.uint32)
+
+        if self.propagate_dq:
+            output_model.dq = self.output_model["dq"].astype(np.uint32)
 
         for arr_name in ["err", *self.variance_array_names]:
             if arr_name in self.output_model:

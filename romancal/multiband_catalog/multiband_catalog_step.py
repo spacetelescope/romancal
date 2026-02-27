@@ -8,7 +8,7 @@ import copy
 import logging
 from typing import TYPE_CHECKING
 
-from romancal.datamodels import ModelLibrary
+from romancal.datamodels.fileio import open_dataset
 from romancal.multiband_catalog.multiband_catalog import (
     initialize_catalog_model,
     make_source_injected_library,
@@ -42,6 +42,7 @@ class MultibandCatalogStep(RomanStep):
     """
 
     class_alias = "multiband_catalog"
+
     reference_file_types: ClassVar = ["apcorr"]
 
     spec = """
@@ -54,17 +55,17 @@ class MultibandCatalogStep(RomanStep):
         fit_psf = boolean(default=True)       # fit source PSFs for accurate astrometry?
         reference_filter = string(default=None)  # reference filter for PSF matching
         inject_sources = boolean(default=False) # Inject sources into images
+        inject_seed = integer(default=None)   # RNG seed for injected sources
         save_debug_info = boolean(default=False)
                                    # Include image data and other data for testing
     """
 
-    def process(self, library):
+    def process(self, dataset):
         # All input MosaicImages in the ModelLibrary are assumed to have
         # the same shape and be pixel aligned.
-        if isinstance(library, str):
-            library = ModelLibrary(library)
-        if not isinstance(library, ModelLibrary):
-            raise TypeError("library input must be a ModelLibrary object")
+        library = open_dataset(
+            dataset, update_version=self.update_version, as_library=True
+        )
 
         with library:
             example_model = library.borrow(0)
@@ -79,7 +80,9 @@ class MultibandCatalogStep(RomanStep):
 
         # Set up source injection library and injection catalog
         if self.inject_sources:
-            si_library, si_cat = make_source_injected_library(library)
+            si_library, si_cat = make_source_injected_library(
+                library, seed=self.inject_seed
+            )
 
         # Create the multiband catalog
         *results, msg = multiband_catalog(

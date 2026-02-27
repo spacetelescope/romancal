@@ -1,0 +1,1 @@
+Fix pixmap_stepsize type from float to integer

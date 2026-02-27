@@ -5,14 +5,12 @@ import numpy as np
 from asdf.lazy_nodes import AsdfDictNode, AsdfListNode
 from astropy.table import Table
 from astropy.time import Time
-from roman_datamodels import datamodels, stnode
+from roman_datamodels import datamodels, get_latest_schema
 
-_, INDIVIDUAL_IMAGE_META_SCHEMA = stnode.get_latest_schema(
+_, INDIVIDUAL_IMAGE_META_SCHEMA = get_latest_schema(
     "asdf://stsci.edu/datamodels/roman/schemas/meta/individual_image_meta"
 )
-_, BASIC_SCHEMA = stnode.get_latest_schema(
-    "asdf://stsci.edu/datamodels/roman/schemas/basic"
-)
+_, BASIC_SCHEMA = get_latest_schema("asdf://stsci.edu/datamodels/roman/schemas/basic")
 
 INDIVIDUAL_IMAGE_META_KEYS = set(INDIVIDUAL_IMAGE_META_SCHEMA["properties"].keys()) - {
     "basic"

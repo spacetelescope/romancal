@@ -84,7 +84,8 @@ def copy_model_arrays(model):
         copied_model = ImageModel()
         copied_model.meta = model.meta
         copied_model.data = model.data.copy()
-        copied_model.err = model.err.copy()
+        # cast to float32 so unit manipulations later on don't overflow
+        copied_model.err = model.err.copy().astype("float32")
         copied_model.dq = model.dq
     elif isinstance(model, MosaicModel):
         copied_model = MosaicModel()

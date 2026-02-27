@@ -14,6 +14,7 @@ from roman_datamodels import datamodels
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.dqflags import pixel
 
+from romancal.datamodels.fileio import open_dataset
 from romancal.source_catalog.background import RomanBackground
 from romancal.source_catalog.detection import convolve_data, make_segmentation_image
 from romancal.source_catalog.psf import add_jitter
@@ -42,6 +43,7 @@ class SourceCatalogStep(RomanStep):
     """
 
     class_alias = "source_catalog"
+
     reference_file_types: ClassVar = ["apcorr"]
 
     spec = """
@@ -55,14 +57,8 @@ class SourceCatalogStep(RomanStep):
         forced_segmentation = string(default='')  # force the use of this segmentation map
     """
 
-    def process(self, step_input):
-        if isinstance(step_input, datamodels.DataModel):
-            input_model = step_input
-        else:
-            input_model = datamodels.open(step_input)
-
-        if not isinstance(input_model, ImageModel | MosaicModel):
-            raise ValueError("The input model must be an ImageModel or MosaicModel.")
+    def process(self, dataset):
+        input_model = open_dataset(dataset, update_version=self.update_version)
 
         # get the name of the psf reference file
         if self.fit_psf:
@@ -185,6 +181,7 @@ class SourceCatalogStep(RomanStep):
         fit_psf = self.fit_psf & (not self.forced_segmentation)  # skip when forced
         catobj = RomanSourceCatalog(
             model,
+            cat_model,
             segment_img,
             detection_image,
             self.kernel_fwhm,
@@ -203,6 +200,7 @@ class SourceCatalogStep(RomanStep):
             segment_img.detection_image = forced_detection_image
             forced_catobj = RomanSourceCatalog(
                 model,
+                cat_model,
                 segment_img,
                 forced_detection_image,
                 self.kernel_fwhm,

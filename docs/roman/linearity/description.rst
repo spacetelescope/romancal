@@ -9,17 +9,34 @@ the input science data.
 
 Algorithm
 ---------
-The linearity step applies the "classic" linearity correction adapted from
-the HST WFC3/IR linearity correction routine, correcting science data values
-for detector non-linearity. The correction is applied pixel-by-pixel,
-group-by-group, integration-by-integration within a science exposure.
+The linearity step corrects science data values for detector non-linearity.
+The correction is applied pixel-by-pixel, group-by-group within a science
+exposure, using the linearity correction routines in stcal.
 
-The correction is represented by an nth-order polynomial for
-each pixel in the detector, with n+1 arrays of coefficients read from the
+The correction has two components:
+
+1. **Integral Nonlinearity (INL)**: A per-channel lookup table correction that
+   accounts for integral nonlinearity in the analog-to-digital converter.
+
+2. **Classical Nonlinearity (CNL)**: A polynomial correction that accounts for
+   the change in pixel capacitance with accumulated charge.
+
+Since the pipeline operates on resultants (averages of individual reads) rather
+than individual reads, the stcal routines simulate the individual reads from
+the observed resultants based on the read pattern. This simulation requires
+inverse linearity polynomials. The corrections are applied to each simulated
+read, and then the reads are re-averaged into corrected resultants.
+
+Upon successful completion of the linearity correction, "cal_step" in the
+metadata is set to "COMPLETE".
+
+Classical Nonlinearity Correction
++++++++++++++++++++++++++++++++++
+The classical nonlinearity correction is represented by an nth-order polynomial
+for each pixel in the detector, with n+1 arrays of coefficients read from the
 linearity reference file.
 
-The algorithm for correcting the observed pixel value in each group of an
-integration is currently of the form:
+The algorithm for correcting the observed pixel value in each group is:
 
 .. math::
    F_\text{c} = c_{0} + c_{1}F + c_{2}F^2 + c_{3}F^3 + ... + c_{n}F^n
@@ -29,8 +46,17 @@ coefficients, and :math:`F_\text{c}` is the corrected counts. There is no
 limit to the order of the polynomial correction; all coefficients contained in
 the reference file will be applied.
 
-Upon successful completion of the linearity correction, "cal_step" in the
-metadata is set to "COMPLETE".
+Integral Nonlinearity Correction
+++++++++++++++++++++++++++++++++
+The integral nonlinearity (INL) correction addresses nonlinearity in the
+analog-to-digital converter. Each of the 32 readout channels (128 columns each)
+has its own correction table that maps observed DN values to a correction
+offset. See `Brandt & Perera (2025)
+<https://www.stsci.edu/files/live/sites/www/files/home/roman/documentation/technical-documentation/_documents/Roman-STScI–000866.pdf>`_
+for details.
+
+The INL correction is optional; if no integral nonlinearity reference file is
+available, only the classical polynomial correction is applied.
 
 Special Handling
 ++++++++++++++++

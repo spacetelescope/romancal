@@ -24,6 +24,7 @@ log.setLevel(logging.DEBUG)
 
 def create_filter_catalog(
     model,
+    cat_model,
     filter_name,
     ref_filter,
     ref_wavelength,
@@ -48,6 +49,9 @@ def create_filter_catalog(
     ----------
     model : ImageModel or MosaicModel
         The input image model for this filter.
+
+    cat_model : `MultibandSourceCatalogModel`
+        The output catalog model, used for schema-based column lookups.
 
     filter_name : str
         Name of the filter (e.g., 'F158').
@@ -110,6 +114,7 @@ def create_filter_catalog(
     log.info(f"Creating catalog for original {filter_name} image")
     catobj_original = RomanSourceCatalog(
         model,
+        cat_model,
         segment_img,
         None,
         star_kernel_fwhm,
@@ -160,6 +165,7 @@ def create_filter_catalog(
         log.info(f"Creating catalog for PSF-matched {filter_name} image")
         catobj_matched = RomanSourceCatalog(
             psf_matched_model,
+            cat_model,
             segment_img,
             None,
             star_kernel_fwhm,

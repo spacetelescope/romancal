@@ -10,16 +10,16 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
+import pyarrow as pa
+import pyarrow.parquet as pq
 from astropy.table import Table
 from roman_datamodels import datamodels as rdm
+from roman_datamodels import dqflags
 from stcal.tweakreg import tweakreg
-from stcal.tweakreg.tweakreg import (
-    _SINGLE_GROUP_REFCAT_STR,
-    SINGLE_GROUP_REFCAT,
-    TweakregError,
-)
+from stcal.tweakreg.tweakreg import TweakregError
 
 from romancal.assign_wcs.utils import add_s_region
+from romancal.datamodels.fileio import open_dataset
 from romancal.lib.save_wcs import save_wfiwcs
 
 # LOCAL
@@ -29,7 +29,7 @@ from ..stpipe import RomanStep
 if TYPE_CHECKING:
     from typing import ClassVar
 
-DEFAULT_ABS_REFCAT = SINGLE_GROUP_REFCAT[0]
+DEFAULT_ABS_REFCAT = "GAIADR3_S3"
 
 __all__ = ["TweakRegStep"]
 
@@ -38,7 +38,7 @@ log = logging.getLogger(__name__)
 
 class TweakRegStep(RomanStep):
     """
-    TweakRegStep: Image alignment based on catalogs of sources detected in
+    TweakRegStep: Image alignment based on catalogs of sources from in
     input images.
     """
 
@@ -59,8 +59,7 @@ class TweakRegStep(RomanStep):
         fitgeometry = option('shift', 'rshift', 'rscale', 'general', default='rshift') # Fitting geometry
         nclip = integer(min=0, default=3) # Number of clipping iterations in fit
         sigma = float(min=0.0, default=3.0) # Clipping limit in sigma units
-        abs_refcat = string(default='{DEFAULT_ABS_REFCAT}')  # Absolute reference
-        # catalog. Options: {_SINGLE_GROUP_REFCAT_STR}
+        abs_refcat = string(default='{DEFAULT_ABS_REFCAT}')  # Absolute reference catalog
         save_abs_catalog = boolean(default=False)  # Write out used absolute astrometric reference catalog as a separate product
         abs_minobj = integer(default=15) # Minimum number of objects acceptable for matching when performing absolute astrometry
         abs_searchrad = float(default=6.0) # The search radius in arcsec for a match when performing absolute astrometry
@@ -74,30 +73,15 @@ class TweakRegStep(RomanStep):
         abs_sigma = float(min=0.0, default=3.0) # Clipping limit in sigma units when performing absolute astrometry
         output_use_model = boolean(default=True)  # When saving use `DataModel.meta.filename`
         update_source_catalog_coordinates = boolean(default=False) # Update source catalog file with tweaked coordinates?
-        vo_timeout = float(min=0, default=120.) # VO catalog service timeout.
+        vo_timeout = float(min=0, default=1200.) # VO catalog service timeout.
     """
 
     reference_file_types: ClassVar = []
 
-    def process(self, input):
-        # properly handle input
-        try:
-            if isinstance(input, rdm.DataModel):
-                images = ModelLibrary([input])
-            elif str(input).endswith(".asdf"):
-                images = ModelLibrary([rdm.open(input)])
-            elif isinstance(input, ModelLibrary):
-                images = input
-            else:
-                images = ModelLibrary(input)
-        except TypeError as e:
-            e.args = (
-                "Input to tweakreg must be a list of DataModels, an "
-                "association, or an already open ModelLibrary "
-                "containing one or more DataModels.",
-                *e.args[1:],
-            )
-            raise e
+    def process(self, dataset):
+        images = open_dataset(
+            dataset, update_version=self.update_version, as_library=True
+        )
 
         if not images:
             raise ValueError("Input must contain at least one image model.")
@@ -187,15 +171,14 @@ class TweakRegStep(RomanStep):
 
                     # validate catalog columns
                     if not _validate_catalog_columns(catalog):
-                        raise ValueError("""
-                        'tweakreg' source catalogs must contain a header
-                        with columns named either 'x' and 'y' or
-                        'x_psf' and 'y_psf'. Neither were found in the
-                        catalog provided.""")
+                        raise ValueError(
+                            "'tweakreg' source catalogs must contain a header with columns named either 'x' and 'y' or 'x_psf' and 'y_psf'. Neither were found in the catalog provided."
+                        )
 
                     catalog = tweakreg.filter_catalog_by_bounding_box(
                         catalog, image_model.meta.wcs.bounding_box
                     )
+                    catalog = _filter_catalog(catalog)
 
                     if self.save_abs_catalog:
                         output_name = os.path.join(
@@ -208,7 +191,7 @@ class TweakRegStep(RomanStep):
                     image_model.meta["tweakreg_catalog"] = catalog.as_array()
                     nsources = len(catalog)
                     log.info(
-                        f"Detected {nsources} sources in {image_model.meta.filename}."
+                        f"Using {nsources} sources from {image_model.meta.filename}."
                         if nsources
                         else f"No sources found in {image_model.meta.filename}."
                     )
@@ -240,12 +223,11 @@ class TweakRegStep(RomanStep):
                 except TweakregError as e:
                     log.warning(str(e))
 
-            if self.abs_refcat in SINGLE_GROUP_REFCAT:
-                try:
-                    self.do_absolute_alignment(ref_image, imcats)
-                except TweakregError as e:
-                    log.warning(str(e))
-                    return images
+            try:
+                self.do_absolute_alignment(ref_image, imcats)
+            except TweakregError as e:
+                log.warning(str(e))
+                return images
 
             # finalize step
             with images:
@@ -298,6 +280,20 @@ class TweakRegStep(RomanStep):
                         image_model.meta.wcs = imcat.wcs
                         # update S_REGION
                         add_s_region(image_model)
+                        # update source catalog coordinates if requested
+                        if self.update_source_catalog_coordinates:
+                            try:
+                                self.update_catalog_coordinates(
+                                    image_model.meta.source_catalog[
+                                        "tweakreg_catalog_name"
+                                    ],
+                                    imcat.wcs,
+                                )
+                            except Exception as e:
+                                log.error(
+                                    f"Failed to update source catalog coordinates: {e}"
+                                )
+                                raise e
 
                     images.shelve(image_model, imcat.meta["model_index"])
 
@@ -310,47 +306,93 @@ class TweakRegStep(RomanStep):
 
     def update_catalog_coordinates(self, tweakreg_catalog_name, tweaked_wcs):
         """
-        Update the source catalog coordinates using the tweaked WCS.
+        Update the source catalog coordinates using the tweaked WCS while strictly preserving original file metadata.
 
         Parameters
         ----------
         tweakreg_catalog_name : str
-            The name of the TweakReg catalog file produced by `SourceCatalog`.
-        tweaked_wcs : `gwcs.wcs.WCS`
-            The tweaked World Coordinate System (WCS) object.
+            Path to the source catalog file (in Parquet format) to be updated.
+        tweaked_wcs : callable
+            A WCS transformation function that takes x and y coordinates and returns updated (RA, Dec) values.
 
         Returns
         -------
         None
+            The function updates the catalog file in place; it does not return a value.
+
+        Notes
+        -----
+        The method preserves all original file metadata by reading and re-attaching it after coordinate updates.
+        Only the coordinate columns are modified; all other data and metadata remain unchanged.
         """
-        # read in cat file
-        with rdm.open(tweakreg_catalog_name) as source_catalog_model:
-            # get catalog
-            catalog = source_catalog_model.source_catalog
 
-            # define mapping between pixel and world coordinates
-            colname_mapping = {
-                ("xcentroid", "ycentroid"): ("ra_centroid", "dec_centroid"),
-                ("x_psf", "y_psf"): ("ra_psf", "dec_psf"),
-            }
+        # Read the existing catalog using PyArrow
+        pa_table = pq.read_table(tweakreg_catalog_name)
+        original_metadata = pa_table.schema.metadata
 
-            for k, v in colname_mapping.items():
-                # get column names
-                x_colname, y_colname = k
-                ra_colname, dec_colname = v
+        # Determine which coordinate columns are present and update them from pixel-space
+        # coordinates using the tweaked WCS.
+        available_cols = set(pa_table.schema.names)
 
-                # calculate new coordinates using tweaked WCS and update catalog coordinates
-                catalog[ra_colname], catalog[dec_colname] = tweaked_wcs(
-                    catalog[x_colname], catalog[y_colname]
+        # (x_col, y_col) -> (ra_col, dec_col)
+        updates = [
+            ("x_centroid", "y_centroid", "ra_centroid", "dec_centroid"),
+            ("x_centroid", "y_centroid", "ra", "dec"),
+            (
+                "x_centroid_win",
+                "y_centroid_win",
+                "ra_centroid_win",
+                "dec_centroid_win",
+            ),
+            ("x_psf", "y_psf", "ra_psf", "dec_psf"),
+        ]
+
+        updated_columns: dict[str, pa.Array] = {}
+
+        for x_col, y_col, ra_col, dec_col in updates:
+            # Only update existing columns to preserve the file schema.
+            if (
+                x_col in available_cols
+                or y_col in available_cols
+                or ra_col in available_cols
+                or dec_col in available_cols
+            ):
+                x_values = pa_table[x_col].to_numpy()
+                y_values = pa_table[y_col].to_numpy()
+
+                new_ra, new_dec = tweaked_wcs(x_values, y_values)
+                new_ra = np.asarray(getattr(new_ra, "value", new_ra))
+                new_dec = np.asarray(getattr(new_dec, "value", new_dec))
+
+                # Preserve the original column types.
+                updated_columns[ra_col] = pa.array(
+                    new_ra, type=pa_table.schema.field(ra_col).type
+                )
+                updated_columns[dec_col] = pa.array(
+                    new_dec, type=pa_table.schema.field(dec_col).type
                 )
 
-            # save updated catalog (overwrite cat file)
-            self.save_model(
-                source_catalog_model,
-                output_file=source_catalog_model.meta.filename,
-                suffix="cat",
-                force=True,
-            )
+        # Create new table with updated columns
+        # Keep all original columns, replacing only the updated ones
+        new_columns = []
+        new_names = []
+
+        for i, field in enumerate(pa_table.schema):
+            col_name = field.name
+            if col_name in updated_columns:
+                # Use updated column
+                new_columns.append(updated_columns[col_name])
+            else:
+                # Keep original column
+                new_columns.append(pa_table.column(i))
+            new_names.append(col_name)
+
+        # Create new table with original schema metadata
+        final_table = pa.table(new_columns, names=new_names)
+        final_table = final_table.replace_schema_metadata(original_metadata)
+
+        # Write back to file
+        pq.write_table(final_table, tweakreg_catalog_name)
 
     def read_catalog(self, catalog_name):
         """
@@ -498,8 +540,7 @@ class TweakRegStep(RomanStep):
             abs_use2dhist=self.abs_use2dhist,
             abs_separation=self.abs_separation,
             abs_tolerance=self.abs_tolerance,
-            save_abs_catalog=self.save_abs_catalog,
-            abs_catalog_output_dir=self.output_dir,
+            save_abs_catalog=False,
             clip_accum=True,
             timeout=self.vo_timeout,
         )
@@ -601,3 +642,26 @@ def _add_required_columns(catalog):
     """
     catalog["x"] = catalog["x_centroid"]
     catalog["y"] = catalog["y_centroid"]
+
+
+def _filter_catalog(catalog):
+    """
+    Remove flagged sources from catalog for tweakreg purposes.
+
+    This presently removes only sources whose central cores are flagged
+    DO_NOT_USE.
+
+    Parameters
+    ----------
+    catalog : Table
+        The catalog from which to filter flagged sources.
+
+    Returns
+    -------
+    The filtered catalog
+    """
+
+    if "warning_flags" in catalog.dtype.names:
+        bad = (catalog["warning_flags"] & dqflags.pixel.DO_NOT_USE) != 0
+        catalog = catalog[~bad]
+    return catalog

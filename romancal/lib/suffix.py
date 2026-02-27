@@ -55,12 +55,14 @@ SUFFIXES_TO_ADD = [
     "saturation",
     "dark_current",
     "darkcurrent",
+    "dark_decay",
     "outlier_detection",
     "skymatch",
     "refpix",
     "cat",
     "segm",
     "coadd",
+    "wfi18_transient",
 ]
 
 # Suffixes that are discovered but should not be considered.
@@ -72,6 +74,7 @@ SUFFIXES_TO_DISCARD = ["mosaicpipeline", "pipeline", "step"]
 _calculated_suffixes = {
     "saturationstep",
     "darkcurrentstep",
+    "darkdecaystep",
     "rampfit",
     "dark_current",
     "assignwcsstep",
@@ -93,6 +96,7 @@ _calculated_suffixes = {
     "resamplestep",
     "sourcecatalogstep",
     "multibandcatalogstep",
+    "wfi18transientstep",
 }
 
 

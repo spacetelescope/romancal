@@ -73,6 +73,7 @@ class WfiSca:
                 "var_rnoise": rng.normal(1, 0.05, size=self.shape).astype(np.float32),
                 "var_poisson": rng.poisson(1, size=self.shape).astype(np.float32),
                 "var_flat": rng.uniform(0, 1, size=self.shape).astype(np.float32),
+                "dq": 2 ** rng.integers(3, 16, size=self.shape).astype(np.uint32),
             },
             shape=self.shape,
         )
@@ -564,15 +565,23 @@ def test_custom_wcs_input_entire_field_no_rotation(multiple_exposures, tmp_path)
 
 
 @pytest.mark.parametrize("weight_type", ["ivm", "exptime", "ivm-sky"])
+@pytest.mark.parametrize("propagate_dq", [True, False])
 def test_resampledata_do_drizzle_default_single_exposure_weight_array(
     exposure_1,
     weight_type,
+    propagate_dq,
 ):
     """Test that resample methods return non-empty weight arrays."""
 
     input_models = ModelLibrary(exposure_1)
-    output_model = ResampleStep(weight_type=weight_type).run(input_models)
+    good_bits = sum([2**i for i in range(3, 16)])
+
+    output_model = ResampleStep(
+        weight_type=weight_type, propagate_dq=propagate_dq, good_bits=str(good_bits)
+    ).run(input_models)
     assert np.any(output_model.weight > 0)
+    if propagate_dq:
+        assert np.bitwise_or.reduce(output_model.dq, axis=(0, 1)) == good_bits
 
 
 def test_l3_wcsinfo(multiple_exposures):

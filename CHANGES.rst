@@ -1,3 +1,152 @@
+0.22.0 (2026-02-13)
+===================
+
+Breaking Changes
+----------------
+
+- Removed `romancal.skycell.SkyCell`; use `romancal.skycell.SkyCells` instead
+  (`#2089 <https://github.com/spacetelescope/romancal/issues/2089>`_)
+- Change ramp fitting to expect dictionaries as output from stcal routines as
+  per stcal PR #496 (`#2142
+  <https://github.com/spacetelescope/romancal/issues/2142>`_)
+
+
+Associations
+------------
+
+- Implemented MultibandAssociation class to create multiband catalog
+  association files. (`#2077
+  <https://github.com/spacetelescope/romancal/issues/2077>`_)
+
+
+``skycell``
+-----------
+
+- add function to query if a pixel coordinate belongs to the exclusive region
+  of a skycell, for tesselation flagging (`#1964
+  <https://github.com/spacetelescope/romancal/issues/1964>`_)
+- vectorize skycell selection and operations with `SkyCells` object (`#2071
+  <https://github.com/spacetelescope/romancal/issues/2071>`_)
+- Deprecate `SkyCell` object in favor of the vectorized `SkyCells` object
+  (`#2089 <https://github.com/spacetelescope/romancal/issues/2089>`_)
+
+
+``dark_decay`` (WFI-Image, WFI-Prism, WFI-Grism)
+------------------------------------------------
+
+- Add new dark_decay step to correct for decaying signal in early resultants.
+  (`#2169 <https://github.com/spacetelescope/romancal/issues/2169>`_)
+
+
+``wfi18_transient`` (WFI-Image, WFI-Prism, WFI-Grism)
+-----------------------------------------------------
+
+- Add the new ``wfi18_transient`` step to the exposure level pipeline to
+  correct an anomalous first read signal in detector WFI18. (`#2096
+  <https://github.com/spacetelescope/romancal/issues/2096>`_)
+- Remove a reference to metadata not available in the schema. (`#2150
+  <https://github.com/spacetelescope/romancal/issues/2150>`_)
+
+
+``linearity`` (WFI-Image, WFI-Prism, WFI-Grism)
+-----------------------------------------------
+
+- Add support for integral nonlinearity correction. (`#2157
+  <https://github.com/spacetelescope/romancal/issues/2157>`_)
+
+
+``dark_current`` (WFI-Image, WFI-Prism, WFI-Grism)
+--------------------------------------------------
+
+- Do not include systematic uncertainty in dark reference file in total
+  uncertainty. (`#2131
+  <https://github.com/spacetelescope/romancal/issues/2131>`_)
+
+
+``orientation``
+---------------
+
+- Implement velocity aberration correction (`#2134
+  <https://github.com/spacetelescope/romancal/issues/2134>`_)
+
+
+``ramp_fitting`` (WFI-Image, WFI-Prism, WFI-Grism)
+--------------------------------------------------
+
+- Update L2 schema support for B21: update err dtype, add new chisq and dumo
+  fields. (`#2131 <https://github.com/spacetelescope/romancal/issues/2131>`_)
+- Change ramp fitting to expect dictionaries as output from stcal routines as
+  per stcal PR #496 (`#2142
+  <https://github.com/spacetelescope/romancal/issues/2142>`_)
+- Include correct chi squared in ramp fitting outputs when using
+  likelihood-based ramp fitting, include the correct difference between slopes
+  computed using uniform and optimal weights. (`#2158
+  <https://github.com/spacetelescope/romancal/issues/2158>`_)
+- Initialize snowball detection parameters to use in the maximum likelyhood
+  ramp fitting algorithm (`#2160
+  <https://github.com/spacetelescope/romancal/issues/2160>`_)
+
+
+``tweakreg`` (WFI-Image)
+------------------------
+
+- Use S3 HATS partitioned GAIA DR3 catalog (GAIADR3_S3) as default reference
+  catalog. (`#2088 <https://github.com/spacetelescope/romancal/issues/2088>`_)
+- Allow user to update the source catalog coordinates with the WCS corrections
+  determined by TweakRegStep. (`#2153
+  <https://github.com/spacetelescope/romancal/issues/2153>`_)
+
+
+``outlier_detection``
+---------------------
+
+- Add parameters ``pixmap_stepsize`` and ``pixmap_order`` to the
+  ``outlier_detection`` step to support faster pixel map computations. (`#2136
+  <https://github.com/spacetelescope/romancal/issues/2136>`_)
+
+
+``resample``
+------------
+
+- Add parameters ``pixmap_stepsize`` and ``pixmap_order`` to the ``resample``
+  step to support faster pixel map computations. (`#2136
+  <https://github.com/spacetelescope/romancal/issues/2136>`_)
+- Added support for propagating DQ flags in resampling. DQ flags are propagated
+  by bitwise OR of all input DQ flags that contribute to a given output pixel.
+  (`#2173 <https://github.com/spacetelescope/romancal/issues/2173>`_)
+
+
+``source_catalog``
+------------------
+
+- Generate catalog column descriptions from schemas. (`#2122
+  <https://github.com/spacetelescope/romancal/issues/2122>`_)
+- Add flagged_spatial_id to source_catalog. (`#2164
+  <https://github.com/spacetelescope/romancal/issues/2164>`_)
+
+
+General
+-------
+
+- Add ``update_version`` option to all Steps. When enabled the pipeline will
+  attempt to update old files to make them compatibile with the current
+  pipeline. (`#2128 <https://github.com/spacetelescope/romancal/issues/2128>`_)
+- Added WFI parallel keyword value assignment to the old file migration block.
+  (`#2143 <https://github.com/spacetelescope/romancal/issues/2143>`_)
+
+
+Documentation
+-------------
+
+- add `romancal.skycell.skymap` module to docs (`#2097
+  <https://github.com/spacetelescope/romancal/issues/2097>`_)
+- Update docs removing mention of non-existent JumpStep, exit status 64 and
+  deprecated stpipe logcfg. (`#2120
+  <https://github.com/spacetelescope/romancal/issues/2120>`_)
+- Update docs for sphinx 9. (`#2147
+  <https://github.com/spacetelescope/romancal/issues/2147>`_)
+
+
 0.21.0 (2025-11-14)
 ===================
 

@@ -5,6 +5,7 @@ made available by this package.
 
 from .assign_wcs.assign_wcs_step import AssignWcsStep
 from .dark_current.dark_current_step import DarkCurrentStep
+from .dark_decay.dark_decay_step import DarkDecayStep
 from .dq_init.dq_init_step import DQInitStep
 from .flatfield.flat_field_step import FlatFieldStep
 from .flux import FluxStep
@@ -19,11 +20,13 @@ from .saturation.saturation_step import SaturationStep
 from .skymatch.skymatch_step import SkyMatchStep
 from .source_catalog.source_catalog_step import SourceCatalogStep
 from .tweakreg.tweakreg_step import TweakRegStep
+from .wfi18_transient.wfi18_transient_step import WFI18TransientStep
 
 __all__ = [
     "AssignWcsStep",
     "DQInitStep",
     "DarkCurrentStep",
+    "DarkDecayStep",
     "FlatFieldStep",
     "FluxStep",
     "LinearityStep",
@@ -37,4 +40,5 @@ __all__ = [
     "SkyMatchStep",
     "SourceCatalogStep",
     "TweakRegStep",
+    "WFI18TransientStep",
 ]

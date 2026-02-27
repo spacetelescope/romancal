@@ -3,6 +3,7 @@ Module to calculate the source catalog.
 """
 
 import logging
+import re
 
 import astropy.units as u
 import numpy as np
@@ -12,6 +13,7 @@ from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.dqflags import pixel
 
 from romancal import __version__ as romancal_version
+from romancal.skycell import skymap
 from romancal.source_catalog.aperture import ApertureCatalog
 from romancal.source_catalog.daofind import DAOFindCatalog
 from romancal.source_catalog.neighbors import NNCatalog
@@ -34,6 +36,9 @@ class RomanSourceCatalog:
         The input data model. The image data is assumed to be background
         subtracted. For PSF-matched photometry in multiband catalogs,
         input the PSF-matched model.
+
+    cat_model : `ImageSourceCatalogModel` or other catalog model
+        The output catalog model.
 
     segment_image : `~photutils.segmentation.SegmentationImage`
         A 2D segmentation image, with the same shape as the input data,
@@ -96,6 +101,7 @@ class RomanSourceCatalog:
     def __init__(
         self,
         model,
+        cat_model,
         segment_img,
         convolved_data,
         kernel_fwhm,
@@ -112,6 +118,7 @@ class RomanSourceCatalog:
             raise ValueError("The input model must be an ImageModel or MosaicModel.")
 
         self.model = model  # input model is background-subtracted
+        self.cat_model = cat_model
         self.segment_img = segment_img
         self.convolved_data = convolved_data
         self.kernel_fwhm = kernel_fwhm
@@ -338,13 +345,64 @@ class RomanSourceCatalog:
             setattr(self, name, getattr(nn_cat, name))
 
     @lazyproperty
-    def flagged_spatial_index(self):
+    def flagged_spatial_id(self):
         """
         The spatial index bit flag encoding the projection, skycell,
         and (x, y) pixel coordinate of the source and whether the
         object is inside the skycell core region.
         """
-        return np.zeros(self.n_sources, dtype=np.int64)
+        bad_return = np.zeros(self.n_sources, dtype=np.int64)
+
+        try:
+            skycell_name = self.model.meta.wcsinfo.skycell_name
+            pixel_scale = self.model.meta.wcsinfo.pixel_scale_ref
+        except AttributeError:  # L2 image or unrecognized schema, give up
+            return bad_return
+
+        try:
+            sc = skymap.SkyCells.from_names([skycell_name])
+        except KeyError:
+            log.warning(
+                f"Could not find skycell {skycell_name}, "
+                "not filling out flagged_spatial_index."
+            )
+            return bad_return
+
+        core_indices = sc.cores_containing(np.array([self.ra, self.dec]).T)
+        if len(core_indices.keys()) > 1:
+            raise ValueError("should only be one sky cell here?")
+        in_core = np.zeros(len(self.ra), dtype="bool")
+        if len(core_indices.keys()) == 1:
+            this_cell_idx = next(iter(core_indices.keys()))
+            core_indices = core_indices[this_cell_idx]
+            in_core[core_indices] = True
+
+        projection_idx = sc.projection_regions[0]
+        pattern = r"x(\d+)y(\d+)"
+        match = re.search(pattern, skycell_name)
+        if not match:
+            log.warning(f"Invalid skycell name: {skycell_name}")
+            return bad_return
+        skycell_x_idx = int(match.group(1))
+        skycell_y_idx = int(match.group(2))
+
+        def convert_to_pixel_idx(val):
+            virtual_scale = 0.05  # virtual pixel scale used for id computation
+            idx = (val.value * pixel_scale * 3600 / virtual_scale).astype("i4")
+            return np.clip(idx, 0, 2**16)
+
+        pixel_x_idx = convert_to_pixel_idx(self.x_centroid)
+        pixel_y_idx = convert_to_pixel_idx(self.y_centroid)
+        spatial_id = (
+            ~in_core * 2**59
+            + projection_idx * 2**46
+            + skycell_y_idx * 2**39
+            + skycell_x_idx * 2**32
+            + pixel_y_idx * 2**16
+            + pixel_x_idx
+        )
+        spatial_id = spatial_id.astype(np.int64)
+        return spatial_id
 
     @lazyproperty
     def ra(self):
@@ -462,128 +520,6 @@ class RomanSourceCatalog:
                 self.meta["ee_fractions"] = np.array(fractions).astype(np.float32)
 
     @lazyproperty
-    def column_descriptions(self):
-        """
-        A dictionary of the output catalog column descriptions.
-
-        The order is not important.
-        """
-        col = {}
-        col["label"] = "Label of the source segment in the segmentation image"
-        col["flagged_spatial_index"] = (
-            "Bit flag encoding the overlap flag, projection, skycell, and "
-            "pixel coordinates of the source"
-        )
-
-        col["x_centroid"] = (
-            "Column coordinate of the source centroid in the detection "
-            "image from image moments (0 indexed)"
-        )
-        col["y_centroid"] = (
-            "Row coordinate of the source centroid in the detection image "
-            "from image moments (0 indexed)"
-        )
-        col["x_centroid_win"] = (
-            "Column coordinate of the windowed source centroid in the "
-            "detection image from image moments (0 indexed)"
-        )
-        col["y_centroid_win"] = (
-            "Row coordinate of the windowed source centroid in the "
-            "detection image from image moments (0 indexed)"
-        )
-
-        col["ra"] = "Best estimate of the right ascension (ICRS)"
-        col["dec"] = "Best estimate of the declination (ICRS)"
-        col["ra_centroid"] = "Right ascension (ICRS) of the source centroid"
-        col["dec_centroid"] = "Declination (ICRS) of the source centroid"
-        col["ra_centroid_win"] = (
-            "Right ascension (ICRS) of the windowed source centroid"
-        )
-        col["dec_centroid_win"] = "Declination (ICRS) of the windowed source centroid"
-        col["ra_psf"] = "Right ascension (ICRS) of the PSF-fitted position"
-        col["dec_psf"] = "Declination (ICRS) of the PSF-fitted position"
-
-        col["bbox_xmin"] = (
-            "Column index of the left edge of the source bounding box (0 indexed)"
-        )
-        col["bbox_xmax"] = (
-            "Column index of the right edge of the source bounding box (0 indexed)"
-        )
-        col["bbox_ymin"] = (
-            "Row index of the bottom edge of the source bounding box (0 indexed)"
-        )
-        col["bbox_ymax"] = (
-            "Row index of the top edge of the source bounding box (0 indexed)"
-        )
-        col["semimajor"] = (
-            "Length of the source semimajor axis computed from image moments"
-        )
-        col["semiminor"] = (
-            "Length of the source semiminor axis computed from image moments"
-        )
-        col["fwhm"] = (
-            "Circularized full width at half maximum (FWHM) "
-            "calculated from the semimajor and semiminor axes "
-            "as 2*sqrt(ln(2) * (semimajor**2 + semiminor**2))"
-        )
-        col["ellipticity"] = "Source ellipticity as 1 - (semimajor / semiminor)"
-        col["orientation_pix"] = (
-            "Angle measured counter-clockwise from the positive X axis to the source major axis computed from image moments"
-        )
-        col["orientation_sky"] = (
-            "Position angle from North of the source major axis computed from image moments"
-        )
-
-        col["cxx"] = (
-            "Coefficient for the x**2 term in the generalized quadratic ellipse equation"
-        )
-        col["cxy"] = (
-            "Coefficient for the x*y term in the generalized quadratic ellipse equation"
-        )
-        col["cyy"] = (
-            "Coefficient for the y**2 term in the generalized quadratic ellipse equation"
-        )
-
-        col["segment_flux"] = "Isophotal flux"
-        col["segment_area"] = "Area of the source segment"
-        col["kron_radius"] = "Unscaled first-moment Kron radius"
-        col["fluxfrac_radius_50"] = (
-            "Radius of a circle centered on the source centroid that encloses 50% of the Kron flux"
-        )
-        col["kron_flux"] = "Flux within the elliptical Kron aperture"
-        col["kron_abmag"] = "AB magnitude within the elliptical Kron aperture"
-        col["aper_bkg_flux"] = "Local background estimated within a circular annulus"
-
-        col["x_psf"] = "Column coordinate of the source from PSF fitting (0 indexed)"
-        col["y_psf"] = "Row coordinate of the source from PSF fitting (0 indexed)"
-        col["psf_flux"] = "Total PSF flux"
-        col["psf_gof"] = "PSF goodness of fit metric"
-        col["psf_flags"] = "PSF fitting bit flags (0 = good)"
-
-        col["warning_flags"] = "Warning bit flags (0 = good)"
-        col["image_flags"] = "Image quality bit flags (0 = good)"
-
-        col["is_extended"] = (
-            "Flag indicating that the source appears to be more extended than a point source"
-        )
-        col["sharpness"] = "Photutils DAOStarFinder sharpness statistic"
-        col["roundness1"] = "Photutils DAOStarFinder roundness1 statistic"
-        col["nn_label"] = "Segment label of the nearest neighbor in this skycell"
-        col["nn_distance"] = "Distance to the nearest neighbor in this skycell"
-
-        # add the aperture flux column descriptions
-        if self.aperture_cat is not None:
-            col.update(self.aperture_cat.aperture_flux_descriptions)
-
-        # add the "*_err" column descriptions
-        for column in self.column_names:
-            if column.endswith("_err"):
-                base_column = column.replace("_err", "")
-                col[column] = f"Uncertainty in {base_column}"
-
-        return col
-
-    @lazyproperty
     def aper_colnames(self):
         """
         An ordered list of the aperture column names.
@@ -641,7 +577,7 @@ class RomanSourceCatalog:
         """
         base_colnames = [
             "label",
-            "flagged_spatial_index",
+            "flagged_spatial_id",
             "x_centroid",
             "y_centroid",
             "x_centroid_err",
@@ -974,8 +910,8 @@ class RomanSourceCatalog:
         catalog = QTable()
         for column in self.column_names:
             catalog[column] = getattr(self, column)
-            descrip = self.column_descriptions.get(column, None)
-            catalog[column].info.description = descrip
+            definition = self.cat_model.get_column_definition(column)
+            catalog[column].info.description = definition["description"]
         self.update_metadata()
         catalog.meta.update(self.meta)
 

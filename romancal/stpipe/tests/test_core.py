@@ -67,7 +67,7 @@ def test_get_reference_file(step_class, base_image):
     # If this test starts failing mysteriously, check the
     # metadata values against the flat rmap.
     im.meta.instrument.optical_element = "F158"
-    im.meta.exposure.start_time = Time("2021-01-01T12:00:00")
+    im.meta.exposure.start_time = Time("2024-01-01T12:00:00")
 
     step = step_class()
     reference_path = step.get_reference_file(im, "flat")
@@ -87,7 +87,7 @@ def test_get_reference_file_spectral(step_class, base_image):
     # If this test starts failing mysteriously, check the
     # metadata values against the flat rmap.
     im.meta.instrument.optical_element = "GRISM"
-    im.meta.exposure.start_time = Time("2021-01-01T12:00:00")
+    im.meta.exposure.start_time = Time("2024-01-01T12:00:00")
 
     step = step_class()
     reference_path = step.get_reference_file(im, "flat")

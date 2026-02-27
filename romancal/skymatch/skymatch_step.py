@@ -13,7 +13,7 @@ from astropy.nddata.bitmask import bitfield_to_boolean_mask, interpret_bit_flags
 from roman_datamodels.dqflags import pixel
 from stcal.skymatch import SkyImage, SkyStats, skymatch
 
-from romancal.datamodels import ModelLibrary
+from romancal.datamodels.fileio import open_dataset
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:
@@ -53,13 +53,10 @@ class SkyMatchStep(RomanStep):
 
     reference_file_types: ClassVar = []
 
-    def process(self, input):
-        log.setLevel(logging.DEBUG)
-
-        if isinstance(input, ModelLibrary):
-            library = input
-        else:
-            library = ModelLibrary(input)
+    def process(self, dataset):
+        library = open_dataset(
+            dataset, update_version=self.update_version, as_library=True
+        )
 
         self._dqbits = interpret_bit_flags(self.dqbits, flag_name_map=pixel)
 
@@ -115,11 +112,11 @@ class SkyMatchStep(RomanStep):
             }
 
         if self._dqbits is None:
-            dqmask = np.isfinite(image_model.data).astype(dtype=np.uint8)
+            dqmask = np.isfinite(image_model.data)
         else:
             dqmask = bitfield_to_boolean_mask(
-                image_model.dq, self._dqbits, good_mask_value=1, dtype=np.uint8
-            ) * np.isfinite(image_model.data)
+                image_model.dq, self._dqbits, good_mask_value=True, dtype="bool"
+            ) & np.isfinite(image_model.data)
 
         # see if 'skymatch' was previously run and raise an exception
         # if 'subtract' mode has changed compared to the previous pass:
@@ -152,13 +149,10 @@ class SkyMatchStep(RomanStep):
             image=image_model.data,
             wcs_fwd=wcs.forward_transform,
             wcs_inv=wcs.backward_transform,
-            pix_area=1.0,  # TODO: pixel area
-            convf=1.0,  # TODO: conv. factor to brightness
             mask=dqmask,
             sky_id=image_model.meta.filename,  # file name?
             skystat=self._skystat,
             stepsize=self.stepsize,
-            reduce_memory_usage=False,
             meta={"image_model": input_image_model},
         )
 

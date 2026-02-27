@@ -2,59 +2,59 @@
 
 import numpy as np
 import pytest
+from roman_datamodels.dqflags import pixel
 
 from romancal.ramp_fitting import RampFitStep
 
-from .common import SIMPLE_RESULTANTS, make_data
+from .common import SIMPLE_RESULTANTS, create_linear_ramp, make_data
 
 SIMPLE_EXPECTED_DEFAULT = {
     "data": np.array(
-        # [[0.52631587, 0.52631587], [0.23026317, 0.7236843]], dtype=np.float32
         [[0.5482434, 0.5482434], [0.21930099, 0.6579002]],
         dtype=np.float32,
     ),
     "err": np.array(
-        # [[0.24262409, 0.24262409], [0.16048454, 0.28450054]], dtype=np.float32
         [[0.24518493, 0.24518453], [0.1550718, 0.26858887]],
-        dtype=np.float32,
+        dtype=np.float16,
     ),
     "var_poisson": np.array(
-        # [[0.05886428, 0.05886428], [0.02575312, 0.08093839]], dtype=np.float32
         [[0.06011445, 0.06011425], [0.02404606, 0.07213879]],
-        dtype=np.float32,
+        dtype=np.float16,
     ),
     "var_rnoise": np.array(
-        # [[2.164128e-06, 2.164128e-06], [2.164128e-06, 2.164128e-06]], dtype=np.float32
         [[1.2022689e-06, 1.2022689e-06], [1.2022329e-06, 1.2022729e-06]],
-        dtype=np.float32,
+        dtype=np.float16,
     ),
+    "chisq": np.array([[0.4, 1.6], [1, 3]], dtype=np.float16),
 }
 SIMPLE_EXPECTED_GAIN = {
     "data": np.array(
         [[0.54823464, 0.54823464], [0.21931194, 0.32894737]], dtype=np.float32
     ),
     "err": np.array(
-        [[0.10965369, 0.10965278], [0.0693583, 0.1040483]], dtype=np.float32
+        [[0.10965369, 0.10965278], [0.0693583, 0.1040483]], dtype=np.float16
     ),
     "var_poisson": np.array(
-        [[0.01202273, 0.01202253], [0.00480937, 0.01082064]], dtype=np.float32
+        [[0.01202273, 0.01202253], [0.00480937, 0.01082064]], dtype=np.float16
     ),
     "var_rnoise": np.array(
         [[1.2021728e-06, 1.2021728e-06], [1.2019930e-06, 5.4103184e-06]],
-        dtype=np.float32,
+        dtype=np.float16,
     ),
+    "chisq": np.array([[2, 8], [5, 0]], dtype=np.float16),
 }
 SIMPLE_EXPECTED_RNOISE = {
     "data": np.array(
         [[0.5263179, 0.5263179], [0.2302627, 0.72367555]], dtype=np.float32
     ),
-    "err": np.array([[10.405058, 10.405058], [10.403467, 10.406118]], dtype=np.float32),
+    "err": np.array([[10.405058, 10.405058], [10.403467, 10.406118]], dtype=np.float16),
     "var_poisson": np.array(
-        [[0.05886434, 0.05886419], [0.025753, 0.0809375]], dtype=np.float32
+        [[0.05886434, 0.05886419], [0.025753, 0.0809375]], dtype=np.float16
     ),
     "var_rnoise": np.array(
-        [[108.20637, 108.20637], [108.20637, 108.20637]], dtype=np.float32
+        [[108.20637, 108.20637], [108.20637, 108.20637]], dtype=np.float16
     ),
+    "chisq": np.array([[4e-5, 2.4e-4], [6e-5, 3.6e-4]], dtype=np.float16),
 }
 
 
@@ -78,17 +78,116 @@ def test_bad_readpattern():
         )
 
 
+def test_flag_large_events_withsnowball():
+    """Test that large events are flagged"""
+    resultants = create_linear_ramp(n_resultants=20, nrows=100, ncols=100)
+    model, m_gain, m_rnoise, m_dark = make_data(resultants, 6, 0.01, False)
+
+    # square of saturation surrounded by jump -> snowball
+    # 112 pixels (121 minus 9) initially have a jump.
+    model.data[10:, 46:57, 46:57] += 300
+    model.data[10:, 50:53, 50:53] = 1e5
+    model.groupdq[10:, 50:53, 50:53] = pixel.SATURATED
+
+    m_image = RampFitStep.call(
+        model,
+        algorithm="likely",
+        override_gain=m_gain,
+        override_readnoise=m_rnoise,
+        expand_large_events=True,
+        min_sat_area=1,
+        min_jump_area=6,
+        expand_factor=1.9,
+        edge_size=0,
+        sat_required_snowball=True,
+        min_sat_radius_extend=0.5,
+        sat_expand=2,
+    )
+    assert np.std(m_image.data) < 1e-5
+    n_jump_expanded = np.sum(m_image.dq == pixel.JUMP_DET)
+
+    # Check that the uncertainties are the same for all pixels with jumps
+    # and save this average uncertainty
+    meanerr_jumppixels_new = np.mean(m_image.err[m_image.dq == pixel.JUMP_DET])
+    assert np.std(m_image.err[m_image.dq == pixel.JUMP_DET]) < 1e-6
+
+    # Now without snowball flagging
+    model, m_gain, m_rnoise, m_dark = make_data(resultants, 6, 0.01, False)
+    model.data[10:, 46:57, 46:57] += 300
+    model.data[10:, 50:53, 50:53] = 1e5
+    model.groupdq[10:, 50:53, 50:53] = pixel.SATURATED
+
+    m_image = RampFitStep.call(
+        model,
+        algorithm="likely",
+        override_gain=m_gain,
+        override_readnoise=m_rnoise,
+        expand_large_events=False,
+    )
+    assert np.std(m_image.data) < 1e-5
+    n_jump_original = np.sum(m_image.dq == pixel.JUMP_DET)
+
+    # Check that the uncertainties are the same for all pixels with jumps
+    # originally flagged.  Check that this uncertainty matches the new value.
+
+    meanerr_jumppixels_orig = np.mean(m_image.err[m_image.dq == pixel.JUMP_DET])
+    assert np.std(m_image.err[m_image.dq == pixel.JUMP_DET]) < 1e-6
+    assert np.abs(meanerr_jumppixels_orig - meanerr_jumppixels_new) < 1e-5
+
+    assert n_jump_original == 112 and n_jump_expanded > 300 and n_jump_expanded < 600
+
+
+def test_uniformweighting():
+    """Ensure uniform weighting slope only matches in the read noise limit"""
+    ramp_model, gain_model, readnoise_model, dark_model = make_data(
+        SIMPLE_RESULTANTS, 0.01, 1000, False
+    )
+
+    out_model = RampFitStep.call(
+        ramp_model,
+        algorithm="likely",
+        override_gain=gain_model,
+        override_readnoise=readnoise_model,
+        include_var_rnoise=True,
+    )
+
+    # Fully in the read noise limit: the uniform-weighting and
+    # optimal-weighting sloeps should be the same.
+
+    np.testing.assert_allclose(out_model.dumo, 0, atol=1e-5)
+
+    ramp_model, gain_model, readnoise_model, dark_model = make_data(
+        SIMPLE_RESULTANTS, 10, 0.01, False
+    )
+
+    out_model = RampFitStep.call(
+        ramp_model,
+        algorithm="likely",
+        override_gain=gain_model,
+        override_readnoise=readnoise_model,
+        include_var_rnoise=True,
+    )
+
+    # Now we are in the photon noise limit.  The uniform-weighting and
+    # optimal-weighting slopes should be different.
+
+    with pytest.raises(AssertionError):
+        np.testing.assert_allclose(out_model.dumo, 0, atol=1e-2)
+
+
 @pytest.mark.parametrize(
     "attribute",
-    ["data", "err", "var_poisson", "var_rnoise"],
-    ids=["data", "err", "var_poisson", "var_rnoise"],
+    ["data", "err", "var_poisson", "var_rnoise", "chisq"],
+    ids=["data", "err", "var_poisson", "var_rnoise", "chisq"],
 )
 def test_fits(fit_ramps, attribute):
     """Check slopes"""
     image_model, expected = fit_ramps
 
     value = getattr(image_model, attribute)
-    np.testing.assert_allclose(value, expected[attribute], 1e-05)
+    expected_value = expected[attribute]
+    precision = 1e-5 if expected_value.dtype == np.float32 else 1e-3
+    np.testing.assert_allclose(value, expected_value, precision)
 
 
 # ########
@@ -136,6 +235,7 @@ def fit_ramps(request):
         use_ramp_jump_detection=use_jump,
         override_gain=gain_model,
         override_readnoise=readnoise_model,
+        include_var_rnoise=True,
     )
 
     return out_model, expected

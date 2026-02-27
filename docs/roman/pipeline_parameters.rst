@@ -67,3 +67,21 @@ Output File
 When running a pipeline, the ``stpipe`` infrastructure automatically passes the
 output data model from one step to the input of the next step, without
 saving any intermediate results to disk.
+
+
+.. _intro_update_version:
+
+Update Version
+^^^^^^^^^^^^^^
+
+It is highly recommended to use data files that were produced with the
+same version of romancal. Running pipelines and steps on files produced
+by an older version of romancal may work (if the data and metadata in
+the old files is compatible). However some files may require extra
+handling to migrate old data formats the the new expected structures.
+Enabling ``update_version`` will trigger this migration process
+and is supported by all steps and pipelines.
+::
+
+    $ strun roman_elp r0008308002010007027_0019_wfi01_uncal.asdf
+        --update_version=True

@@ -24,6 +24,7 @@ def get_steps():
         ("romancal.pipeline.ExposurePipeline", "roman_elp", True),
         ("romancal.pipeline.MosaicPipeline", "roman_mos", True),
         ("romancal.step.DarkCurrentStep", "dark", False),
+        ("romancal.step.DarkDecayStep", "dark_decay", False),
         ("romancal.step.DQInitStep", "dq_init", False),
         ("romancal.step.FlatFieldStep", "flat_field", False),
         ("romancal.step.FluxStep", "flux", False),
@@ -39,4 +40,5 @@ def get_steps():
         ("romancal.step.ResampleStep", "resample", False),
         ("romancal.step.SourceCatalogStep", "source_catalog", False),
         ("romancal.step.MultibandCatalogStep", "multiband_catalog", False),
+        ("romancal.step.WFI18TransientStep", "wfi18_transient", False),
     ]
