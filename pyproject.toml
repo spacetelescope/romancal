@@ -27,12 +27,14 @@ dependencies = [
     # roman_datamodels release.
     "roman_datamodels>=0.30.0,<0.31",
     # "roman_datamodels@git+https://github.com/spacetelescope/roman_datamodels.git",
-    "romanisim>=0.13.0,<0.14",
+    #"romanisim>=0.13.0,<0.14",
+    "romanisim@git+https://github.com/spacetelescope/romanisim.git",
     "asdf>=4.1.0,<6",
     "crds>=13.0.2",
     "drizzle>=2.2.0,<2.3.0",
     "gwcs>=1.0.1,<2",
-    "stcal>=1.17.0,<1.18",
+    # "stcal>=1.17.0,<1.18",
+    "stcal@git+https://github.com/spacetelescope/stcal.git",
     "stpipe>=0.11.0,<0.12.0",
     "spherical-geometry>=1.3.3,<1.4",
 ]

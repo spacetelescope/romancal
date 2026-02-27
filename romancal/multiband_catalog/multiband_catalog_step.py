@@ -55,6 +55,7 @@ class MultibandCatalogStep(RomanStep):
         suffix = string(default='cat')        # Default suffix for output files
         fit_psf = boolean(default=True)       # fit source PSFs for accurate astrometry?
         inject_sources = boolean(default=False) # Inject sources into images
+        inject_seed = integer(default=None)   # RNG seed for injected sources
         save_debug_info = boolean(default=False)
                                    # Include image data and other data for testing
     """
@@ -99,7 +100,9 @@ class MultibandCatalogStep(RomanStep):
 
         # Set up source injection library and injection catalog
         if self.inject_sources:
-            si_library, si_cat = make_source_injected_library(library)
+            si_library, si_cat = make_source_injected_library(
+                library, seed=self.inject_seed
+            )
 
         # Create catalog of library images
         segment_img, cat_model, msg = multiband_catalog(
