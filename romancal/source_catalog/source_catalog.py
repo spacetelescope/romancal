@@ -275,6 +275,7 @@ class RomanSourceCatalog:
             self.model,
             self.segment_img,
             self.convolved_data,
+            self.mask,
             self._pixel_area,
             self._wcs_angle,
             detection_cat=self.detection_cat,
