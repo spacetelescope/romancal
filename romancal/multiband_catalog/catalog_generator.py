@@ -209,6 +209,7 @@ def create_filter_catalog(
             ref_catalog=ref_filter_catalog,
             target_model=model,
             target_psf_model=psf_model,
+            cat_model=cat_model,
             segment_img=segment_img,
             star_kernel_fwhm=star_kernel_fwhm,
             detection_cat=detection_catobj,

@@ -217,6 +217,7 @@ def compute_psf_correction_factors(
     ref_catalog,
     target_model,
     target_psf_model,
+    cat_model,
     segment_img,
     star_kernel_fwhm,
     detection_cat,
@@ -254,6 +255,9 @@ def compute_psf_correction_factors(
 
     target_psf_model : EpsfRefModel
         PSF model for the target filter.
+
+    cat_model : catalog model
+        The output catalog model, used for schema-based column lookups.
 
     segment_img : `~photutils.segmentation.SegmentationImage`
         Segmentation map for source extraction.
@@ -295,6 +299,7 @@ def compute_psf_correction_factors(
     # Measure photometry on the PSF-matched reference image
     catobj_matched = RomanSourceCatalog(
         psf_matched_ref,
+        cat_model,
         segment_img,
         None,
         star_kernel_fwhm,
