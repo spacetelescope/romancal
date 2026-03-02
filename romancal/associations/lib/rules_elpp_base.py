@@ -971,9 +971,9 @@ class AsnMixin_Science(DMS_ELPP_Base):
                 DMSAttrConstraint(
                     name="acq_obsnum",
                     sources=["obs_num"],
-                    value=lambda: "("
-                    + "|".join(self.constraints["obs_num"].found_values)
-                    + ")",
+                    value=lambda: (
+                        "(" + "|".join(self.constraints["obs_num"].found_values) + ")"
+                    ),
                     force_unique=False,
                 )
             ],
