@@ -1,6 +1,7 @@
 # Roman upstream packages
 git+https://github.com/spacetelescope/roman_datamodels.git
 git+https://github.com/spacetelescope/rad.git
+git+https://github.com/spacetelescope/romanisim.git
 
 # shared upstream packages
 git+https://github.com/spacetelescope/stcal.git
