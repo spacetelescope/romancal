@@ -1,0 +1,2 @@
+Fix ``pixel_scale`` and ``pixel_scale_ref`` in the Level 3 wcsinfo block to be
+in arcseconds rather than degrees.
