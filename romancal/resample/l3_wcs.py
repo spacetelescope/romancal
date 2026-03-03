@@ -69,12 +69,12 @@ def assign_l3_wcs(model, wcs):
     l3_wcsinfo.dec_ref = world_ref[1]
 
     try:
-        l3_wcsinfo.pixel_scale_ref = transform.cdelt[0]
+        l3_wcsinfo.pixel_scale_ref = transform.cdelt[0] * 3600
     except AttributeError:
-        l3_wcsinfo.pixel_scale_ref = compute_scale(wcs, world_ref)
+        l3_wcsinfo.pixel_scale_ref = compute_scale(wcs, world_ref) * 3600
 
     # pixel scale at center of image
-    l3_wcsinfo.pixel_scale = compute_scale(wcs, world_center)
+    l3_wcsinfo.pixel_scale = compute_scale(wcs, world_center) * 3600
 
     l3_wcsinfo.orientation_ref = calc_pa(wcs, *world_ref)
 
@@ -119,7 +119,7 @@ def calc_pa(wcs, ra, dec):
 
 def l3wcsinfo_to_wcs(wcsinfo, bounding_box=None):
     crpix = [wcsinfo["x_ref"], wcsinfo["y_ref"]]
-    cdelt = [wcsinfo["pixel_scale_ref"], wcsinfo["pixel_scale_ref"]]
+    cdelt = [wcsinfo["pixel_scale_ref"] / 3600, wcsinfo["pixel_scale_ref"] / 3600]
     tangent_projection = models.Pix2Sky_TAN()
     crval = [
         wcsinfo["ra_ref"],

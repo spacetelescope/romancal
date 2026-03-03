@@ -61,7 +61,7 @@ def make_output_wcs(
         WCS object, with defined domain, covering entire set of input frames
 
     pscale : float
-        The computed (or provided) input pixel scale (in degrees).
+        The computed (or provided) input pixel scale (in arcseconds).
 
     pscale_ratio : float, optional
         The computed (or provided) input pixel scale ratio.
@@ -85,26 +85,27 @@ def make_output_wcs(
                 ref_wcs,
                 fiducial=np.array([ref_wcsinfo["ra_ref"], ref_wcsinfo["dec_ref"]]),
             )
-            * pscale_ratio
+            * pscale_ratio * 3600
         )
     else:
         pscale_ratio = pscale / np.rad2deg(
             math.sqrt(compute_mean_pixel_area(ref_wcs, shape=ref_shape))
         )
+        pscale *= 3600  # convert to arcsec / pix
 
     wcs = wcs_from_sregions(
         sregions,
         ref_wcs=ref_wcs,
         ref_wcsinfo=ref_wcsinfo,
         pscale_ratio=pscale_ratio,
-        pscale=pscale,
+        pscale=pscale / 3600,
         shape=shape,
         rotation=rotation,
         crpix=crpix,
         crval=crval,
     )
 
-    return wcs, pscale * 3600.0, pscale_ratio
+    return wcs, pscale, pscale_ratio
 
 
 def compute_var_sky(model) -> None:

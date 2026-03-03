@@ -591,8 +591,8 @@ def test_l3_wcsinfo(multiple_exposures):
         "dec_ref": 0.001534500000533253,
         "x_ref": 106.4579605214774,
         "y_ref": 80.66617532540977,
-        "pixel_scale_ref": 3.100000000097307e-05,
-        "pixel_scale": 3.099999999719185e-05,
+        "pixel_scale_ref": 3.100000000097307e-05 * 3600,
+        "pixel_scale": 3.099999999719185e-05 * 3600,
         "image_shape": (161, 213),
         "ra": 10.002930353020417,
         "dec": 0.0015101325554100666,
@@ -628,3 +628,14 @@ def test_resample_pixel_scale_units(wfi_sca1):
     coords = output_model.meta.wcs.pixel_to_world((100, 100), (100, 101))
     pscale = coords[0].separation(coords[1]).to(u.arcsec).value
     np.testing.assert_allclose(pscale, pixel_scale)
+
+
+def test_make_output_wcs_pscale_units(wfi_sca1):
+    """
+    Test that make_output_wcs returns pixel scale in arcseconds, not degrees.
+    """
+    input_models = ModelLibrary([wfi_sca1])
+    # fixture uses pscale=(0.000031, 0.000031) degrees/pixel
+    expected_pscale_arcsec = 0.000031 * 3600
+    _, pscale, _ = resample_utils.make_output_wcs(input_models)
+    np.testing.assert_allclose(pscale, expected_pscale_arcsec, rtol=1e-3)
