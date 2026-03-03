@@ -87,9 +87,11 @@ def create_psf_matched_image(
     pixel_scale = model.meta.wcsinfo.pixel_scale * 3600
     pixfrac = model.meta.resample.pixfrac
     input_l3_psf_model = create_l3_psf_model(
-        psf_model, pixel_scale=pixel_scale, pixfrac=pixfrac)
+        psf_model, pixel_scale=pixel_scale, pixfrac=pixfrac
+    )
     target_l3_psf_model = create_l3_psf_model(
-        target_psf_model, pixel_scale=pixel_scale, pixfrac=pixfrac)
+        target_psf_model, pixel_scale=pixel_scale, pixfrac=pixfrac
+    )
 
     # Check oversampling factors -- create_convolution_kernel requires
     # a single oversampling factor.
