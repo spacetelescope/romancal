@@ -85,7 +85,8 @@ def make_output_wcs(
                 ref_wcs,
                 fiducial=np.array([ref_wcsinfo["ra_ref"], ref_wcsinfo["dec_ref"]]),
             )
-            * pscale_ratio * 3600
+            * pscale_ratio
+            * 3600
         )
     else:
         pscale_ratio = pscale / np.rad2deg(
