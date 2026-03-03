@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 from astropy.modeling.fitting import TRFLSQFitter
 from astropy.modeling.models import Gaussian2D
-from roman_datamodels.datamodels import ImageModel
+from roman_datamodels.datamodels import MosaicModel
 
 from romancal.source_catalog.psf_matching import (
     create_psf_matched_image,
@@ -20,7 +20,7 @@ from romancal.source_catalog.psf_matching import (
 @pytest.fixture
 def mock_image_model():
     """
-    Create a mock ImageModel for testing.
+    Create a mock MosaicModel for testing.
     """
     # Create a simple test image with a Gaussian-like source
     ny, nx = 100, 100
@@ -39,10 +39,12 @@ def mock_image_model():
     err = 0.01 * np.ones_like(data)
 
     # Use create_fake_data to get proper metadata structure
-    model = ImageModel.create_fake_data(shape=(ny, nx))
+    model = MosaicModel.create_fake_data(shape=(ny, nx))
     model.data[:] = data
     model.err[:] = err
     model.meta.instrument.optical_element = "F087"
+    model.meta.wcsinfo.pixel_scale = 0.055 / 3600
+    model.meta.resample.pixfrac = 1
 
     return model
 
@@ -106,7 +108,7 @@ def mock_create_l3_psf_patch():
     in tests that need to perform PSF matching.
     """
 
-    def mock_create_l3_psf(psf_ref_model):
+    def mock_create_l3_psf(psf_ref_model, pixel_scale=None, pixfrac=None):
         """Mock create_l3_psf_model."""
 
         class MockL3PSF:
@@ -159,8 +161,8 @@ def test_create_psf_matched_image_basic(
             mock_image_model, input_psf_ref, target_psf_ref
         )
 
-    # Check that output is an ImageModel
-    assert isinstance(matched_model, ImageModel)
+    # Check that output is a MosaicModel
+    assert isinstance(matched_model, MosaicModel)
 
     # Check that data shape is preserved
     assert matched_model.data.shape == mock_image_model.data.shape
@@ -263,13 +265,13 @@ def test_get_reddest_filter():
             pass
 
     # Create models with different filters
-    model_f087 = ImageModel.create_fake_data(shape=(10, 10))
+    model_f087 = MosaicModel.create_fake_data(shape=(10, 10))
     model_f087.meta.instrument.optical_element = "F087"
 
-    model_f129 = ImageModel.create_fake_data(shape=(10, 10))
+    model_f129 = MosaicModel.create_fake_data(shape=(10, 10))
     model_f129.meta.instrument.optical_element = "F129"
 
-    model_f184 = ImageModel.create_fake_data(shape=(10, 10))
+    model_f184 = MosaicModel.create_fake_data(shape=(10, 10))
     model_f184.meta.instrument.optical_element = "F184"
 
     library = MockLibrary([model_f087, model_f129, model_f184])
@@ -288,7 +290,7 @@ def test_create_psf_matched_image_invalid_input(mock_psf_ref_model):
     input_psf_ref = mock_psf_ref_model("F087")
     target_psf_ref = mock_psf_ref_model("F184")
 
-    match = "model must be an ImageModel or MosaicModel"
+    match = "model must be a MosaicModel"
     with pytest.raises(ValueError, match=match):
         create_psf_matched_image(invalid_model, input_psf_ref, target_psf_ref)
 
@@ -323,7 +325,7 @@ def test_psf_matching_kernel_validation():
     data = gauss_source(x, y)
 
     # Create model
-    model = ImageModel.create_fake_data(shape=(ny, nx))
+    model = MosaicModel.create_fake_data(shape=(ny, nx))
     model.data[:] = data
     model.err = 0.01 * np.ones_like(data)
     model.meta.instrument.optical_element = "F087"
@@ -381,7 +383,7 @@ def test_psf_matching_kernel_validation():
     # Mock create_l3_psf_model to capture the kernel
     captured_kernel = {}
 
-    def mock_create_l3_psf(psf_ref_model):
+    def mock_create_l3_psf(psf_ref_model, pixel_scale=None, pixfrac=None):
         """Mock create_l3_psf_model."""
 
         class MockL3PSF:

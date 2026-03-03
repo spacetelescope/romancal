@@ -6,7 +6,7 @@ import logging
 
 import numpy as np
 from astropy.convolution import convolve_fft
-from roman_datamodels.datamodels import ImageModel, MosaicModel
+from roman_datamodels.datamodels import MosaicModel
 
 from romancal.multiband_catalog.utils import add_filter_to_colnames
 from romancal.source_catalog.psf import (
@@ -33,7 +33,7 @@ def create_psf_matched_image(
 
     Parameters
     ----------
-    model : `ImageModel` or `MosaicModel`
+    model : MosaicModel
         The input image to PSF-match. The image is assumed to be
         background subtracted. If the input model data and error arrays
         have units, they will be preserved in the output.
@@ -53,12 +53,12 @@ def create_psf_matched_image(
 
     Returns
     -------
-    matched_model : `ImageModel` or `MosaicModel`
+    matched_model : MosaicModel
         A copy of the input model with PSF-matched data and error
         arrays.
     """
-    if not isinstance(model, (ImageModel, MosaicModel)):
-        raise ValueError("model must be an ImageModel or MosaicModel")
+    if not isinstance(model, MosaicModel):
+        raise ValueError("model must be a MosaicModel")
 
     # Get filter information
     input_filter = model.meta.instrument.optical_element
@@ -84,8 +84,12 @@ def create_psf_matched_image(
     log.info("Computing PSF matching kernel")
 
     # Create L3 PSF models to access PSF data arrays
-    input_l3_psf_model = create_l3_psf_model(psf_model)
-    target_l3_psf_model = create_l3_psf_model(target_psf_model)
+    pixel_scale = model.meta.wcsinfo.pixel_scale * 3600
+    pixfrac = model.meta.resample.pixfrac
+    input_l3_psf_model = create_l3_psf_model(
+        psf_model, pixel_scale=pixel_scale, pixfrac=pixfrac)
+    target_l3_psf_model = create_l3_psf_model(
+        target_psf_model, pixel_scale=pixel_scale, pixfrac=pixfrac)
 
     # Check oversampling factors -- create_convolution_kernel requires
     # a single oversampling factor.
@@ -117,6 +121,7 @@ def create_psf_matched_image(
         matching_kernel,
         preserve_nan=True,
         normalize_kernel=True,
+        allow_huge=True,
     )
 
     # Propagate errors - convolve variance with kernel^2
@@ -127,6 +132,7 @@ def create_psf_matched_image(
             matching_kernel**2,
             preserve_nan=True,
             normalize_kernel=False,
+            allow_huge=True,
         )
         matched_err = np.sqrt(np.abs(matched_variance))
     else:
@@ -241,7 +247,7 @@ def compute_psf_correction_factors(
 
     Parameters
     ----------
-    ref_model : `ImageModel` or `MosaicModel`
+    ref_model : MosaicModel
         The reference filter image (original, not PSF-matched).
 
     ref_psf_model : EpsfRefModel
@@ -250,7 +256,7 @@ def compute_psf_correction_factors(
     ref_catalog : `~astropy.table.Table`
         Catalog from the original reference image.
 
-    target_model : `ImageModel` or `MosaicModel`
+    target_model : MosaicModel
         The target (redder) filter image that will be matched.
 
     target_psf_model : EpsfRefModel

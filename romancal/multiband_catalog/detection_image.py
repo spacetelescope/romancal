@@ -105,6 +105,7 @@ def make_det_image(library, kernel_fwhm):
                     mask=coverage_mask,
                     preserve_nan=True,
                     normalize_kernel=False,
+                    allow_huge=True,
                 )
                 var_conv = convolve_fft(
                     wht**2 * var_rnoise,
@@ -112,6 +113,7 @@ def make_det_image(library, kernel_fwhm):
                     mask=coverage_mask,
                     preserve_nan=True,
                     normalize_kernel=False,
+                    allow_huge=True,
                 )
 
             detection_data += np.nan_to_num(data_conv, copy=False, nan=0.0)
