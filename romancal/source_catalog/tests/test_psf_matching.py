@@ -329,6 +329,8 @@ def test_psf_matching_kernel_validation():
     model.data[:] = data
     model.err = 0.01 * np.ones_like(data)
     model.meta.instrument.optical_element = "F087"
+    model.meta.wcsinfo.pixel_scale = 0.055 / 3600
+    model.meta.resample.pixfrac = 1
 
     # Create PSF models with known Gaussian PSFs
     # Note: PSFs will be oversampled by a factor of 4
