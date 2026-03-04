@@ -56,6 +56,31 @@ def get_ee_spline(input_model, apcorr_file):
         return SplineSplrepFitter()(Spline1D(), ee_radii, ee_fractions)
 
 
+def make_model_mask(model):
+    """
+    Create a boolean mask for bad pixels in an image model.
+
+    A pixel is masked if its data or error value is non-finite, or if
+    its error is non-positive.
+
+    Parameters
+    ----------
+    model : ImageModel or MosaicModel
+        The input data model.
+
+    Returns
+    -------
+    mask : ndarray of bool
+        Boolean array with the same shape as ``model.data``, where
+        True marks bad pixels.
+    """
+    return (
+        ~np.isfinite(model.data)
+        | ~np.isfinite(model.err)
+        | (model.err <= 0)
+    )
+
+
 def copy_model_arrays(model):
     """
     Create a shallow copy of ImageModel or MosaicModel with data and err

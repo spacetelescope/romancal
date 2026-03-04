@@ -276,7 +276,7 @@ def prepare_reference_filter(self, library):
     with library:
         for model in library:
             if model.meta.instrument.optical_element == ref_filter:
-                ref_model = model
+                ref_model = model.copy()
             library.shelve(model, modify=False)
             if ref_model is not None:
                 break

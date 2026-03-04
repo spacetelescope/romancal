@@ -16,7 +16,7 @@ from romancal.source_catalog.psf_matching import (
     get_filter_wavelength,
 )
 from romancal.source_catalog.source_catalog import RomanSourceCatalog
-from romancal.source_catalog.utils import get_ee_spline
+from romancal.source_catalog.utils import get_ee_spline, make_model_mask
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -99,7 +99,7 @@ def create_filter_catalog(
         If trying to process a redder filter before the reference filter.
     """
     # Create mask
-    mask = ~np.isfinite(model.data) | ~np.isfinite(model.err) | (model.err <= 0)
+    mask = make_model_mask(model)
 
     # Load PSF reference model (needed for PSF matching and PSF fitting)
     log.info(f"Creating catalog for {filter_name} image")
@@ -126,13 +126,13 @@ def create_filter_catalog(
         ee_spline=ee_spline,
     )
 
+    # Add the filter name to the column names
+    cat_original = add_filter_to_colnames(catobj_original.catalog, filter_name)
+
     # Store reference filter catalog for later use with redder filters
     updated_ref_filter_catalog = ref_filter_catalog
     if filter_name == ref_filter:
-        updated_ref_filter_catalog = catobj_original.catalog
-
-    # Add the filter name to the column names
-    cat_original = add_filter_to_colnames(catobj_original.catalog, filter_name)
+        updated_ref_filter_catalog = cat_original
 
     # Store ee_fractions for this filter
     ee_fractions = {}
@@ -160,6 +160,7 @@ def create_filter_catalog(
             model,
             psf_model,
             ref_psf_model,
+            mask=mask,
         )
 
         log.info(f"Creating catalog for PSF-matched {filter_name} image")

@@ -13,7 +13,7 @@ from romancal.source_catalog.psf import (
     create_convolution_kernel,
     create_l3_psf_model,
 )
-from romancal.source_catalog.utils import copy_model_arrays
+from romancal.source_catalog.utils import copy_model_arrays, make_model_mask
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -23,6 +23,7 @@ def create_psf_matched_image(
     model,
     psf_model,
     target_psf_model,
+    mask=None,
     min_fft_power_ratio=1e-5,
 ):
     """
@@ -44,6 +45,12 @@ def create_psf_matched_image(
     target_psf_model : EpsfRefModel
         The PSF model for the reference/target PSF (typically the
         broadest PSF in a multiband set).
+
+    mask : array-like of bool, optional
+        Boolean mask array where True marks bad pixels. Masked pixels
+        are set to NaN before convolution so that ``convolve_fft``
+        interpolates over them using the matching kernel rather than
+        spreading their values to neighboring pixels.
 
     min_fft_power_ratio : float, optional
         Regularization parameter for the matching kernel calculation.
@@ -116,13 +123,20 @@ def create_psf_matched_image(
         downsample=oversampling,
     )
 
-    # Convolve the data
-    # np.asarray() is needed to convert to an ndarray from
+    # Convolve the data.
+    # np.asanyarray() is needed to convert to an ndarray from
     # asdf.tags.core.ndarray.NDArrayType, which can cause issues with
-    # convolve_fft
+    # convolve_fft. We copy so that NaN-ing masked pixels below does
+    # not modify the original model.
     log.info("Convolving image data with matching kernel")
+    data = np.asanyarray(model.data).copy()
+    if mask is not None:
+        # Set masked pixels to NaN so convolve_fft interpolates over
+        # them using the matching kernel rather than spreading their
+        # (potentially bad) values to neighboring pixels.
+        data[mask] = np.nan
     matched_data = convolve_fft(
-        np.asanyarray(model.data),  # use np.asanyarray to preserve units
+        data,
         matching_kernel,
         preserve_nan=True,
         normalize_kernel=True,
@@ -132,8 +146,11 @@ def create_psf_matched_image(
     # Propagate errors - convolve variance with kernel^2
     log.info("Propagating errors")
     if model.err is not None:
+        variance = np.asanyarray(model.err) ** 2
+        if mask is not None:
+            variance[mask] = np.nan
         matched_variance = convolve_fft(
-            model.err**2,
+            variance,
             matching_kernel**2,
             preserve_nan=True,
             normalize_kernel=False,
@@ -300,11 +317,15 @@ def compute_psf_correction_factors(
         f"Computing PSF correction factors for {ref_filter} matched to {target_filter}"
     )
 
-    # PSF-match the reference image to the target filter
+    # PSF-match the reference image to the target filter.
+    # Compute the mask from the reference model's own data/err arrays
+    # (the `mask` argument to this function is for the target model).
+    ref_mask = make_model_mask(ref_model)
     psf_matched_ref = create_psf_matched_image(
         ref_model,
         ref_psf_model,
         target_psf_model,
+        mask=ref_mask,
     )
 
     # Measure photometry on the PSF-matched reference image
