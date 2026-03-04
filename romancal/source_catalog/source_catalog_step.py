@@ -11,7 +11,7 @@ import numpy as np
 from astropy.table import join
 from photutils.segmentation import SegmentationImage
 from roman_datamodels import datamodels
-from roman_datamodels.datamodels import ImageModel, MosaicModel
+from roman_datamodels.datamodels import ImageModel
 from roman_datamodels.dqflags import pixel
 
 from romancal.datamodels.fileio import open_dataset
