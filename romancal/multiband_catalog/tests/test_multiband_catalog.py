@@ -753,6 +753,10 @@ def test_multiband_catalog_column_content(
 
     # The column structure for f062m and f213m must be identical
     # (same column types, just different filter names).
-    f062m_cols = sorted(c.replace("f062m", "BAND") for c in cat.colnames if "f062m" in c)
-    f213m_cols = sorted(c.replace("f213m", "BAND") for c in cat.colnames if "f213m" in c)
+    f062m_cols = sorted(
+        c.replace("f062m", "BAND") for c in cat.colnames if "f062m" in c
+    )
+    f213m_cols = sorted(
+        c.replace("f213m", "BAND") for c in cat.colnames if "f213m" in c
+    )
     assert f062m_cols == f213m_cols
