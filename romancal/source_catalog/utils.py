@@ -74,11 +74,7 @@ def make_model_mask(model):
         Boolean array with the same shape as ``model.data``, where
         True marks bad pixels.
     """
-    return (
-        ~np.isfinite(model.data)
-        | ~np.isfinite(model.err)
-        | (model.err <= 0)
-    )
+    return ~np.isfinite(model.data) | ~np.isfinite(model.err) | (model.err <= 0)
 
 
 def copy_model_arrays(model):

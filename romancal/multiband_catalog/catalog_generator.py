@@ -266,7 +266,11 @@ def create_filter_catalog(
                 # Column names to skip include psf_f213_flux (starts
                 # with "psf_") and x_psf_f213_err / ra_psf_f213_err
                 # (contain "_psf_" after add_filter_to_colnames).
-                if colname.startswith("psf_") or "_psf_" in colname or "_abmag" in colname:
+                if (
+                    colname.startswith("psf_")
+                    or "_psf_" in colname
+                    or "_abmag" in colname
+                ):
                     continue
                 new_colname = colname.replace(
                     f"_{filter_name.lower()}_",
