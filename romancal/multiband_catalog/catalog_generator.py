@@ -222,10 +222,6 @@ def create_filter_catalog(
         # correction factors to the original catalog
         cat_synthetic = cat_original.copy()
 
-        # Remove background aperture flux columns
-        cols_to_remove = [col for col in cat_synthetic.colnames if "aper_bkg_" in col]
-        cat_synthetic.remove_columns(cols_to_remove)
-
         # Apply correction factors to flux columns
         for flux_col, correction in correction_factors.items():
             # flux_col names contain the reference filter name, so
@@ -264,6 +260,14 @@ def create_filter_catalog(
             # We not keep columns that *end* with the filter name, e.g.,
             # sharpness_f158.
             if f"_{filter_name.lower()}_" in colname:
+                # Skip PSF columns which don't make much sense for the
+                # PSF-matched images.  Also skip abmag columns
+                # which are derivable from the fluxes.
+                # Column names to skip include psf_f213_flux (starts
+                # with "psf_") and x_psf_f213_err / ra_psf_f213_err
+                # (contain "_psf_" after add_filter_to_colnames).
+                if colname.startswith("psf_") or "_psf_" in colname or "_abmag" in colname:
+                    continue
                 new_colname = colname.replace(
                     f"_{filter_name.lower()}_",
                     f"_{filter_name_matched.lower()}_",

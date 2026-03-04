@@ -86,12 +86,14 @@ class TestCopyModelArrays:
         original_err_value = model.err[10, 10]
 
         copied = copy_model_arrays(model)
-        copied.err[10, 10] = 123.456
+        copied.err[10, 10] = np.float32(123.456)
 
         # Original should be unchanged
         assert model.err[10, 10] == original_err_value
-        # Copied should have new value
-        assert copied.err[10, 10] == 123.456
+        # Copied should have new value (ImageModel casts err to float32,
+        # so compare against np.float32 to avoid numpy version-dependent
+        # precision differences)
+        assert copied.err[10, 10] == np.float32(123.456)
 
     @pytest.mark.parametrize("model_class", [ImageModel, MosaicModel])
     def test_returns_correct_type(self, model_class):

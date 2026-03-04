@@ -481,6 +481,23 @@ def test_match_recovered_sources():
 
 
 @pytest.fixture
+def library_model_f062_f129_f213(mosaic_model):
+    """
+    Library with F062, F129, F213 for column content tests.
+    """
+    model1 = mosaic_model.copy()
+    model1.meta.instrument.optical_element = "F062"
+
+    model2 = mosaic_model.copy()
+    model2.meta.instrument.optical_element = "F129"
+
+    model3 = mosaic_model.copy()
+    model3.meta.instrument.optical_element = "F213"
+
+    return ModelLibrary([model1, model2, model3])
+
+
+@pytest.fixture
 def library_model_three_filters(mosaic_model):
     """
     Library with F062, F158, F184.
@@ -669,3 +686,71 @@ def test_multiband_catalog_bluest_reference(library_model_three_filters, functio
     assert "f062m" not in cat.meta["ee_fractions"]
     assert "f158m" not in cat.meta["ee_fractions"]
     assert "f184m" not in cat.meta["ee_fractions"]
+
+
+@pytest.mark.parametrize("fit_psf", (True, False))
+def test_multiband_catalog_column_content(
+    library_model_f062_f129_f213, fit_psf, function_jail
+):
+    """
+    Test that matched catalog columns contain the fields we need.
+
+    With F062, F129, F213 and F129 as the reference:
+    - F062m: bluer than reference, normal PSF convolution
+    - F213m: redder than reference, synthetic correction factors
+    - F129 (reference): only original measurements, no matched columns.
+    """
+    step = MultibandCatalogStep()
+
+    result = step.call(
+        library_model_f062_f129_f213,
+        bkg_boxsize=50,
+        snr_threshold=3,
+        npixels=10,
+        fit_psf=fit_psf,
+        deblend=True,
+        reference_filter="F129",
+        save_results=False,
+    )
+
+    cat = result.source_catalog
+    assert isinstance(cat, Table)
+    assert len(cat) == 7
+
+    n_aper = len(cat.meta["aperture_radii"]["circle_pix"])
+
+    for matched_band in ("f062m", "f213m"):
+        # Aperture flux columns must be present
+        assert f"aper_bkg_{matched_band}_flux" in cat.colnames, (
+            f"aper_bkg_{matched_band}_flux missing"
+        )
+        assert f"aper_bkg_{matched_band}_flux_err" in cat.colnames
+        assert (
+            sum(1 for c in cat.colnames if match(rf"^aper\d+_{matched_band}_flux$", c))
+            == n_aper
+        )
+
+        # kron and segment flux columns must be present
+        assert f"kron_{matched_band}_flux" in cat.colnames
+        assert f"kron_{matched_band}_flux_err" in cat.colnames
+        assert f"segment_{matched_band}_flux" in cat.colnames
+        assert f"segment_{matched_band}_flux_err" in cat.colnames
+
+        # abmag columns must NOT be present (redundant for matched
+        # catalogs; derivable from flux via -2.5*log10)
+        assert not any("_abmag" in c and matched_band in c for c in cat.colnames), (
+            f"abmag column found for {matched_band}"
+        )
+
+        # PSF flux columns must NOT be present
+        assert f"psf_{matched_band}_flux" not in cat.colnames
+        assert f"psf_{matched_band}_flux_err" not in cat.colnames
+
+    # Reference filter should have no matched columns
+    assert sum(1 for c in cat.colnames if match(r"^aper\d+_f129m_flux$", c)) == 0
+
+    # The column structure for f062m and f213m must be identical
+    # (same column types, just different filter names).
+    f062m_cols = sorted(c.replace("f062m", "BAND") for c in cat.colnames if "f062m" in c)
+    f213m_cols = sorted(c.replace("f213m", "BAND") for c in cat.colnames if "f213m" in c)
+    assert f062m_cols == f213m_cols

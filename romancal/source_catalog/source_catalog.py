@@ -552,12 +552,27 @@ class RomanSourceCatalog:
             "kron_abmag_err",
         ]
         psf_colnames = ["psf_flux", "psf_flux_err"]
+        # PSF-matched catalogs omit abmag columns (redundant, since they
+        # can be derived from flux via -2.5*log10; we provide at least
+        # one magnitude per source but not all variants) and PSF columns
+        # (fit_psf is always False for matched images, but be explicit
+        # for clarity).
+        matched_other_colnames = [
+            "segment_flux",
+            "segment_flux_err",
+            "kron_flux",
+            "kron_flux_err",
+        ]
 
-        if self.cat_type in ("prompt", "forced_full", "dr_band", "psf_matched"):
+        if self.cat_type in ("prompt", "forced_full", "dr_band"):
             flux_colnames = self.aper_colnames
             if self.fit_psf:
                 flux_colnames.extend(psf_colnames)
             flux_colnames.extend(other_colnames)
+
+        elif self.cat_type == "psf_matched":
+            flux_colnames = self.aper_colnames
+            flux_colnames.extend(matched_other_colnames)
 
         elif self.cat_type in ("dr_det", "forced_det"):
             flux_colnames = []
