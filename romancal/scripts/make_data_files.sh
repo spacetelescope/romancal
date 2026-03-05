@@ -17,18 +17,23 @@ logfile="$outdir/make_regtestdata.log"
 
 # stop on an error
 set -e
+mkdir -p $outdir/L1
+mkdir -p $outdir/MOC
+
+# set up the directory structure
 
 # Redirect all output to the logfile and the terminal
 exec > >(tee $logfile) 2>&1
 
-# set up the directory structure
-#mkdir -p $outdir/MOC
-
 # run elp for 1 uncal for each wfi
 L1_FNS=`ls r0000101001001001001_0001_wfi*_f158_uncal.asdf`
 for L1_FN in $L1_FNS; do
+    cp $L1_FN $outdir/L1/
     strun roman_elp $L1_FN
 done
 
-# copy cal files to MOC directory
-#L2_FNS=`ls r0000101001001001001_0001_wfi*_f158_cal.asdf`
+# copy cal files to output directory
+L2_FNS=`ls r0000101001001001001_0001_wfi*_f158_cal.asdf`
+for L2_FN in $L2_FNS; do
+    cp $L2_FN $outdir/MOC/
+done
