@@ -145,28 +145,9 @@ def create_psf_matched_image(
         allow_huge=True,
     )
 
-    # Propagate errors - convolve variance with kernel^2
-    log.info("Propagating errors")
-    if model.err is not None:
-        variance = np.asanyarray(model.err) ** 2
-        if mask is not None:
-            variance[mask] = np.nan
-        matched_variance = convolve_fft(
-            variance,
-            matching_kernel**2,
-            preserve_nan=True,
-            normalize_kernel=False,
-            allow_huge=True,
-        )
-        matched_err = np.sqrt(np.abs(matched_variance))
-    else:
-        matched_err = None
-
-    # Create output model with copied data and err arrays
+    # Create output model with copied data; err array is left unchanged
     matched_model = copy_model_arrays(model)
     matched_model.data = matched_data
-    if matched_err is not None:
-        matched_model.err = matched_err
 
     log.info(f"Created PSF-matched image: {input_filter} -> {target_filter}")
 
