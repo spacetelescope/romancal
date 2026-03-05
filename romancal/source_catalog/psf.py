@@ -521,15 +521,16 @@ def create_l3_psf_model(
     """
     Compute a PSF model for an L3 image.
 
-    L3 data is an amalgamation of numerous exposures over numerous SCA's.
+    L3 data is an amalgamation of exposures over SCAs.
     This algorithm does not attempt to merge specific PSF profiles for each
     SCA that contributes to each pixel. Instead, a simplified version is implemented
     as described.
 
         - Base PSF for the given detector, is created via get_gridded_psf_model.
-          This bas has the native 0.11 arcsec pixel scale already convolved in.
+          This includes an integration of the optical PSF over the native 0.11 arcsec
+          pixel scale.
         - PSF is further convolved with the drizzlepac `pixfrac` scale
-        - PSF is further convolved with the images actual pixel scale.
+        - PSF is further convolved with the image's actual pixel scale.
         - The PSF is then azimuthally averaged and resampled at the L3 pixel scale.
 
     Parameters

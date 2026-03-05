@@ -57,9 +57,6 @@ def make_det_image(library, kernel_fwhm):
     -------
     detection_data : 2D `numpy.ndarray`
         The detection image data.
-
-    detection_error : 2D `numpy.ndarray`
-        The detection image (standard deviation) error.
     """
     if not isinstance(library, ModelLibrary):
         raise TypeError("library input must be a ModelLibrary object")
@@ -108,6 +105,7 @@ def make_det_image(library, kernel_fwhm):
                     mask=coverage_mask,
                     preserve_nan=True,
                     normalize_kernel=False,
+                    allow_huge=True,
                 )
                 var_conv = convolve_fft(
                     wht**2 * var_rnoise,
@@ -115,6 +113,7 @@ def make_det_image(library, kernel_fwhm):
                     mask=coverage_mask,
                     preserve_nan=True,
                     normalize_kernel=False,
+                    allow_huge=True,
                 )
 
             detection_data += np.nan_to_num(data_conv, copy=False, nan=0.0)

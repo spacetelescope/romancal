@@ -60,6 +60,12 @@ def save_segment_image(
     if image_metas := source_catalog_model.meta.get("image_metas"):
         segmentation_model.meta.image_metas = image_metas
 
+    # carry over psf_match_reference_filter if present (multiband only)
+    source_cat = getattr(source_catalog_model, "source_catalog", None)
+    if source_cat is not None:
+        if ref_filter := source_cat.meta.get("psf_match_reference_filter"):
+            segmentation_model.meta["psf_match_reference_filter"] = ref_filter
+
     # Set the data and detection image
     segmentation_model.data = segment_img.data.astype(np.uint32)
     if hasattr(segment_img, "detection_image"):
