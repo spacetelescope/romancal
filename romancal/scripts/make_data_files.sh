@@ -17,10 +17,10 @@ logfile="$outdir/make_regtestdata.log"
 
 # stop on an error
 set -e
-mkdir -p $outdir/L1
-mkdir -p $outdir/MOC
 
 # set up the directory structure
+mkdir -p $outdir/L1
+mkdir -p $outdir/MOC
 
 # Redirect all output to the logfile and the terminal
 exec > >(tee $logfile) 2>&1
