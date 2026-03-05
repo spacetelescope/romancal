@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import logging
+from math import ceil
 from typing import TYPE_CHECKING
 
 import asdf
@@ -46,6 +47,7 @@ class RampFitStep(RomanStep):
         threshold_constant = float(default=None) # Override the constant parameter for the threshold function in the jump detection algorithm.
         include_var_rnoise = boolean(default=False) # include var_rnoise in output (can be reconstructed from err and other variances)
         maximum_cores = string(default='1') # cores for multiprocessing. Can be an integer, 'half', 'quarter', or 'all'
+        maximum_memory = float(default=None) # Maximum memory budget in GB for ramp fitting. When set, the detector is processed in spatial chunks to stay within this limit.
         expand_large_events = boolean(default=False) # Turns on Snowball detection
         min_sat_area = float(default=1.0) # minimum required area for the central saturation of snowballs
         min_jump_area = float(default=6.0) # minimum area to trigger large events processing
@@ -213,13 +215,21 @@ class RampFitStep(RomanStep):
             [input_model.data.shape[2], input_model.data.shape[3]]
         )
 
-        # Setup jump data to handle snowballs and other special situations handled by
-        # the likelihood algorithm
-        jump_data = self._setup_jump_data(input_model, readnoise_model, gain_model)
-
-        image_info, _, _ = likely_ramp_fit(
-            input_model, readnoise_model.data, gain_model.data, jump_data=jump_data
-        )
+        if self.maximum_memory is not None:
+            image_info = self._likely_chunked(
+                input_model, readnoise_model, gain_model
+            )
+        else:
+            # Full-frame processing (original path)
+            jump_data = self._setup_jump_data(
+                input_model, readnoise_model, gain_model
+            )
+            image_info, _, _ = likely_ramp_fit(
+                input_model,
+                readnoise_model.data,
+                gain_model.data,
+                jump_data=jump_data,
+            )
 
         # Flag pixels that have only a single resultant.
         oneresultant = (
@@ -239,6 +249,101 @@ class RampFitStep(RomanStep):
         out_model.meta.cal_step.ramp_fit = "COMPLETE"
 
         return out_model
+
+    def _likely_chunked(self, input_model, readnoise_model, gain_model):
+        """Process ramp fitting in spatial chunks to limit memory usage.
+
+        Divides the detector along rows and calls likely_ramp_fit per chunk,
+        then stitches the output arrays back together.
+
+        Parameters
+        ----------
+        input_model : RampModel
+            Prepared input model (already has extra axis, read_pattern, etc.)
+
+        readnoise_model : ReadnoiseRefModel
+            Read noise reference model.
+
+        gain_model : GainRefModel
+            Gain reference model.
+
+        Returns
+        -------
+        image_info : dict
+            Stitched output dict with slope, dq, err, var_poisson, var_rnoise,
+            and optionally chisq arrays.
+        """
+        nrows = input_model.data.shape[2]
+        ncols = input_model.data.shape[3]
+        n_resultants = input_model.data.shape[1]
+
+        # Estimate memory per row: data + groupdq dominate at
+        # 2 * n_resultants * ncols * 4 bytes, plus reference arrays and
+        # internal temporaries (use 3x safety factor).
+        bytes_per_row = ncols * (2 * n_resultants + 10) * 4 * 3
+        memory_budget_bytes = self.maximum_memory * 1024**3
+        chunk_rows = max(1, int(memory_budget_bytes / bytes_per_row))
+        chunk_rows = min(chunk_rows, nrows)
+        n_chunks = ceil(nrows / chunk_rows)
+
+        log.info(
+            "Chunked ramp fitting: %d chunks of ~%d rows "
+            "(memory budget: %.1f GB)",
+            n_chunks,
+            chunk_rows,
+            self.maximum_memory,
+        )
+
+        # Pre-allocate output arrays
+        image_info = {
+            "slope": np.zeros((nrows, ncols), dtype=np.float32),
+            "dq": np.zeros((nrows, ncols), dtype=np.uint32),
+            "var_poisson": np.zeros((nrows, ncols), dtype=np.float32),
+            "var_rnoise": np.zeros((nrows, ncols), dtype=np.float32),
+            "err": np.zeros((nrows, ncols), dtype=np.float32),
+        }
+
+        for chunk_idx in range(n_chunks):
+            row_start = chunk_idx * chunk_rows
+            row_end = min(row_start + chunk_rows, nrows)
+            s = slice(row_start, row_end)
+
+            log.info(
+                "Processing chunk %d/%d: rows %d-%d",
+                chunk_idx + 1,
+                n_chunks,
+                row_start,
+                row_end,
+            )
+
+            chunk_model = _ChunkedRampData(input_model, s)
+            chunk_readnoise = readnoise_model.data[s, :]
+            chunk_gain = gain_model.data[s, :]
+
+            chunk_rnoise_ref = _RefDataSlice(readnoise_model, s)
+            chunk_gain_ref = _RefDataSlice(gain_model, s)
+            jump_data = self._setup_jump_data(
+                chunk_model, chunk_rnoise_ref, chunk_gain_ref
+            )
+
+            chunk_info, _, _ = likely_ramp_fit(
+                chunk_model, chunk_readnoise, chunk_gain, jump_data=jump_data
+            )
+
+            for key in ("slope", "dq", "var_poisson", "var_rnoise", "err"):
+                if chunk_info.get(key) is not None:
+                    image_info[key][s, :] = chunk_info[key]
+
+            if chunk_info.get("chisq") is not None:
+                if "chisq" not in image_info:
+                    image_info["chisq"] = np.zeros(
+                        (nrows, ncols), dtype=np.float32
+                    )
+                image_info["chisq"][s, :] = chunk_info["chisq"]
+
+            del chunk_model, chunk_info
+
+        return image_info
 
     def _setup_jump_data(self, result, rnoise_m, gain_m):
         """
@@ -281,6 +386,43 @@ class RampFitStep(RomanStep):
         jump_data.max_cores = self.maximum_cores
 
         return jump_data
+
+
+class _ChunkedRampData:
+    """Lightweight proxy presenting a spatial row-slice of ramp data.
+
+    Explicitly slices the large spatial arrays (data, groupdq, pixeldq,
+    average_dark_current) and falls through to the original model for
+    everything else (meta, read_pattern, flags, etc.).
+    """
+
+    def __init__(self, model, row_slice):
+        # Use object.__setattr__ to avoid triggering __getattr__
+        object.__setattr__(self, "_model", model)
+        self.data = model.data[:, :, row_slice, :]
+        self.groupdq = model.groupdq[:, :, row_slice, :]
+        self.pixeldq = model.pixeldq[row_slice, :]
+        self.average_dark_current = model.average_dark_current[row_slice, :]
+
+    def __getattr__(self, name):
+        return getattr(self._model, name)
+
+    def __getitem__(self, key):
+        return self._model[key]
+
+    def __setitem__(self, key, value):
+        self._model[key] = value
+
+
+class _RefDataSlice:
+    """Proxy for a reference model that slices the .data attribute spatially."""
+
+    def __init__(self, ref_model, row_slice):
+        object.__setattr__(self, "_ref_model", ref_model)
+        self.data = ref_model.data[row_slice, :]
+
+    def __getattr__(self, name):
+        return getattr(self._ref_model, name)
 
 
 # #########

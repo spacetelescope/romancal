@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from __future__ import annotations
 
+import gc
 import logging
 from typing import TYPE_CHECKING
 
@@ -50,6 +51,7 @@ class ExposurePipeline(RomanPipeline):
     spec = """
         save_results = boolean(default=False)
         suffix = string(default="cal")
+        on_disk = boolean(default=False)
     """
 
     # Define aliases to steps
@@ -88,6 +90,7 @@ class ExposurePipeline(RomanPipeline):
             update_version=self.update_version,
             return_type=True,
             as_library=True,
+            open_kwargs={"on_disk": self.on_disk},
         )
         return_lib = input_type in ("ModelLibrary", "asn")
 
@@ -116,6 +119,11 @@ class ExposurePipeline(RomanPipeline):
                     result = self.refpix.run(result)
                     result = self.dark_decay.run(result)
                     result = self.wfi18_transient.run(result)
+
+                    # Free unreferenced arrays before the memory-intensive
+                    # linearity and ramp fitting steps.
+                    gc.collect()
+
                     result = self.linearity.run(result)
                     result = self.rampfit.run(result)
                     result = self.dark_current.run(result)
