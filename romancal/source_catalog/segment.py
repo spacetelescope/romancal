@@ -30,6 +30,11 @@ class SegmentCatalog:
         The 2D array used to calculate the source centroid and shape
         measurements. The image is assumed to be background subtracted.
 
+    mask : 2D bool `~numpy.ndarray` or `None`
+        A 2D boolean array with the same shape as the input data, where
+        `True` values indicate masked pixels. If `None`, then no pixels
+        are masked.
+
     pixel_area : `~astropy.units.Quantity`
         The pixel area in steradians. This is used to convert various
         measuments from pixels to arcseconds.
@@ -65,6 +70,7 @@ class SegmentCatalog:
         model,
         segment_img,
         convolved_data,
+        mask,
         pixel_area,
         wcs_angle,
         detection_cat=None,
@@ -73,6 +79,7 @@ class SegmentCatalog:
         self.model = model
         self.segment_img = segment_img
         self.convolved_data = convolved_data
+        self.mask = mask
         self.pixel_area = pixel_area
         self.wcs_angle = wcs_angle
         self.detection_cat = detection_cat
@@ -167,6 +174,7 @@ class SegmentCatalog:
             self.segment_img,
             convolved_data=self.convolved_data,
             error=self.model.err,
+            mask=self.mask,
             wcs=self.wcs,
             apermask_method="mask",
             detection_cat=detection_cat,
