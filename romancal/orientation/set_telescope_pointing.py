@@ -469,7 +469,7 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
     # Update model meta.
     logger.info("Aperture WCS info: %s", wcsinfo)
     logger.info("V1 WCS info: %s", vinfo)
-    update_meta(model, wcsinfo, vinfo, quality)
+    update_meta(model, t_pars, wcsinfo, vinfo, quality)
 
     return transforms
 
@@ -1333,7 +1333,7 @@ def dcm(alpha, delta, angle):
     return dcm
 
 
-def update_meta(model, wcsinfo, vinfo, quality):
+def update_meta(model, t_pars, wcsinfo, vinfo, quality):
     """Update model's meta info with the given pointing.
 
     The following meta are update:
@@ -1352,6 +1352,9 @@ def update_meta(model, wcsinfo, vinfo, quality):
     ----------
     model : `~roman.datamodels.DataModel`
         The model to update. Updates are done in-place.
+
+    t_pars : `TransformParameters`
+        The transformation parameters. Parameters are updated during processing.
 
     wcsinfo : `WCSRef``
         The aperture-specific pointing.
@@ -1403,8 +1406,11 @@ def update_meta(model, wcsinfo, vinfo, quality):
 
     # Update guidestar information
     gs = model.meta.guide_star
-    gs.h = getattr(gs, "h", wm.v2_ref)
-    gs.v = getattr(gs, "v", wm.v3_ref)
+    if t_pars.gscommanded is None:
+        hv = (None, None)
+    else:
+        hv = t_pars.gscommanded
+    gs.h, gs.v = hv
 
 
 def attitude_from_v1(vinfo):
