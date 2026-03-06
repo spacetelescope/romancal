@@ -206,8 +206,7 @@ class TweakRegStep(RomanStep):
                     catalog_table.meta["name"] = catalog_name
 
                     catalog = tweakreg.filter_catalog_by_bounding_box(
-                        catalog_table,
-                        image_model.meta.wcs.bounding_box
+                        catalog_table, image_model.meta.wcs.bounding_box
                     )
                     corrector = tweakreg.RomanWCSCorrector(
                         wcs=image_model.meta.wcs,
