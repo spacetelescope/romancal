@@ -54,21 +54,6 @@ TRANSFORM_KWARGS = {
 # Get the mock databases
 DATA_PATH = Path(__file__).parent / "data"
 
-# Meta attributes for test comparisons
-METAS_EQUALITY = [
-    "meta.pointing.pointing_engineering_source",
-]
-METAS_ISCLOSE = [
-    "meta.wcsinfo.dec_ref",
-    "meta.wcsinfo.ra_ref",
-    "meta.wcsinfo.roll_ref",
-    "meta.wcsinfo.v2_ref",
-    "meta.wcsinfo.v3_ref",
-    "meta.pointing.ra_v1",
-    "meta.pointing.dec_v1",
-    "meta.pointing.pa_v3",
-]
-
 # Some tests depend on the default engineering database to be available. Check now.
 NO_ENGDB = False
 try:
@@ -299,6 +284,34 @@ def test_transform_serialize(calc_wcs, tmp_path):
     assert str(transforms) == str(from_asdf)
 
 
+@pytest.mark.parametrize(
+    'attr, expected',
+    [
+        ('meta.guide_star.h', 916.4728835141),
+        ('meta.guide_star.v', -186.8939737044),
+        ('meta.pointing.dec_v1', 84.68431896236322),
+        ('meta.pointing.pa_aperture', 78.66156386345588),
+        ('meta.pointing.pa_v3', 80.93636997134696),
+        ('meta.pointing.quaternion', np.array([-0.70264027, -0.09765787,  0.6867813 ,  0.1584015 ])),
+        ('meta.pointing.ra_v1', 60.92574219562233),
+        ('meta.pointing.target_dec', 84.21835653550785),
+        ('meta.pointing.target_ra', 59.16610246530431),
+        ('meta.wcsinfo.dec_ref', 84.27409398200808),
+        ('meta.wcsinfo.ra_ref', 58.63942790688876),
+        ('meta.wcsinfo.roll_ref', 78.66156386345588),
+        ('meta.wcsinfo.s_region', 'POLYGON ICRS  59.032838301 84.195782549 57.858399495 84.235747305 58.234833815 84.352770166 59.437292567 84.311887600')])
+def test_update_meta(attr, expected, updated_model):
+    """Ensure that all the expected meta are updated"""
+
+    value = _getattrpath(updated_model, attr)
+    if isinstance(value, np.ndarray):
+        assert np.allclose(value, expected)
+    elif isinstance(value, float):
+        assert np.isclose(value, expected)
+    else:
+        assert value == expected
+
+
 # ######################
 # Utilities and fixtures
 # ######################
@@ -343,6 +356,36 @@ def science_raw_model():
     )
 
     return m
+
+@pytest.fixture(scope='module')
+def updated_model(calc_wcs):
+    """Update a model with a orientation calculation"""
+    wcsinfo, vinfo, _, t_pars = calc_wcs
+
+    m = rdm.datamodels.ScienceRawModel.create_fake_data(
+        {
+            "meta": {
+                "exposure": {"start_time": STARTTIME, "end_time": ENDTIME},
+                "pointing": {
+                    "target_aperture": "WFI_CEN",
+                    "target_ra": TARG_RA,
+                    "target_dec": TARG_DEC,
+                },
+                "wcsinfo": {"aperture_name": "WFI02_FULL"},
+            }
+        }
+    )
+    stp.update_meta(m, t_pars, wcsinfo, vinfo, 'CALCULATED')
+    return m
+
+
+def _getattrpath(obj, path, default=None):
+    """Retrieve an attribute from its fully qualified path"""
+    attribute, _, rest = path.partition('.')
+    value = getattr(obj, attribute, default)
+    if value is not None and rest:
+        value = _getattrpath(value, rest, default)
+    return value
 
 
 def _make_t_pars(**transform_kwargs):

@@ -1337,9 +1337,12 @@ def update_meta(model, t_pars, wcsinfo, vinfo, quality):
     """Update model's meta info with the given pointing.
 
     The following meta are update:
+    - meta.guide_star.h
+    - meta.guide_star.v
     - meta.pointing.dec_v1
     - meta.pointing.pa_aperture
     - meta.pointing.pa_v3
+    - meta.pointing.quaternion
     - meta.pointing.ra_v1
     - meta.pointing.target_dec
     - meta.pointing.target_ra
@@ -1375,8 +1378,7 @@ def update_meta(model, t_pars, wcsinfo, vinfo, quality):
     siaf = Siaf("roman")
     aper = siaf[wm.aperture_name.upper()]
 
-    # Set the quality
-    model.meta.pointing.pointing_engineering_source = quality
+    # Update pointing info
 
     # Update SIAF-related meta
     wm.v2_ref = aper.V2Ref
@@ -1394,6 +1396,8 @@ def update_meta(model, t_pars, wcsinfo, vinfo, quality):
     pm.dec_v1 = vinfo.dec
     pm.pa_aperture = wcsinfo.pa
     pm.pa_v3 = vinfo.pa
+    pm.pointing_engineering_source = quality
+    pm.quaternion = t_pars.pointing.q
     pm.ra_v1 = vinfo.ra
 
     # Update target's sky location.
