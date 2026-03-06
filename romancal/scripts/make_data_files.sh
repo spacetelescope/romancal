@@ -43,8 +43,8 @@ done
 # L1 -> L2
 WORKSHOP_UNCALS="
     r0000101001001001001_0001_wfi01_f158_uncal.asdf
-    r0000101001001001001_0001_wfi01_grism_uncal.asdf
-    r0000101001001001001_0001_wfi01_prism_uncal.asdf
+    r0000201001001001001_0001_wfi01_grism_uncal.asdf
+    r0000301001001001001_0001_wfi01_prism_uncal.asdf
 "
 for WORKSHOP_UNCAL in $WORKSHOP_UNCALS; do
     if [ $WORKSHOP_UNCAL =~ "_f158_"]; then
