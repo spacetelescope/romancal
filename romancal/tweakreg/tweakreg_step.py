@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import gwcs
 import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -204,14 +205,27 @@ class TweakRegStep(RomanStep):
                     catalog_table = Table(image_model.meta.tweakreg_catalog)
                     catalog_table.meta["name"] = catalog_name
 
-                    imcat = tweakreg.construct_wcs_corrector(
-                        wcs=image_model.meta.wcs,
-                        refang=image_model.meta.wcsinfo,
-                        catalog=catalog_table,
-                        group_id=images._model_to_group_id(image_model),
+                    catalog = tweakreg.filter_catalog_by_bounding_box(
+                        catalog_table,
+                        image_model.meta.wcs.bounding_box
                     )
-                    imcat.meta["model_index"] = i
-                    imcats.append(imcat)
+                    corrector = tweakreg.RomanWCSCorrector(
+                        wcs=image_model.meta.wcs,
+                        wcsinfo={
+                            "roll_ref": image_model.meta.wcsinfo["roll_ref"],
+                            "v2_ref": image_model.meta.wcsinfo["v2_ref"],
+                            "v3_ref": image_model.meta.wcsinfo["v3_ref"],
+                        },
+                        # catalog and group_id are required meta
+                        meta={
+                            "catalog": catalog,
+                            "name": catalog.meta.get("name"),
+                            "group_id": images._model_to_group_id(image_model),
+                            "model_index": i,
+                        },
+                    )
+
+                    imcats.append(corrector)
                 images.shelve(image_model, i)
 
         # run alignment only if it was possible to build image catalogs
@@ -665,3 +679,46 @@ def _filter_catalog(catalog):
         bad = (catalog["warning_flags"] & dqflags.pixel.DO_NOT_USE) != 0
         catalog = catalog[~bad]
     return catalog
+
+
+def construct_wcs_corrector(
+    wcs: gwcs.WCS,
+    refang: dict,
+    catalog: Table,
+    group_id: str,
+) -> RomanWCSCorrector:
+    """
+    Construct a RomanWCSCorrector for the provided wcs.
+
+    pre-compute skycoord here so we can later use it
+    to check for a small wcs correction.
+
+    Parameters
+    ----------
+    wcs : `gwcs.WCS`
+        WCS object to be corrected.
+
+    refang : dict
+        Dictionary containing WCSreference angles.
+
+    Returns
+    -------
+    `RomanWCSCorrector`
+        A WCS corrector object for the provided WCS.
+    """
+    catalog = tweakreg.filter_catalog_by_bounding_box(catalog, wcs.bounding_box)
+
+    return tweakreg.RomanWCSCorrector(
+        wcs=wcs,
+        wcsinfo={
+            "roll_ref": refang["roll_ref"],
+            "v2_ref": refang["v2_ref"],
+            "v3_ref": refang["v3_ref"],
+        },
+        # catalog and group_id are required meta
+        meta={
+            "catalog": catalog,
+            "name": catalog.meta.get("name"),
+            "group_id": group_id,
+        },
+    )
