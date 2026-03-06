@@ -1,1 +1,1 @@
-``tweakwcs`` will now use roman-specific WCS corrector.
+Replace "JWST" with "Roman" in name of the WCS transform produced by ``tweakwcs``.
