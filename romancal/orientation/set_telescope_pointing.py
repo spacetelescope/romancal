@@ -1401,11 +1401,8 @@ def update_meta(model, wcsinfo, vinfo, quality):
     pm.target_ra = skycoord[0]
     pm.target_dec = skycoord[1]
 
-    # If not present, stub-out keywords that are expected
-    # in L1 products. 26Q2B21 will deal with this bad situation
+    # Update guidestar information
     gs = model.meta.guide_star
-    gs.corrected_ra = getattr(gs, "corrected_ra", pm.target_ra)
-    gs.corrected_dec = getattr(gs, "corrected_dec", pm.target_dec)
     gs.h = getattr(gs, "h", wm.v2_ref)
     gs.v = getattr(gs, "v", wm.v3_ref)
 
