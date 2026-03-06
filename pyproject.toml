@@ -36,6 +36,7 @@ dependencies = [
     "stcal>=1.18.0,<2",
     "stpipe>=0.11.0,<2",
     "spherical-geometry>=1.4.0,<1.5",
+    "tweakwcs@git+https://github.com/mcara/tweakwcs.git@roman-gwcs",
 ]
 license-files = ["LICENSE"]
 dynamic = [
