@@ -47,7 +47,7 @@ WORKSHOP_UNCALS="
     r0000301001001001001_0001_wfi01_prism_uncal.asdf
 "
 for WORKSHOP_UNCAL in $WORKSHOP_UNCALS; do
-    if [ $WORKSHOP_UNCAL =~ "_f158_"]; then
+    if [[ $WORKSHOP_UNCAL =~ "_f158_" ]]; then
         # image file, already processed through elp to a cal file above
         cp "${WORKSHOP_UNCAL//_uncal/_cal}" $outdir/data-workshop/
         cp "${WORKSHOP_UNCAL//_uncal/_wcs}" $outdir/data-workshop/
