@@ -15,6 +15,7 @@ import pyarrow.parquet as pq
 from astropy.table import Table
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import dqflags
+from tweakwcs import RomanWCSCorrector
 from stcal.tweakreg import tweakreg
 from stcal.tweakreg.tweakreg import TweakregError
 
@@ -207,12 +208,12 @@ class TweakRegStep(RomanStep):
                     catalog = tweakreg.filter_catalog_by_bounding_box(
                         catalog_table, image_model.meta.wcs.bounding_box
                     )
-                    corrector = tweakreg.RomanWCSCorrector(
+                    corrector = RomanWCSCorrector(
                         wcs=image_model.meta.wcs,
                         wcsinfo={
-                            "roll_ref": image_model.meta.wcsinfo["roll_ref"],
-                            "v2_ref": image_model.meta.wcsinfo["v2_ref"],
-                            "v3_ref": image_model.meta.wcsinfo["v3_ref"],
+                            "roll_ref": image_model.meta.wcsinfo.roll_ref,
+                            "v2_ref": image_model.meta.wcsinfo.v2_ref,
+                            "v3_ref": image_model.meta.wcsinfo.v3_ref,
                         },
                         # catalog and group_id are required meta
                         meta={
