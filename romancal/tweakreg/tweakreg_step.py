@@ -15,9 +15,9 @@ import pyarrow.parquet as pq
 from astropy.table import Table
 from roman_datamodels import datamodels as rdm
 from roman_datamodels import dqflags
-from tweakwcs import RomanWCSCorrector
 from stcal.tweakreg import tweakreg
 from stcal.tweakreg.tweakreg import TweakregError
+from tweakwcs import RomanWCSCorrector
 
 from romancal.assign_wcs.utils import add_s_region
 from romancal.datamodels.fileio import open_dataset
