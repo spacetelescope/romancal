@@ -71,7 +71,7 @@ ASN_FNS=`ls *_asn.json`
 for ASN_FN in $ASN_FNS; do
     strun roman_mos $ASN_FN
     cp $ASN_FN $outdir/data-workshop/
-    cp "${WORKSHOP_UNCAL//_asn.json/_coadd.asdf}" $outdir/data-workshop/
-    cp "${WORKSHOP_UNCAL//_asn.json/_cat.parquet}" $outdir/data-workshop/
-    cp "${WORKSHOP_UNCAL//_asn.json/_segm.asdf}" $outdir/data-workshop/
+    cp "${ASN_FN//_asn.json/_coadd.asdf}" $outdir/data-workshop/
+    cp "${ASN_FN//_asn.json/_cat.parquet}" $outdir/data-workshop/
+    cp "${ASN_FN//_asn.json/_segm.asdf}" $outdir/data-workshop/
 done
