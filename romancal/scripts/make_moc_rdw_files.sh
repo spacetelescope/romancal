@@ -13,7 +13,7 @@ fi
 
 outdir="$1"
 
-logfile="$outdir/make_regtestdata.log"
+logfile="$outdir/make_moc_rdw_files.log"
 
 # stop on an error
 set -e
