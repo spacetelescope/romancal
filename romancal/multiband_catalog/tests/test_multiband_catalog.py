@@ -160,7 +160,10 @@ def shared_tests(
         assert filepath.exists()
         segm_model = rdm.open(filepath)
         assert isinstance(segm_model, MultibandSegmentationMapModel)
-        assert segm_model.meta.get("psf_match_reference_filter") == cat.meta["psf_match_reference_filter"]
+        assert (
+            segm_model.meta.get("psf_match_reference_filter")
+            == cat.meta["psf_match_reference_filter"]
+        )
 
 
 @pytest.mark.parametrize("fit_psf", (True, False))
