@@ -216,14 +216,10 @@ class RampFitStep(RomanStep):
         )
 
         if self.maximum_memory is not None:
-            image_info = self._likely_chunked(
-                input_model, readnoise_model, gain_model
-            )
+            image_info = self._likely_chunked(input_model, readnoise_model, gain_model)
         else:
             # Full-frame processing (original path)
-            jump_data = self._setup_jump_data(
-                input_model, readnoise_model, gain_model
-            )
+            jump_data = self._setup_jump_data(input_model, readnoise_model, gain_model)
             image_info, _, _ = likely_ramp_fit(
                 input_model,
                 readnoise_model.data,
@@ -287,8 +283,7 @@ class RampFitStep(RomanStep):
         n_chunks = ceil(nrows / chunk_rows)
 
         log.info(
-            "Chunked ramp fitting: %d chunks of ~%d rows "
-            "(memory budget: %.1f GB)",
+            "Chunked ramp fitting: %d chunks of ~%d rows (memory budget: %.1f GB)",
             n_chunks,
             chunk_rows,
             self.maximum_memory,
@@ -336,9 +331,7 @@ class RampFitStep(RomanStep):
 
             if chunk_info.get("chisq") is not None:
                 if "chisq" not in image_info:
-                    image_info["chisq"] = np.zeros(
-                        (nrows, ncols), dtype=np.float32
-                    )
+                    image_info["chisq"] = np.zeros((nrows, ncols), dtype=np.float32)
                 image_info["chisq"][s, :] = chunk_info["chisq"]
 
             del chunk_model, chunk_info
