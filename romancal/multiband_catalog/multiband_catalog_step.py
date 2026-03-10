@@ -53,7 +53,7 @@ class MultibandCatalogStep(RomanStep):
         deblend = boolean(default=False)      # deblend sources?
         suffix = string(default='cat')        # Default suffix for output files
         fit_psf = boolean(default=True)       # fit source PSFs for accurate astrometry?
-        reference_filter = string(default=None)  # reference filter for PSF matching
+        psf_match_reference_filter = string(default=None)  # reference filter for PSF matching
         inject_sources = boolean(default=False) # Inject sources into images
         inject_seed = integer(default=None)   # RNG seed for injected sources
         save_debug_info = boolean(default=False)
@@ -70,6 +70,10 @@ class MultibandCatalogStep(RomanStep):
         with library:
             example_model = library.borrow(0)
             library.shelve(example_model, modify=False)
+
+        # Determine reference filter: CLI arg > association file > reddest filter
+        if self.psf_match_reference_filter is None:
+            self.psf_match_reference_filter = library.asn.get("psf_match_reference_filter")
 
         # Initialize the source catalog model
         cat_model = initialize_catalog_model(library, example_model)

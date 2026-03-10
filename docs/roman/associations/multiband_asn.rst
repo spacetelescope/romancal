@@ -22,6 +22,19 @@ Multiband catalog products always omit the optical element (filter) from their
 output filenames, regardless of whether they contain one or multiple filters.
 This naming convention distinguishes multiband products from single-band products.
 
+The association file may optionally contain a ``psf_match_reference_filter`` top-level key
+specifying which filter to use as the PSF-matching reference in
+:class:`~romancal.multiband_catalog.MultibandCatalogStep`.  If omitted, the step
+defaults to the reddest filter.  Use ``--psf-match-reference-filter`` to set it:
+
+.. code-block:: bash
+
+    multiband_asn r00001_*_coadd.asdf --psf-match-reference-filter F158
+
+This value may be overridden at run time by passing ``--psf_match_reference_filter``
+directly to ``MultibandCatalogStep`` on the command line, which takes
+precedence over the association file.
+
 Usage
 ^^^^^
 

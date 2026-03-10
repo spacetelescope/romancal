@@ -199,12 +199,37 @@ cp ${l3name}_segm.asdf $outdir/roman-pipeline/dev/WFI/image/
 strun romancal.step.ResampleStep L3_mosaic_asn.json --resample_on_skycell=False --rotation=0 --output_file=mosaic.asdf
 cp mosaic_resamplestep.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
-# multiband catalog
-asn_from_list --product-name=${l3name}_mbcat ${l3name}_coadd.asdf -o L3_skycell_mbcat_asn.json
-strun romancal.step.MultibandCatalogStep L3_skycell_mbcat_asn.json --deblend True
-cp L3_skycell_mbcat_asn.json $outdir/roman-pipeline/dev/WFI/image/
-cp ${l3name}_mbcat_cat.parquet $outdir/roman-pipeline/dev/truth/WFI/image/
-cp ${l3name}_mbcat_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
+# F129 and F213: L2 processing
+strun roman_elp r0000101001001001001_0005_wfi01_f129_uncal.asdf
+strun roman_elp r0000101001001001001_0006_wfi01_f213_uncal.asdf
+cp r0000101001001001001_0005_wfi01_f129_cal.asdf $outdir/roman-pipeline/dev/WFI/image/
+cp r0000101001001001001_0006_wfi01_f213_cal.asdf $outdir/roman-pipeline/dev/WFI/image/
+
+# F129 and F213: L3 on skycell
+l3name_f129="r00001_p_v01001001001001_270p65x70y49_f129"
+l3name_f213="r00001_p_v01001001001001_270p65x70y49_f213"
+asn_from_list r0000101001001001001_0005_wfi01_f129_cal.asdf \
+    -o L3_mosaic_f129_asn.json --product-name $l3name_f129 --target 270p65x70y49
+asn_from_list r0000101001001001001_0006_wfi01_f213_cal.asdf \
+    -o L3_mosaic_f213_asn.json --product-name $l3name_f213 --target 270p65x70y49
+strun roman_mos L3_mosaic_f129_asn.json
+strun roman_mos L3_mosaic_f213_asn.json
+cp ${l3name_f129}_coadd.asdf $outdir/roman-pipeline/dev/WFI/image/
+cp ${l3name_f213}_coadd.asdf $outdir/roman-pipeline/dev/WFI/image/
+
+# Multiband catalog (3-filter: F129, F158, F213; F158 is reference)
+# multiband_asn derives product name and output filename from the input
+# coadd filenames, producing r00001_p_v01001001001001_270p65x70y49_asn.json
+l3name_mb="r00001_p_v01001001001001_270p65x70y49"
+multiband_asn \
+    ${l3name_f129}_coadd.asdf \
+    ${l3name}_coadd.asdf \
+    ${l3name_f213}_coadd.asdf \
+    --psf-match-reference-filter F158
+strun romancal.step.MultibandCatalogStep ${l3name_mb}_asn.json --deblend True
+cp ${l3name_mb}_asn.json $outdir/roman-pipeline/dev/WFI/image/
+cp ${l3name_mb}_cat.parquet $outdir/roman-pipeline/dev/truth/WFI/image/
+cp ${l3name_mb}_segm.asdf $outdir/roman-pipeline/dev/truth/WFI/image/
 
 # 2nd L3 on skycell
 l3name="r00001_p_e01001001001001_0001_270p65x70y49_f158"

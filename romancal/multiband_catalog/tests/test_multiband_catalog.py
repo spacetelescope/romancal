@@ -592,7 +592,7 @@ def test_multiband_catalog_middle_reference(library_model_three_filters, functio
         npixels=10,
         fit_psf=False,
         deblend=True,
-        reference_filter="F158",
+        psf_match_reference_filter="F158",
         save_results=False,
     )
 
@@ -650,7 +650,7 @@ def test_multiband_catalog_bluest_reference(library_model_three_filters, functio
         npixels=10,
         fit_psf=False,
         deblend=True,
-        reference_filter="F062",
+        psf_match_reference_filter="F062",
         save_results=False,
     )
 
@@ -711,7 +711,7 @@ def test_multiband_catalog_column_content(
         npixels=10,
         fit_psf=fit_psf,
         deblend=True,
-        reference_filter="F129",
+        psf_match_reference_filter="F129",
         save_results=False,
     )
 

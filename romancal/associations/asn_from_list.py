@@ -44,6 +44,9 @@ def asn_from_list(items, rule=DMS_ELPP_Base, **kwargs):
         target = kwargs["target"]
         asn["target"] = target
 
+    if kwargs.get("psf_match_reference_filter") is not None:
+        asn["psf_match_reference_filter"] = kwargs["psf_match_reference_filter"]
+
     # Always set data_release_id; default to 'p' if not provided
     asn["data_release_id"] = kwargs.get("data_release_id", "p")
     asn = _create_ordered_meta(asn)
@@ -170,6 +173,14 @@ def _cli(args=None):
     )
 
     parser.add_argument(
+        "--psf-match-reference-filter",
+        type=str,
+        default=None,
+        help="Reference filter for PSF matching (used only by the multiband catalog step)",
+        dest="psf_match_reference_filter",
+    )
+
+    parser.add_argument(
         "filelist",
         type=str,
         nargs="+",
@@ -190,6 +201,7 @@ def _cli(args=None):
             acid=parsed.acid,
             target=parsed.target,
             data_release_id=parsed.data_release_id,
+            psf_match_reference_filter=parsed.psf_match_reference_filter,
         )
         _, serialized = asn.dump(format="json")
         outfile.write(serialized)

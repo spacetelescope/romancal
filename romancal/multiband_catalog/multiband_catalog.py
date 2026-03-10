@@ -262,13 +262,13 @@ def prepare_reference_filter(self, library):
         - 'ref_psf_model': The reference PSF model
     """
     # Determine reference filter for PSF matching
-    if self.reference_filter is None:
+    if self.psf_match_reference_filter is None:
         # Default to reddest filter
         ref_filter = get_reddest_filter(library)
         log.info(f"Using reddest filter as reference: {ref_filter}")
     else:
         # User specified reference filter
-        ref_filter = self.reference_filter.upper()
+        ref_filter = self.psf_match_reference_filter.upper()
         log.info(f"Using user-specified reference filter: {ref_filter}")
 
     # Load reference PSF model
