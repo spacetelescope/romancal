@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# takes one argument: the directory into which to start putting the regtest files.
+# takes one argument: the directory into which to start putting the processed files.
 
 # input files needed:
 # r0000101001001001001_0001_wfi*_f158_uncal.asdf - L1 files for each detector
