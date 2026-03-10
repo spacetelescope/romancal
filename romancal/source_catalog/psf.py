@@ -2,6 +2,7 @@
 Module to calculate PSF photometry.
 """
 
+import inspect
 import logging
 from collections import OrderedDict
 
@@ -678,15 +679,27 @@ def fit_psf_to_image_model(
         if finder is None:
             # these defaults extracted from the
             # romancal SourceDetectionStep
-            finder = DAOStarFinder(
-                fwhm=1.0,
-                threshold=0.0,
-                sharplo=0.0,
-                sharphi=1.0,
-                roundlo=-1.0,
-                roundhi=1.0,
-                peakmax=None,
-            )
+
+            finder_args = list(inspect.signature(DAOStarFinder).parameters)
+            if "sharpness_range" in finder_args:
+                # Use new new kwargs for photutils v3.0 and later
+                finder = DAOStarFinder(
+                    fwhm=1.0,
+                    threshold=0.0,
+                    sharpness_range=(0.0, 1.0),
+                    roundness_range=(-1.0, 1.0),
+                    peak_max=None,
+                )
+            else:
+                finder = DAOStarFinder(
+                    fwhm=1.0,
+                    threshold=0.0,
+                    sharplo=0.0,
+                    sharphi=1.0,
+                    roundlo=-1.0,
+                    roundhi=1.0,
+                    peakmax=None,
+                )
 
         psf_photometry_kwargs["finder"] = finder
 
