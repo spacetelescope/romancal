@@ -73,7 +73,9 @@ class MultibandCatalogStep(RomanStep):
 
         # Determine reference filter: CLI arg > association file > reddest filter
         if self.psf_match_reference_filter is None:
-            self.psf_match_reference_filter = library.asn.get("psf_match_reference_filter")
+            self.psf_match_reference_filter = library.asn.get(
+                "psf_match_reference_filter"
+            )
 
         # Initialize the source catalog model
         cat_model = initialize_catalog_model(library, example_model)

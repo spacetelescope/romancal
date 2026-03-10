@@ -119,7 +119,8 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request, dms_logger)
             cat[f"aper02_{matched_band}_flux"][bright]
             / cat[f"aper08_{matched_band}_flux"][bright]
         )
-        dms_logger.info(f"aperture ratios: "
+        dms_logger.info(
+            f"aperture ratios: "
             f"{band}: ref={ref_ratio:.4f} matched={matched_ratio:.4f} "
             f"unmatched={unmatched_ratio:.4f}"
         )
