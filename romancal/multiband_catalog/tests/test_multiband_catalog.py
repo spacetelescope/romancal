@@ -111,7 +111,9 @@ def check_psf_matched_catalog(cat, all_filters, ref_filter):
 
     for mb in matched_bands:
         # Aperture and background columns must be present
-        assert sum(1 for c in cat.colnames if match(rf"^aper\d+_{mb}_flux$", c)) == n_aper
+        assert (
+            sum(1 for c in cat.colnames if match(rf"^aper\d+_{mb}_flux$", c)) == n_aper
+        )
         assert f"aper_bkg_{mb}_flux" in cat.colnames
         assert f"aper_bkg_{mb}_flux_err" in cat.colnames
         # kron and segment flux columns must be present
@@ -129,13 +131,16 @@ def check_psf_matched_catalog(cat, all_filters, ref_filter):
             assert f"{param}_{mb}" not in cat.colnames
 
     # Reference filter must have no matched aperture columns
-    assert sum(1 for c in cat.colnames if match(rf"^aper\d+_{ref_filter}m_flux$", c)) == 0
+    assert (
+        sum(1 for c in cat.colnames if match(rf"^aper\d+_{ref_filter}m_flux$", c)) == 0
+    )
 
     # All matched bands must have the same column structure
     if len(matched_bands) > 1:
         template = sorted(
             c.replace(matched_bands[0], "BAND")
-            for c in cat.colnames if matched_bands[0] in c
+            for c in cat.colnames
+            if matched_bands[0] in c
         )
         for mb in matched_bands[1:]:
             assert (
@@ -552,9 +557,9 @@ def library_model_three_filters(mosaic_model):
 @pytest.mark.parametrize(
     "psf_match_reference_filter",
     [
-        None,     # reddest (F184 auto-selected)
-        "F158",   # middle
-        "F062",   # bluest
+        None,  # reddest (F184 auto-selected)
+        "F158",  # middle
+        "F062",  # bluest
     ],
 )
 def test_multiband_catalog_reference_filter(
