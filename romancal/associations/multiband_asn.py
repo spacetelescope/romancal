@@ -145,6 +145,8 @@ def _cli():
 
     multiband_asn = MultibandAssociation(args.files)
 
-    multiband_asn.create_multiband_asn(psf_match_reference_filter=args.psf_match_reference_filter)
+    multiband_asn.create_multiband_asn(
+        psf_match_reference_filter=args.psf_match_reference_filter
+    )
 
     logger.info("Multiband association creation complete.")
