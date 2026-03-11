@@ -5,7 +5,6 @@ creation.
 
 import logging
 
-import numpy as np
 from astropy.table import join
 from roman_datamodels import datamodels
 

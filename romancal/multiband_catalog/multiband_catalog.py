@@ -184,9 +184,7 @@ def join_filter_catalogs(detection_catalog, filter_catalogs):
         The detection catalog with all filter catalogs joined in
         wavelength order.
     """
-    sorted_filter_keys = sorted(
-        filter_catalogs.keys(), key=get_filter_wavelength
-    )
+    sorted_filter_keys = sorted(filter_catalogs.keys(), key=get_filter_wavelength)
 
     for filter_key in sorted_filter_keys:
         cat = filter_catalogs[filter_key]
