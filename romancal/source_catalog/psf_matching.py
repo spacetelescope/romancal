@@ -280,7 +280,7 @@ def compute_psf_correction_factors(
         Detection catalog.
 
     mask : array-like
-        Boolean mask array where True indicates valid pixels.
+        Boolean mask array where True indicates invalid/bad pixels.
 
     ee_spline : callable
         The encircled energy spline function.
@@ -311,7 +311,8 @@ def compute_psf_correction_factors(
         mask=ref_mask,
     )
 
-    # Measure photometry on the PSF-matched reference image
+    # Measure photometry on the PSF-matched reference image using the
+    # reference mask (bad pixels in ref_model), not the target mask.
     catobj_matched = RomanSourceCatalog(
         psf_matched_ref,
         cat_model,
@@ -320,7 +321,7 @@ def compute_psf_correction_factors(
         star_kernel_fwhm,
         fit_psf=False,
         psf_model=None,
-        mask=mask,
+        mask=ref_mask,
         detection_cat=detection_cat,
         cat_type="psf_matched",
         ee_spline=ee_spline,
@@ -337,19 +338,21 @@ def compute_psf_correction_factors(
     flux_columns = [col for col in ref_catalog.colnames if col.endswith("_flux")]
 
     for flux_col in flux_columns:
-        if flux_col not in ref_catalog.colnames or flux_col not in cat_matched.colnames:
+        if flux_col not in cat_matched.colnames:
+            # ref_catalog uses cat_type="dr_band" which includes columns
+            # (e.g. psf_flux) absent from cat_matched's cat_type="psf_matched"
             continue
 
         flux_original = ref_catalog[flux_col]
         flux_matched = cat_matched[flux_col]
 
-        # Compute correction factor, avoiding division by zero
+        # Compute correction factor; NaN where flux_matched is zero or
+        # correction is otherwise non-finite, so that invalid corrections
+        # propagate visibly through the matched photometry columns.
         with np.errstate(divide="ignore", invalid="ignore"):
             correction = flux_original / flux_matched
-            # Set correction to 1.0 where original flux is zero or
-            # invalid
             correction = np.where(
-                (flux_matched == 0) | ~np.isfinite(correction), 1.0, correction
+                (flux_matched == 0) | ~np.isfinite(correction), np.nan, correction
             )
 
         correction_factors[flux_col] = correction

@@ -27,7 +27,6 @@ def create_filter_catalog(
     cat_model,
     filter_name,
     ref_filter,
-    ref_wavelength,
     segment_img,
     star_kernel_fwhm,
     detection_catobj,
@@ -58,9 +57,6 @@ def create_filter_catalog(
 
     ref_filter : str
         Name of the reference filter for PSF matching.
-
-    ref_wavelength : int
-        Wavelength of the reference filter in microns.
 
     segment_img : ndarray
         Segmentation image from detection.
@@ -141,10 +137,7 @@ def create_filter_catalog(
     # Clear filter catalog metadata
     cat_original.meta = None
 
-    # Determine if this filter is bluer or redder than reference
-    filter_wavelength = get_filter_wavelength(filter_name)
-
-    # Create PSF-matched catalog based on filter position
+    # Create PSF-matched catalog based on filter position relative to reference
     if filter_name == ref_filter:
         # Reference filter case - only include original measurements
         log.info(
@@ -152,7 +145,7 @@ def create_filter_catalog(
         )
         cat = cat_original
 
-    elif filter_wavelength < ref_wavelength:
+    elif get_filter_wavelength(filter_name) < get_filter_wavelength(ref_filter):
         # Bluer filter - normal PSF matching (convolve to the reference
         # image's PSF)
         log.info(f"Creating PSF-matched image for {filter_name}")
@@ -222,34 +215,19 @@ def create_filter_catalog(
         # correction factors to the original catalog
         cat_synthetic = cat_original.copy()
 
-        # Apply correction factors to flux columns
+        # Apply correction factors to flux and flux_err columns.
+        # Both catalogs use the same cat_type and fit_psf setting, so
+        # column names are guaranteed to match after filter substitution.
         for flux_col, correction in correction_factors.items():
-            # flux_col names contain the reference filter name, so
-            # we need to replace it with the current filter name
+            # flux_col names contain the reference filter name; replace
+            # with the current filter name to get the target column.
             flux_col_syn = flux_col.replace(
                 f"_{ref_filter.lower()}_", f"_{filter_name.lower()}_"
             )
+            cat_synthetic[flux_col_syn] *= correction
 
-            # Apply correction to flux column
-            if flux_col_syn in cat_synthetic.colnames:
-                cat_synthetic[flux_col_syn] *= correction
-
-            # Also apply to error columns
             err_col_syn = flux_col_syn.replace("_flux", "_flux_err")
-            if err_col_syn in cat_synthetic.colnames:
-                cat_synthetic[err_col_syn] *= correction
-
-            # Handle magnitude columns (subtract 2.5 * log10(C))
-            mag_col_syn = flux_col_syn.replace("_flux", "_abmag")
-            if mag_col_syn in cat_synthetic.colnames:
-                with np.errstate(divide="ignore", invalid="ignore"):
-                    mag_correction = -2.5 * np.log10(correction)
-                    mag_correction = np.where(
-                        ~np.isfinite(mag_correction),
-                        0.0,
-                        mag_correction,
-                    )
-                cat_synthetic[mag_col_syn] += mag_correction
+            cat_synthetic[err_col_syn] *= correction
 
         # Rename columns to add 'm' suffix and keep only flux columns
         filter_name_matched = f"{filter_name}m"

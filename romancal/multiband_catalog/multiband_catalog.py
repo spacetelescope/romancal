@@ -176,8 +176,7 @@ def join_filter_catalogs(detection_catalog, filter_catalogs):
         The detection catalog to which filter catalogs will be joined.
 
     filter_catalogs : dict
-        Dictionary with (filter_name, wavelength) tuples as keys and
-        catalog tables as values.
+        Dictionary with filter names as keys and catalog tables as values.
 
     Returns
     -------
@@ -185,8 +184,9 @@ def join_filter_catalogs(detection_catalog, filter_catalogs):
         The detection catalog with all filter catalogs joined in
         wavelength order.
     """
-    # Sort by wavelength (second element of tuple key)
-    sorted_filter_keys = sorted(filter_catalogs.keys(), key=lambda x: x[1])
+    sorted_filter_keys = sorted(
+        filter_catalogs.keys(), key=get_filter_wavelength
+    )
 
     for filter_key in sorted_filter_keys:
         cat = filter_catalogs[filter_key]
@@ -257,7 +257,6 @@ def prepare_reference_filter(self, library):
     result : dict
         Dictionary with keys:
         - 'ref_filter': The reference filter name (uppercase)
-        - 'ref_wavelength': The reference filter approx wavelength (nm)
         - 'ref_model': The reference filter model
         - 'ref_psf_model': The reference PSF model
     """
@@ -292,12 +291,8 @@ def prepare_reference_filter(self, library):
     ref_psf_model = datamodels.open(ref_psf_file)
     log.info(f"Using reference PSF: {ref_psf_file}")
 
-    # Get reference filter approximate wavelength (nm) based on filter name
-    ref_wavelength = get_filter_wavelength(ref_filter)
-
     return {
         "ref_filter": ref_filter,
-        "ref_wavelength": ref_wavelength,
         "ref_model": ref_model,
         "ref_psf_model": ref_psf_model,
     }
@@ -320,12 +315,9 @@ def prepare_processing_order(library, ref_filter):
 
     Returns
     -------
-    result : list of tuple
-        List of (model_index, filter_name) tuples sorted so reference
-        filter is first.
+    result : list of int
+        List of model indices sorted so the reference filter is first.
     """
-    # Create list of model indices in processing order with reference
-    # filter first, then all others
     model_indices = []
     with library:
         for i, model in enumerate(library):
@@ -333,14 +325,9 @@ def prepare_processing_order(library, ref_filter):
             model_indices.append((i, filter_name))
             library.shelve(model, modify=False)
 
-    # Sort so reference filter is first
-    def sort_key(index_filter_tuple):
-        _, filt = index_filter_tuple
-        return 0 if filt == ref_filter else 1
+    model_indices.sort(key=lambda x: 0 if x[1] == ref_filter else 1)
 
-    model_indices.sort(key=sort_key)
-
-    return model_indices
+    return [i for i, _ in model_indices]
 
 
 def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
@@ -394,7 +381,6 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
     # Setup reference filter for PSF matching
     ref_info = prepare_reference_filter(self, library)
     ref_filter = ref_info["ref_filter"]
-    ref_wavelength = ref_info["ref_wavelength"]
     ref_model = ref_info["ref_model"]
     ref_psf_model = ref_info["ref_psf_model"]
 
@@ -415,7 +401,7 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
 
     # Create catalogs for each input image
     with library:
-        for model_index, _ in model_indices:
+        for model_index in model_indices:
             model = library.borrow(model_index)
             filter_name = model.meta.instrument.optical_element
 
@@ -425,7 +411,6 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
                 cat_model=catalog_model,
                 filter_name=filter_name,
                 ref_filter=ref_filter,
-                ref_wavelength=ref_wavelength,
                 segment_img=segment_img,
                 star_kernel_fwhm=star_kernel_fwhm,
                 detection_catobj=detection_catobj,
@@ -443,10 +428,7 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
             # Store ee_fractions for consolidation
             filter_ee_fractions.append(result["ee_fractions"])
 
-            # Store filter catalog for later joining in wavelength order
-            filter_wavelength = get_filter_wavelength(filter_name)
-            cat = result["catalog"]
-            filter_catalogs[(filter_name, filter_wavelength)] = cat
+            filter_catalogs[filter_name] = result["catalog"]
 
             # Accumulate and blend image metadata
             blend_image_metadata(model, catalog_model, time_means, exposure_times)
