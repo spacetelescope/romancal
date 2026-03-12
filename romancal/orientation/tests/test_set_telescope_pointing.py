@@ -83,6 +83,27 @@ def test_add_wcs_default(science_raw_model, tmp_path):
         assert np.allclose(result.meta.guide_star.hv_position, TRANSFORM_KWARGS['gscommanded'])
 
 
+def test_add_wcs_default_from_model(science_raw_model, tmp_path):
+    """Handle when no pointing exists and the default is used."""
+    m = science_raw_model
+    m.meta.exposure.start_time = Time("2022-01-01T00:00:00")
+    m.meta.exposure.end_time = Time("2022-01-01T01:00:00")
+    m.meta.pointing.quaternion = tuple(TRANSFORM_KWARGS["pointing"].q)
+    m.meta.guide_star.hv_position = TRANSFORM_KWARGS['gscommanded']
+    model_path = _model_to_tmpfile(m, tmp_path)
+    stp.add_wcs(
+        model_path,
+        tolerance=0,
+        allow_default=True,
+    )
+
+    with rdm.open(model_path) as result:
+        assert np.isclose(result.meta.wcsinfo.ra_ref, DEFAULT_RADECREF[0])
+        assert np.isclose(result.meta.wcsinfo.dec_ref, DEFAULT_RADECREF[1])
+        assert np.allclose(result.meta.pointing.quaternion, TRANSFORM_KWARGS['pointing'].q)
+        assert np.allclose(result.meta.guide_star.hv_position, TRANSFORM_KWARGS['gscommanded'])
+
+
 def test_change_base_url():
     """Test changing the engineering database by call for success.
 
