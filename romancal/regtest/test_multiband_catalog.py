@@ -29,17 +29,19 @@ fieldlist = [
     "kron_f158_flux_err",  # DMS395 basic statistical uncertainties
     "aper01_f158_flux_err",  # DMS395 basic statistical uncertainties
     "x_psf_f158_err",  # DMS395 basic statistical uncertainties
+    "aper02_f129m_flux",  # DMS539 PSF-matched photometry
+    "segment_f129m_flux",  # DMS539
+    "kron_f129m_flux",  # DMS539
+    "aper02_f213m_flux",  # DMS539 PSF-matched photometry
+    "segment_f213m_flux",  # DMS539
+    "kron_f213m_flux",  # DMS539
 ]
 
 
 def test_multiband_catalog(rtdata_module, resource_tracker, request, dms_logger):
     rtdata = rtdata_module
-    inputasnfn = "L3_skycell_mbcat_asn.json"
-    # note that this input association currently only has a single
-    # filter in it, so this is more of an existence proof for the multiband
-    # catalogs than a detailed test.  Using only a single catalog lets us
-    # rely on the existing regtest files.
-    outputfn = "r00001_p_v01001001001001_270p65x70y49_f158_mbcat_cat.parquet"
+    inputasnfn = "r00001_p_v01001001001001_270p65x70y49_asn.json"
+    outputfn = "r00001_p_v01001001001001_270p65x70y49_cat.parquet"
     rtdata.get_asn(f"WFI/image/{inputasnfn}")
     rtdata.output = outputfn
     rtdata.input = inputasnfn
@@ -99,3 +101,35 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request, dms_logger)
     )
 
     dms_logger.info("DMS396: successfully recovered over half of the injected sources.")
+
+    # DMS 539/540: PSF matching quality check.
+    # The aper02/aper08 flux ratio is a proxy for encircled energy and
+    # should be similar across all matched bands (since they share an
+    # effective PSF after matching).  Assert that matched ratios are much
+    # closer to the F158 reference than the original unmatched ratios.
+    bright = cat["segment_f158_flux"] > np.median(cat["segment_f158_flux"])
+    ref_ratio = np.nanmedian(
+        cat["aper02_f158_flux"][bright] / cat["aper08_f158_flux"][bright]
+    )
+    for band, matched_band in [("f129", "f129m"), ("f213", "f213m")]:
+        unmatched_ratio = np.nanmedian(
+            cat[f"aper02_{band}_flux"][bright] / cat[f"aper08_{band}_flux"][bright]
+        )
+        matched_ratio = np.nanmedian(
+            cat[f"aper02_{matched_band}_flux"][bright]
+            / cat[f"aper08_{matched_band}_flux"][bright]
+        )
+        dms_logger.info(
+            f"aperture ratios: "
+            f"{band}: ref={ref_ratio:.4f} matched={matched_ratio:.4f} "
+            f"unmatched={unmatched_ratio:.4f}"
+        )
+        assert abs(matched_ratio - ref_ratio) < abs(unmatched_ratio - ref_ratio) / 5
+
+    dms_logger.info(
+        "DMS539: multiband catalog includes PSF-matched photometry for all bands."
+    )
+    dms_logger.info(
+        "DMS540: PSF matching convolution kernels successfully constructed "
+        "and used for each filter pair."
+    )

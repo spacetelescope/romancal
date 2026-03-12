@@ -49,8 +49,11 @@ class SegmentCatalog:
         detection catalog centroids and shape properties will also be
         used to perform aperture photometry (i.e., circular and Kron).
 
-    flux_unit : str, optional
-        The unit of the flux density. Default is 'nJy'.
+    cat_type : str, optional
+        The type of catalog to create. The default is 'prompt'. Allowed
+        values are 'prompt', 'dr_det', 'dr_band', 'psf_matched',
+        'forced_full', and 'forced_det'. This determines which
+        properties are calculated.
 
     Notes
     -----
@@ -68,7 +71,7 @@ class SegmentCatalog:
         pixel_area,
         wcs_angle,
         detection_cat=None,
-        flux_unit="nJy",
+        cat_type="prompt",
     ):
         self.model = model
         self.segment_img = segment_img
@@ -76,7 +79,7 @@ class SegmentCatalog:
         self.pixel_area = pixel_area
         self.wcs_angle = wcs_angle
         self.detection_cat = detection_cat
-        self.flux_unit = flux_unit
+        self.cat_type = cat_type
 
         self.names = []
         self.wcs = self.model.meta.wcs
@@ -88,9 +91,22 @@ class SegmentCatalog:
         # calculate the segment properties
         self.calc_segment_properties()
 
-        # lazyproperties are not set until accessed so we need to
-        # manually append them
+        # lazy properties are not set until accessed so we need to
+        # manually append them.
+
         for name in self._lazyproperties:
+            # For "dr_band" and "psf_matched" catalogs, we do not need
+            # the orientation_sky lazy property.
+            skip_orientation = self.cat_type in ("dr_band", "psf_matched")
+            if skip_orientation and name == "orientation_sky":
+                continue
+
+            # For "psf_matched" catalogs, we do not need the
+            # fluxfrac_radius_50 lazy property.
+            skip_fluxfrac = self.cat_type in ("psf_matched",)
+            if skip_fluxfrac and name == "fluxfrac_radius_50":
+                continue
+
             self.names.append(name)
 
         # add the placeholder attributes
@@ -177,33 +193,47 @@ class SegmentCatalog:
         # Extract the properties from the segment catalog. These
         # names are the SourceCatalog property names and the order
         # is not important.
-        photutils_names = (
-            "label",
-            "xcentroid",
-            "ycentroid",
-            "xcentroid_win",
-            "ycentroid_win",
-            "sky_centroid",
-            "sky_centroid_win",
-            "bbox_xmin",
-            "bbox_xmax",
-            "bbox_ymin",
-            "bbox_ymax",
-            "area",
-            "semimajor_sigma",
-            "semiminor_sigma",
-            "fwhm",
-            "orientation",
-            "ellipticity",
-            "cxx",
-            "cxy",
-            "cyy",
-            "kron_radius",
-            "segment_flux",
-            "segment_fluxerr",
-            "kron_flux",
-            "kron_fluxerr",
-        )
+
+        # For dr_band and psf_matched catalogs (multiband filter and
+        # PSF-matched catalogs), only calculate minimal properties
+        # needed for photometry
+        if self.cat_type in ("dr_band", "psf_matched"):
+            photutils_names = [
+                "label",
+                "segment_flux",
+                "segment_fluxerr",
+                "kron_flux",
+                "kron_fluxerr",
+            ]
+        else:
+            # Full catalog includes all core properties
+            photutils_names = [
+                "label",
+                "xcentroid",
+                "ycentroid",
+                "xcentroid_win",
+                "ycentroid_win",
+                "sky_centroid",
+                "sky_centroid_win",
+                "bbox_xmin",
+                "bbox_xmax",
+                "bbox_ymin",
+                "bbox_ymax",
+                "area",
+                "kron_radius",
+                "segment_flux",
+                "segment_fluxerr",
+                "kron_flux",
+                "kron_fluxerr",
+                "semimajor_sigma",
+                "semiminor_sigma",
+                "fwhm",
+                "orientation",
+                "ellipticity",
+                "cxx",
+                "cxy",
+                "cyy",
+            ]
 
         # if needed, map names from photutils to the output catalog names
         name_map = {}
@@ -223,7 +253,10 @@ class SegmentCatalog:
             new_name = name_map.get(name, name)
             value = getattr(segm_cat, name)
 
-            # handle any unit conversions
+            # handle any unit conversions needed for specific columns
+            # photutils -> romancal
+
+            # unitless -> pix
             if new_name in (
                 "x_centroid",
                 "y_centroid",
@@ -248,7 +281,7 @@ class SegmentCatalog:
             if new_name == "ellipticity":
                 value = value.value
 
-            # change the photutils dtypes
+            # change dtypes for romancal catalog
             if new_name not in ("sky_centroid", "sky_centroid_win"):
                 if np.issubdtype(value.dtype, np.integer):
                     value = value.astype(np.int32)

@@ -86,6 +86,76 @@ def library_model_all_nan(mosaic_model):
     return ModelLibrary([model1, model2])
 
 
+def check_psf_matched_catalog(cat, all_filters, ref_filter):
+    """
+    Assert that a multiband catalog has correct PSF-matched column structure.
+
+    Parameters
+    ----------
+    cat : `~astropy.table.Table`
+    all_filters : list of str
+        Lowercase filter names present in the catalog (e.g. ["f158", "f184"]).
+    ref_filter : str
+        Lowercase reference filter (e.g. "f184").
+    """
+    n_aper = len(cat.meta["aperture_radii"]["circle_pix"])
+    matched_bands = [f"{f}m" for f in all_filters if f != ref_filter]
+
+    assert cat.meta.get("psf_match_reference_filter") == ref_filter
+
+    # All original filter bands should have aperture columns
+    for f in all_filters:
+        assert (
+            sum(1 for c in cat.colnames if match(rf"^aper\d+_{f}_flux$", c)) == n_aper
+        )
+
+    for mb in matched_bands:
+        # Aperture and background columns must be present
+        assert (
+            sum(1 for c in cat.colnames if match(rf"^aper\d+_{mb}_flux$", c)) == n_aper
+        )
+        assert f"aper_bkg_{mb}_flux" in cat.colnames
+        assert f"aper_bkg_{mb}_flux_err" in cat.colnames
+        # kron and segment flux columns must be present
+        assert f"kron_{mb}_flux" in cat.colnames
+        assert f"kron_{mb}_flux_err" in cat.colnames
+        assert f"segment_{mb}_flux" in cat.colnames
+        assert f"segment_{mb}_flux_err" in cat.colnames
+        # abmag columns must not be present (redundant; derivable from flux)
+        assert not any("_abmag" in c and mb in c for c in cat.colnames)
+        # PSF flux columns must not be present (PSFs are already matched to each filter)
+        assert f"psf_{mb}_flux" not in cat.colnames
+        assert f"psf_{mb}_flux_err" not in cat.colnames
+        # othershape columns (sharpness etc.) not computed for matched bands
+        for param in ["sharpness", "roundness1", "is_extended", "fluxfrac_radius_50"]:
+            assert f"{param}_{mb}" not in cat.colnames
+
+    # Reference filter must have no matched aperture columns
+    assert (
+        sum(1 for c in cat.colnames if match(rf"^aper\d+_{ref_filter}m_flux$", c)) == 0
+    )
+
+    # All matched bands must have the same column structure
+    if len(matched_bands) > 1:
+        template = sorted(
+            c.replace(matched_bands[0], "BAND")
+            for c in cat.colnames
+            if matched_bands[0] in c
+        )
+        for mb in matched_bands[1:]:
+            assert (
+                sorted(c.replace(mb, "BAND") for c in cat.colnames if mb in c)
+                == template
+            )
+
+    # ee_fractions: exactly the original filter keys, correct lengths
+    assert "ee_fractions" in cat.meta
+    assert isinstance(cat.meta["ee_fractions"], dict)
+    assert set(cat.meta["ee_fractions"].keys()) == set(all_filters)
+    for value in cat.meta["ee_fractions"].values():
+        assert len(value) == n_aper
+
+
 def shared_tests(
     result, cat, library_model, save_results, function_jail, shape=(101, 101)
 ):
@@ -94,20 +164,7 @@ def shared_tests(
         assert result.meta.data_release_id == input_model.meta.data_release_id
         library_model.shelve(input_model, modify=False)
 
-    assert len(cat.meta["aperture_radii"]["circle_pix"]) > 0
-    assert sum(
-        1 for name in cat.colnames if match(r"^aper\d+_f158_flux$", name)
-    ) == len(cat.meta["aperture_radii"]["circle_pix"])
-    assert sum(
-        1 for name in cat.colnames if match(r"^aper\d+_f184_flux$", name)
-    ) == len(cat.meta["aperture_radii"]["circle_pix"])
-    assert "ee_fractions" in cat.meta
-    assert isinstance(cat.meta["ee_fractions"], dict)
-    assert len(cat.meta["ee_fractions"]) == 2
-    assert "f158" in cat.meta["ee_fractions"]
-    assert "f184" in cat.meta["ee_fractions"]
-    for value in cat.meta["ee_fractions"].values():
-        assert len(value) == len(cat.meta["aperture_radii"]["circle_pix"])
+    check_psf_matched_catalog(cat, ["f158", "f184"], "f184")
 
     if len(cat) > 0:
         assert np.min(cat["x_centroid"]) > 0.0
@@ -134,7 +191,12 @@ def shared_tests(
 
         filepath = Path(function_jail / f"{result.meta.filename}_segm.asdf")
         assert filepath.exists()
-        assert isinstance(rdm.open(filepath), MultibandSegmentationMapModel)
+        segm_model = rdm.open(filepath)
+        assert isinstance(segm_model, MultibandSegmentationMapModel)
+        assert (
+            segm_model.meta.get("psf_match_reference_filter")
+            == cat.meta["psf_match_reference_filter"]
+        )
 
 
 @pytest.mark.parametrize("fit_psf", (True, False))
@@ -380,7 +442,7 @@ def test_multiband_source_injection_catalog(
         result,
         cat,
         library_model2,
-        test_multiband_catalog,
+        save_results,
         function_jail,
         shape=(5000, 5000),
     )
@@ -454,3 +516,117 @@ def test_match_recovered_sources():
     # Test columns included or excluded as expected
     assert "one" in rec_table.colnames
     assert "empty" not in rec_table.colnames
+
+
+@pytest.fixture
+def library_model_f062_f129_f213(mosaic_model):
+    """
+    Library with F062, F129, F213 for column content tests.
+    """
+    model1 = mosaic_model.copy()
+    model1.meta.instrument.optical_element = "F062"
+
+    model2 = mosaic_model.copy()
+    model2.meta.instrument.optical_element = "F129"
+
+    model3 = mosaic_model.copy()
+    model3.meta.instrument.optical_element = "F213"
+
+    return ModelLibrary([model1, model2, model3])
+
+
+@pytest.fixture
+def library_model_three_filters(mosaic_model):
+    """
+    Library with F062, F158, F184.
+    """
+    model1 = mosaic_model.copy()
+    model1.meta.instrument.optical_element = "F062"
+
+    model2 = mosaic_model.copy()
+    model2.meta.instrument.optical_element = "F158"
+
+    model3 = mosaic_model.copy()
+    model3.meta.instrument.optical_element = "F184"
+
+    # input models not in wavelength order to test sorting
+    return ModelLibrary([model2, model3, model1])
+
+
+@pytest.mark.parametrize("fit_psf", (True, False))
+@pytest.mark.parametrize(
+    "psf_match_reference_filter",
+    [
+        None,  # reddest (F184 auto-selected)
+        "F158",  # middle
+        "F062",  # bluest
+    ],
+)
+def test_multiband_catalog_reference_filter(
+    library_model_three_filters,
+    fit_psf,
+    psf_match_reference_filter,
+    function_jail,
+):
+    """
+    Test PSF matching with reddest, middle, and bluest reference filters.
+
+    Uses [F062, F158, F184]; parametrized over which filter is the reference.
+    Non-reference filters should have PSF-matched columns; the reference
+    should not.  ee_fractions should contain the three original filter keys
+    only (no 'm' variants).
+    """
+    step = MultibandCatalogStep()
+
+    kwargs = dict(
+        bkg_boxsize=50,
+        snr_threshold=3,
+        npixels=10,
+        fit_psf=fit_psf,
+        deblend=True,
+        save_results=False,
+    )
+    if psf_match_reference_filter is not None:
+        kwargs["psf_match_reference_filter"] = psf_match_reference_filter
+
+    result = step.call(library_model_three_filters, **kwargs)
+
+    cat = result.source_catalog
+    assert isinstance(cat, Table)
+    assert len(cat) == 7
+
+    # None means reddest (F184) is auto-selected
+    ref = (psf_match_reference_filter or "F184").lower()
+    check_psf_matched_catalog(cat, ["f062", "f158", "f184"], ref)
+
+
+@pytest.mark.parametrize("fit_psf", (True, False))
+def test_multiband_catalog_column_content(
+    library_model_f062_f129_f213, fit_psf, function_jail
+):
+    """
+    Test that matched catalog columns contain the fields we need.
+
+    With F062, F129, F213 and F129 as the reference:
+    - F062m: bluer than reference, normal PSF convolution
+    - F213m: redder than reference, synthetic correction factors
+    - F129 (reference): only original measurements, no matched columns.
+    """
+    step = MultibandCatalogStep()
+
+    result = step.call(
+        library_model_f062_f129_f213,
+        bkg_boxsize=50,
+        snr_threshold=3,
+        npixels=10,
+        fit_psf=fit_psf,
+        deblend=True,
+        psf_match_reference_filter="F129",
+        save_results=False,
+    )
+
+    cat = result.source_catalog
+    assert isinstance(cat, Table)
+    assert len(cat) == 7
+
+    check_psf_matched_catalog(cat, ["f062", "f129", "f213"], "f129")
