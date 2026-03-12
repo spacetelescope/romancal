@@ -1337,8 +1337,7 @@ def update_meta(model, t_pars, wcsinfo, vinfo, quality):
     """Update model's meta info with the given pointing.
 
     The following meta are update:
-    - meta.guide_star.h
-    - meta.guide_star.v
+    - meta.guide_star.hv_position
     - meta.pointing.dec_v1
     - meta.pointing.pa_aperture
     - meta.pointing.pa_v3
@@ -1369,8 +1368,9 @@ def update_meta(model, t_pars, wcsinfo, vinfo, quality):
         Indicator of the success of the pointing determination.
     """
     # Shortcuts to the meta blocks
-    wm = model.meta.wcsinfo
+    gs = model.meta.guide_star
     pm = model.meta.pointing
+    wm = model.meta.wcsinfo
 
     # Setup SIAF info.
     from pysiaf import Siaf
@@ -1409,12 +1409,8 @@ def update_meta(model, t_pars, wcsinfo, vinfo, quality):
     pm.target_dec = skycoord[1]
 
     # Update guidestar information
-    gs = model.meta.guide_star
-    if t_pars.gscommanded is None:
-        hv = (None, None)
-    else:
-        hv = t_pars.gscommanded
-    gs.h, gs.v = hv
+    if t_pars.gscommanded is not None:
+        gs.hv_position = t_pars.gscommanded
 
 
 def attitude_from_v1(vinfo):

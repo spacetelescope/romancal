@@ -287,8 +287,7 @@ def test_transform_serialize(calc_wcs, tmp_path):
 @pytest.mark.parametrize(
     'attr, expected',
     [
-        ('meta.guide_star.h', 916.4728835141),
-        ('meta.guide_star.v', -186.8939737044),
+        ('meta.guide_star.hv_position', (916.4728835141, -186.8939737044)),
         ('meta.pointing.dec_v1', 84.68431896236322),
         ('meta.pointing.pa_aperture', 78.66156386345588),
         ('meta.pointing.pa_v3', 80.93636997134696),
