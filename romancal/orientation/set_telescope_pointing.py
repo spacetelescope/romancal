@@ -43,9 +43,11 @@ through the engineering telemetry and represents how the observatory is orientat
 
 The following meta values are populated:
 
+    - meta.guide_star.hv_position
     - meta.pointing.dec_v1
     - meta.pointing.pa_aperture
     - meta.pointing.pa_v3
+    - meta.pointing.quaternion
     - meta.pointing.ra_v1
     - meta.pointing.target_dec
     - meta.pointing.target_ra
