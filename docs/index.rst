@@ -1,8 +1,19 @@
-.. romancal documentation master file
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 :ref:`genindex`  |  :ref:`modindex`
+
+.. image:: _static/stsci_logo.png
+   :width: 15%
+   :alt: STScI Logo
+   :target: https://stsci.edu
+
+.. image:: _static/stsci_name.png
+   :width: 68%
+   :alt: STScI Logo
+   :target: https://stsci.edu
+
+.. image:: _static/A_Rst_1020_Logo_Box_Color_Seafoamondarkblue_Logo_Full_Color_RGB_850px@72ppi.png
+   :width: 15%
+   :alt: Nancy Grace Roman Space Telescope
+   :target: https://science.nasa.gov/mission/roman-space-telescope/
 
 .. _roman-pipeline-doc-index:
 
@@ -10,32 +21,41 @@
 The Roman Space Telescope Calibration Pipeline
 ==============================================
 
-.. image:: _static/roman_logo_black_w200px.png
-   :align: center
-   :alt: Nancy Roman Space Telescope
-
 **Version**: |release|
 
-Welcome to the documentation for the Roman calibration software,
-`romancal <https://github.com/spacetelescope/romancal>`__.
-This package contains the Python software suite for the
-Roman Space Telescope (RST) calibration pipeline, which processes data
-from the Roman Wide-Field Instrument (WFI) by applying various corrections
-to produce science-ready, calibrated output products including fully calibrated
-individual exposures as well as high-level data products (mosaics,
-catalogs, etc.). The tools in this package allow users to run and
-configure the pipeline to custom process their Roman data.
-Additionally, the romancal package contains the interface to
-Roman datamodels, the recommended method of reading and writing
-Roman data files in Python.
+This package (``romancal``) processes uncalibrated data from both imagers and spectrographs onboard the `Nancy Grace Roman Space Telescope (Roman) <https://science.nasa.gov/mission/roman-space-telescope/>`_, an orbiting infrared observatory stationed at Earth-Sun L :subscript:`2`.
+The pipeline performs a series of calibration steps that result in standard data products,
+applying various corrections to produce science-ready, calibrated output products including
+individual exposures and high-level data products (mosaics, extracted spectra, etc.).
 
+`See README.md for installation and usage instructions <https://github.com/spacetelescope/romancal?tab=readme-ov-file#installation>`_.
 
-If you have questions or concerns regarding the software, please contact the Roman Help
-desk at `Roman Help Desk <https://stsci.service-now.com/roman>`_.
+This package allows users to run and configure the calibration pipeline themselves for custom processing of Roman Telescope data,
+either :ref:`from the command line <running-the-pipeline-from-command-line>` with ``strun``
+or from Python with :ref:`pipeline and step functions and classes <running-the-pipeline-from-python>` in the ``romancal`` package.
+Additionally, the ``romancal`` package provides :ref:`Roman Telescope datamodel classes <datamodels>`,
+the recommended method for reading and writing Roman Telescope data files in Python.
+
+.. note::
+
+   If you have trouble installing this package, have encountered a bug while running the pipeline, or wish to request a new feature,
+   please `open an issue on GitHub <https://github.com/spacetelescope/romancal/issues>`_ or `contact the Roman Telescope Help Desk <https://romanhelp.stsci.edu>`_.
+
+Detailed explanations of specific calibration stages, reference files, and pipeline builds can be found on `RDox <https://roman-docs.stsci.edu/data-handbook-home/roman-data-pipelines>`_.
+
+============
+Contributing
+============
+
+``romancal`` is an open source package written in Python.
+The source code is `available on GitHub <https://github.com/spacetelescope/romancal>`_.
+New contributions and contributors are very welcome!
+
+Please read `CONTRIBUTING.md <https://github.com/spacetelescope/romancal/blob/main/CONTRIBUTING.md>`_.
+
+We strive to provide a welcoming community by abiding with our `CODE_OF_CONDUCT.md <https://github.com/spacetelescope/romancal/blob/main/CODE_OF_CONDUCT.md>`_.
 
 --------------------------------
-
-.. include:: roman/introduction.rst
 
 .. toctree::
    :caption: RomanCal Pipeline
