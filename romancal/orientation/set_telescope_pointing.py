@@ -1294,9 +1294,9 @@ def t_pars_from_model(model, t_pars):
 
     # Retrieve previously calculated orientation items only if they are currently not defined.
     if t_pars.gscommanded is None:
-        t_pars.gscommanded = getattr(model.meta.guide_star, 'hv_position', None)
+        t_pars.gscommanded = getattr(model.meta.guide_star, "hv_position", None)
     if t_pars.default_quaternion is None:
-        t_pars.default_quaternion = getattr(model.meta.pointing, 'quaternion', None)
+        t_pars.default_quaternion = getattr(model.meta.pointing, "quaternion", None)
 
 
 def dcm(alpha, delta, angle):

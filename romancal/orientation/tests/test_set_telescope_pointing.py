@@ -46,7 +46,7 @@ TRANSFORM_KWARGS = {
             ]
         ),
         obstime=Time(1757680438.0280416, format="unix"),
-        q=np.array([-0.70264027, -0.09765787,  0.6867813 ,  0.1584015]),
+        q=np.array([-0.70264027, -0.09765787, 0.6867813, 0.1584015]),
     ),
     "velocity": (-5.473753741352352, -27.480586797035414, -11.875972151015253),
 }
@@ -73,14 +73,18 @@ def test_add_wcs_default(science_raw_model, tmp_path):
         tolerance=0,
         allow_default=True,
         default_quaternion=TRANSFORM_KWARGS["pointing"].q,
-        gscommanded=TRANSFORM_KWARGS['gscommanded']
+        gscommanded=TRANSFORM_KWARGS["gscommanded"],
     )
 
     with rdm.open(model_path) as result:
         assert np.isclose(result.meta.wcsinfo.ra_ref, DEFAULT_RADECREF[0])
         assert np.isclose(result.meta.wcsinfo.dec_ref, DEFAULT_RADECREF[1])
-        assert np.allclose(result.meta.pointing.quaternion, TRANSFORM_KWARGS['pointing'].q)
-        assert np.allclose(result.meta.guide_star.hv_position, TRANSFORM_KWARGS['gscommanded'])
+        assert np.allclose(
+            result.meta.pointing.quaternion, TRANSFORM_KWARGS["pointing"].q
+        )
+        assert np.allclose(
+            result.meta.guide_star.hv_position, TRANSFORM_KWARGS["gscommanded"]
+        )
 
 
 def test_add_wcs_default_from_model(science_raw_model, tmp_path):
@@ -89,7 +93,7 @@ def test_add_wcs_default_from_model(science_raw_model, tmp_path):
     m.meta.exposure.start_time = Time("2022-01-01T00:00:00")
     m.meta.exposure.end_time = Time("2022-01-01T01:00:00")
     m.meta.pointing.quaternion = tuple(TRANSFORM_KWARGS["pointing"].q)
-    m.meta.guide_star.hv_position = TRANSFORM_KWARGS['gscommanded']
+    m.meta.guide_star.hv_position = TRANSFORM_KWARGS["gscommanded"]
     model_path = _model_to_tmpfile(m, tmp_path)
     stp.add_wcs(
         model_path,
@@ -100,8 +104,12 @@ def test_add_wcs_default_from_model(science_raw_model, tmp_path):
     with rdm.open(model_path) as result:
         assert np.isclose(result.meta.wcsinfo.ra_ref, DEFAULT_RADECREF[0])
         assert np.isclose(result.meta.wcsinfo.dec_ref, DEFAULT_RADECREF[1])
-        assert np.allclose(result.meta.pointing.quaternion, TRANSFORM_KWARGS['pointing'].q)
-        assert np.allclose(result.meta.guide_star.hv_position, TRANSFORM_KWARGS['gscommanded'])
+        assert np.allclose(
+            result.meta.pointing.quaternion, TRANSFORM_KWARGS["pointing"].q
+        )
+        assert np.allclose(
+            result.meta.guide_star.hv_position, TRANSFORM_KWARGS["gscommanded"]
+        )
 
 
 def test_change_base_url():
@@ -309,20 +317,28 @@ def test_transform_serialize(calc_wcs, tmp_path):
 
 
 @pytest.mark.parametrize(
-    'attr, expected',
+    "attr, expected",
     [
-        ('meta.guide_star.hv_position', (916.4728835141, -186.8939737044)),
-        ('meta.pointing.dec_v1', 84.68431896236322),
-        ('meta.pointing.pa_aperture', 78.66156386345588),
-        ('meta.pointing.pa_v3', 80.93636997134696),
-        ('meta.pointing.quaternion', np.array([-0.70264027, -0.09765787,  0.6867813 ,  0.1584015 ])),
-        ('meta.pointing.ra_v1', 60.92574219562233),
-        ('meta.pointing.target_dec', 84.21835653550785),
-        ('meta.pointing.target_ra', 59.16610246530431),
-        ('meta.wcsinfo.dec_ref', 84.27409398200808),
-        ('meta.wcsinfo.ra_ref', 58.63942790688876),
-        ('meta.wcsinfo.roll_ref', 78.66156386345588),
-        ('meta.wcsinfo.s_region', 'POLYGON ICRS  59.032838301 84.195782549 57.858399495 84.235747305 58.234833815 84.352770166 59.437292567 84.311887600')])
+        ("meta.guide_star.hv_position", (916.4728835141, -186.8939737044)),
+        ("meta.pointing.dec_v1", 84.68431896236322),
+        ("meta.pointing.pa_aperture", 78.66156386345588),
+        ("meta.pointing.pa_v3", 80.93636997134696),
+        (
+            "meta.pointing.quaternion",
+            np.array([-0.70264027, -0.09765787, 0.6867813, 0.1584015]),
+        ),
+        ("meta.pointing.ra_v1", 60.92574219562233),
+        ("meta.pointing.target_dec", 84.21835653550785),
+        ("meta.pointing.target_ra", 59.16610246530431),
+        ("meta.wcsinfo.dec_ref", 84.27409398200808),
+        ("meta.wcsinfo.ra_ref", 58.63942790688876),
+        ("meta.wcsinfo.roll_ref", 78.66156386345588),
+        (
+            "meta.wcsinfo.s_region",
+            "POLYGON ICRS  59.032838301 84.195782549 57.858399495 84.235747305 58.234833815 84.352770166 59.437292567 84.311887600",
+        ),
+    ],
+)
 def test_update_meta(attr, expected, updated_model):
     """Ensure that all the expected meta are updated"""
 
@@ -380,7 +396,8 @@ def science_raw_model():
 
     return m
 
-@pytest.fixture(scope='module')
+
+@pytest.fixture(scope="module")
 def updated_model(calc_wcs):
     """Update a model with a orientation calculation"""
     wcsinfo, vinfo, _, t_pars = calc_wcs
@@ -398,13 +415,13 @@ def updated_model(calc_wcs):
             }
         }
     )
-    stp.update_meta(m, t_pars, wcsinfo, vinfo, 'CALCULATED')
+    stp.update_meta(m, t_pars, wcsinfo, vinfo, "CALCULATED")
     return m
 
 
 def _getattrpath(obj, path, default=None):
     """Retrieve an attribute from its fully qualified path"""
-    attribute, _, rest = path.partition('.')
+    attribute, _, rest = path.partition(".")
     value = getattr(obj, attribute, default)
     if value is not None and rest:
         value = _getattrpath(value, rest, default)
