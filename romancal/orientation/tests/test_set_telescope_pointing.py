@@ -73,11 +73,14 @@ def test_add_wcs_default(science_raw_model, tmp_path):
         tolerance=0,
         allow_default=True,
         default_quaternion=TRANSFORM_KWARGS["pointing"].q,
+        gscommanded=TRANSFORM_KWARGS['gscommanded']
     )
 
     with rdm.open(model_path) as result:
         assert np.isclose(result.meta.wcsinfo.ra_ref, DEFAULT_RADECREF[0])
         assert np.isclose(result.meta.wcsinfo.dec_ref, DEFAULT_RADECREF[1])
+        assert np.allclose(result.meta.pointing.quaternion, TRANSFORM_KWARGS['pointing'].q)
+        assert np.allclose(result.meta.guide_star.hv_position, TRANSFORM_KWARGS['gscommanded'])
 
 
 def test_change_base_url():
@@ -303,7 +306,7 @@ def test_update_meta(attr, expected, updated_model):
     """Ensure that all the expected meta are updated"""
 
     value = _getattrpath(updated_model, attr)
-    if isinstance(value, np.ndarray):
+    if isinstance(value, (list, tuple, np.ndarray)):
         assert np.allclose(value, expected)
     elif isinstance(value, float):
         assert np.isclose(value, expected)

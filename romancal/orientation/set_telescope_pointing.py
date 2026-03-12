@@ -1292,6 +1292,12 @@ def t_pars_from_model(model, t_pars):
     ephem = model.meta.ephemeris
     t_pars.velocity = (ephem.velocity_x, ephem.velocity_y, ephem.velocity_z)
 
+    # Retrieve previously calculated orientation items only if they are currently not defined.
+    if t_pars.gscommanded is None:
+        t_pars.gscommanded = getattr(model.meta.guide_star, 'hv_position', None)
+    if t_pars.default_quaternion is None:
+        t_pars.default_quaternion = getattr(model.meta.pointing, 'quaterion', None)
+
 
 def dcm(alpha, delta, angle):
     """
@@ -1399,7 +1405,7 @@ def update_meta(model, t_pars, wcsinfo, vinfo, quality):
     pm.pa_aperture = wcsinfo.pa
     pm.pa_v3 = vinfo.pa
     pm.pointing_engineering_source = quality
-    pm.quaternion = t_pars.pointing.q
+    pm.quaternion = tuple(t_pars.pointing.q)
     pm.ra_v1 = vinfo.ra
 
     # Update target's sky location.
