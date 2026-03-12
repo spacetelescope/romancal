@@ -1,0 +1,1 @@
+Use quaternion and guide star position from header if engineering is unavailable
