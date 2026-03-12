@@ -294,7 +294,7 @@ asdf_schema_reference_mappings = [
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 html_theme = "sphinx_rtd_theme"
-html_logo = "_static/roman_logo_white_w100px.png"
+html_logo = "_static/A_Rst_1020_Logo_Box_Color_Seafoamondarkblue_Logo_Full_Color_RGB_850px@72ppi.png"
 html_favicon = "_static/favicon.ico"
 
 # Theme options are theme-specific and customize the look and feel of a theme
