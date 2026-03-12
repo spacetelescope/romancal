@@ -43,9 +43,11 @@ through the engineering telemetry and represents how the observatory is orientat
 
 The following meta values are populated:
 
+    - meta.guide_star.hv_position
     - meta.pointing.dec_v1
     - meta.pointing.pa_aperture
     - meta.pointing.pa_v3
+    - meta.pointing.quaternion
     - meta.pointing.ra_v1
     - meta.pointing.target_dec
     - meta.pointing.target_ra
@@ -469,7 +471,7 @@ def update_wcs_from_telem(model, t_pars: TransformParameters):
     # Update model meta.
     logger.info("Aperture WCS info: %s", wcsinfo)
     logger.info("V1 WCS info: %s", vinfo)
-    update_meta(model, wcsinfo, vinfo, quality)
+    update_meta(model, t_pars, wcsinfo, vinfo, quality)
 
     return transforms
 
@@ -1290,6 +1292,12 @@ def t_pars_from_model(model, t_pars):
     ephem = model.meta.ephemeris
     t_pars.velocity = (ephem.velocity_x, ephem.velocity_y, ephem.velocity_z)
 
+    # Retrieve previously calculated orientation items only if they are currently not defined.
+    if t_pars.gscommanded is None:
+        t_pars.gscommanded = getattr(model.meta.guide_star, "hv_position", None)
+    if t_pars.default_quaternion is None:
+        t_pars.default_quaternion = getattr(model.meta.pointing, "quaternion", None)
+
 
 def dcm(alpha, delta, angle):
     """
@@ -1333,13 +1341,15 @@ def dcm(alpha, delta, angle):
     return dcm
 
 
-def update_meta(model, wcsinfo, vinfo, quality):
+def update_meta(model, t_pars, wcsinfo, vinfo, quality):
     """Update model's meta info with the given pointing.
 
     The following meta are update:
+    - meta.guide_star.hv_position
     - meta.pointing.dec_v1
     - meta.pointing.pa_aperture
     - meta.pointing.pa_v3
+    - meta.pointing.quaternion
     - meta.pointing.ra_v1
     - meta.pointing.target_dec
     - meta.pointing.target_ra
@@ -1353,6 +1363,9 @@ def update_meta(model, wcsinfo, vinfo, quality):
     model : `~roman.datamodels.DataModel`
         The model to update. Updates are done in-place.
 
+    t_pars : `TransformParameters`
+        The transformation parameters. Parameters are updated during processing.
+
     wcsinfo : `WCSRef``
         The aperture-specific pointing.
 
@@ -1363,8 +1376,9 @@ def update_meta(model, wcsinfo, vinfo, quality):
         Indicator of the success of the pointing determination.
     """
     # Shortcuts to the meta blocks
-    wm = model.meta.wcsinfo
+    gs = model.meta.guide_star
     pm = model.meta.pointing
+    wm = model.meta.wcsinfo
 
     # Setup SIAF info.
     from pysiaf import Siaf
@@ -1372,8 +1386,7 @@ def update_meta(model, wcsinfo, vinfo, quality):
     siaf = Siaf("roman")
     aper = siaf[wm.aperture_name.upper()]
 
-    # Set the quality
-    model.meta.pointing.pointing_engineering_source = quality
+    # Update pointing info
 
     # Update SIAF-related meta
     wm.v2_ref = aper.V2Ref
@@ -1391,6 +1404,8 @@ def update_meta(model, wcsinfo, vinfo, quality):
     pm.dec_v1 = vinfo.dec
     pm.pa_aperture = wcsinfo.pa
     pm.pa_v3 = vinfo.pa
+    pm.pointing_engineering_source = quality
+    pm.quaternion = tuple(t_pars.pointing.q)
     pm.ra_v1 = vinfo.ra
 
     # Update target's sky location.
@@ -1401,13 +1416,9 @@ def update_meta(model, wcsinfo, vinfo, quality):
     pm.target_ra = skycoord[0]
     pm.target_dec = skycoord[1]
 
-    # If not present, stub-out keywords that are expected
-    # in L1 products. 26Q2B21 will deal with this bad situation
-    gs = model.meta.guide_star
-    gs.corrected_ra = getattr(gs, "corrected_ra", pm.target_ra)
-    gs.corrected_dec = getattr(gs, "corrected_dec", pm.target_dec)
-    gs.h = getattr(gs, "h", wm.v2_ref)
-    gs.v = getattr(gs, "v", wm.v3_ref)
+    # Update guidestar information
+    if t_pars.gscommanded is not None:
+        gs.hv_position = t_pars.gscommanded
 
 
 def attitude_from_v1(vinfo):

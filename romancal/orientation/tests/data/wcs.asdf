@@ -10,10 +10,10 @@ history:
   - !core/extension_metadata-1.0.0
     extension_class: asdf.extension._manifest.ManifestExtension
     extension_uri: asdf://asdf-format.org/core/extensions/core-1.6.0
-    manifest_software: !core/software-1.0.0 {name: asdf_standard, version: 1.4.0}
+    manifest_software: !core/software-1.0.0 {name: asdf_standard, version: 1.5.0}
     software: !core/software-1.0.0 {name: asdf, version: 5.1.0}
-vinfo: {dec: -86.74487008789984, pa: 281.0322689932444, ra: 200.01837573448663, s_region: ''}
-wcsinfo: {dec: -86.42472387670922, pa: -84.63561648291132, ra: 205.69722812483823,
-  s_region: POLYGON ICRS  205.452358680 -86.338378803 207.070799788 -86.410020181
-    205.951656846 -86.511622828 204.300767154 -86.437665190}
+vinfo: {dec: 84.68431896236322, pa: 80.93636997134696, ra: 60.92574219562233, s_region: ''}
+wcsinfo: {dec: 84.27409398200808, pa: 78.66156386345588, ra: 58.63942790688876, s_region: POLYGON
+    ICRS  59.032838301 84.195782549 57.858399495 84.235747305 58.234833815 84.352770166
+    59.437292567 84.311887600}
 ...
