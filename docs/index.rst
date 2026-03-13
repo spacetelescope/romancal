@@ -23,10 +23,10 @@ The Roman Space Telescope Calibration Pipeline
 
 **Version**: |release|
 
-This package (``romancal``) processes uncalibrated data from both imagers and spectrographs onboard the `Nancy Grace Roman Space Telescope (Roman) <https://science.nasa.gov/mission/roman-space-telescope/>`_, an orbiting infrared observatory stationed at Earth-Sun L :subscript:`2`.
+This package (``romancal``) processes uncalibrated data from the `Nancy Grace Roman Space Telescope (Roman) <https://science.nasa.gov/mission/roman-space-telescope/>`_.
 The pipeline performs a series of calibration steps that result in standard data products,
 applying various corrections to produce science-ready, calibrated output products including
-individual exposures and high-level data products (mosaics, extracted spectra, etc.).
+individual exposures and high-level data products (mosaics, catalogs etc.).
 
 `See README.md for installation and usage instructions <https://github.com/spacetelescope/romancal?tab=readme-ov-file#installation>`_.
 

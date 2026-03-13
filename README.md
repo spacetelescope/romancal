@@ -8,7 +8,6 @@
 
 # Nancy Grace Roman Space Telescope Calibration Pipeline
 
-[![DOI](https://zenodo.org/badge/60551519.svg)](https://zenodo.org/badge/latestdoi/60551519)
 [![PyPI](https://img.shields.io/pypi/v/romancal.svg)](https://pypi.org/project/romancal)
 [![Python Support](https://img.shields.io/pypi/pyversions/romancal)](https://pypi.org/project/romancal/)
 [![Powered by STScI](https://img.shields.io/badge/powered%20by-STScI-blue.svg?colorA=707170&colorB=3e8ddd&style=flat)](https://www.stsci.edu)
@@ -20,7 +19,7 @@
 [![readthedocs](https://readthedocs.org/projects/roman-pipeline/badge/?version=latest)](https://roman-pipeline.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/spacetelescope/romancal/branch/main/graph/badge.svg?token=Utf5Zs9g7z)](https://codecov.io/gh/spacetelescope/romancal)
 
-This package (`romancal`) processes uncalibrated data from both imagers and spectrographs onboard the [Nancy Grace Roman Space Telescope (Roman)](https://science.nasa.gov/mission/roman-space-telescope/), an orbiting infrared observatory stationed at Earth-Sun L<sub>2</sub>.
+This package (`romancal`) processes uncalibrated data from the [Nancy Grace Roman Space Telescope (Roman)](https://science.nasa.gov/mission/roman-space-telescope/).
 The pipeline performs a series of calibration steps that result in standard data products usable for science.
 
 Detailed explanations of specific calibration stages, reference files, and pipeline builds can be found on the [ReadTheDocs pages](https://roman-pipeline.readthedocs.io) and [RDox](https://roman-docs.stsci.edu/data-handbook-home/roman-data-pipelines).
