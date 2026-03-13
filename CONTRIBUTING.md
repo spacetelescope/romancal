@@ -178,18 +178,6 @@ The full configuration for `pre-commit` checks can be found in `.pre-commit-conf
 The code style for the `romancal` repository generally conforms to [PEP8](https://peps.python.org/pep-0008/), enforced using [`ruff`](https://docs.astral.sh/ruff/).
 `ruff` will automatically pick up the appropriate configuration from `.ruff.toml` and perform only the checks that are turned on for our repository.
 
-### Numpy docstring style
-
-Docstrings in `romancal` conform to the [Numpy style guide](https://numpydoc.readthedocs.io/en/latest/format.html), enforced with [`numpydoc-validation`](https://numpydoc.readthedocs.io/en/latest/validation.html).
-
-### Spell checking
-
-We use [Codespell](https://github.com/codespell-project/codespell) to check for common misspellings in both our codebase and documentation.
-
-### PEP-compliant type hints
-
-The majority of the `romancal` repository does *not* have type hints, and type hints are *not* required for contributions. If type hints are used, though, their compliance with [PEP-484](https://peps.python.org/pep-0484/) is enforced with [`mypy`](https://mypy.readthedocs.io/en/stable/index.html).
-
 ## Writing and maintaining documentation
 
 See [`docs/README.md`](./docs/README.md) for instructions.
