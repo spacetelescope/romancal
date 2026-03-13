@@ -1,0 +1,1 @@
+improve documentation flow and add better explanations for external collaborators
