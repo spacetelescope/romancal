@@ -1,10 +1,8 @@
 import os
 import os.path as op
 import pprint
-import shutil
 import sys
 from contextlib import chdir
-from difflib import unified_diff
 from glob import glob as _sys_glob
 from pathlib import Path
 from textwrap import dedent
@@ -29,7 +27,6 @@ from gwcs.wcstools import grid_from_bounding_box
 from romancal.associations.load_asn import load_asn
 
 # from romancal.lib.suffix import replace_suffix
-from romancal.stpipe import RomanStep
 
 # Define location of default Artifactory API key, for Jenkins use only
 ARTIFACTORY_API_KEY_FILE = "/eng/ssb2/keys/svc_rodata.key"
@@ -280,181 +277,6 @@ class RegtestData:
     def open(cls, filename):
         with asdf.open(filename) as af:
             return cls(**af.tree)
-
-
-def run_step_from_dict(rtdata, **step_params):
-    """Run Steps with given parameter
-
-    Parameters
-    ----------
-    rtdata: RegtestData
-        The artifactory instance
-
-    step_params: dict
-        The parameters defining what step to run with what input
-
-    Returns
-    -------
-    rtdata: RegtestData
-        Updated `RegtestData` object with inputs set.
-
-    Notes
-    -----
-    `step_params` looks like this:
-    {
-        'input_path': str or None  # The input file path, relative to artifactory
-        'step': str                # The step to run, either a class or a config file
-        'args': list,              # The arguments passed to `Step.from_cmdline`
-    }
-    """
-
-    # Get the data. If `step_params['input_path]` is not
-    # specified, the presumption is that `rtdata.input` has
-    # already been retrieved.
-    # input_path = step_params.get('input_path', None)
-    # if input_path:
-    #     try:
-    #         rtdata.get_asn(input_path)
-    #     except AssociationNotValidError:
-    #         rtdata.get_data(input_path)
-
-    # Figure out whether we have a config or class
-    step = step_params["step"]
-    if step.endswith((".asdf", ".cfg")):
-        step = os.path.join("config", step)
-
-    # Run the step
-    full_args = [step, rtdata.input]
-    full_args.extend(step_params["args"])
-
-    RomanStep.from_cmdline(full_args)
-
-    return rtdata
-
-
-def run_step_from_dict_mock(rtdata, source, **step_params):
-    """Pretend to run Steps with given parameter but just copy data
-
-    For long running steps where the result already exists, just
-    copy the data from source
-
-    Parameters
-    ----------
-    rtdata: RegtestData
-        The artifactory instance
-
-    step_params: dict
-        The parameters defining what step to run with what input
-
-    source: Path-like folder
-        The folder to copy from. All regular files are copied.
-
-    Returns
-    -------
-    rtdata: RegtestData
-        Updated `RegtestData` object with inputs set.
-
-    Notes
-    -----
-    `step_params` looks like this:
-    {
-        'input_path': str or None  # The input file path, relative to artifactory
-        'step': str                # The step to run, either a class or a config file
-        'args': list,              # The arguments passed to `Step.from_cmdline`
-    }
-    """
-
-    # Get the data. If `step_params['input_path]` is not
-    # specified, the presumption is that `rtdata.input` has
-    # already been retrieved.
-    # input_path = step_params.get('input_path', None)
-    # if input_path:
-    #     try:
-    #         rtdata.get_asn(input_path)
-    #     except AssociationNotValidError:
-    #         rtdata.get_data(input_path)
-
-    # Copy the data
-    for file_name in os.listdir(source):
-        file_path = os.path.join(source, file_name)
-        if os.path.isfile(file_path):
-            shutil.copy(file_path, ".")
-
-    return rtdata
-
-
-def is_like_truth(rtdata, ignore_asdf_paths, output, truth_path, is_suffix=True):
-    """Compare step outputs with truth
-
-    Parameters
-    ----------
-    rtdata: RegtestData
-        The artifactory object from the step run.
-
-    ignore_asdf_paths: dict
-        The asdf `diff` keyword arguments
-
-    output: str
-        The suffix or full file name to check on.
-
-    truth_path: str
-        Location of the truth files.
-
-    is_suffix: bool
-        Interpret `output` as just a suffix on the expected output root.
-        Otherwise, assume it is a full file name
-    """
-    __tracebackhide__ = True
-    # If given only a suffix, get the root to change the suffix of.
-    # If the input was an association, the output should be the name of
-    # the product. Otherwise, output is based on input.
-    if is_suffix:
-        # suffix = output
-        if rtdata.asn:
-            output = rtdata.asn["products"][0]["name"]
-        else:
-            output = os.path.splitext(os.path.basename(rtdata.input))[0]
-        # output = replace_suffix(output, suffix) + '.asdf'
-    rtdata.output = output
-
-    rtdata.get_truth(os.path.join(truth_path, output))
-
-    # diff = FITSDiff(rtdata.output, rtdata.truth, **fitsdiff_default_kwargs)
-    report = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
-    assert report is None, report
-
-
-def text_diff(from_path, to_path):
-    """Assertion helper for diffing two text files
-
-    Parameters
-    ----------
-    from_path: str
-        File to diff from.
-
-    to_path: str
-        File to diff to.  The truth.
-
-    Returns
-    -------
-    diffs: [str[,...]]
-        A generator of a list of strings that are the differences.
-        The output from `difflib.unified_diff`
-    """
-    __tracebackhide__ = True
-    with open(from_path) as fh:
-        from_lines = fh.readlines()
-    with open(to_path) as fh:
-        to_lines = fh.readlines()
-
-    diffs = unified_diff(from_lines, to_lines, from_path, to_path)
-
-    diff = list(diffs)
-    if len(diff) > 0:
-        diff.insert(0, "\n")
-        raise AssertionError("".join(diff))
-    else:
-        return True
 
 
 def _data_glob_local(*glob_parts):
