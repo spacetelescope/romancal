@@ -26,6 +26,7 @@ General Pipeline Changes
 - ``changes/<PR#>.scripts.rst``
 - ``changes/<PR#>.mosaic_pipeline.rst``
 - ``changes/<PR#>.skycell.rst``
+- ``changes/<PR#>.orientation.rst``
 
 Step Changes
 ============
