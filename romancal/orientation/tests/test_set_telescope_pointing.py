@@ -23,16 +23,15 @@ stp.logger.setLevel(logging.DEBUG)
 stp.logger.addHandler(logging.StreamHandler())
 
 # Setup for some times
-STARTTIME = Time("2027-03-11T13:26:56.571", format="isot")
-ENDTIME = Time("2027-03-11T13:27:56.658", format="isot")
+STARTTIME = Time("2025-09-12T12:33:28", format="isot")
+ENDTIME = Time("2025-09-12T12:34:28", format="isot")
 BADSTARTTIME = Time("2020-02-02T02:02:02", format="isot")
 BADENDTIME = Time("2020-02-02T02:12:02", format="isot")
-DEFAULT_RADECREF = (149.9709175757851, 86.7401422250309)
+DEFAULT_RADECREF = (298.40133157648984, -84.38532012751783)
 
 # Header defaults
 TARG_RA = 270.0
-TARG_DEC = 66.01
-
+TARG_DEC = 66.0
 # Default set of transform parameters
 TRANSFORM_KWARGS = {
     "aperture": "WFI01_FULL",
@@ -46,29 +45,14 @@ TRANSFORM_KWARGS = {
                 0.6822141509826322,
             ]
         ),
-        obstime=Time(1804771646.4242268, format="unix"),
-        q=np.array([-0.33879082, 0.62326573, -0.36611627, 0.60226181]),
+        obstime=Time(1757680438.0280416, format="unix"),
+        q=np.array([-0.70264027, -0.09765787, 0.6867813, 0.1584015]),
     ),
     "velocity": (-5.473753741352352, -27.480586797035414, -11.875972151015253),
 }
 
 # Get the mock databases
 DATA_PATH = Path(__file__).parent / "data"
-
-# Meta attributes for test comparisons
-METAS_EQUALITY = [
-    "meta.pointing.pointing_engineering_source",
-]
-METAS_ISCLOSE = [
-    "meta.wcsinfo.dec_ref",
-    "meta.wcsinfo.ra_ref",
-    "meta.wcsinfo.roll_ref",
-    "meta.wcsinfo.v2_ref",
-    "meta.wcsinfo.v3_ref",
-    "meta.pointing.ra_v1",
-    "meta.pointing.dec_v1",
-    "meta.pointing.pa_v3",
-]
 
 # Some tests depend on the default engineering database to be available. Check now.
 NO_ENGDB = False
@@ -89,11 +73,43 @@ def test_add_wcs_default(science_raw_model, tmp_path):
         tolerance=0,
         allow_default=True,
         default_quaternion=TRANSFORM_KWARGS["pointing"].q,
+        gscommanded=TRANSFORM_KWARGS["gscommanded"],
     )
 
     with rdm.open(model_path) as result:
         assert np.isclose(result.meta.wcsinfo.ra_ref, DEFAULT_RADECREF[0])
         assert np.isclose(result.meta.wcsinfo.dec_ref, DEFAULT_RADECREF[1])
+        assert np.allclose(
+            result.meta.pointing.quaternion, TRANSFORM_KWARGS["pointing"].q
+        )
+        assert np.allclose(
+            result.meta.guide_star.hv_position, TRANSFORM_KWARGS["gscommanded"]
+        )
+
+
+def test_add_wcs_default_from_model(science_raw_model, tmp_path):
+    """Handle when no pointing exists and the default is used."""
+    m = science_raw_model
+    m.meta.exposure.start_time = Time("2022-01-01T00:00:00")
+    m.meta.exposure.end_time = Time("2022-01-01T01:00:00")
+    m.meta.pointing.quaternion = tuple(TRANSFORM_KWARGS["pointing"].q)
+    m.meta.guide_star.hv_position = TRANSFORM_KWARGS["gscommanded"]
+    model_path = _model_to_tmpfile(m, tmp_path)
+    stp.add_wcs(
+        model_path,
+        tolerance=0,
+        allow_default=True,
+    )
+
+    with rdm.open(model_path) as result:
+        assert np.isclose(result.meta.wcsinfo.ra_ref, DEFAULT_RADECREF[0])
+        assert np.isclose(result.meta.wcsinfo.dec_ref, DEFAULT_RADECREF[1])
+        assert np.allclose(
+            result.meta.pointing.quaternion, TRANSFORM_KWARGS["pointing"].q
+        )
+        assert np.allclose(
+            result.meta.guide_star.hv_position, TRANSFORM_KWARGS["gscommanded"]
+        )
 
 
 def test_change_base_url():
@@ -300,6 +316,41 @@ def test_transform_serialize(calc_wcs, tmp_path):
     assert str(transforms) == str(from_asdf)
 
 
+@pytest.mark.parametrize(
+    "attr, expected",
+    [
+        ("meta.guide_star.hv_position", (916.4728835141, -186.8939737044)),
+        ("meta.pointing.dec_v1", 84.68431896236322),
+        ("meta.pointing.pa_aperture", 78.66156386345588),
+        ("meta.pointing.pa_v3", 80.93636997134696),
+        (
+            "meta.pointing.quaternion",
+            np.array([-0.70264027, -0.09765787, 0.6867813, 0.1584015]),
+        ),
+        ("meta.pointing.ra_v1", 60.92574219562233),
+        ("meta.pointing.target_dec", 84.21835653550785),
+        ("meta.pointing.target_ra", 59.16610246530431),
+        ("meta.wcsinfo.dec_ref", 84.27409398200808),
+        ("meta.wcsinfo.ra_ref", 58.63942790688876),
+        ("meta.wcsinfo.roll_ref", 78.66156386345588),
+        (
+            "meta.wcsinfo.s_region",
+            "POLYGON ICRS  59.032838301 84.195782549 57.858399495 84.235747305 58.234833815 84.352770166 59.437292567 84.311887600",
+        ),
+    ],
+)
+def test_update_meta(attr, expected, updated_model):
+    """Ensure that all the expected meta are updated"""
+
+    value = _getattrpath(updated_model, attr)
+    if isinstance(value, (list, tuple, np.ndarray)):
+        assert np.allclose(value, expected)
+    elif isinstance(value, float):
+        assert np.isclose(value, expected)
+    else:
+        assert value == expected
+
+
 # ######################
 # Utilities and fixtures
 # ######################
@@ -344,6 +395,37 @@ def science_raw_model():
     )
 
     return m
+
+
+@pytest.fixture(scope="module")
+def updated_model(calc_wcs):
+    """Update a model with a orientation calculation"""
+    wcsinfo, vinfo, _, t_pars = calc_wcs
+
+    m = rdm.datamodels.ScienceRawModel.create_fake_data(
+        {
+            "meta": {
+                "exposure": {"start_time": STARTTIME, "end_time": ENDTIME},
+                "pointing": {
+                    "target_aperture": "WFI_CEN",
+                    "target_ra": TARG_RA,
+                    "target_dec": TARG_DEC,
+                },
+                "wcsinfo": {"aperture_name": "WFI02_FULL"},
+            }
+        }
+    )
+    stp.update_meta(m, t_pars, wcsinfo, vinfo, "CALCULATED")
+    return m
+
+
+def _getattrpath(obj, path, default=None):
+    """Retrieve an attribute from its fully qualified path"""
+    attribute, _, rest = path.partition(".")
+    value = getattr(obj, attribute, default)
+    if value is not None and rest:
+        value = _getattrpath(value, rest, default)
+    return value
 
 
 def _make_t_pars(**transform_kwargs):
