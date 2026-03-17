@@ -13,6 +13,7 @@ import astropy.time
 import deepdiff
 import gwcs
 import numpy as np
+import pyarrow
 import requests
 from astropy.units import Quantity
 from ci_watson.artifactory_helpers import (
@@ -521,6 +522,36 @@ class DiffResult:
         return f"{title}\n{report}"
 
 
+def _compare_trees(
+    result, truth, exclude_paths=None, rtol=1e-05, atol=1e-08, equal_nan=True
+):
+    exclude_paths = exclude_paths or []
+    operators = [
+        NDArrayTypeOperator(
+            rtol,
+            atol,
+            equal_nan,
+            types=[asdf.tags.core.NDArrayType, np.ndarray],
+        ),
+        TimeOperator(types=[astropy.time.Time]),
+        TableOperator(rtol, atol, equal_nan, types=[astropy.table.Table]),
+        WCSOperator(rtol, atol, equal_nan, types=[gwcs.WCS]),
+    ]
+    # swap the inputs here so DeepDiff(truth, result)
+    # this will create output with 'new_value' referring to
+    # the value in the result and 'old_value' referring to the truth
+    diff = deepdiff.DeepDiff(
+        truth,
+        result,
+        ignore_nan_inequality=equal_nan,
+        custom_operators=operators,
+        exclude_paths=exclude_paths,
+        math_epsilon=atol,
+        ignore_type_in_groups=[asdf.tags.core.NDArrayType, np.ndarray],
+    )
+    return DiffResult(diff, result, truth)
+
+
 def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=True):
     """
     Compare 2 asdf files: result and truth. Note that this comparison is
@@ -555,21 +586,10 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
         result of the comparison
     """
     exclude_paths = []
-    ignore = ignore or []
-    for path in ignore:
-        key_path = "".join([f"['{k}']" for k in path.split(".")])
-        exclude_paths.append(f"root{key_path}")
-    operators = [
-        NDArrayTypeOperator(
-            rtol,
-            atol,
-            equal_nan,
-            types=[asdf.tags.core.NDArrayType, np.ndarray],
-        ),
-        TimeOperator(types=[astropy.time.Time]),
-        TableOperator(rtol, atol, equal_nan, types=[astropy.table.Table]),
-        WCSOperator(rtol, atol, equal_nan, types=[gwcs.WCS]),
-    ]
+    if ignore:
+        for path in ignore:
+            key_path = "".join([f"['{k}']" for k in path.split(".")])
+            exclude_paths.append(f"root{key_path}")
     with asdf.open(result) as af0:
         with asdf.config_context() as cfg:
             # Disable validation of the truth file to allow for more
@@ -578,16 +598,40 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
             # versioned for every change between releases).
             cfg.validate_on_read = False
             with asdf.open(truth) as af1:
-                # swap the inputs here so DeepDiff(truth, result)
-                # this will create output with 'new_value' referring to
-                # the value in the result and 'old_value' referring to the truth
-                diff = deepdiff.DeepDiff(
-                    af1.tree,
+                return _compare_trees(
                     af0.tree,
-                    ignore_nan_inequality=equal_nan,
-                    custom_operators=operators,
+                    af1.tree,
                     exclude_paths=exclude_paths,
-                    math_epsilon=atol,
-                    ignore_type_in_groups=[asdf.tags.core.NDArrayType, np.ndarray],
+                    rtol=rtol,
+                    atol=atol,
+                    equal_nan=equal_nan,
                 )
-                return DiffResult(diff, result, truth)
+
+
+def _parquet_to_tree(parquet_file):
+    table = pyarrow.parquet.read_table(parquet_file)
+    return {
+        "table": astropy.table.Table.from_pandas(table.to_pandas()),
+        "meta": {
+            k.decode("ascii"): v.decode("ascii")
+            for k, v in table.schema.metadata.items()
+        },
+    }
+
+
+def compare_parquet(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=True):
+    exclude_paths = []
+    if ignore:
+        # prepend meta since _parquet_to_tree puts all metadata under the "meta" key
+        for path in ignore:
+            exclude_paths.append(f"root['meta']['{path}']")
+    if ignore:
+        ignore = [f"meta.{key}" for key in ignore]
+    return _compare_trees(
+        _parquet_to_tree(result),
+        _parquet_to_tree(truth),
+        exclude_paths=exclude_paths,
+        rtol=rtol,
+        atol=atol,
+        equal_nan=equal_nan,
+    )

@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from roman_datamodels import datamodels as rdm
 
-from romancal.regtest.regtestdata import compare_asdf
+from romancal.regtest.regtestdata import compare_asdf, compare_parquet
 
 
 @pytest.mark.parametrize("modification", [None, "small", "large"])
@@ -111,3 +111,15 @@ def test_n_diffs(tmp_path, n_diffs):
     assert "arrays_differ" in diff.diff
     assert "root['v']" in diff.diff["arrays_differ"]
     assert n_diffs == diff.diff["arrays_differ"]["root['v']"]["n_diffs"]
+
+
+def test_compare_parquet(tmp_path, ignore_asdf_paths):
+    fn0 = tmp_path / "test0.parquet"
+    fn1 = tmp_path / "test1.parquet"
+    m0 = rdm.ImageSourceCatalogModel.create_fake_data()
+    m1 = rdm.ImageSourceCatalogModel.create_fake_data()
+    m0.save(fn0)
+    m1.save(fn1)
+    ignore = ignore_asdf_paths["ignore"] + ["roman.meta.filename"]
+    diff = compare_parquet(fn0, fn1, ignore=ignore)
+    assert diff.identical, diff.report()
