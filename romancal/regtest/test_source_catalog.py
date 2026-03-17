@@ -86,7 +86,14 @@ def test_log_tracked_resources(log_tracked_resources, run_source_catalog):
 
 
 def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths):
-    diff = compare_parquet(output_filename, truth_filename, **ignore_asdf_paths)
+    ignore = ignore_asdf_paths["ignore"] + [
+        "source_catalog.date",
+        "source_catalog.versions",
+        "table_meta_yaml",
+        "roman.meta.image.file_date",
+        "roman.meta.image.filename",
+    ]
+    diff = compare_parquet(output_filename, truth_filename, ignore=ignore)
     assert diff.identical, diff.report()
 
 
