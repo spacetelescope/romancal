@@ -522,10 +522,12 @@ class DiffResult:
         return f"{title}\n{report}"
 
 
-def _compare_trees(
-    result, truth, exclude_paths=None, rtol=1e-05, atol=1e-08, equal_nan=True
-):
-    exclude_paths = exclude_paths or []
+def _compare_trees(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=True):
+    exclude_paths = []
+    if ignore:
+        for path in ignore:
+            key_path = "".join([f"['{k}']" for k in path.split(".")])
+            exclude_paths.append(f"root{key_path}")
     operators = [
         NDArrayTypeOperator(
             rtol,
@@ -584,11 +586,6 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
     diff_result : DiffResult
         result of the comparison
     """
-    exclude_paths = []
-    if ignore:
-        for path in ignore:
-            key_path = "".join([f"['{k}']" for k in path.split(".")])
-            exclude_paths.append(f"root{key_path}")
     with asdf.open(result) as af0:
         with asdf.config_context() as cfg:
             # Disable validation of the truth file to allow for more
@@ -600,7 +597,7 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
                 diff = _compare_trees(
                     af0.tree,
                     af1.tree,
-                    exclude_paths=exclude_paths,
+                    ignore=ignore,
                     rtol=rtol,
                     atol=atol,
                     equal_nan=equal_nan,
@@ -610,27 +607,25 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
 
 def _parquet_to_tree(parquet_file):
     table = pyarrow.parquet.read_table(parquet_file)
-    return {
-        "table": astropy.table.Table.from_pandas(table.to_pandas()),
-        "meta": {
-            k.decode("ascii"): v.decode("ascii")
-            for k, v in table.schema.metadata.items()
-        },
-    }
+    # convert meta back into a tree
+    result = {}
+    for k, v in table.schema.metadata.items():
+        path = k.decode("ascii")
+        value = v.decode("ascii")
+        *subpaths, key = path.split(".")
+        obj = result
+        for subpath in subpaths:
+            obj = obj.setdefault(subpath, {})
+        obj[key] = value
+    result["table"] = astropy.table.Table.from_pandas(table.to_pandas())
+    return result
 
 
 def compare_parquet(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=True):
-    exclude_paths = []
-    if ignore:
-        # prepend meta since _parquet_to_tree puts all metadata under the "meta" key
-        for path in ignore:
-            exclude_paths.append(f"root['meta']['{path}']")
-    if ignore:
-        ignore = [f"meta.{key}" for key in ignore]
     diff = _compare_trees(
         _parquet_to_tree(result),
         _parquet_to_tree(truth),
-        exclude_paths=exclude_paths,
+        ignore=ignore,
         rtol=rtol,
         atol=atol,
         equal_nan=equal_nan,
