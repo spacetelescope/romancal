@@ -540,7 +540,7 @@ def _compare_trees(
     # swap the inputs here so DeepDiff(truth, result)
     # this will create output with 'new_value' referring to
     # the value in the result and 'old_value' referring to the truth
-    diff = deepdiff.DeepDiff(
+    return deepdiff.DeepDiff(
         truth,
         result,
         ignore_nan_inequality=equal_nan,
@@ -549,7 +549,6 @@ def _compare_trees(
         math_epsilon=atol,
         ignore_type_in_groups=[asdf.tags.core.NDArrayType, np.ndarray],
     )
-    return DiffResult(diff, result, truth)
 
 
 def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=True):
@@ -598,7 +597,7 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
             # versioned for every change between releases).
             cfg.validate_on_read = False
             with asdf.open(truth) as af1:
-                return _compare_trees(
+                diff = _compare_trees(
                     af0.tree,
                     af1.tree,
                     exclude_paths=exclude_paths,
@@ -606,6 +605,7 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
                     atol=atol,
                     equal_nan=equal_nan,
                 )
+                return DiffResult(diff, result, truth)
 
 
 def _parquet_to_tree(parquet_file):
@@ -627,7 +627,7 @@ def compare_parquet(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_na
             exclude_paths.append(f"root['meta']['{path}']")
     if ignore:
         ignore = [f"meta.{key}" for key in ignore]
-    return _compare_trees(
+    diff = _compare_trees(
         _parquet_to_tree(result),
         _parquet_to_tree(truth),
         exclude_paths=exclude_paths,
@@ -635,3 +635,4 @@ def compare_parquet(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_na
         atol=atol,
         equal_nan=equal_nan,
     )
+    return DiffResult(diff, result, truth)
