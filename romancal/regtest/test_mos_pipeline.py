@@ -1,5 +1,6 @@
 """Roman tests for the High Level Pipeline"""
 
+import copy
 import os
 
 import pytest
@@ -9,7 +10,7 @@ from romancal.pipeline.mosaic_pipeline import MosaicPipeline
 from romancal.resample.l3_wcs import l3wcsinfo_to_wcs
 
 from . import util
-from .regtestdata import compare_asdf
+from .regtestdata import compare_asdf, compare_parquet
 
 # mark all tests in this module
 pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
@@ -75,6 +76,15 @@ def test_log_tracked_resources(log_tracked_resources, run_mos):
 def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths):
     # DMS356
     diff = compare_asdf(output_filename, truth_filename, **ignore_asdf_paths)
+    assert diff.identical, diff.report()
+
+
+def test_catalog_matches_truth(run_mos, ignore_parquet_paths):
+    # copy RegtestData instance before modifying output and truth
+    rtdata = copy.copy(run_mos)
+    rtdata.output = rtdata.output.rsplit("_", 1)[0] + "_cat.parquet"
+    rtdata.get_truth(f"truth/WFI/image/{rtdata.output}")
+    diff = compare_parquet(rtdata.output, rtdata.truth, **ignore_parquet_paths)
     assert diff.identical, diff.report()
 
 
