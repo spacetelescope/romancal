@@ -209,3 +209,8 @@ def rtdata_module(artifactory_repos, envopt, request, module_jail):
 @pytest.fixture
 def ignore_asdf_paths(ignore_metadata_paths):
     return {"ignore": ignore_metadata_paths}
+
+
+@pytest.fixture
+def ignore_parquet_paths(ignore_parquet_metadata_paths):
+    return {"ignore": ignore_parquet_metadata_paths}
