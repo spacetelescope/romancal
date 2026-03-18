@@ -1,4 +1,5 @@
 import copy
+import os
 from pathlib import Path
 
 import numpy as np
@@ -102,7 +103,7 @@ def test_catalog_matches_truth(run_elp, ignore_parquet_paths):
     # copy RegtestData instance before modifying output and truth
     rtdata = copy.copy(run_elp)
     rtdata.output = rtdata.output.rsplit("_", 1)[0] + "_cat.parquet"
-    rtdata.get_truth(f"truth/WFI/image/{rtdata.output}")
+    rtdata.get_truth(f"truth/WFI/image/{os.path.basename(rtdata.output)}")
     diff = compare_parquet(rtdata.output, rtdata.truth, **ignore_parquet_paths)
     assert diff.identical, diff.report()
 
