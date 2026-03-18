@@ -98,13 +98,13 @@ def test_log_tracked_resources(log_tracked_resources, run_multiband_catalog):
     log_tracked_resources()
 
 
-def test_output_matches_truth(output_filename, truth_filename):
-    diff = compare_parquet(output_filename, truth_filename)
+def test_output_matches_truth(output_filename, truth_filename, ignore_parquet_paths):
+    diff = compare_parquet(output_filename, truth_filename, **ignore_parquet_paths)
     assert diff.identical, diff.report()
 
 
 def test_field_list(output_catalog, dms_logger):
-    missing_fields = set(output_catalog.dtype.names) - set(fieldlist)
+    missing_fields = set(fieldlist) - set(output_catalog.dtype.names)
     assert not missing_fields, f"Missing fields in catalog: {missing_fields}"
     dms_logger.info(
         "DMS374, 399, 375, 386, 387, 392, 394, 395: source catalog includes fields: "
