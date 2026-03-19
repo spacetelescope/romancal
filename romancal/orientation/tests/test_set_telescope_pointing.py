@@ -50,7 +50,7 @@ TRANSFORM_KWARGS = {
             ]
         ),
         obstime=Time(1757680438.0280416, format="unix"),
-        q=np.array([-0.33879082,  0.62326573, -0.36611627,  0.60226181]),
+        q=np.array([-0.33879082, 0.62326573, -0.36611627, 0.60226181]),
     ),
     "velocity": (-5.473753741352352, -27.480586797035414, -11.875972151015253),
 }
@@ -165,10 +165,10 @@ def test_get_pointing():
     except ValueError as exception:
         pytest.xfail(reason=str(exception))
 
-    assert np.isclose(
-        pointing.obstime.value, 1757680438.0280416
+    assert np.isclose(pointing.obstime.value, 1757680438.0280416)
+    assert np.allclose(
+        pointing.q, np.array([-0.70264027, -0.09765787, 0.6867813, 0.1584015])
     )
-    assert np.allclose(pointing.q, np.array([-0.70264027, -0.09765787,  0.6867813 ,  0.1584015]))
 
 
 def test_get_pointing_fail():
@@ -189,7 +189,11 @@ def test_get_pointing_list():
         pytest.xfail(reason=str(exception))
     assert isinstance(results, list)
     assert len(results) > 0
-    assert np.isclose(results[0].q, np.array([-0.70264233, -0.09766397,  0.68678001,  0.15839417]), rtol=1.0e-2).all()
+    assert np.isclose(
+        results[0].q,
+        np.array([-0.70264233, -0.09766397, 0.68678001, 0.15839417]),
+        rtol=1.0e-2,
+    ).all()
     assert STARTTIME <= results[0].obstime <= ENDTIME
 
 
