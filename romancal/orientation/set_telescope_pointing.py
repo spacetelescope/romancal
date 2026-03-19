@@ -112,20 +112,10 @@ COARSE_MNEMONICS = (
 )
 
 # Default and pre-defined matricies.
-# Conversion of the FCS reference point from the V-Frame.
+# Conversion of the FGS Unified Frame (FGS) reference point from the V-Frame.
 # This is the pre-launch value, later to be refined and provided
 # in the SIAF
-M_V2FCS0 = np.array(
-    [
-        [-0.0000001, 0.5000141, 0.8660173],
-        [0.0086567, -0.8659848, 0.4999953],
-        [0.9999625, 0.0074969, -0.0043284],
-    ],
-)
-
-# Default B-frame to FCS frame, M_b_to_fcs
-# Pre-launch this is the same as M_v_to_fcs.
-M_B2FCS0 = M_V2FCS0
+FGS_DEFAULT_QUATERNION = np.array([-0.18597289, 0.68379795, -0.18006017, 0.68221269])
 
 # Maximum absolute speed of the observatory. Used for sanity check is defined
 # as the sum of the absolute components of the velocity.
@@ -1596,7 +1586,7 @@ def calc_m_b2fgs(fgs_q=None):
     """
     if fgs_q is None:
         logger.warning("No B-to-FGS information is given. Using pre-launch values.")
-        return M_B2FCS0
+        fgs_q = FGS_DEFAULT_QUATERNION
 
     # Calculate the DCM from the quaterion
     return calc_quat2matrix(fgs_q)
