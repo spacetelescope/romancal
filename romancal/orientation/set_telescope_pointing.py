@@ -547,7 +547,7 @@ def calc_wcs(t_pars: TransformParameters):
     transforms = calc_transforms(t_pars)
 
     # Calculate the V1 WCS information
-    vinfo = calc_wcs_from_matrix(transforms.m_eci2v.T)
+    vinfo = calc_wcs_from_matrix(transforms.m_eci2v)
 
     # Calculate the Aperture WCS
     wcsinfo = wcsinfo_from_siaf(t_pars.aperture, vinfo)
