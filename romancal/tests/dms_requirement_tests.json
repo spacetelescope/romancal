@@ -109,25 +109,26 @@
     "romancal.regtest.test_source_catalog.test_has_field"
   ],
   "DMS391": [
-    "romancal.regtest.test_multiband_catalog.test_multiband_catalog"
+    "romancal.regtest.test_multiband_catalog.test_catalog_fields_matches_truth"
   ],
   "DMS392": [
-    "romancal.regtest.test_multiband_catalog.test_multiband_catalog"
+    "romancal.regtest.test_multiband_catalog.test_field_list"
   ],
   "DMS393": [
-    "romancal.regtest.test_multiband_catalog.test_multiband_catalog"
+    "romancal.regtest.test_multiband_catalog.test_catalog_fields_matches_truth"
   ],
   "DMS394": [
-    "romancal.regtest.test_multiband_catalog.test_multiband_catalog"
+    "romancal.regtest.test_multiband_catalog.test_field_list"
   ],
   "DMS395": [
-    "romancal.regtest.test_multiband_catalog.test_multiband_catalog"
+    "romancal.regtest.test_multiband_catalog.test_field_list"
   ],
   "DMS396": [
-    "romancal.regtest.test_multiband_catalog.test_multiband_catalog"
+    "romancal.regtest.test_multiband_catalog.test_segmentation_contains_injected_and_recovered_sources",
+    "romancal.regtest.test_multiband_catalog.test_recovery_rate"
   ],
   "DMS399": [
-    "romancal.regtest.test_multiband_catalog.test_multiband_catalog"
+    "romancal.regtest.test_multiband_catalog.test_field_list"
   ],
   "DMS400": [
     "romancal.regtest.test_mos_pipeline.test_steps_ran",
@@ -172,10 +173,10 @@
     "romancal.regtest.test_psf_library.test_psf_library_psfinterp"
   ],
   "DMS539": [
-    "romancal.regtest.test_multiband_catalog.test_multiband_catalog"
+    "romancal.regtest.test_multiband_catalog.test_psf_matching_quality"
   ],
   "DMS540": [
-    "romancal.regtest.test_multiband_catalog.test_multiband_catalog"
+    "romancal.regtest.test_multiband_catalog.test_psf_matching_quality"
   ],
   "DMS534": [
      "romancal.regtest.test_psf_library.test_psf_library_jitter"

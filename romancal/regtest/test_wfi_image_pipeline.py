@@ -1,3 +1,5 @@
+import copy
+import os
 from pathlib import Path
 
 import numpy as np
@@ -12,7 +14,7 @@ from romancal.assign_wcs.assign_wcs_step import AssignWcsStep
 from romancal.lib.suffix import replace_suffix
 from romancal.pipeline.exposure_pipeline import ExposurePipeline
 
-from .regtestdata import compare_asdf
+from .regtestdata import compare_asdf, compare_parquet
 
 # mark all tests in this module
 pytestmark = pytest.mark.bigdata
@@ -93,6 +95,16 @@ def test_log_tracked_resources(log_tracked_resources, run_elp):
 @pytest.mark.soctests
 def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths):
     diff = compare_asdf(output_filename, truth_filename, **ignore_asdf_paths)
+    assert diff.identical, diff.report()
+
+
+@pytest.mark.soctests
+def test_catalog_matches_truth(run_elp, ignore_parquet_paths):
+    # copy RegtestData instance before modifying output and truth
+    rtdata = copy.copy(run_elp)
+    rtdata.output = rtdata.output.rsplit("_", 1)[0] + "_cat.parquet"
+    rtdata.get_truth(f"truth/WFI/image/{os.path.basename(rtdata.output)}")
+    diff = compare_parquet(rtdata.output, rtdata.truth, **ignore_parquet_paths)
     assert diff.identical, diff.report()
 
 
