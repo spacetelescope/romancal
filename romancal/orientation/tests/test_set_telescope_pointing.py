@@ -157,7 +157,7 @@ def test_get_mnemonics():
 def test_get_pointing():
     """Ensure that the averaging works.
 
-    Note: The expected quaternion is from mastdev during Q26B20 development.
+    Note: The expected quaternion is from mastdev during Q26B21 development.
     This will most likely change again.
     """
     try:
@@ -166,9 +166,9 @@ def test_get_pointing():
         pytest.xfail(reason=str(exception))
 
     assert np.isclose(
-        pointing.obstime.value, TRANSFORM_KWARGS["pointing"].obstime.value
+        pointing.obstime.value, 1757680438.0280416
     )
-    assert np.allclose(pointing.q, TRANSFORM_KWARGS["pointing"].q)
+    assert np.allclose(pointing.q, np.array([-0.70264027, -0.09765787,  0.6867813 ,  0.1584015]))
 
 
 def test_get_pointing_fail():
@@ -180,7 +180,7 @@ def test_get_pointing_fail():
 def test_get_pointing_list():
     """Test pointing collection
 
-    Note: The expected quaternion is from mastdev during Q26B20 development.
+    Note: The expected quaternion is from mastdev during Q26B21 development.
     This will most likely change again.
     """
     try:
@@ -189,7 +189,7 @@ def test_get_pointing_list():
         pytest.xfail(reason=str(exception))
     assert isinstance(results, list)
     assert len(results) > 0
-    assert np.isclose(results[0].q, TRANSFORM_KWARGS["pointing"].q, rtol=1.0e-2).all()
+    assert np.isclose(results[0].q, np.array([-0.70264233, -0.09766397,  0.68678001,  0.15839417]), rtol=1.0e-2).all()
     assert STARTTIME <= results[0].obstime <= ENDTIME
 
 
