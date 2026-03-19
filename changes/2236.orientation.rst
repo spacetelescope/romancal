@@ -1,0 +1,1 @@
+Remove errant transposition and better define default FGS matrix
