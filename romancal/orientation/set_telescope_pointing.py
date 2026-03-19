@@ -164,8 +164,8 @@ class Transforms:
     m_b2fgs: np.ndarray | None = None
     #: ECI to B-frame
     m_eci2b: np.ndarray | None = None
-    #: ECI to FCS
-    m_eci2fcs: np.ndarray | None = None
+    #: ECI to FGS
+    m_eci2fgs: np.ndarray | None = None
     #: ECI to GS
     m_eci2gs: np.ndarray | None = None
     #: ECI to GS apparent
@@ -612,9 +612,9 @@ def calc_transforms(t_pars: TransformParameters):
     # Quaternion to M_eci2b
     t.m_eci2b = calc_quat2matrix(t_pars.pointing.q)
 
-    # ECI to FCS
+    # ECI to FGS
     t.m_b2fgs = calc_m_b2fgs(t_pars.pointing.fgs_q)
-    t.m_eci2fcs = np.dot(t.m_b2fgs, t.m_eci2b)
+    t.m_eci2fgs = np.dot(t.m_b2fgs, t.m_eci2b)
 
     # FGS to Guide star apparent.
     if t_pars.gscommanded is None:
