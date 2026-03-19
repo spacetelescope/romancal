@@ -27,7 +27,7 @@ STARTTIME = Time("2025-09-12T12:33:28", format="isot")
 ENDTIME = Time("2025-09-12T12:34:28", format="isot")
 BADSTARTTIME = Time("2020-02-02T02:02:02", format="isot")
 BADENDTIME = Time("2020-02-02T02:12:02", format="isot")
-DEFAULT_RADECREF = (298.40133157648984, -84.38532012751783)
+DEFAULT_RADECREF = (266.59060641987423, -30.664532676056954)
 
 # Header defaults
 TARG_RA = 270.0
@@ -324,22 +324,22 @@ def test_transform_serialize(calc_wcs, tmp_path):
     "attr, expected",
     [
         ("meta.guide_star.hv_position", (916.4728835141, -186.8939737044)),
-        ("meta.pointing.dec_v1", 84.68431896236322),
-        ("meta.pointing.pa_aperture", 78.66156386345588),
-        ("meta.pointing.pa_v3", 80.93636997134696),
+        ("meta.pointing.dec_v1", -30.177183927606528),
+        ("meta.pointing.pa_aperture", 90.60111674247034),
+        ("meta.pointing.pa_v3", 90.4289479321644),
         (
             "meta.pointing.quaternion",
-            np.array([-0.70264027, -0.09765787, 0.6867813, 0.1584015]),
+            [-0.33879082, 0.62326573, -0.36611627, 0.60226181],
         ),
-        ("meta.pointing.ra_v1", 60.92574219562233),
-        ("meta.pointing.target_dec", 84.21835653550785),
-        ("meta.pointing.target_ra", 59.16610246530431),
-        ("meta.wcsinfo.dec_ref", 84.27409398200808),
-        ("meta.wcsinfo.ra_ref", 58.63942790688876),
-        ("meta.wcsinfo.roll_ref", 78.66156386345588),
+        ("meta.pointing.ra_v1", 267.0168676146806),
+        ("meta.pointing.target_dec", -30.604540841887303),
+        ("meta.pointing.target_ra", 266.7250048091743),
+        ("meta.wcsinfo.dec_ref", -30.53927896286344),
+        ("meta.wcsinfo.ra_ref", 266.67803540698276),
+        ("meta.wcsinfo.roll_ref", 90.60111674247034),
         (
             "meta.wcsinfo.s_region",
-            "POLYGON ICRS  59.032838301 84.195782549 57.858399495 84.235747305 58.234833815 84.352770166 59.437292567 84.311887600",
+            "POLYGON ICRS  266.704474362 -30.623991336 266.579827226 -30.560011007 266.651764709 -30.453928832 266.777049827 -30.518088819",
         ),
     ],
 )
