@@ -32,7 +32,11 @@ DEFAULT_RADECREF = (298.40133157648984, -84.38532012751783)
 # Header defaults
 TARG_RA = 270.0
 TARG_DEC = 66.0
+
 # Default set of transform parameters
+# These are the set of initial conditions used in the notebook `demo_vacorrection` as
+# sent by T.Sohn to J.Eisenhamer on 2015-11-19. The transforms produced are represented
+# in the truth file `data/transforms.asdf` and the resulting WCS results in `data/wcs.asdf`
 TRANSFORM_KWARGS = {
     "aperture": "WFI01_FULL",
     "gscommanded": (916.4728835141, -186.8939737044),
@@ -46,7 +50,7 @@ TRANSFORM_KWARGS = {
             ]
         ),
         obstime=Time(1757680438.0280416, format="unix"),
-        q=np.array([-0.70264027, -0.09765787, 0.6867813, 0.1584015]),
+        q=np.array([-0.33879082,  0.62326573, -0.36611627,  0.60226181]),
     ),
     "velocity": (-5.473753741352352, -27.480586797035414, -11.875972151015253),
 }

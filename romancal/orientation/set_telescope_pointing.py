@@ -649,7 +649,7 @@ def calc_transforms(t_pars: TransformParameters):
 
     # ECI to V
     t.m_eci2v = np.linalg.multi_dot(
-        [M_V2FCS0.T, t.m_fgs2gsapp.T, M_idl2ics, t.m_eci2gs]
+        [t.m_b2fgs.T, t.m_fgs2gsapp.T, M_idl2ics, t.m_eci2gs]
     )
 
     return t
