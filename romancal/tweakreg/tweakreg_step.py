@@ -17,6 +17,7 @@ from roman_datamodels import datamodels as rdm
 from roman_datamodels import dqflags
 from stcal.tweakreg import tweakreg
 from stcal.tweakreg.tweakreg import TweakregError
+from tweakwcs import RomanWCSCorrector
 
 from romancal.assign_wcs.utils import add_s_region
 from romancal.datamodels.fileio import open_dataset
@@ -204,14 +205,26 @@ class TweakRegStep(RomanStep):
                     catalog_table = Table(image_model.meta.tweakreg_catalog)
                     catalog_table.meta["name"] = catalog_name
 
-                    imcat = tweakreg.construct_wcs_corrector(
-                        wcs=image_model.meta.wcs,
-                        refang=image_model.meta.wcsinfo,
-                        catalog=catalog_table,
-                        group_id=images._model_to_group_id(image_model),
+                    catalog = tweakreg.filter_catalog_by_bounding_box(
+                        catalog_table, image_model.meta.wcs.bounding_box
                     )
-                    imcat.meta["model_index"] = i
-                    imcats.append(imcat)
+                    corrector = RomanWCSCorrector(
+                        wcs=image_model.meta.wcs,
+                        wcsinfo={
+                            "roll_ref": image_model.meta.wcsinfo.roll_ref,
+                            "v2_ref": image_model.meta.wcsinfo.v2_ref,
+                            "v3_ref": image_model.meta.wcsinfo.v3_ref,
+                        },
+                        # catalog and group_id are required meta
+                        meta={
+                            "catalog": catalog,
+                            "name": catalog.meta.get("name"),
+                            "group_id": images._model_to_group_id(image_model),
+                            "model_index": i,
+                        },
+                    )
+
+                    imcats.append(corrector)
                 images.shelve(image_model, i)
 
         # run alignment only if it was possible to build image catalogs
