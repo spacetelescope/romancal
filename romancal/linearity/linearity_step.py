@@ -10,7 +10,11 @@ from typing import TYPE_CHECKING
 import numpy as np
 from roman_datamodels import datamodels as rdd
 from roman_datamodels.dqflags import group, pixel
-from stcal.linearity.linearity import linearity_correction
+from stcal.linearity.linearity import (
+    apply_polynomial,
+    linearity_correction,
+    prepare_coefficients,
+)
 
 from romancal.datamodels.fileio import open_dataset
 from romancal.stpipe import RomanStep
@@ -66,6 +70,140 @@ def make_inl_correction(inl_model, ncols):
     return inl_correction
 
 
+def _linearity_correction_lowmem(
+    data,
+    gdq,
+    pdq,
+    lin_coeffs,
+    lin_dq,
+    dqflags,
+    ilin_coeffs,
+    additional_correction=None,
+    read_pattern=None,
+):
+    """Memory-efficient read-level linearity correction.
+
+    Drop-in replacement for stcal's ``linearity_correction`` that processes
+    reads one at a time instead of materializing all reads per resultant
+    simultaneously.  This reduces peak temporaries from
+    ~3 * n_reads * nrows * ncols * 4 bytes to ~3 * nrows * ncols * 4 bytes.
+
+    Two-pass algorithm per resultant:
+      Pass 1 – accumulate mean(ilin_poly(predicted_read)) to compute offset
+      Pass 2 – for each read, apply offset → optional INL → optional sat cap
+               → lin_poly → accumulate corrected sum
+
+    Parameters match ``stcal.linearity.linearity.linearity_correction``
+    (subset used by Roman: single integration, no zeroframe).
+    """
+    # Prepare coefficients (handles NaN, zero, NO_LIN_CORR flags)
+    lin_coeffs, new_pdq = prepare_coefficients(lin_coeffs, lin_dq, pdq, dqflags)
+    ilin_coeffs, new_pdq = prepare_coefficients(ilin_coeffs, lin_dq, new_pdq, dqflags)
+
+    nints = data.shape[0]
+    for integration in range(nints):
+        _linearity_int_lowmem(
+            data[integration],
+            gdq[integration],
+            lin_coeffs,
+            dqflags,
+            ilin_coeffs=ilin_coeffs,
+            additional_correction=additional_correction,
+            read_pattern=read_pattern,
+        )
+
+    return data, new_pdq, None
+
+
+def _linearity_int_lowmem(
+    data,
+    gdq,
+    lin_coeffs,
+    dqflags,
+    ilin_coeffs,
+    additional_correction=None,
+    read_pattern=None,
+):
+    """Process one integration with incremental read-level correction.
+
+    Parameters
+    ----------
+    data : ndarray, shape (ngroups, nrows, ncols)
+    gdq : ndarray, shape (ngroups, nrows, ncols)
+    lin_coeffs, ilin_coeffs : ndarray, shape (ncoeffs, nrows, ncols)
+    dqflags : dict
+    additional_correction : callable or None
+    read_pattern : list of lists
+    """
+    ngroups, nrows, ncols = data.shape
+    mean_read_resultant = np.array([np.mean(reads) for reads in read_pattern])
+
+    # With fewer than 2 resultants we cannot estimate a count rate,
+    # so fall back to simple polynomial linearization.
+    if ngroups < 2:
+        for i in range(ngroups):
+            corrected = apply_polynomial(data[i], lin_coeffs, gdq[i], dqflags)
+            resultant_saturated = (gdq[i] & dqflags["SATURATED"]) != 0
+            data[i] = np.where(resultant_saturated, data[i], corrected)
+        return data
+
+    # Identify saturated pixels and count unsaturated resultants
+    is_saturated = (gdq & dqflags["SATURATED"]) != 0
+    n_unsaturated = np.sum(~is_saturated, axis=0) - 1
+    n_unsaturated = np.clip(n_unsaturated, 2, ngroups)
+
+    # Linearize first resultant and compute count rate
+    firstread_lin = apply_polynomial(data[0], lin_coeffs, gdq[0], dqflags)
+
+    lastvalidresultant = n_unsaturated - 1
+    iy, ix = np.meshgrid(np.arange(nrows), np.arange(ncols), indexing="ij")
+    last_idx = (lastvalidresultant[iy, ix], iy, ix)
+
+    lastread_lin = apply_polynomial(data[last_idx], lin_coeffs, gdq[last_idx], dqflags)
+    d_reads = mean_read_resultant[last_idx[0]] - mean_read_resultant[0]
+    countrate = (lastread_lin - firstread_lin) / d_reads
+
+    del lastread_lin, d_reads, last_idx, lastvalidresultant, n_unsaturated, is_saturated
+
+    # Scratch arrays reused across resultants
+    read_buf = np.empty((nrows, ncols), dtype=data.dtype)
+
+    for i in range(ngroups):
+        reads_in_group = read_pattern[i]
+        n_reads = len(reads_in_group)
+        reads_since_first = np.array(reads_in_group) - mean_read_resultant[0]
+
+        # --- Pass 1: compute mean of unlinearized reads to get offset ---
+        unlin_sum = np.zeros((nrows, ncols), dtype=np.float64)
+        for dt in reads_since_first:
+            np.add(firstread_lin, countrate * dt, out=read_buf)
+            unlin_sum += apply_polynomial(read_buf[np.newaxis], ilin_coeffs)[0]
+        predicted_cts = unlin_sum / n_reads
+        offset = data[i] - predicted_cts
+        del unlin_sum, predicted_cts
+
+        # --- Pass 2: apply offset, corrections, linearize, accumulate ---
+        corrected_sum = np.zeros((nrows, ncols), dtype=np.float64)
+        for dt in reads_since_first:
+            np.add(firstread_lin, countrate * dt, out=read_buf)
+            read_unlin = apply_polynomial(read_buf[np.newaxis], ilin_coeffs)[0]
+            read_unlin += offset
+
+            if additional_correction is not None:
+                read_unlin += additional_correction(read_unlin[np.newaxis])[0]
+
+            corrected_sum += apply_polynomial(read_unlin, lin_coeffs)
+            del read_unlin
+
+        corrected_resultant = (corrected_sum / n_reads).astype(data.dtype)
+        del corrected_sum
+
+        resultant_saturated = (gdq[i] & dqflags["SATURATED"]) != 0
+        data[i] = np.where(resultant_saturated, data[i], corrected_resultant)
+
+    return data
+
+
 class LinearityStep(RomanStep):
     """
     LinearityStep: This step performs a correction for non-linear
@@ -119,20 +257,32 @@ class LinearityStep(RomanStep):
             pdq = input_model.pixeldq
             input_model.data = input_model.data[np.newaxis, :]
 
-            # Call linearity correction function in stcal
-            # The third return value is the processed zero frame which
-            # Roman does not use.
-            new_data, new_pdq, _ = linearity_correction(
-                input_model.data,
-                gdq,
-                pdq,
-                lin_coeffs,
-                lin_dq,
-                pixel,
-                ilin_coeffs=ilin_coeffs,
-                additional_correction=inl_correction,
-                read_pattern=read_pattern,
-            )
+            # Use memory-efficient implementation when inverse linearity
+            # coefficients are available (read-level correction).  The stcal
+            # version materializes all reads per resultant simultaneously,
+            # which can exceed 6 GB for 32-read resultants on a 4096×4096
+            # detector.  Our implementation processes reads one at a time.
+            if ilin_coeffs is not None:
+                new_data, new_pdq, _ = _linearity_correction_lowmem(
+                    input_model.data,
+                    gdq,
+                    pdq,
+                    lin_coeffs,
+                    lin_dq,
+                    pixel,
+                    ilin_coeffs=ilin_coeffs,
+                    additional_correction=inl_correction,
+                    read_pattern=read_pattern,
+                )
+            else:
+                new_data, new_pdq, _ = linearity_correction(
+                    input_model.data,
+                    gdq,
+                    pdq,
+                    lin_coeffs,
+                    lin_dq,
+                    pixel,
+                )
 
             input_model.data = new_data[0, :, :, :]
             input_model.pixeldq = new_pdq

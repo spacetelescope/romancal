@@ -78,7 +78,9 @@ def open_dataset(
             result = ModelLibrary(dataset, update_version=update_version, **open_kwargs)
 
         case "asdf":
-            model = rdm.open(dataset, **open_kwargs)
+            # on_disk is a ModelLibrary concept; strip it before opening a single file
+            asdf_kwargs = {k: v for k, v in open_kwargs.items() if k != "on_disk"}
+            model = rdm.open(dataset, **asdf_kwargs)
             if update_version:
                 result = update_model_version(model, close_on_update=True)
             else:

@@ -115,18 +115,23 @@ def apply_flat_field(science, flat, include_var_flat=False):
     # on array broadcasting to handle the cubes
     science.data = (science.data / flat_data).astype(science.data.dtype)
 
-    # Update the variances using BASELINE algorithm.  For guider data, it has
-    # not gone through ramp fitting so there is no Poisson noise or readnoise
-    flat_data_squared = flat_data**2
-    science.var_poisson /= flat_data_squared
-    if hasattr(science, "var_rnoise"):
-        science.var_rnoise /= flat_data_squared
-
     # Scale err by flat (err = sqrt(variance), so divide by flat not flat^2)
     science.err /= flat_data
 
+    # Update the variances using BASELINE algorithm.  For guider data, it has
+    # not gone through ramp fitting so there is no Poisson noise or readnoise.
+    # Square flat_data in-place to avoid allocating a separate array.
+    np.square(flat_data, out=flat_data)
+    science.var_poisson /= flat_data
+    if hasattr(science, "var_rnoise"):
+        science.var_rnoise /= flat_data
+
     if include_var_flat:
-        var_flat = science.data**2 / flat_data_squared * flat_err**2
+        # Compute var_flat reusing flat_err as scratch space
+        np.square(flat_err, out=flat_err)
+        var_flat = np.square(science.data)
+        var_flat /= flat_data
+        var_flat *= flat_err
         try:
             science.var_flat = var_flat
         except AttributeError:
@@ -134,6 +139,7 @@ def apply_flat_field(science, flat, include_var_flat=False):
             science.var_flat = var_flat
         # Add var_flat contribution to err
         science.err = np.sqrt(science.err**2 + var_flat)
+        del var_flat
 
     # Combine the science and flat DQ arrays
     science.dq = np.bitwise_or(science.dq, flat_dq)
