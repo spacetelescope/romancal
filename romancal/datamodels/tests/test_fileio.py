@@ -43,18 +43,6 @@ def list_of_filenames(model_filename):
     return [model_filename]
 
 
-# @pytest.fixture(params=[
-#     "model",
-#     "library",
-#     "model_filename",
-#     "library_filename",
-#     "list_of_models",
-#     "list_of_filenames",
-# ])
-# def valid_dataset(request):
-#     return request.getfixturevalue(request.param)
-
-
 @pytest.mark.parametrize("return_type", [True, False])
 @pytest.mark.parametrize("as_library", [True, False])
 @pytest.mark.parametrize(
@@ -92,7 +80,7 @@ def test_open_dataset(
 
 
 @pytest.mark.parametrize(
-    "dataset",
+    "dataset_fixture_name",
     [
         "model_filename",
         "library_filename",
@@ -100,7 +88,7 @@ def test_open_dataset(
         "list_of_filenames",
     ],
 )
-def test_open_kwargs(dataset, monkeypatch):
+def test_open_kwargs(dataset_fixture_name, monkeypatch, request):
     class TestException(Exception):
         pass
 
@@ -108,6 +96,7 @@ def test_open_kwargs(dataset, monkeypatch):
         assert "test" in kwargs
         raise TestException()
 
+    dataset = request.getfixturevalue(dataset_fixture_name)
     monkeypatch.setattr(rdm, "open", patched_open)
     monkeypatch.setattr(ModelLibrary, "__init__", patched_open)
 
