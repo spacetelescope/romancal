@@ -14,7 +14,7 @@ __all__ = ["MultibandAssociation"]
 
 
 _COADD_RE = re.compile(
-    r"^(?P<prefix>.*_)(?P<skycell>[0-9p]*x[0-9]*y[0-9]*)_(?P<filter>f[0-9]+)_coadd\.asdf$"
+    r"^(?P<prefix>.*_)(?P<skycell>[0-9]+[pm][0-9]*x[0-9]*y[0-9]*)_(?P<filter>f[0-9]+)_coadd\.asdf$"
 )
 
 
