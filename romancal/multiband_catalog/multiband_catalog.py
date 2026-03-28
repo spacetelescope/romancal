@@ -383,7 +383,7 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
     ref_psf_model = ref_info["ref_psf_model"]
 
     # Record the PSF match reference filter in metadata
-    detection_catalog.meta["psf_match_reference_filter"] = ref_filter.lower()
+    detection_catalog.meta["psf_match_reference_filter"] = ref_filter.upper()
 
     # Store reference filter's catalog for computing correction factors
     ref_filter_catalog = None  # defined in processing loop
@@ -475,6 +475,9 @@ def initialize_catalog_model(library, example_model):
     catalog_model = datamodels.MultibandSourceCatalogModel.create_minimal(
         {"meta": example_model.meta}
     )
+
+    catalog_model.meta.setdefault("psf_match_reference_filter", "NOT_CONFIGURED")
+
     catalog_model.meta["image"] = {
         # try to record association name else fall back to example model
         # filename
