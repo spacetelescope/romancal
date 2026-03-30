@@ -143,7 +143,7 @@ def test_calibration_software_version(base_image):
     assert result.meta.calibration_software_version == romancal.__version__
 
 
-class MockStep(RomanStep):
+class MockStepClass(RomanStep):
     """Minimal subclass to test RomanStep methods."""
 
     def process(self, input):
@@ -169,7 +169,7 @@ class MockStep(RomanStep):
 )
 def test_populate_statistics(model_type, model_class, data_val, dq_val, expected_frac):
     """Test statistics population."""
-    step = MockStep()
+    step = MockStepClass()
     shape = (10, 10)
 
     model = model_class.create_minimal()
@@ -202,7 +202,7 @@ def test_populate_statistics(model_type, model_class, data_val, dq_val, expected
 
 def test_statistics_handled_in_finalize():
     """Verify finalize_result triggers the statistics population."""
-    step = MockStep()
+    step = MockStepClass()
     shape = (10, 10)
 
     model = ImageModel.create_minimal()
@@ -220,7 +220,7 @@ def test_statistics_handled_in_finalize():
 
 def test_statistics_graceful_exit_no_data():
     """Ensure we don't crash if data is None."""
-    step = MockStep()
+    step = MockStepClass()
 
     model = ImageModel.create_minimal()
 
