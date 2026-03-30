@@ -230,3 +230,26 @@ def test_statistics_graceful_exit_no_data():
 
     # check that meta.statistics wasn't created
     assert not hasattr(model.meta, "statistics")
+
+
+def test_populate_statistics_attribute_error(caplog):
+    step = MockStepClass()
+
+    # create a "Bad" object that raises AttributeError on any attribute assignment
+    class FailOnSet:
+        def __setattr__(self, name, value):
+            raise AttributeError("Cannot set attribute")
+
+    bad_model = type(
+        "BadModel",
+        (),
+        {
+            "data": np.ones((2, 2), dtype=np.float32),
+            "dq": np.zeros((2, 2), dtype=np.uint32),
+            "meta": type("BadMeta", (), {"statistics": FailOnSet()})(),
+        },
+    )()
+
+    step.populate_statistics(bad_model)
+
+    assert "Could not populate statistics stanza" in caplog.text
