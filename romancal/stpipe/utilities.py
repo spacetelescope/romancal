@@ -40,6 +40,9 @@ def all_steps():
 
     steps = {}
     for module in load_sub_modules(romancal):
+        # skip if the module is part of a test suite
+        if ".tests" in module.__name__ or ".test_" in module.__name__:
+            continue
         more_steps = {
             klass_name: klass
             for klass_name, klass in inspect.getmembers(
