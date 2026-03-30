@@ -6,7 +6,10 @@ import importlib.metadata
 import logging
 import time
 
+import numpy as np
+from astropy.stats import mad_std
 from roman_datamodels.datamodels import ImageModel, MosaicModel
+from roman_datamodels.dqflags import pixel
 from stpipe import Pipeline, Step, crds_client
 
 from romancal.datamodels.fileio import open_dataset
@@ -101,6 +104,7 @@ class RomanStep(Step):
 
         if isinstance(model, ImageModel | MosaicModel):
             model.meta.cal_logs = self.log_records
+            self.populate_statistics(model)
 
         if len(reference_files_used) > 0:
             if not hasattr(model.meta, "ref_file"):
@@ -161,6 +165,35 @@ class RomanStep(Step):
         # by tests to be up-to-date.  Roman will likely need to do
         # something similar.
         return remove_suffix(name)
+
+    def populate_statistics(self, model):
+        """
+        Populate meta.statistics.
+        """
+        if not hasattr(model, "data") or model.data is None:
+            log.debug("Model has no data array; skipping statistics population.")
+            return
+
+        if getattr(model.meta, "statistics", None) is None:
+            log.debug("Creating meta.statistics node...")
+            model.meta.statistics = {}
+
+        img_median = float(np.nanmedian(model.data))
+
+        img_rms = mad_std(model.data, ignore_nan=True)
+
+        good_pix_frac = 0.0
+        if hasattr(model, "dq") and model.dq is not None:
+            num_good = np.sum((model.dq & pixel.DO_NOT_USE) == 0)
+            good_pix_frac = num_good / model.data.size
+
+        try:
+            model.meta.statistics.zodiacal_light = -1.0  # placeholder
+            model.meta.statistics.image_median = img_median
+            model.meta.statistics.image_rms = img_rms
+            model.meta.statistics.good_pixel_fraction = good_pix_frac
+        except AttributeError as e:
+            log.warning(f"Could not populate statistics stanza: {e}")
 
 
 # RomanPipeline needs to inherit from Pipeline, but also
