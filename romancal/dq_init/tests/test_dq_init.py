@@ -319,6 +319,7 @@ def test_dqinit_add_reference_read():
     assert np.allclose(result2.data - result.data, offset)
     assert np.allclose(result2.amp33 - result.amp33, offset)
 
+
 def test_dqinit_sub_data_encoding_offset():
     offset = 7
     shape = (2, 20, 20)
