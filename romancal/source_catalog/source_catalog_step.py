@@ -143,7 +143,7 @@ class SourceCatalogStep(RomanStep):
             segment_img = make_segmentation_image(
                 detection_image,
                 snr_threshold=self.snr_threshold,
-                npixels=self.npixels,
+                n_pixels=self.npixels,
                 bkg_rms=bkg.background_rms,
                 deblend=self.deblend,
                 mask=mask,
