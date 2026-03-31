@@ -6,10 +6,7 @@ import importlib.metadata
 import logging
 import time
 
-import numpy as np
-from astropy.stats import mad_std
 from roman_datamodels.datamodels import ImageModel, MosaicModel
-from roman_datamodels.dqflags import pixel
 from stpipe import Pipeline, Step, crds_client
 
 from romancal.datamodels.fileio import open_dataset

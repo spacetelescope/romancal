@@ -4,8 +4,7 @@ import logging
 import numpy as np
 import pytest
 from astropy.time import Time
-from roman_datamodels.datamodels import FlatRefModel, ImageModel, MosaicModel
-from roman_datamodels.dqflags import pixel
+from roman_datamodels.datamodels import FlatRefModel, ImageModel
 from stpipe import crds_client
 
 import romancal
