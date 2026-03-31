@@ -40,9 +40,6 @@ def all_steps():
 
     steps = {}
     for module in load_sub_modules(romancal):
-        # skip if the module is part of a test suite
-        if ".tests" in module.__name__ or ".test_" in module.__name__:
-            continue
         more_steps = {
             klass_name: klass
             for klass_name, klass in inspect.getmembers(
@@ -71,6 +68,8 @@ def load_sub_modules(module):
     """
 
     for package_info in walk_packages(module.__path__):
+        if "tests" in package_info.name:
+            continue
         if package_info.module_finder.path.startswith(module.__path__[0]):
             package = import_module(f"{module.__name__}.{package_info.name}")
 

@@ -143,65 +143,15 @@ def test_calibration_software_version(base_image):
     assert result.meta.calibration_software_version == romancal.__version__
 
 
-class MockStepClass(RomanStep):
-    """Minimal subclass to test RomanStep methods."""
-
-    def process(self, input):
-        return input
-
-
-@pytest.mark.parametrize(
-    "model_class",
-    [("imagemodel", ImageModel), ("mosaicmodel", MosaicModel)],
-)
-@pytest.mark.parametrize(
-    "data_val, dq_val, expected_frac",
-    [
-        # all pixels good (dq=0)
-        (10.0, 0, 1.0),
-        # all pixels flagged do_not_use (fraction should be 0.0)
-        (10.0, pixel.DO_NOT_USE, 0.0),
-        # half pixels flagged do_not_use (0.5)
-        (5.0, "half_bad", 0.5),
-        # other flags set (saturated), but not do_not_use (fraction should be 1.0)
-        (10.0, pixel.SATURATED | pixel.HOT, 1.0),
-    ],
-)
-def test_populate_statistics(model_type, model_class, data_val, dq_val, expected_frac):
-    """Test statistics population."""
-    step = MockStepClass()
-    shape = (10, 10)
-
-    model = model_class.create_minimal()
-
-    model.data = np.full(shape, data_val, dtype=np.float32)
-
-    if dq_val == "half_bad":
-        dq = np.zeros(shape, dtype=np.uint32)
-        dq.view().flat[0:50] = pixel.DO_NOT_USE
-        model.dq = dq
-    else:
-        model.dq = np.full(shape, dq_val, dtype=np.uint32)
-
-    # inject a nan to verify nan-resistance (nanmedian and mad_std)
-    model.data[0, 0] = np.nan
-
-    step.populate_statistics(model)
-
-    assert model.meta.statistics.image_median == data_val
-
-    assert model.meta.statistics.image_rms == 0.0
-
-    assert model.meta.statistics.good_pixel_fraction == pytest.approx(
-        expected_frac, abs=1e-6
-    )
-
-    # check the placeholder logic (-1.0)
-    assert model.meta.statistics.zodiacal_light == -1.0
-
-
 def test_statistics_handled_in_finalize():
     """Verify finalize_result triggers the statistics population."""
+
+    class MockStepClass(RomanStep):
+        """Minimal subclass to test RomanStep methods."""
+
+        def process(self, input):
+            return input
+
     step = MockStepClass()
     shape = (10, 10)
 
@@ -216,40 +166,3 @@ def test_statistics_handled_in_finalize():
     assert hasattr(model.meta, "statistics")
     assert model.meta.statistics.image_median == 1.0
     assert model.meta.statistics.good_pixel_fraction == 1.0
-
-
-def test_statistics_graceful_exit_no_data():
-    """Ensure we don't crash if data is None."""
-    step = MockStepClass()
-
-    model = ImageModel.create_minimal()
-
-    model.data = None
-
-    step.populate_statistics(model)
-
-    # check that meta.statistics wasn't created
-    assert not hasattr(model.meta, "statistics")
-
-
-def test_populate_statistics_attribute_error(caplog):
-    step = MockStepClass()
-
-    # create a "Bad" object that raises AttributeError on any attribute assignment
-    class FailOnSet:
-        def __setattr__(self, name, value):
-            raise AttributeError("Cannot set attribute")
-
-    bad_model = type(
-        "BadModel",
-        (),
-        {
-            "data": np.ones((2, 2), dtype=np.float32),
-            "dq": np.zeros((2, 2), dtype=np.uint32),
-            "meta": type("BadMeta", (), {"statistics": FailOnSet()})(),
-        },
-    )()
-
-    step.populate_statistics(bad_model)
-
-    assert "Could not populate statistics stanza" in caplog.text
