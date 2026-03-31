@@ -7,8 +7,12 @@ import warnings
 
 import astropy.units as u
 import numpy as np
-from astropy.utils import lazyproperty
+import photutils
+from astropy.utils import lazyproperty, minversion
 from photutils.segmentation import SourceCatalog
+
+PHOTUTILS_GE_3 = minversion(photutils, "2.3.1.dev")
+photutils.future_column_names = True
 
 
 class SegmentCatalog:
@@ -178,15 +182,26 @@ class SegmentCatalog:
         else:
             detection_cat = None
 
-        segm_cat = SourceCatalog(
-            self.model.data,
-            self.segment_img,
-            convolved_data=self.convolved_data,
-            error=self.model.err,
-            wcs=self.wcs,
-            apermask_method="mask",
-            detection_cat=detection_cat,
-        )
+        if PHOTUTILS_GE_3:
+            segm_cat = SourceCatalog(
+                self.model.data,
+                self.segment_img,
+                convolved_data=self.convolved_data,
+                error=self.model.err,
+                wcs=self.wcs,
+                aperture_mask_method="mask",
+                detection_catalog=detection_cat,
+            )
+        else:
+            segm_cat = SourceCatalog(
+                self.model.data,
+                self.segment_img,
+                convolved_data=self.convolved_data,
+                error=self.model.err,
+                wcs=self.wcs,
+                apermask_method="mask",
+                detection_cat=detection_cat,
+            )
         self.source_cat = segm_cat
         self.meta.update(segm_cat.meta)
 
@@ -209,10 +224,6 @@ class SegmentCatalog:
             # Full catalog includes all core properties
             photutils_names = [
                 "label",
-                "xcentroid",
-                "ycentroid",
-                "xcentroid_win",
-                "ycentroid_win",
                 "sky_centroid",
                 "sky_centroid_win",
                 "bbox_xmin",
@@ -222,31 +233,62 @@ class SegmentCatalog:
                 "area",
                 "kron_radius",
                 "segment_flux",
-                "segment_fluxerr",
                 "kron_flux",
-                "kron_fluxerr",
-                "semimajor_sigma",
-                "semiminor_sigma",
                 "fwhm",
                 "orientation",
                 "ellipticity",
-                "cxx",
-                "cxy",
-                "cyy",
             ]
 
         # if needed, map names from photutils to the output catalog names
         name_map = {}
-        name_map["xcentroid"] = "x_centroid"
-        name_map["ycentroid"] = "y_centroid"
-        name_map["xcentroid_win"] = "x_centroid_win"
-        name_map["ycentroid_win"] = "y_centroid_win"
         name_map["area"] = "segment_area"
-        name_map["semimajor_sigma"] = "semimajor"
-        name_map["semiminor_sigma"] = "semiminor"
         name_map["orientation"] = "orientation_pix"
-        name_map["segment_fluxerr"] = "segment_flux_err"
-        name_map["kron_fluxerr"] = "kron_flux_err"
+
+        if PHOTUTILS_GE_3:
+            photutils_names.extend(
+                [
+                    "x_centroid",
+                    "y_centroid",
+                    "x_centroid_win",
+                    "y_centroid_win",
+                    "semimajor_axis",
+                    "semiminor_axis",
+                    "ellipse_cxx",
+                    "ellipse_cxy",
+                    "ellipse_cyy",
+                    "segment_flux_err",
+                    "kron_flux_err",
+                ]
+            )
+            name_map["semimajor_axis"] = "semimajor"
+            name_map["semiminor_axis"] = "semiminor"
+            name_map["ellipse_cxx"] = "cxx"
+            name_map["ellipse_cxy"] = "cxy"
+            name_map["ellipse_cyy"] = "cyy"
+        else:
+            photutils_names.extend(
+                [
+                    "xcentroid",
+                    "ycentroid",
+                    "xcentroid_win",
+                    "ycentroid_win",
+                    "semimajor_sigma",
+                    "semiminor_sigma",
+                    "cxx",
+                    "cxy",
+                    "cyy",
+                    "segment_fluxerr",
+                    "kron_fluxerr",
+                ]
+            )
+            name_map["xcentroid"] = "x_centroid"
+            name_map["ycentroid"] = "y_centroid"
+            name_map["xcentroid_win"] = "x_centroid_win"
+            name_map["ycentroid_win"] = "y_centroid_win"
+            name_map["semimajor_sigma"] = "semimajor"
+            name_map["semiminor_sigma"] = "semiminor"
+            name_map["segment_fluxerr"] = "segment_flux_err"
+            name_map["kron_fluxerr"] = "kron_flux_err"
 
         # set the source properties as attributes of this instance
         for name in photutils_names:
@@ -313,7 +355,12 @@ class SegmentCatalog:
             "x_centroid_win_err",
             "y_centroid_win_err",
         )
-        pix_value = np.zeros(self.source_cat.nlabels, dtype=np.float32) * u.pix
+        if PHOTUTILS_GE_3:
+            n_labels = self.source_cat.n_labels
+        else:
+            n_labels = self.source_cat.nlabels
+
+        pix_value = np.zeros(n_labels, dtype=np.float32) * u.pix
         for name in pix_columns:
             if not hasattr(self, name):
                 setattr(self, name, pix_value)
@@ -325,7 +372,7 @@ class SegmentCatalog:
             "ra_centroid_win_err",
             "dec_centroid_win_err",
         )
-        sky_value = np.zeros(self.source_cat.nlabels, dtype=np.float32) * u.arcsec
+        sky_value = np.zeros(n_labels, dtype=np.float32) * u.arcsec
         for name in sky_columns:
             if not hasattr(self, name):
                 setattr(self, name, sky_value)
@@ -339,9 +386,10 @@ class SegmentCatalog:
         The position angle of the source major axis in degrees measured
         East of North.
         """
-        return ((180.0 * u.deg) - self.wcs_angle + self.orientation_pix).astype(
-            np.float32
+        angle = ((180.0 * u.deg) - self.wcs_angle + self.orientation_pix) % (
+            360.0 * u.deg
         )
+        return angle.astype(np.float32)
 
     @lazyproperty
     def _kron_abmag(self):
@@ -366,5 +414,8 @@ class SegmentCatalog:
         """
         The radius (in arcsec) at which the flux fraction is 50%.
         """
-        value = self.source_cat.fluxfrac_radius(0.5)
+        if PHOTUTILS_GE_3:
+            value = self.source_cat.flux_radius(0.5)
+        else:
+            value = self.source_cat.fluxfrac_radius(0.5)
         return (value.value * self.pixel_scale).astype(np.float32)

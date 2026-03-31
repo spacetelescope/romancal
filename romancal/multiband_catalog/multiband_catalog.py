@@ -106,7 +106,7 @@ def process_detection_image(self, library, example_model, ee_spline, catalog_mod
     segment_img = make_segmentation_image(
         detection_image,
         snr_threshold=self.snr_threshold,
-        npixels=self.npixels,
+        n_pixels=self.npixels,
         bkg_rms=bkg_rms,
         deblend=self.deblend,
         mask=mask,

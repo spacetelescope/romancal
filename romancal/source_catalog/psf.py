@@ -8,11 +8,12 @@ from collections import OrderedDict
 
 import astropy.units as u
 import numpy as np
+import photutils
 from astropy.convolution import Box2DKernel, convolve
 from astropy.modeling.fitting import LevMarLSQFitter
 from astropy.nddata import NDData
 from astropy.table import Table
-from astropy.utils import lazyproperty
+from astropy.utils import lazyproperty, minversion
 from numpy import fft
 from photutils.background import LocalBackground
 from photutils.detection import DAOStarFinder
@@ -24,6 +25,9 @@ from photutils.psf import (
     SourceGrouper,
 )
 from scipy.ndimage import map_coordinates
+
+PHOTUTILS_GE_3 = minversion(photutils, "2.3.1.dev")
+photutils.future_column_names = True
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -594,7 +598,7 @@ def fit_psf_to_image_model(
     psf_model=None,
     grouper=None,
     fitter=None,
-    localbkg_estimator=None,
+    local_bkg_estimator=None,
     finder=None,
     x_init=None,
     y_init=None,
@@ -631,7 +635,7 @@ def fit_psf_to_image_model(
     fitter : `astropy.modeling.fitting.Fitter`, optional
         Modeling class which optimizes the PSF fit.
         Default is `astropy.modeling.fitting.LevMarLSQFitter(calc_uncertainties=True)`.
-    localbkg_estimator : `photutils.background.LocalBackground`, optional
+    local_bkg_estimator : `photutils.background.LocalBackground`, optional
         Specifies inner and outer radii for computing flux background near
         a source. Default has ``inner_radius=10, outer_radius=30``.
     finder : subclass of `photutils.detection.StarFinderBase`, optional
@@ -703,22 +707,34 @@ def fit_psf_to_image_model(
 
         psf_photometry_kwargs["finder"] = finder
 
-    if localbkg_estimator is None:
-        localbkg_estimator = LocalBackground(
+    if local_bkg_estimator is None:
+        local_bkg_estimator = LocalBackground(
             inner_radius=10,  # [pix]
             outer_radius=30,  # [pix]
         )
 
-    photometry = photometry_cls(
-        grouper=grouper,
-        localbkg_estimator=localbkg_estimator,
-        psf_model=psf_model,
-        fitter=fitter,
-        fit_shape=fit_shape,
-        aperture_radius=fit_shape[0],
-        progress_bar=progress_bar,
-        **psf_photometry_kwargs,
-    )
+    if PHOTUTILS_GE_3:
+        photometry = photometry_cls(
+            grouper=grouper,
+            local_bkg_estimator=local_bkg_estimator,
+            psf_model=psf_model,
+            fitter=fitter,
+            fit_shape=fit_shape,
+            aperture_radius=fit_shape[0],
+            progress_bar=progress_bar,
+            **psf_photometry_kwargs,
+        )
+    else:
+        photometry = photometry_cls(
+            grouper=grouper,
+            localbkg_estimator=local_bkg_estimator,
+            psf_model=psf_model,
+            fitter=fitter,
+            fit_shape=fit_shape,
+            aperture_radius=fit_shape[0],
+            progress_bar=progress_bar,
+            **psf_photometry_kwargs,
+        )
 
     if x_init is not None and y_init is not None:
         guesses = Table(np.column_stack([x_init, y_init]), names=["x_init", "y_init"])
