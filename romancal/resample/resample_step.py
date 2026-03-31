@@ -6,7 +6,6 @@ from copy import deepcopy
 from typing import TYPE_CHECKING
 
 import asdf
-import numpy as np
 from roman_datamodels import datamodels
 
 from romancal.datamodels.fileio import open_dataset
