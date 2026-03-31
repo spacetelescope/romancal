@@ -26,30 +26,35 @@ def populate_statistics(model):
     Parameters
     ----------
     model : ImageModel or MosaicModel
-        The data model object to populate statistics for (must have a 'model.meta.data' attribute).
+        The data model object to populate statistics for (must have a 'model.data' attribute).
 
     Returns
     -------
     None
     """
-    if not hasattr(model, "data") or model.data is None:
-        logger.debug("Model has no data array; skipping statistics population.")
-        return
 
-    if getattr(model.meta, "statistics", None) is None:
+    if not getattr(model.meta, "statistics", False):
         logger.debug("Creating meta.statistics node...")
         model.meta.statistics = {}
 
-    img_median = float(np.nanmedian(model.data))
+    # initialize statistics with default values
+    stats = {
+        "zodiacal_light": -1.0,
+        "image_median": np.nan,
+        "image_rms": np.nan,
+        "good_pixel_fraction": np.nan,
+    }
 
-    img_rms = mad_std(model.data, ignore_nan=True)
+    if (
+        hasattr(model, "data")
+        and model.data is not None
+        and not np.all(np.isnan(model.data))
+    ):
+        stats["image_median"] = float(np.nanmedian(model.data))
+        stats["image_rms"] = mad_std(model.data, ignore_nan=True)
+        if hasattr(model, "dq") and model.dq is not None:
+            num_good = np.sum((model.dq & pixel.DO_NOT_USE) == 0)
+            stats["good_pixel_fraction"] = num_good / model.data.size
 
-    good_pix_frac = 0.0
-    if hasattr(model, "dq") and model.dq is not None:
-        num_good = np.sum((model.dq & pixel.DO_NOT_USE) == 0)
-        good_pix_frac = num_good / model.data.size
-
-        model.meta.statistics.zodiacal_light = -1.0  # placeholder
-        model.meta.statistics.image_median = img_median
-        model.meta.statistics.image_rms = img_rms
-        model.meta.statistics.good_pixel_fraction = good_pix_frac
+    for key, value in stats.items():
+        model.meta.statistics[key] = value

@@ -53,13 +53,19 @@ def test_populate_statistics(model_class, data_val, dq_val, expected_frac):
 
 
 def test_statistics_graceful_exit_no_data():
-    """Ensure we don't crash if data is None."""
+    """Ensure meta.statistics is created with defaults if data is None."""
 
     model = ImageModel.create_minimal()
-
     model.data = None
 
     populate_statistics(model)
 
-    # check that meta.statistics wasn't created
-    assert not hasattr(model.meta, "statistics")
+    # 1. Check that meta.statistics WAS created (as per the first 'if' block)
+    assert hasattr(model.meta, "statistics")
+
+    # 2. Verify that default values were still assigned
+    # Since model.data was None, the stats remain at their initialized defaults
+    assert model.meta.statistics.zodiacal_light == -1.0
+    assert np.isnan(model.meta.statistics.image_median)
+    assert np.isnan(model.meta.statistics.image_rms)
+    assert np.isnan(model.meta.statistics.good_pixel_fraction)
