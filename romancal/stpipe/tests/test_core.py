@@ -151,7 +151,7 @@ class MockStepClass(RomanStep):
 
 
 @pytest.mark.parametrize(
-    "model_type, model_class",
+    "model_class",
     [("imagemodel", ImageModel), ("mosaicmodel", MosaicModel)],
 )
 @pytest.mark.parametrize(
