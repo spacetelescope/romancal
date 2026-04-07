@@ -1,3 +1,5 @@
+from contextlib import nullcontext
+
 import pytest
 import roman_datamodels.datamodels as rdm
 
@@ -43,18 +45,6 @@ def list_of_filenames(model_filename):
     return [model_filename]
 
 
-# @pytest.fixture(params=[
-#     "model",
-#     "library",
-#     "model_filename",
-#     "library_filename",
-#     "list_of_models",
-#     "list_of_filenames",
-# ])
-# def valid_dataset(request):
-#     return request.getfixturevalue(request.param)
-
-
 @pytest.mark.parametrize("return_type", [True, False])
 @pytest.mark.parametrize("as_library", [True, False])
 @pytest.mark.parametrize(
@@ -92,27 +82,34 @@ def test_open_dataset(
 
 
 @pytest.mark.parametrize(
-    "dataset",
+    "dataset_fixture_name, expect_on_disk",
     [
-        "model_filename",
-        "library_filename",
-        "list_of_models",
-        "list_of_filenames",
+        ("model_filename", False),
+        ("library_filename", True),
+        ("list_of_models", False),
+        ("list_of_filenames", False),
     ],
 )
-def test_open_kwargs(dataset, monkeypatch):
+def test_open_kwargs(dataset_fixture_name, expect_on_disk, monkeypatch, request):
     class TestException(Exception):
         pass
 
     def patched_open(self, *args, **kwargs):
         assert "test" in kwargs
+        assert "on_disk" in kwargs if expect_on_disk else "on_disk" not in kwargs
         raise TestException()
+
+    dataset = request.getfixturevalue(dataset_fixture_name)
 
     monkeypatch.setattr(rdm, "open", patched_open)
     monkeypatch.setattr(ModelLibrary, "__init__", patched_open)
+    if expect_on_disk:
+        ctx = nullcontext()
+    else:
+        ctx = pytest.warns(UserWarning, match="on_disk")
 
-    with pytest.raises(TestException):
-        open_dataset(dataset, open_kwargs={"test": 1})
+    with pytest.raises(TestException), ctx:
+        open_dataset(dataset, open_kwargs={"test": 1, "on_disk": True})
 
 
 @pytest.mark.parametrize("update_version", [True, False])

@@ -8,6 +8,25 @@ from romancal.datamodels.library import ModelLibrary
 from romancal.pipeline import ExposurePipeline
 
 
+@pytest.fixture
+def fake_science_raw():
+    model = rdm.ScienceRawModel.create_fake_data()
+    model.meta.filename = "test_uncal.asdf"
+    model.meta.exposure.read_pattern = [
+        [1],
+        [2],
+        [3],
+        [4],
+    ]  # truncated for 4 groups below
+    model.meta.exposure.ma_table_number = 5
+    model.meta.exposure.start_time = Time(
+        "2024-01-03T00:00:00.0", format="isot", scale="utc"
+    )
+    model.data = np.zeros((4, 4096, 4096), dtype=model.data.dtype)
+    model.amp33 = np.zeros((4, 4096, 128), dtype=model.amp33.dtype)
+    return model
+
+
 @pytest.fixture(scope="function")
 def input_value(request, tmp_path):
     model = rdm.RampModel.create_fake_data(shape=(2, 20, 20))
@@ -61,27 +80,12 @@ def test_input_to_output(function_jail, input_value, expected_output_type):
 
 
 @pytest.mark.parametrize("save_results", [True, False])
-def test_elp_save_results(function_jail, save_results, monkeypatch):
+def test_elp_save_results(function_jail, fake_science_raw, save_results, monkeypatch):
     """
     Test that the elp respects save_results.
     """
     output_path = function_jail / "output"
     output_path.mkdir()
-
-    model = rdm.ScienceRawModel.create_fake_data()
-    model.meta.filename = "test_uncal.asdf"
-    model.meta.exposure.read_pattern = [
-        [1],
-        [2],
-        [3],
-        [4],
-    ]  # truncated for 4 groups below
-    model.meta.exposure.ma_table_number = 5
-    model.meta.exposure.start_time = Time(
-        "2024-01-03T00:00:00.0", format="isot", scale="utc"
-    )
-    model.data = np.zeros((4, 4096, 4096), dtype=model.data.dtype)
-    model.amp33 = np.zeros((4, 4096, 128), dtype=model.amp33.dtype)
 
     pipeline = ExposurePipeline()
     pipeline.output_dir = str(output_path)
@@ -90,7 +94,7 @@ def test_elp_save_results(function_jail, save_results, monkeypatch):
     # don't try to actually run tweakreg as it will fail for an empty model
     monkeypatch.setattr(pipeline.tweakreg, "run", lambda init: init)
 
-    pipeline.run(model)
+    pipeline.run(fake_science_raw)
     # check that the current directory doesn't contain extra files
     assert set(p.name for p in function_jail.iterdir()) == {"output"}
 
@@ -101,3 +105,24 @@ def test_elp_save_results(function_jail, save_results, monkeypatch):
         expected.add("test_cal.asdf")
         expected.add("test_wcs.asdf")
     assert output_files == expected
+
+
+@pytest.mark.parametrize("on_disk", [True, False])
+def test_on_disk(function_jail, fake_science_raw, on_disk):
+    fake_science_raw.meta.filename = "foo.asdf"
+    fake_science_raw.save(fake_science_raw.meta.filename)
+    asn = asn_from_list([fake_science_raw.meta.filename], product_name="foo_out")
+    base_fn, contents = asn.dump(format="json")
+    asn_filename = base_fn
+    with open(asn_filename, "w") as f:
+        f.write(contents)
+
+    pipeline = ExposurePipeline()
+    pipeline.on_disk = on_disk
+    # don't fetch references
+    pipeline.prefetch_references = False
+    # skip all steps
+    [setattr(getattr(pipeline, k), "skip", True) for k in pipeline.step_defs]
+    pipeline.dq_init.skip = False  # unskip dqinit
+    output_value = pipeline.run(asn_filename)
+    assert output_value._on_disk == on_disk
