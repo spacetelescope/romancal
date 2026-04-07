@@ -91,10 +91,9 @@ class DQInitStep(RomanStep):
 
         # If a data encoding offset was added to the data, remove it
         data_encoding_offset = getattr(
-            input_model.meta.instrument, "data_encoding_offset", None
+            input_model.meta.instrument, "data_encoding_offset", 0
         )
-        if data_encoding_offset is not None and not is_tvac:
-            output_model.data -= data_encoding_offset
+        output_model.data -= data_encoding_offset
 
         # Test for reference file
         if reference_file_name != "N/A" and reference_file_name is not None:
