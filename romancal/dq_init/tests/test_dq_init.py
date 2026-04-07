@@ -318,3 +318,16 @@ def test_dqinit_add_reference_read():
 
     assert np.allclose(result2.data - result.data, offset)
     assert np.allclose(result2.amp33 - result.amp33, offset)
+
+
+def test_dqinit_sub_data_encoding_offset():
+    offset = 7
+    shape = (2, 20, 20)
+
+    wfi_sci_raw_model = rawim(shape, "WFI", "WFI_IMAGE")
+    result = DQInitStep.call(wfi_sci_raw_model)
+
+    wfi_sci_raw_model.meta.instrument.data_encoding_offset = offset
+    result2 = DQInitStep.call(wfi_sci_raw_model)
+
+    assert np.allclose(result.data - result2.data, offset)
