@@ -39,7 +39,7 @@ def update_model_version(model, *, close_on_update=False):
         updated_model.meta.observation.wfi_parallel = visit_file_sequence > 1
 
     # old files (<B21) lack hga_move
-    if ("hga_move" not in model.meta.get("exposure", {})):
+    if "hga_move" not in model.meta.get("exposure", {}):
         updated_model.meta.exposure.hga_move = False
 
     new_ref_files = ["darkdecaysignal", "integralnonlinearity", "inverselinearity"]
