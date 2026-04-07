@@ -49,6 +49,7 @@ class ExposurePipeline(RomanPipeline):
 
     spec = """
         save_results = boolean(default=False)
+        on_disk = boolean(default=False)
         suffix = string(default="cal")
     """
 
@@ -88,6 +89,7 @@ class ExposurePipeline(RomanPipeline):
             update_version=self.update_version,
             return_type=True,
             as_library=True,
+            open_kwargs={"on_disk": self.on_disk},
         )
         return_lib = input_type in ("ModelLibrary", "asn")
 

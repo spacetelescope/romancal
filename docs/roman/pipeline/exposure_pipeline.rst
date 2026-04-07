@@ -46,6 +46,20 @@ The ``exposure`` pipeline has no arguments
 Inputs
 ------
 
+For more details about step arguments (including datatypes, possible values
+and defaults) see :py:obj:`romancal.pipeline.exposure_pipeline.ExposurePipeline.spec`.
+
+``--on_disk``
+  When `True` the input association will be opened in a way that uses
+  temporary files to avoid keeping all input models in memory.
+
+You can see the options for strun using:
+
+strun --help roman_elp
+
+and this will list all the strun options as well as the step options for the roman_elp.
+
+
 3D raw data
 +++++++++++
 
@@ -78,6 +92,7 @@ The corresponding output image will:
 
 A single fully saturated input will also cause :ref:`tweakreg <tweakreg_step>` to be skipped
 for all input images.
+
 
 Outputs
 -------
