@@ -50,11 +50,13 @@ def populate_statistics(model):
         and model.data is not None
         and not np.all(np.isnan(model.data))
     ):
-        stats["image_median"] = float(np.nanmedian(model.data))
-        stats["image_rms"] = mad_std(model.data, ignore_nan=True)
+        good = np.ones_like(model.data, dtype="bool")
         if hasattr(model, "dq") and model.dq is not None:
-            num_good = np.sum((model.dq & pixel.DO_NOT_USE) == 0)
-            stats["good_pixel_fraction"] = num_good / model.data.size
+            good &= (model.dq & pixel.DO_NOT_USE) == 0
+        good &= (model.err > 0) & np.isfinite(model.data)
+        stats["image_median"] = float(np.median(model.data[good]))
+        stats["image_rms"] = float(mad_std(model.data[good]))
+        stats["good_pixel_fraction"] = np.sum(good) / model.data.size
 
     for key, value in stats.items():
         model.meta.statistics[key] = value
