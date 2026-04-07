@@ -56,7 +56,7 @@ class TweakRegStep(RomanStep):
         use2dhist = boolean(default=True) # Use 2d histogram to find initial offset?
         separation = float(default=1.0) # Minimum object separation in arcsec
         tolerance = float(default=0.7) # Matching tolerance for xyxymatch in arcsec
-        fitgeometry = option('shift', 'rshift', 'rscale', 'general', default='rshift') # Fitting geometry
+        fitgeometry = option('shift', 'rshift', 'rscale', 'general', default='general') # Fitting geometry
         nclip = integer(min=0, default=3) # Number of clipping iterations in fit
         sigma = float(min=0.0, default=3.0) # Clipping limit in sigma units
         abs_refcat = string(default='{DEFAULT_ABS_REFCAT}')  # Absolute reference catalog
@@ -68,7 +68,7 @@ class TweakRegStep(RomanStep):
         abs_separation = float(default=1.0) # Minimum object separation in arcsec when performing absolute astrometry
         abs_tolerance = float(default=0.7) # Matching tolerance for xyxymatch in arcsec when performing absolute astrometry
         # Fitting geometry when performing absolute astrometry
-        abs_fitgeometry = option('shift', 'rshift', 'rscale', 'general', default='rshift')
+        abs_fitgeometry = option('shift', 'rshift', 'rscale', 'general', default='general')
         abs_nclip = integer(min=0, default=3) # Number of clipping iterations in fit when performing absolute astrometry
         abs_sigma = float(min=0.0, default=3.0) # Clipping limit in sigma units when performing absolute astrometry
         output_use_model = boolean(default=True)  # When saving use `DataModel.meta.filename`
