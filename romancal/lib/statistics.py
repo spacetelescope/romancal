@@ -2,6 +2,7 @@ import logging
 
 import numpy as np
 from astropy.stats import mad_std
+from roman_datamodels.datamodels import MosaicModel
 from roman_datamodels.dqflags import pixel
 
 # Configure logging
@@ -33,7 +34,7 @@ def populate_statistics(model):
     None
     """
 
-    if not getattr(model.meta, "statistics", False):
+    if not hasattr(model.meta, "statistics") or model.meta.statistics is None:
         logger.debug("Creating meta.statistics node...")
         model.meta.statistics = {}
 
@@ -42,21 +43,23 @@ def populate_statistics(model):
         "zodiacal_light": -1.0,
         "image_median": np.nan,
         "image_rms": np.nan,
-        "good_pixel_fraction": np.nan,
+        "good_pixel_fraction": 0.0,
     }
+    if isinstance(model, MosaicModel):
+        stats.pop("zodiacal_light", None)
 
-    if (
-        hasattr(model, "data")
-        and model.data is not None
-        and not np.all(np.isnan(model.data))
-    ):
-        good = np.ones_like(model.data, dtype="bool")
+    if hasattr(model, "data") and model.data is not None:
+        good = np.isfinite(model.data)
         if hasattr(model, "dq") and model.dq is not None:
             good &= (model.dq & pixel.DO_NOT_USE) == 0
-        good &= (model.err > 0) & np.isfinite(model.data)
-        stats["image_median"] = float(np.median(model.data[good]))
-        stats["image_rms"] = float(mad_std(model.data[good]))
-        stats["good_pixel_fraction"] = np.sum(good) / model.data.size
+        if hasattr(model, "err") and model.err is not None:
+            good &= model.err > 0
+        if not np.any(good):
+            logger.warning("No good pixels found for statistics calculation.")
+        else:
+            stats["image_median"] = float(np.median(model.data[good]))
+            stats["image_rms"] = float(mad_std(model.data[good]))
+            stats["good_pixel_fraction"] = np.sum(good) / model.data.size
 
     for key, value in stats.items():
         model.meta.statistics[key] = value
