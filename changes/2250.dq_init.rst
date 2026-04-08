@@ -1,0 +1,1 @@
+Added support for the data encoding offset with a unit test.
