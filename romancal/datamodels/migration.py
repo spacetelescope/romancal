@@ -30,13 +30,19 @@ def update_model_version(model, *, close_on_update=False):
     if type(updated_model.meta.file_date) is not Time:
         updated_model.meta.file_date = Time(updated_model.meta.file_date)
 
-    # old files (<B21) lacks WFI_parallel
+    # old files (<B21) lack WFI_parallel
     if ("wfi_parallel" not in model.meta.get("observation", {})) and (
         visit_file_sequence := model.meta.get("observation", {}).get(
             "visit_file_sequence", None
         )
     ):
         updated_model.meta.observation.wfi_parallel = visit_file_sequence > 1
+
+    # old L3 files (<B22) lack pixmap_stepsize
+    if ("resample" in model.get("meta", {})) and (
+        "pixmap_stepsize" not in model.meta.get("resample", {})
+    ):
+        updated_model.meta.resample.pixmap_stepsize = 1
 
     new_ref_files = ["darkdecaysignal", "integralnonlinearity", "inverselinearity"]
     ref_file = model.meta.get("ref_file", None)
