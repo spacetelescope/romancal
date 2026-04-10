@@ -458,7 +458,9 @@ class TweakRegStep(RomanStep):
         """
         twk_cat = getattr(source_catalog, "tweakreg_catalog", None)
         twk_cat_name = getattr(source_catalog, "tweakreg_catalog_name", None)
-        image_name = getattr(getattr(image_model, "meta", None), "filename", "<unknown>")
+        image_name = getattr(
+            getattr(image_model, "meta", None), "filename", "<unknown>"
+        )
 
         if twk_cat is not None:
             log.info(
@@ -469,9 +471,7 @@ class TweakRegStep(RomanStep):
             return tweakreg_catalog
 
         elif twk_cat_name is not None:
-            log.info(
-                f"Using tweakreg catalog file '{twk_cat_name}' for {image_name}."
-            )
+            log.info(f"Using tweakreg catalog file '{twk_cat_name}' for {image_name}.")
             return self.read_catalog(source_catalog.tweakreg_catalog_name)
 
         else:
