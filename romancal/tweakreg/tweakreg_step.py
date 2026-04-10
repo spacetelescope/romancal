@@ -115,12 +115,6 @@ class TweakRegStep(RomanStep):
                 for i, member in enumerate(images.asn["products"][0]["members"]):
                     filename = member["expname"]
                     if filename in catdict:
-                        # FIXME: I'm not sure if this captures all the possible combinations
-                        # for example, meta.tweakreg_catalog is set by the container (when
-                        # it's present in the association). However the code in this step
-                        # checks meta.source_catalog.tweakreg_catalog. I think this means
-                        # that setting a catalog via an association does not work. Is this
-                        # intended? If so, the container can be updated to not support that.
                         model = images.borrow(i)
                         model.meta["source_catalog"] = {
                             "tweakreg_catalog_name": catdict[filename],

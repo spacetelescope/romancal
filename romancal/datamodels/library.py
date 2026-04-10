@@ -70,7 +70,16 @@ class ModelLibrary(AbstractModelLibrary):
         # __setitem__ calls here instead of setattr
         for attr in ("tweakreg_catalog",):
             if attr in member:
+                # leave this for backwards compatibility, but also add it to
+                # the source_catalog as a filename for the catalog
                 model.meta[attr] = member[attr]
+                if not hasattr(
+                    model.meta,
+                    "source_catalog",
+                ):
+                    model.meta["source_catalog"] = {}
+
+                model.meta.source_catalog["tweakreg_catalog_name"] = member[attr]
 
         for asn_attr, dm_attr in (
             ("table_name", "table_name"),

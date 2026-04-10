@@ -7,30 +7,44 @@ Description
 Overview
 --------
 This step uses the coordinates of point-like sources from an input catalog
-(i.e. the result from `SourceCatalogStep` saved in the
-`meta.tweakreg_catalog` attribute) and compares them with the
-coordinates from a Gaia catalog to compute corrections to
+(i.e. the result from `SourceCatalogStep` recorded under the input model's
+`meta.source_catalog` metadata, either as `meta.source_catalog.tweakreg_catalog`
+(in-memory catalog) or `meta.source_catalog.tweakreg_catalog_name` (catalog filename))
+and compares them with the coordinates from a Gaia catalog to compute corrections to
 the WCS of the input images such that sky catalogs obtained from the image catalogs
 using the corrected WCS will align on the sky.
 
 Custom Source Catalogs
 ----------------------
-The default catalog used by ``tweakreg`` step can be disabled by
-providing a file name to a custom source catalog in the
-``meta.tweakreg_catalog`` attribute of input data models.
+For the ``tweakreg`` step to use user-provided input source catalogs,
+``use_custom_catalogs`` parameter of the ``tweakreg`` step must be set to
+`True`.
+
+To provide a custom catalog for a given input model, set
+``meta.source_catalog.tweakreg_catalog_name`` to the custom catalog filename.
+Alternatively, an in-memory catalog may be supplied via
+``meta.source_catalog.tweakreg_catalog``.
+
+.. note::
+    ``TweakRegStep`` expects ``meta.source_catalog`` to be present on each input
+    model. If it is missing, the step will raise an ``AttributeError``.
+    Running ``SourceCatalogStep`` will populate ``meta.source_catalog``; otherwise
+    users must ensure it exists before setting ``meta.source_catalog.*`` fields.
+
+.. note::
+    If ``meta.source_catalog`` is missing on a model, you can create it before setting
+    the catalog fields, e.g. ``model.meta["source_catalog"] = {}``.
+
 The catalog must be in a format automatically recognized by
 :py:meth:`~astropy.table.Table.read`. The catalog must contain
 either ``'x'`` and ``'y'`` or ``'x_psf'`` and ``'y_psf'`` columns which
 indicate source *image* coordinates (in pixels). Pixel coordinates are
 0-indexed.
 
-For the ``tweakreg`` step to use user-provided input source catalogs,
-``use_custom_catalogs`` parameter of the ``tweakreg`` step must be set to
-`True`.
 
-In addition to setting the ``meta.tweakreg_catalog`` attribute of input data
-models to the custom catalog file name, the ``tweakreg_step`` also supports two
-other ways of supplying custom source catalogs to the step:
+In addition to setting ``meta.source_catalog.tweakreg_catalog_name`` on input data
+models, the ``tweakreg_step`` also supports two other ways of supplying custom
+source catalogs to the step:
 
 1. Adding ``tweakreg_catalog`` attribute to the ``members`` of the input ASN
    table - see `~roman.datamodels.ModelLibrary` for more details.
@@ -42,29 +56,23 @@ other ways of supplying custom source catalogs to the step:
    Catalog file names are relative to ``catfile`` file path.
 
 Specifying custom source catalogs via either the input ASN table or
-``catfile``, will update input data models' ``meta.tweakreg_catalog``
-attributes to the catalog file names provided in either in the ASN table or
-``catfile``.
+``catfile`` will set (or update) the per-model metadata used by ``TweakRegStep``
+to locate the catalog. ``TweakRegStep`` reads custom catalog information from
+``meta.source_catalog.tweakreg_catalog_name`` (or, for in-memory catalogs,
+``meta.source_catalog.tweakreg_catalog``).
 
 .. note::
-    When custom source catalogs are provided via both ``catfile`` and
-    ASN table members' attributes, the ``catfile`` takes precedence and
-    catalogs specified via ASN table are ignored altogether.
+    When a data model file name is listed in ``catfile`` but the corresponding
+    source catalog file name is left empty, the step will treat that as "no
+    custom catalog provided" for that model.
 
 .. note::
-    1. Providing a data model file name in the ``catfile`` and leaving
-       the corresponding source catalog file name empty -- same as setting
-       ``'tweakreg_catalog'`` in the ASN table to an empty string ``""`` --
-       would set corresponding input data model's ``meta.tweakreg_catalog``
-       attribute to `None`. In this case, ``tweakreg_step`` will automatically
-       generate a source catalog for that data model.
-
-    2. If an input data model is not listed in the ``catfile`` or does not
-       have ``'tweakreg_catalog'`` attribute provided in the ASN table,
-       then the catalog file name in that model's ``meta.tweakreg_catalog``
-       attribute will be used. If ``model.meta.tweakreg_catalog`` is `None`,
-       ``tweakreg_step`` will automatically generate a source catalog for
-       that data model.
+    If an input data model is not listed in the ``catfile`` and does not have
+    custom catalog metadata populated, then the catalog information already
+    present under ``meta.source_catalog`` will be used. If no catalog is
+    available under ``meta.source_catalog``, the step will fail with an
+    ``AttributeError``; run ``SourceCatalogStep`` first or provide a custom
+    catalog.
 
 Alignment
 ---------
@@ -117,12 +125,13 @@ Step Arguments
 **Catalog parameters:**
 
 * ``use_custom_catalogs``: A boolean that indicates whether
-  to ignore source catalog in the input data model's ``meta.tweakreg_catalog``
-  attribute (Default=`False`).
+  to use user-provided catalogs (as specified via ``catfile`` / ASN member
+  metadata / ``meta.source_catalog.*``) instead of relying solely on catalogs
+  produced by ``SourceCatalogStep`` (Default=`False`).
 
   .. note::
-    If `True`, the user must provide a valid custom catalog that will be assigned to
-    `meta.tweakreg_catalog` and used throughout the step.
+    If `True`, the user must provide a valid custom catalog for each input model
+    (typically via ``meta.source_catalog.tweakreg_catalog_name`` or ``catfile``).
 
 * ``catalog_format``: A `str` indicating one of the catalog output file format
   supported by :py:class:`astropy.table.Table` (Default='ascii.ecsv').
