@@ -499,3 +499,19 @@ def test_parquet_metadata_preserved_after_update(function_jail, tweakreg_image):
         # Check that units are readable (not None or empty when they should have units)
         if col in ["ra_centroid", "dec_centroid", "ra_psf", "dec_psf"]:
             assert updated_astropy[col].unit == u.deg
+
+
+def test_tweakreg_logs_selected_catalog_file(tweakreg_image, caplog):
+    """
+    Test that TweakReg logs which catalog file is used for an image.
+    """
+    img = tweakreg_image()
+    expected_catalog_path = img.meta.source_catalog.tweakreg_catalog_name
+
+    with caplog.at_level("INFO"):
+        TweakRegStep().get_tweakreg_catalog(img.meta.source_catalog, img)
+
+    assert (
+        f"Using tweakreg catalog file '{expected_catalog_path}' for {img.meta.filename}."
+        in caplog.text
+    )
