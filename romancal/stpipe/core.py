@@ -11,6 +11,7 @@ from stpipe import Pipeline, Step, crds_client
 
 from romancal.datamodels.fileio import open_dataset
 
+from ..lib.statistics import populate_statistics
 from ..lib.suffix import remove_suffix
 
 _LOG_FORMATTER = logging.Formatter(
@@ -101,6 +102,7 @@ class RomanStep(Step):
 
         if isinstance(model, ImageModel | MosaicModel):
             model.meta.cal_logs = self.log_records
+            populate_statistics(model)
 
         if len(reference_files_used) > 0:
             if not hasattr(model.meta, "ref_file"):
