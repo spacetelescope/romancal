@@ -39,7 +39,7 @@ jobs:
     if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run extra tests')))
     uses: spacetelescope/crds/.github/workflows/contexts.yml@main
     with:
-      observatory: jwst
+      observatory: roman
   crds_context:
     if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run extra tests')))
     needs: [ latest_crds_contexts ]

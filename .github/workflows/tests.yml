@@ -40,7 +40,7 @@ jobs:
   latest_crds_contexts:
     uses: spacetelescope/crds/.github/workflows/contexts.yml@main
     with:
-      observatory: jwst
+      observatory: roman
   crds_context:
     needs: [ latest_crds_contexts ]
     runs-on: ubuntu-latest
