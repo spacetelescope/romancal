@@ -64,59 +64,6 @@ def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, tweakreg_image):
         )
 
 
-def test_tweakreg_combine_custom_catalogs_and_asn_file(
-    tmp_path, tweakreg_image, gaia_coords
-):
-    """
-    Test that TweakRegStep can handle a custom catalog for the members of an ASN file.
-    In this case, the user can create a custom catalog file (catfile) for each of the
-    members of an ASN file.
-    """
-    catfile = str(tmp_path / "catfile.txt")
-
-    # generate and save model
-    img = tweakreg_image()
-    img.meta.filename = "img.asdf"
-    img.save(tmp_path / img.meta.filename)
-
-    # generate and save custom catalog
-    catalog_data = np.array(
-        [img.meta.wcs.world_to_pixel_values(ra, dec) for ra, dec in gaia_coords]
-    )
-    custom_catalog_fn = str(tmp_path / "custom_catalog")
-    Table(catalog_data, names=("x", "y")).write(custom_catalog_fn, format="ascii.ecsv")
-    # record custom catalog
-    with open(catfile, "w") as f:
-        f.write(f"{img.meta.filename} {custom_catalog_fn}")
-
-    # create ASN file
-    asn_filepath = str(tmp_path / "test_asn.json")
-    asn_dict = {
-        "asn_id": "a3001",
-        "products": [
-            {
-                "name": "test.asdf",
-                "members": [{"expname": img.meta.filename, "exptype": "science"}],
-            }
-        ],
-    }
-    with open(asn_filepath, "w") as f:
-        json.dump(asn_dict, f)
-
-    res = TweakRegStep.call(
-        asn_filepath,
-        use_custom_catalogs=True,
-        catfile=catfile,
-    )
-
-    assert isinstance(res, ModelLibrary)
-    with res:
-        m = res.borrow(0)
-        assert m.meta.cal_step.tweakreg == "COMPLETE"
-        assert m.meta.source_catalog.tweakreg_catalog_name.endswith("custom_catalog")
-        res.shelve(m, modify=False)
-
-
 @pytest.mark.parametrize(
     "theta, offset_x, offset_y",
     [
