@@ -44,6 +44,11 @@ def update_model_version(model, *, close_on_update=False):
     ):
         updated_model.meta.exposure.hga_move = False
 
+    # old files (<B21) may have lower case psf_match_reference_filter
+    if "psf_match_reference_filter" in model.get("meta", {}):
+        updated_model.meta.psf_match_reference_filter = \
+            updated_model.meta.psf_match_reference_filter.upper()
+
     new_ref_files = ["darkdecaysignal", "integralnonlinearity", "inverselinearity"]
     ref_file = model.meta.get("ref_file", None)
     if ref_file is not None:
