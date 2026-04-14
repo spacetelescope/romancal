@@ -6,7 +6,6 @@ from copy import deepcopy
 from typing import TYPE_CHECKING
 
 import asdf
-import numpy as np
 from roman_datamodels import datamodels
 
 from romancal.datamodels.fileio import open_dataset
@@ -176,11 +175,6 @@ class ResampleStep(RomanStep):
 
     def _final_updates(self, model):
         model.meta.cal_step["resample"] = "COMPLETE"
-
-        # TODO statistics are unknown
-        model.meta.statistics.image_median = np.nan
-        model.meta.statistics.image_rms = np.nan
-        model.meta.statistics.good_pixel_fraction = np.nan
 
     @staticmethod
     def _load_custom_wcs(asdf_wcs_file, output_shape):

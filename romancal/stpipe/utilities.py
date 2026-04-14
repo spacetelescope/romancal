@@ -68,6 +68,8 @@ def load_sub_modules(module):
     """
 
     for package_info in walk_packages(module.__path__):
+        if "tests" in package_info.name:
+            continue
         if package_info.module_finder.path.startswith(module.__path__[0]):
             package = import_module(f"{module.__name__}.{package_info.name}")
 
