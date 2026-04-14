@@ -35,5 +35,3 @@ or a Roman datamodel `ImageModel`.
                 step.abs_refcat = 'GAIADR3' # use Gaia DR3 for absolute astrometry
                 step.catalog_path = '/path/for/the/abs/catalog' # save the Gaia catalog to this path
                 step.run([img])
-
-
