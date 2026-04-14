@@ -58,6 +58,9 @@ class EngdbMast(EngdbABC):
         MAST_API_TOKEN is queried. A token is required.
         For more information, see https://auth.mast.stsci.edu/
 
+    check_aliveness : boolean
+        Check if the service is actually reachable.
+
     **service_kwargs : dict
         Service-specific keyword arguments that are not relevant to this implementation
         of EngdbABC.
@@ -95,14 +98,16 @@ class EngdbMast(EngdbABC):
     #: METADATA endpoint URI
     meta_uri = None
 
-
-    def __init__(self, eng_base_url=None, data_uri=None, meta_uri=None, token=None, **service_kwargs):
+    def __init__(self, eng_base_url=None, data_uri=None, meta_uri=None, token=None, check_aliveness=True, **service_kwargs):
         logger.debug("kwargs not used by this service: %s", service_kwargs)
 
         self.configure(eng_base_url=eng_base_url, token=token)
         self.set_session()
+        if check_aliveness:
+            self.isalive()
 
-        # Check for basic aliveness.
+    def isalive(self):
+        """Check that the database is reachable"""
         try:
             self.get_meta(search="engdb_mastaliveness")
         except (
@@ -285,7 +290,8 @@ class EngdbMast(EngdbABC):
 
     def set_session(self):
         """Set up HTTP session."""
-        headers={"Authorization": f"token {self.token}"}
+        headers={"Authorization": f"token {self.token}",
+                 "x-asb-auth": f"token {self.token}"}
 
         self._datareq = requests.Request(
             method="GET",
