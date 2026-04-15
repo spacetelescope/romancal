@@ -8,12 +8,11 @@ from collections import OrderedDict
 
 import astropy.units as u
 import numpy as np
-import photutils
 from astropy.convolution import Box2DKernel, convolve
 from astropy.modeling.fitting import LevMarLSQFitter
 from astropy.nddata import NDData
-from astropy.table import Table
-from astropy.utils import lazyproperty, minversion
+from astropy.table import QTable, Table
+from astropy.utils import lazyproperty
 from numpy import fft
 from photutils.background import LocalBackground
 from photutils.detection import DAOStarFinder
@@ -25,9 +24,6 @@ from photutils.psf import (
     SourceGrouper,
 )
 from scipy.ndimage import map_coordinates
-
-PHOTUTILS_GE_3 = minversion(photutils, "2.3.1.dev")
-photutils.future_column_names = True
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -713,28 +709,16 @@ def fit_psf_to_image_model(
             outer_radius=30,  # [pix]
         )
 
-    if PHOTUTILS_GE_3:
-        photometry = photometry_cls(
-            grouper=grouper,
-            local_bkg_estimator=local_bkg_estimator,
-            psf_model=psf_model,
-            fitter=fitter,
-            fit_shape=fit_shape,
-            aperture_radius=fit_shape[0],
-            progress_bar=progress_bar,
-            **psf_photometry_kwargs,
-        )
-    else:
-        photometry = photometry_cls(
-            grouper=grouper,
-            localbkg_estimator=local_bkg_estimator,
-            psf_model=psf_model,
-            fitter=fitter,
-            fit_shape=fit_shape,
-            aperture_radius=fit_shape[0],
-            progress_bar=progress_bar,
-            **psf_photometry_kwargs,
-        )
+    photometry = photometry_cls(
+        grouper=grouper,
+        local_bkg_estimator=local_bkg_estimator,
+        psf_model=psf_model,
+        fitter=fitter,
+        fit_shape=fit_shape,
+        aperture_radius=fit_shape[0],
+        progress_bar=progress_bar,
+        **psf_photometry_kwargs,
+    )
 
     if x_init is not None and y_init is not None:
         guesses = Table(np.column_stack([x_init, y_init]), names=["x_init", "y_init"])
@@ -771,6 +755,8 @@ def fit_psf_to_image_model(
 
     # fit the model PSF to the data:
     results_table = photometry(data=data, error=error, init_params=guesses, mask=mask)
+    # Convert from DeprecatedColumnQTable (remove when require photutils 4+)
+    results_table = QTable(results_table)
 
     # results are stored on the PSFPhotometry instance:
     return results_table, photometry

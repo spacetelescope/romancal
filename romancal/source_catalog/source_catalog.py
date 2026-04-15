@@ -7,9 +7,8 @@ import re
 
 import astropy.units as u
 import numpy as np
-import photutils
 from astropy.table import QTable, Table
-from astropy.utils import lazyproperty, minversion
+from astropy.utils import lazyproperty
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.dqflags import pixel
 
@@ -22,8 +21,6 @@ from romancal.source_catalog.psf import PSFCatalog
 from romancal.source_catalog.segment import SegmentCatalog
 
 from ._wcs_helpers import pixel_scale_angle_at_skycoord
-
-PHOTUTILS_GE_3 = minversion(photutils, "2.3.1.dev")
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -500,16 +497,10 @@ class RomanSourceCatalog:
             self.meta[ver_key] = ver_dict
 
         # reorder the metadata dictionary
-        if PHOTUTILS_GE_3:
-            key1 = "local_bkg_width"
-            key2 = "aperture_mask_method"
-        else:
-            key1 = "localbkg_width"
-            key2 = "apermask_method"
-        self.meta.pop(key1)
-        keys = ["date", "versions", key2, "kron_params"]
+        self.meta.pop("local_bkg_width", None)
+        keys = ["date", "versions", "aperture_mask_method", "kron_params"]
         old_meta = self.meta.copy()
-        self.meta = {key: old_meta[key] for key in keys}
+        self.meta = {key: old_meta.get(key, None) for key in keys}
 
         # reformat the aperture radii for the metadata to remove
         # Quantity objects

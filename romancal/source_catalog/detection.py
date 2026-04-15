@@ -6,14 +6,10 @@ import logging
 import math
 import warnings
 
-import photutils
 from astropy.convolution import convolve
-from astropy.utils import minversion
 from astropy.utils.exceptions import AstropyUserWarning
 from photutils.segmentation import SourceFinder, make_2dgaussian_kernel
 from photutils.utils.exceptions import NoDetectionsWarning
-
-PHOTUTILS_GE_3 = minversion(photutils, "2.3.1.dev")
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -91,10 +87,7 @@ def make_segmentation_image(
         if segment_img is None:
             n_sources = 0
         else:
-            if PHOTUTILS_GE_3:
-                n_sources = segment_img.n_labels
-            else:
-                n_sources = segment_img.nlabels
+            n_sources = segment_img.n_labels
         log.info(f"Detected {n_sources} sources")
 
     return segment_img
