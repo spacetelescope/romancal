@@ -7,12 +7,8 @@ import warnings
 
 import astropy.units as u
 import numpy as np
-import photutils
-from astropy.utils import lazyproperty, minversion
+from astropy.utils import lazyproperty
 from photutils.segmentation import SourceCatalog
-
-PHOTUTILS_GE_3 = minversion(photutils, "2.3.1.dev")
-photutils.future_column_names = True
 
 
 class SegmentCatalog:
@@ -182,33 +178,22 @@ class SegmentCatalog:
         else:
             detection_cat = None
 
-        if PHOTUTILS_GE_3:
-            segm_cat = SourceCatalog(
-                self.model.data,
-                self.segment_img,
-                convolved_data=self.convolved_data,
-                error=self.model.err,
-                wcs=self.wcs,
-                aperture_mask_method="mask",
-                detection_catalog=detection_cat,
-            )
-        else:
-            segm_cat = SourceCatalog(
-                self.model.data,
-                self.segment_img,
-                convolved_data=self.convolved_data,
-                error=self.model.err,
-                wcs=self.wcs,
-                apermask_method="mask",
-                detection_cat=detection_cat,
-            )
+        segm_cat = SourceCatalog(
+            self.model.data,
+            self.segment_img,
+            convolved_data=self.convolved_data,
+            error=self.model.err,
+            wcs=self.wcs,
+            aperture_mask_method="mask",
+            detection_catalog=detection_cat,
+        )
+
         self.source_cat = segm_cat
         self.meta.update(segm_cat.meta)
 
-        # Extract the properties from the segment catalog. These
-        # names are the SourceCatalog property names and the order
-        # is not important.
-
+        # Extract the properties from the segment catalog. These names
+        # are the photutils SourceCatalog property names; order is not
+        # important.
         # For dr_band and psf_matched catalogs (multiband filter and
         # PSF-matched catalogs), only calculate minimal properties
         # needed for photometry
@@ -216,14 +201,18 @@ class SegmentCatalog:
             photutils_names = [
                 "label",
                 "segment_flux",
-                "segment_fluxerr",
+                "segment_flux_err",
                 "kron_flux",
-                "kron_fluxerr",
+                "kron_flux_err",
             ]
         else:
             # Full catalog includes all core properties
             photutils_names = [
                 "label",
+                "x_centroid",
+                "y_centroid",
+                "x_centroid_win",
+                "y_centroid_win",
                 "sky_centroid",
                 "sky_centroid_win",
                 "bbox_xmin",
@@ -231,64 +220,30 @@ class SegmentCatalog:
                 "bbox_ymin",
                 "bbox_ymax",
                 "area",
-                "kron_radius",
-                "segment_flux",
-                "kron_flux",
-                "fwhm",
+                "semimajor_axis",
+                "semiminor_axis",
                 "orientation",
                 "ellipticity",
+                "ellipse_cxx",
+                "ellipse_cxy",
+                "ellipse_cyy",
+                "fwhm",
+                "segment_flux",
+                "segment_flux_err",
+                "kron_radius",
+                "kron_flux",
+                "kron_flux_err",
             ]
 
-        # if needed, map names from photutils to the output catalog names
+        # Map photutils names to the output catalog names
         name_map = {}
         name_map["area"] = "segment_area"
+        name_map["semimajor_axis"] = "semimajor"
+        name_map["semiminor_axis"] = "semiminor"
         name_map["orientation"] = "orientation_pix"
-
-        if PHOTUTILS_GE_3:
-            photutils_names.extend(
-                [
-                    "x_centroid",
-                    "y_centroid",
-                    "x_centroid_win",
-                    "y_centroid_win",
-                    "semimajor_axis",
-                    "semiminor_axis",
-                    "ellipse_cxx",
-                    "ellipse_cxy",
-                    "ellipse_cyy",
-                    "segment_flux_err",
-                    "kron_flux_err",
-                ]
-            )
-            name_map["semimajor_axis"] = "semimajor"
-            name_map["semiminor_axis"] = "semiminor"
-            name_map["ellipse_cxx"] = "cxx"
-            name_map["ellipse_cxy"] = "cxy"
-            name_map["ellipse_cyy"] = "cyy"
-        else:
-            photutils_names.extend(
-                [
-                    "xcentroid",
-                    "ycentroid",
-                    "xcentroid_win",
-                    "ycentroid_win",
-                    "semimajor_sigma",
-                    "semiminor_sigma",
-                    "cxx",
-                    "cxy",
-                    "cyy",
-                    "segment_fluxerr",
-                    "kron_fluxerr",
-                ]
-            )
-            name_map["xcentroid"] = "x_centroid"
-            name_map["ycentroid"] = "y_centroid"
-            name_map["xcentroid_win"] = "x_centroid_win"
-            name_map["ycentroid_win"] = "y_centroid_win"
-            name_map["semimajor_sigma"] = "semimajor"
-            name_map["semiminor_sigma"] = "semiminor"
-            name_map["segment_fluxerr"] = "segment_flux_err"
-            name_map["kron_fluxerr"] = "kron_flux_err"
+        name_map["ellipse_cxx"] = "cxx"
+        name_map["ellipse_cxy"] = "cxy"
+        name_map["ellipse_cyy"] = "cyy"
 
         # set the source properties as attributes of this instance
         for name in photutils_names:
@@ -355,11 +310,7 @@ class SegmentCatalog:
             "x_centroid_win_err",
             "y_centroid_win_err",
         )
-        if PHOTUTILS_GE_3:
-            n_labels = self.source_cat.n_labels
-        else:
-            n_labels = self.source_cat.nlabels
-
+        n_labels = self.source_cat.n_labels
         pix_value = np.zeros(n_labels, dtype=np.float32) * u.pix
         for name in pix_columns:
             if not hasattr(self, name):
@@ -414,8 +365,5 @@ class SegmentCatalog:
         """
         The radius (in arcsec) at which the flux fraction is 50%.
         """
-        if PHOTUTILS_GE_3:
-            value = self.source_cat.flux_radius(0.5)
-        else:
-            value = self.source_cat.fluxfrac_radius(0.5)
+        value = self.source_cat.flux_radius(0.5)
         return (value.value * self.pixel_scale).astype(np.float32)
