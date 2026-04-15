@@ -95,6 +95,36 @@ def main():
                 " Otherwise, a hardwired default is used."
             ),
         )
+        parser.add_argument(
+            "--eng-data-uri",
+            type=str,
+            default=None,
+            help=(
+                "The URI component required to retrieve the engineering data."
+                " If not specified, the environment variable 'ENG_DATA_URI' is used."
+                " Otherwise, a hardwired default is used."
+            ),
+        )
+        parser.add_argument(
+            "--eng-meta-uri",
+            type=str,
+            default=None,
+            help=(
+                "The URI component required to retrieve the engineering metadata."
+                " If not specified, the environment variable 'ENG_META_URI' is used."
+                " Otherwise, a hardwired default is used."
+            ),
+        )
+        parser.add_argument(
+            "--token",
+            type=str,
+            default=None,
+            help=(
+                "MAST token to use for access."
+                " If not specified, the environment variable 'MAST_API_TOKEN' is used."
+                " Otherwise, no token is used."
+            ),
+        )
 
     # Arguments pertinent only to the EngdbEDP service
     if "edp" in AVAILABLE_SERVICES:
@@ -128,7 +158,7 @@ def main():
 
     # Gather the service-specific args
     service_kwargs = {"service": args.service}
-    for arg in ["eng_base_url", "environment", "path_to_cc"]:
+    for arg in ["eng_base_url", "eng_data_uri", "eng_meta_uri", "environment", "path_to_cc", 'token']:
         try:
             service_kwargs[arg] = getattr(args, arg)
         except AttributeError:
