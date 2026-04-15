@@ -125,6 +125,28 @@ def test_negative_aliveness():
         )
 
 
+@pytest.mark.parametrize('env, var, value, default',
+                         [
+                             ('ENG_BASE_URL', 'eng_base_url', None, engdb_mast.MAST_BASE_URL + '/'),
+                             ('ENG_BASE_URL', 'eng_base_url', 'something/', None),
+                             ('ENG_DATA_URI', 'data_uri', None, engdb_mast.DATA_URI),
+                             ('ENG_DATA_URI', 'data_uri', 'something', None),
+                             ('ENG_META_URI', 'meta_uri', None, engdb_mast.META_URI),
+                             ('ENG_META_URI', 'meta_uri', 'something', None),
+                         ])
+def test_uri_from_environment(env, var, value, default, monkeypatch):
+    """Test settings from environment variables"""
+    if value is None:
+        monkeypatch.delenv(env, raising=False)
+        value = default
+    else:
+        monkeypatch.setenv(env, value)
+
+    s = engdb_mast.EngdbMast(check_aliveness=False)
+
+    assert getattr(s, var) == value
+
+
 # ######################
 # Fixtures and utilities
 # ######################
