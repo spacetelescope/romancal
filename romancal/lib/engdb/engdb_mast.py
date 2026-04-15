@@ -101,7 +101,7 @@ class EngdbMast(EngdbABC):
     def __init__(self, eng_base_url=None, data_uri=None, meta_uri=None, token=None, check_aliveness=True, **service_kwargs):
         logger.debug("kwargs not used by this service: %s", service_kwargs)
 
-        self.configure(eng_base_url=eng_base_url, token=token)
+        self.configure(eng_base_url=eng_base_url, data_uri=data_uri, meta_uri=meta_uri, token=token)
         self.set_session()
         if check_aliveness:
             self.isalive()
