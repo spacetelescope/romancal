@@ -1,4 +1,4 @@
-import warnings
+import logging
 
 from astropy.time import Time
 from roman_datamodels.datamodels import ImageModel
@@ -45,10 +45,9 @@ def update_model_version(model, *, close_on_update=False):
     if isinstance(model, ImageModel) and "hga_move" not in model.meta.get(
         "exposure", "hga_move"
     ):
-        warnings.warn(
+        logging.warning(
             "Migration is adding keyword hga_move to the exposure "
-            "block and arbitrarily setting it to False.",
-            stacklevel=2,
+            "block and arbitrarily setting it to False."
         )
         updated_model.meta.exposure.hga_move = False
 
