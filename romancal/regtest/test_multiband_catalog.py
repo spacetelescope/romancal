@@ -7,6 +7,8 @@ from roman_datamodels.datamodels import MultibandSegmentationMapModel
 
 from romancal.stpipe import RomanStep
 
+from .regtestdata import compare_parquet
+
 # mark all tests in this module
 pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 
@@ -38,37 +40,83 @@ fieldlist = [
 ]
 
 
-def test_multiband_catalog(rtdata_module, resource_tracker, request, dms_logger):
+@pytest.fixture(scope="module")
+def run_multiband_catalog(rtdata_module, resource_tracker):
     rtdata = rtdata_module
-    inputasnfn = "r00001_p_v01001001001001_270p65x70y49_asn.json"
-    outputfn = "r00001_p_v01001001001001_270p65x70y49_cat.parquet"
-    rtdata.get_asn(f"WFI/image/{inputasnfn}")
-    rtdata.output = outputfn
-    rtdata.input = inputasnfn
-    rtdata.get_truth(f"truth/WFI/image/{outputfn}")
-    cattruth = Table.read(f"truth/{outputfn}")
+
+    rtdata.get_asn("WFI/image/r00001_p_v01001001001001_270p65x70y49_asn.json")
+
+    output = "r00001_p_v01001001001001_270p65x70y49_cat.parquet"
+    rtdata.output = output
+
     args = [
         "romancal.step.MultibandCatalogStep",
-        inputasnfn,
+        rtdata.input,
         "--deblend",
         "True",  # use deblending, DMS 393
         "--inject_sources",  # turn on source injection, DMS 396
         "True",
     ]
-    with resource_tracker.track(log=request):
+    with resource_tracker.track():
         RomanStep.from_cmdline(args)
-    cat = Table.read(outputfn)
-    for field in fieldlist:
-        assert field in cat.dtype.names
 
+    rtdata.get_truth(f"truth/WFI/image/{output}")
+    return rtdata
+
+
+@pytest.fixture(scope="module")
+def output_filename(run_multiband_catalog):
+    return run_multiband_catalog.output
+
+
+@pytest.fixture(scope="module")
+def truth_filename(run_multiband_catalog):
+    return run_multiband_catalog.truth
+
+
+@pytest.fixture(scope="module")
+def segmentation_filename(run_multiband_catalog):
+    return run_multiband_catalog.output.replace("_cat.parquet", "_segm.asdf")
+
+
+@pytest.fixture(scope="module")
+def output_catalog(output_filename):
+    return Table.read(output_filename)
+
+
+@pytest.fixture(scope="module")
+def truth_catalog(truth_filename):
+    return Table.read(truth_filename)
+
+
+@pytest.fixture(scope="module")
+def segmentation_model(segmentation_filename):
+    return MultibandSegmentationMapModel(segmentation_filename)
+
+
+def test_log_tracked_resources(log_tracked_resources, run_multiband_catalog):
+    log_tracked_resources()
+
+
+def test_output_matches_truth(output_filename, truth_filename, ignore_parquet_paths):
+    diff = compare_parquet(output_filename, truth_filename, **ignore_parquet_paths)
+    assert diff.identical, diff.report()
+
+
+def test_field_list(output_catalog, dms_logger):
+    missing_fields = set(fieldlist) - set(output_catalog.dtype.names)
+    assert not missing_fields, f"Missing fields in catalog: {missing_fields}"
     dms_logger.info(
         "DMS374, 399, 375, 386, 387, 392, 394, 395: source catalog includes fields: "
         + ", ".join(fieldlist)
     )
 
+
+def test_catalog_fields_matches_truth(output_catalog, truth_catalog, dms_logger):
     # DMS 393: multiband catalog uses both PSF-like and extend-source-like
     # kernels
-    assert set(cat.dtype.names) == set(cattruth.dtype.names)
+    assert set(output_catalog.dtype.names) == set(truth_catalog.dtype.names)
+
     # weak assertion that our truth file must at least have the same
     # catalog fields as the file produced here.  Exactly matching rows
     # would require a lot of okifying things that aren't obviously
@@ -82,42 +130,51 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request, dms_logger)
         "fluxes and uncertainties."
     )
 
+
+def test_segmentation_contains_injected_and_recovered_sources(
+    segmentation_model, dms_logger
+):
     # DMS 396: Ensure the segmentation image contains
     # both injected_sources and recovered_sources
-    segm_mod = MultibandSegmentationMapModel(
-        outputfn.replace("_cat.parquet", "_segm.asdf")
-    )
-    assert "injected_sources" in segm_mod
-    assert "recovered_sources" in segm_mod
+    assert "injected_sources" in segmentation_model
+    assert "recovered_sources" in segmentation_model
 
     dms_logger.info(
         "DMS396: segmentation image contains both "
         "injected_sources and recovered_sources."
     )
 
+
+def test_recovery_rate(segmentation_model, dms_logger):
     # DMS 396: Ensure at least 50% of injected sourced are recovered.
-    assert np.count_nonzero(segm_mod.recovered_sources["best_injected_index"] != -1) > (
-        len(segm_mod.injected_sources) / 2
-    )
+    assert np.count_nonzero(
+        segmentation_model.recovered_sources["best_injected_index"] != -1
+    ) > (len(segmentation_model.injected_sources) / 2)
 
     dms_logger.info("DMS396: successfully recovered over half of the injected sources.")
 
+
+def test_psf_matching_quality(output_catalog, dms_logger):
     # DMS 539/540: PSF matching quality check.
     # The aper02/aper08 flux ratio is a proxy for encircled energy and
     # should be similar across all matched bands (since they share an
     # effective PSF after matching).  Assert that matched ratios are much
     # closer to the F158 reference than the original unmatched ratios.
-    bright = cat["segment_f158_flux"] > np.median(cat["segment_f158_flux"])
+    bright = output_catalog["segment_f158_flux"] > np.median(
+        output_catalog["segment_f158_flux"]
+    )
     ref_ratio = np.nanmedian(
-        cat["aper02_f158_flux"][bright] / cat["aper08_f158_flux"][bright]
+        output_catalog["aper02_f158_flux"][bright]
+        / output_catalog["aper08_f158_flux"][bright]
     )
     for band, matched_band in [("f129", "f129m"), ("f213", "f213m")]:
         unmatched_ratio = np.nanmedian(
-            cat[f"aper02_{band}_flux"][bright] / cat[f"aper08_{band}_flux"][bright]
+            output_catalog[f"aper02_{band}_flux"][bright]
+            / output_catalog[f"aper08_{band}_flux"][bright]
         )
         matched_ratio = np.nanmedian(
-            cat[f"aper02_{matched_band}_flux"][bright]
-            / cat[f"aper08_{matched_band}_flux"][bright]
+            output_catalog[f"aper02_{matched_band}_flux"][bright]
+            / output_catalog[f"aper08_{matched_band}_flux"][bright]
         )
         dms_logger.info(
             f"aperture ratios: "
