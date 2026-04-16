@@ -1,4 +1,6 @@
+import logging
 from astropy.time import Time
+from roman_datamodels.datamodels import ImageModel
 
 __all__ = ["update_model_version"]
 
@@ -39,9 +41,11 @@ def update_model_version(model, *, close_on_update=False):
         updated_model.meta.observation.wfi_parallel = visit_file_sequence > 1
 
     # old files (<B21) lack HGA_move
-    if "hga_move" not in model.meta.get("exposure", "hga_move") and (
-        "effective_exposure_time" in model.meta.get("exposure", {})
+    if (isinstance(model, ImageModel) and
+        "hga_move" not in model.meta.get("exposure", "hga_move")
     ):
+        logging.warning(f"Migration is adding keyword hga_move to the exposure "
+                         "block and arbitrarily setting it to False.")
         updated_model.meta.exposure.hga_move = False
 
     # old files (<B21) may have lower case psf_match_reference_filter
