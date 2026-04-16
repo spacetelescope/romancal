@@ -1,7 +1,7 @@
 import warnings
 
 from astropy.time import Time
-from roman_datamodels.datamodels import ImageModel
+from roman_datamodels.datamodels import ImageModel, ScienceRawModel
 
 __all__ = ["update_model_version"]
 
@@ -46,9 +46,9 @@ def update_model_version(model, *, close_on_update=False):
         updated_model.meta.observation.wfi_parallel = visit_file_sequence > 1
 
     # old files (<B21) lack HGA_move
-    if isinstance(model, ImageModel) and "hga_move" not in model.meta.get(
-        "exposure", "hga_move"
-    ):
+    if isinstance(
+        model, (ImageModel, ScienceRawModel)
+    ) and "hga_move" not in model.meta.get("exposure", "hga_move"):
         warnings.warn(
             "Migration is adding keyword hga_move to the exposure "
             "block and arbitrarily setting it to False.",
