@@ -1,7 +1,7 @@
 import pytest
 import roman_datamodels.datamodels as rdm
 
-from romancal.datamodels.migration import update_model_version
+from romancal.datamodels.migration import MigrationWarning, update_model_version
 
 
 @pytest.fixture
@@ -16,14 +16,15 @@ def latest_L3_model():
 
 @pytest.fixture
 def old_model():
-    return rdm.ImageModel.create_fake_data(
-        tag="asdf://stsci.edu/datamodels/roman/tags/wfi_image-1.4.0"
-    )
+    with pytest.warns(MigrationWarning, match="hga_move"):
+        yield rdm.ImageModel.create_fake_data(
+            tag="asdf://stsci.edu/datamodels/roman/tags/wfi_image-1.4.0"
+        )
 
 
 @pytest.fixture
 def old_L3_model():
-    return rdm.MosaicModel.create_fake_data(
+    yield rdm.MosaicModel.create_fake_data(
         tag="asdf://stsci.edu/datamodels/roman/tags/wfi_mosaic-1.4.0"
     )
 
