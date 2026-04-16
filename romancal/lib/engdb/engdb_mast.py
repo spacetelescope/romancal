@@ -291,7 +291,7 @@ class EngdbMast(EngdbABC):
     def set_session(self):
         """Set up HTTP session."""
         headers={"Authorization": f"token {self.token}",
-                 "x-asb-auth": f"token {self.token}"}
+                 "x-asb-auth": self.token}
 
         self._datareq = requests.Request(
             method="GET",

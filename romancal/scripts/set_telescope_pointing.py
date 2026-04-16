@@ -96,7 +96,7 @@ def main():
             ),
         )
         parser.add_argument(
-            "--eng-data-uri",
+            "--eng-data-uri", dest='data_uri',
             type=str,
             default=None,
             help=(
@@ -106,7 +106,7 @@ def main():
             ),
         )
         parser.add_argument(
-            "--eng-meta-uri",
+            "--eng-meta-uri", dest='meta_uri',
             type=str,
             default=None,
             help=(
@@ -158,7 +158,7 @@ def main():
 
     # Gather the service-specific args
     service_kwargs = {"service": args.service}
-    for arg in ["eng_base_url", "eng_data_uri", "eng_meta_uri", "environment", "path_to_cc", 'token']:
+    for arg in ["eng_base_url", "data_uri", "meta_uri", "environment", "path_to_cc", 'token']:
         try:
             service_kwargs[arg] = getattr(args, arg)
         except AttributeError:
