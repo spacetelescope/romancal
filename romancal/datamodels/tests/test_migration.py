@@ -43,6 +43,11 @@ def test_old_open_model(old_model, close_on_update, monkeypatch):
     assert close_on_update == close_called
 
 
+# Ignore this warning - it is informational.
+@pytest.mark.filterwarnings(
+    "ignore:Migration is adding keyword hga_move to the exposure "
+    "block and arbitrarily setting it to False."
+)
 @pytest.mark.parametrize(
     "vfs_value, wp_bool",
     [
