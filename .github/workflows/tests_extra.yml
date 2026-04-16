@@ -61,10 +61,9 @@ jobs:
       cache-path: /tmp/data/
       cache-key: data-${{ needs.crds_context.outputs.context }}
       envs: |
-        - macos: py311
-        - macos: py312
-        - macos: py313
         - linux: py313-devdeps
           pytest-results-summary: true
         - macos: py313-devdeps
           pytest-results-summary: true
+      fill: true
+      fill_platforms: macos

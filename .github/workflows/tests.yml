@@ -69,10 +69,11 @@ jobs:
       envs: |
         - linux: py311-oldestdeps-cov
         - linux: py311-nolegacypath
-        - linux: py312
         - linux: py313-cov
           coverage: codecov
           pytest-results-summary: true
         - macos: py313
         - macos: py313-pyargs
           pytest-results-summary: true
+      fill: true
+      fill_platforms: linux
