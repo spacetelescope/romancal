@@ -105,10 +105,25 @@ class EngdbMast(EngdbABC):
     #: METADATA endpoint URI
     meta_uri = None
 
-    def __init__(self, eng_base_url=None, data_uri=None, meta_uri=None, token=None, rsdp_auth=False, check_aliveness=True, **service_kwargs):
+    def __init__(
+        self,
+        eng_base_url=None,
+        data_uri=None,
+        meta_uri=None,
+        token=None,
+        rsdp_auth=False,
+        check_aliveness=True,
+        **service_kwargs,
+    ):
         logger.debug("kwargs not used by this service: %s", service_kwargs)
 
-        self.configure(eng_base_url=eng_base_url, data_uri=data_uri, meta_uri=meta_uri, token=token, rsdp_auth=rsdp_auth)
+        self.configure(
+            eng_base_url=eng_base_url,
+            data_uri=data_uri,
+            meta_uri=meta_uri,
+            token=token,
+            rsdp_auth=rsdp_auth,
+        )
         self.set_session()
         if check_aliveness:
             self.isalive()
@@ -125,7 +140,14 @@ class EngdbMast(EngdbABC):
                 f"MAST url: {self.eng_base_url} is unreachable."
             ) from exception
 
-    def configure(self, eng_base_url=None, data_uri=None, meta_uri=None, token=None, rsdp_auth=False):
+    def configure(
+        self,
+        eng_base_url=None,
+        data_uri=None,
+        meta_uri=None,
+        token=None,
+        rsdp_auth=False,
+    ):
         """
         Configure from parameters and environment.
 
@@ -165,11 +187,11 @@ class EngdbMast(EngdbABC):
         self.eng_base_url = eng_base_url
 
         if data_uri is None:
-            data_uri = getenv('ENG_DATA_URI', DATA_URI)
+            data_uri = getenv("ENG_DATA_URI", DATA_URI)
         self.data_uri = data_uri
 
         if meta_uri is None:
-            meta_uri = getenv('ENG_META_URI', META_URI)
+            meta_uri = getenv("ENG_META_URI", META_URI)
         self.meta_uri = meta_uri
 
         # Get the token
@@ -307,9 +329,9 @@ class EngdbMast(EngdbABC):
         """Set up HTTP session."""
         headers = dict()
         if self.rsdp_auth:
-            headers['x-asb-auth'] = self.token
+            headers["x-asb-auth"] = self.token
         else:
-            headers["Authorization"] =  f"token {self.token}"
+            headers["Authorization"] = f"token {self.token}"
 
         self._datareq = requests.Request(
             method="GET",
