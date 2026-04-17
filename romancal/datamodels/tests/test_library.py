@@ -75,3 +75,45 @@ def test_asn_data(example_library):
     Test that `asn` returns the association information
     """
     assert example_library.asn["products"][0]["name"] == _PRODUCT_NAME
+
+
+def test_assign_member_to_model_sets_attributes(example_library):
+    """
+    Test that _assign_member_to_model correctly maps ASN dictionary keys.
+    """
+    # 1. Setup the model and ENSURE source_catalog exists
+    model = dm.ImageModel.create_fake_data(shape=(2, 2))
+    # Manually initialize the node to satisfy the schema/stnode
+    model.meta["source_catalog"] = {}
+
+    member = {"tweakreg_catalog": "cat.ecsv"}
+
+    # 2. Handle the mappingproxy issue
+    # Instead of modifying example_library.asn in place, we mock the internal dict
+    # or create a temporary mock object if the fixture is too rigid.
+    # Most romancal libraries store this in ._asn
+    example_library._asn = {"table_name": "table1", "asn_pool": "pool1"}
+
+    # 3. Execute the method
+    example_library._assign_member_to_model(model, member)
+
+    # 4. Assertions (using dict access for safety if attributes are being finicky)
+    assert model.meta.source_catalog.tweakreg_catalog_name == "cat.ecsv"
+    assert model.meta.asn.table_name == "table1"
+    assert model.meta.asn.pool_name == "pool1"
+
+
+def test_assign_member_to_model_no_catalog(example_library):
+    """
+    Ensure the method handles members without custom catalogs gracefully.
+    """
+    model = dm.ImageModel.create_fake_data(shape=(2, 2))
+    # Still need to initialize the node if the method expects to write to it
+    model.meta["source_catalog"] = {}
+
+    member = {"expname": "test.asdf"}
+
+    example_library._assign_member_to_model(model, member)
+
+    # Check for None safely
+    assert getattr(model.meta.source_catalog, "tweakreg_catalog_name", None) is None
