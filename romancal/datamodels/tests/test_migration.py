@@ -1,7 +1,7 @@
 import pytest
 import roman_datamodels.datamodels as rdm
 
-from romancal.datamodels.migration import update_model_version
+from romancal.datamodels.migration import MigrationWarning, update_model_version
 
 
 @pytest.fixture
@@ -16,14 +16,14 @@ def latest_L3_model():
 
 @pytest.fixture
 def old_model():
-    return rdm.ImageModel.create_fake_data(
+    yield rdm.ImageModel.create_fake_data(
         tag="asdf://stsci.edu/datamodels/roman/tags/wfi_image-1.4.0"
     )
 
 
 @pytest.fixture
 def old_L3_model():
-    return rdm.MosaicModel.create_fake_data(
+    yield rdm.MosaicModel.create_fake_data(
         tag="asdf://stsci.edu/datamodels/roman/tags/wfi_mosaic-1.4.0"
     )
 
@@ -39,7 +39,8 @@ def test_old_open_model(old_model, close_on_update, monkeypatch):
     # check to see if model.close is called
     # patch the backing _asdf since we can't patch the DataModel
     monkeypatch.setattr(old_model._asdf, "close", close_watcher)
-    update_model_version(old_model, close_on_update=close_on_update)
+    with pytest.warns(MigrationWarning, match="hga_move"):
+        update_model_version(old_model, close_on_update=close_on_update)
     assert close_on_update == close_called
 
 
@@ -52,7 +53,8 @@ def test_old_open_model(old_model, close_on_update, monkeypatch):
 )
 def test_update(old_model, latest_model, vfs_value, wp_bool):
     old_model.meta.observation.visit_file_sequence = vfs_value
-    new_model = update_model_version(old_model)
+    with pytest.warns(MigrationWarning, match="hga_move"):
+        new_model = update_model_version(old_model)
     assert new_model is not old_model
     assert new_model.tag != old_model.tag
     assert new_model.tag == latest_model.tag
