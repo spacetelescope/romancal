@@ -23,6 +23,11 @@ for ``.parquet`` files). The catalog must contain
 either ``'x'`` and ``'y'`` or ``'x_psf'`` and ``'y_psf'`` columns which
 indicate source *image* coordinates (in pixels). Pixel coordinates are
 0-indexed.
+Association files can also be used as ``tweakreg`` input for custom catalogs.
+When an association is provided, ``tweakreg`` reads the custom catalog
+information for each member from that member's
+``meta.source_catalog.tweakreg_catalog`` or
+``meta.source_catalog.tweakreg_catalog_name`` metadata.
 
 .. note::
     ``tweakreg`` requires ``meta.source_catalog`` to be present.
