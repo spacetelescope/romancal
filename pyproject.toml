@@ -25,8 +25,8 @@ dependencies = [
     # the roman_datamodels pin to the released version. If there
     # is a need to change this to main then we need a new
     # roman_datamodels release.
-    "roman_datamodels>=0.31.0, <0.32",
-    "romanisim>=0.13.0,<0.14",
+    "roman_datamodels@git+https://github.com/spacetelescope/roman_datamodels.git",
+    "romanisim>=0.13.1,<0.14",
     "asdf>=4.1.0,<6",
     "crds>=13.0.2",
     "drizzle>=2.2.0,<2.3.0",
