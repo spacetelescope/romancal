@@ -967,7 +967,7 @@ def get_mnemonics(
     except EXPECTED_ERRORS as exception:
         raise ValueError(
             f"Cannot open engineering DB connection\nException: {exception}"
-        ) from None
+        ) from exception
     logger.info("Querying engineering DB: %s", engdb)
 
     # Construct the mnemonic values structure.
