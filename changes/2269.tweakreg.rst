@@ -1,0 +1,1 @@
+Drop support for catfiles in TweakReg and remove use_custom_catalog spec parameter.

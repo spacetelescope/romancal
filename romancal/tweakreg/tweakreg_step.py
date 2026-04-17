@@ -45,9 +45,7 @@ class TweakRegStep(RomanStep):
     class_alias = "tweakreg"
 
     spec = f"""
-        use_custom_catalogs = boolean(default=False) # Use custom user-provided catalogs?
         catalog_format = string(default='ascii.ecsv') # Catalog output file format
-        catfile = string(default='') # Name of the file with a list of custom user-provided catalogs
         catalog_path = string(default='') # Catalog output file path
         enforce_user_order = boolean(default=False) # Align images in user specified order?
         expand_refcat = boolean(default=False) # Expand reference catalog with new sources?
@@ -96,38 +94,6 @@ class TweakRegStep(RomanStep):
         with images:
             ref_image = images.borrow(0)
             images.shelve(ref_image, 0, modify=False)
-
-        catdict = _parse_catfile(self.catfile)
-
-        use_custom_catalogs = self.use_custom_catalogs
-        # if user requested the use of custom catalogs and provided a
-        # valid 'catfile' file name that has no custom catalogs,
-        # turn off the use of custom catalogs:
-        if catdict is not None and not catdict:
-            log.warning(
-                "'use_custom_catalogs' is set to True but 'catfile' "
-                "contains no user catalogs."
-            )
-            use_custom_catalogs = False
-
-        if use_custom_catalogs and catdict:
-            with images:
-                for i, member in enumerate(images.asn["products"][0]["members"]):
-                    filename = member["expname"]
-                    if filename in catdict:
-                        # FIXME: I'm not sure if this captures all the possible combinations
-                        # for example, meta.tweakreg_catalog is set by the container (when
-                        # it's present in the association). However the code in this step
-                        # checks meta.source_catalog.tweakreg_catalog. I think this means
-                        # that setting a catalog via an association does not work. Is this
-                        # intended? If so, the container can be updated to not support that.
-                        model = images.borrow(i)
-                        model.meta["source_catalog"] = {
-                            "tweakreg_catalog_name": catdict[filename],
-                        }
-                        images.shelve(model, i)
-                    else:
-                        images.shelve(model, i, modify=False)
 
         # set path where the source catalog will be saved to
         if len(self.catalog_path) == 0:
@@ -551,57 +517,6 @@ class TweakRegStep(RomanStep):
             clip_accum=True,
             timeout=self.vo_timeout,
         )
-
-
-def _parse_catfile(catfile):
-    """
-    Parse a catalog file and return a dictionary mapping data models to catalog paths.
-
-    This function reads a specified catalog file, extracting data model names and
-    their associated catalog paths. It supports a format where each line contains
-    a data model followed by an optional catalog path, and it ensures that the
-    file adheres to the expected structure.
-
-    Parameters
-    ----------
-    catfile : str
-        The path to the catalog file to be parsed.
-
-    Returns
-    -------
-    dict or None
-        A dictionary mapping data model names to catalog paths, or None if the
-        input file is empty or invalid.
-
-    Raises
-    ------
-    ValueError
-        If the catalog file contains more than two columns per line.
-    """
-
-    if catfile is None or not catfile.strip():
-        return None
-
-    catdict = {}
-
-    with open(catfile) as f:
-        catfile_dir = os.path.dirname(catfile)
-
-        for line in f:
-            sline = line.strip()
-            if not sline or sline[0] == "#":
-                continue
-
-            data_model, *catalog = sline.split()
-            catalog = list(map(str.strip, catalog))
-            if len(catalog) == 1:
-                catdict[data_model] = os.path.join(catfile_dir, catalog[0])
-            elif not catalog:
-                catdict[data_model] = None
-            else:
-                raise ValueError("'catfile' can contain at most two columns.")
-
-    return catdict
 
 
 def _validate_catalog_columns(catalog) -> bool:
