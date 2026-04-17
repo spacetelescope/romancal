@@ -501,6 +501,71 @@ def test_parquet_metadata_preserved_after_update(function_jail, tweakreg_image):
             assert updated_astropy[col].unit == u.deg
 
 
+def test_tweakreg_custom_catalog_via_asn_member_attribute(
+    tmp_path, tweakreg_image, gaia_coords
+):
+    """
+    Test that a custom catalog specified via ASN member attribute `tweakreg_catalog`
+    is mapped into meta.source_catalog.tweakreg_catalog_name and used by TweakRegStep.
+    """
+    # generate and save model
+    img = tweakreg_image()
+    img.meta.filename = "img.asdf"
+    img.save(tmp_path / img.meta.filename)
+
+    # generate and save custom catalog
+    catalog_data = np.array(
+        [img.meta.wcs.world_to_pixel_values(ra, dec) for ra, dec in gaia_coords]
+    )
+    custom_catalog_fn = str(tmp_path / "custom_catalog.ecsv")
+    Table(catalog_data, names=("x", "y")).write(custom_catalog_fn, format="ascii.ecsv")
+
+    # create ASN file with member tweakreg_catalog attribute
+    asn_filepath = str(tmp_path / "test_asn.json")
+    asn_dict = {
+        "asn_id": "a3001",
+        "products": [
+            {
+                "name": "test.asdf",
+                "members": [
+                    {
+                        "expname": img.meta.filename,
+                        "exptype": "science",
+                        "tweakreg_catalog": custom_catalog_fn,
+                    }
+                ],
+            }
+        ],
+    }
+    with open(asn_filepath, "w") as f:
+        json.dump(asn_dict, f)
+
+    res = TweakRegStep.call(
+        asn_filepath,
+        use_custom_catalogs=True,
+    )
+
+    assert isinstance(res, ModelLibrary)
+    with res:
+        m = res.borrow(0)
+        assert m.meta.cal_step.tweakreg == "COMPLETE"
+        assert m.meta.source_catalog.tweakreg_catalog_name == custom_catalog_fn
+        res.shelve(m, modify=False)
+
+
+def test_tweakreg_raises_attributeerror_on_missing_source_catalog(tweakreg_image):
+    """
+    Test that TweakReg raises an AttributeError if meta.source_catalog is missing.
+    """
+    img = tweakreg_image()
+    del img.meta["source_catalog"]
+    with pytest.raises(
+        AttributeError,
+        match=r"Attribute 'meta.source_catalog' is missing",
+    ):
+        TweakRegStep.call([img])
+
+
 def test_tweakreg_logs_selected_catalog_file(tweakreg_image, caplog):
     """
     Test that TweakReg logs which catalog file is used for an image.
