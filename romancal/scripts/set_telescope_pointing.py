@@ -96,7 +96,8 @@ def main():
             ),
         )
         parser.add_argument(
-            "--eng-data-uri", dest='data_uri',
+            "--eng-data-uri",
+            dest="data_uri",
             type=str,
             default=None,
             help=(
@@ -106,7 +107,8 @@ def main():
             ),
         )
         parser.add_argument(
-            "--eng-meta-uri", dest='meta_uri',
+            "--eng-meta-uri",
+            dest="meta_uri",
             type=str,
             default=None,
             help=(
@@ -126,9 +128,7 @@ def main():
             ),
         )
         parser.add_argument(
-            "--rsdp-auth",
-            action='store_true',
-            help="Use RSDP authentication"
+            "--rsdp-auth", action="store_true", help="Use RSDP authentication"
         )
 
     # Arguments pertinent only to the EngdbEDP service
@@ -163,7 +163,15 @@ def main():
 
     # Gather the service-specific args
     service_kwargs = {"service": args.service}
-    for arg in ["eng_base_url", "data_uri", "meta_uri", "environment", "path_to_cc", 'token', 'rsdp_auth']:
+    for arg in [
+        "eng_base_url",
+        "data_uri",
+        "meta_uri",
+        "environment",
+        "path_to_cc",
+        "token",
+        "rsdp_auth",
+    ]:
         try:
             service_kwargs[arg] = getattr(args, arg)
         except AttributeError:
