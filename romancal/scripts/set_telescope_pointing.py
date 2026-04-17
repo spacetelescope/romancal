@@ -125,6 +125,11 @@ def main():
                 " Otherwise, no token is used."
             ),
         )
+        parser.add_argument(
+            "--rsdp-auth",
+            action='store_true',
+            help="Use RSDP authentication"
+        )
 
     # Arguments pertinent only to the EngdbEDP service
     if "edp" in AVAILABLE_SERVICES:
@@ -158,7 +163,7 @@ def main():
 
     # Gather the service-specific args
     service_kwargs = {"service": args.service}
-    for arg in ["eng_base_url", "data_uri", "meta_uri", "environment", "path_to_cc", 'token']:
+    for arg in ["eng_base_url", "data_uri", "meta_uri", "environment", "path_to_cc", 'token', 'rsdp_auth']:
         try:
             service_kwargs[arg] = getattr(args, arg)
         except AttributeError:
