@@ -564,3 +564,19 @@ def test_tweakreg_raises_attributeerror_on_missing_source_catalog(tweakreg_image
         match=r"Attribute 'meta.source_catalog' is missing",
     ):
         TweakRegStep.call([img])
+
+
+def test_tweakreg_logs_selected_catalog_file(tweakreg_image, caplog):
+    """
+    Test that TweakReg logs which catalog file is used for an image.
+    """
+    img = tweakreg_image()
+    expected_catalog_path = img.meta.source_catalog.tweakreg_catalog_name
+
+    with caplog.at_level("INFO"):
+        TweakRegStep().get_tweakreg_catalog(img.meta.source_catalog, img)
+
+    assert (
+        f"Using tweakreg catalog file '{expected_catalog_path}' for {img.meta.filename}."
+        in caplog.text
+    )

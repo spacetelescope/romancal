@@ -1,0 +1,1 @@
+Updated psf_match_reference_filter metadata assignment to be uppercase and added a default value.

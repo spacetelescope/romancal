@@ -1,6 +1,7 @@
 import json
 import logging
 
+import numpy as np
 import pytest
 from astropy.time import Time
 from roman_datamodels.datamodels import FlatRefModel, ImageModel
@@ -139,3 +140,28 @@ def test_calibration_software_version(base_image):
     result = NullStep.call(im)
 
     assert result.meta.calibration_software_version == romancal.__version__
+
+
+def test_statistics_handled_in_finalize():
+    """Verify finalize_result triggers the statistics population."""
+
+    class MockStepClass(RomanStep):
+        """Minimal subclass to test RomanStep methods."""
+
+        def process(self, input):
+            return input
+
+    step = MockStepClass()
+    shape = (10, 10)
+
+    model = ImageModel.create_minimal()
+
+    model.data = np.ones(shape, dtype=np.float32)
+    model.dq = np.zeros(shape, dtype=np.uint32)
+
+    # finalize_result should trigger the populate_statistics call
+    step.finalize_result(model, [])
+
+    assert hasattr(model.meta, "statistics")
+    assert model.meta.statistics.image_median == 1.0
+    assert model.meta.statistics.good_pixel_fraction == 1.0

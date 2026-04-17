@@ -101,7 +101,7 @@ def check_psf_matched_catalog(cat, all_filters, ref_filter):
     n_aper = len(cat.meta["aperture_radii"]["circle_pix"])
     matched_bands = [f"{f}m" for f in all_filters if f != ref_filter]
 
-    assert cat.meta.get("psf_match_reference_filter") == ref_filter
+    assert cat.meta.get("psf_match_reference_filter") == ref_filter.upper()
 
     # All original filter bands should have aperture columns
     for f in all_filters:
