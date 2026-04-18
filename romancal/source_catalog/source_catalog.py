@@ -279,6 +279,7 @@ class RomanSourceCatalog:
             self.model,
             self.segment_img,
             self.convolved_data,
+            self.mask,
             self._pixel_area,
             self._wcs_angle,
             detection_cat=self.detection_cat,
@@ -497,10 +498,10 @@ class RomanSourceCatalog:
             self.meta[ver_key] = ver_dict
 
         # reorder the metadata dictionary
-        self.meta.pop("localbkg_width")
-        keys = ["date", "versions", "apermask_method", "kron_params"]
+        self.meta.pop("local_bkg_width", None)
+        keys = ["date", "versions", "aperture_mask_method", "kron_params"]
         old_meta = self.meta.copy()
-        self.meta = {key: old_meta[key] for key in keys}
+        self.meta = {key: old_meta.get(key, None) for key in keys}
 
         # reformat the aperture radii for the metadata to remove
         # Quantity objects

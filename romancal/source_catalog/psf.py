@@ -11,7 +11,7 @@ import numpy as np
 from astropy.convolution import Box2DKernel, convolve
 from astropy.modeling.fitting import LevMarLSQFitter
 from astropy.nddata import NDData
-from astropy.table import Table
+from astropy.table import QTable, Table
 from astropy.utils import lazyproperty
 from numpy import fft
 from photutils.background import LocalBackground
@@ -594,7 +594,7 @@ def fit_psf_to_image_model(
     psf_model=None,
     grouper=None,
     fitter=None,
-    localbkg_estimator=None,
+    local_bkg_estimator=None,
     finder=None,
     x_init=None,
     y_init=None,
@@ -631,7 +631,7 @@ def fit_psf_to_image_model(
     fitter : `astropy.modeling.fitting.Fitter`, optional
         Modeling class which optimizes the PSF fit.
         Default is `astropy.modeling.fitting.LevMarLSQFitter(calc_uncertainties=True)`.
-    localbkg_estimator : `photutils.background.LocalBackground`, optional
+    local_bkg_estimator : `photutils.background.LocalBackground`, optional
         Specifies inner and outer radii for computing flux background near
         a source. Default has ``inner_radius=10, outer_radius=30``.
     finder : subclass of `photutils.detection.StarFinderBase`, optional
@@ -703,15 +703,15 @@ def fit_psf_to_image_model(
 
         psf_photometry_kwargs["finder"] = finder
 
-    if localbkg_estimator is None:
-        localbkg_estimator = LocalBackground(
+    if local_bkg_estimator is None:
+        local_bkg_estimator = LocalBackground(
             inner_radius=10,  # [pix]
             outer_radius=30,  # [pix]
         )
 
     photometry = photometry_cls(
         grouper=grouper,
-        localbkg_estimator=localbkg_estimator,
+        local_bkg_estimator=local_bkg_estimator,
         psf_model=psf_model,
         fitter=fitter,
         fit_shape=fit_shape,
@@ -755,6 +755,8 @@ def fit_psf_to_image_model(
 
     # fit the model PSF to the data:
     results_table = photometry(data=data, error=error, init_params=guesses, mask=mask)
+    # Convert from DeprecatedColumnQTable (remove when require photutils 4+)
+    results_table = QTable(results_table)
 
     # results are stored on the PSFPhotometry instance:
     return results_table, photometry

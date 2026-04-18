@@ -50,7 +50,7 @@ def convolve_data(data, kernel_fwhm, size=None, mask=None):
 
 
 def make_segmentation_image(
-    convolved_data, snr_threshold, npixels, bkg_rms, deblend=False, mask=None
+    convolved_data, snr_threshold, n_pixels, bkg_rms, deblend=False, mask=None
 ):
     """
     Make a segmentation image from a model image.
@@ -61,7 +61,7 @@ def make_segmentation_image(
         The background-subtracted convolved data array.
     snr_threshold : float
         The per-pixel signal-to-noise ratio threshold for detection.
-    npixels : int
+    n_pixels : int
         The number of connected pixels required to define a source.
     bkg_rms : 2D `numpy.ndarray`
         The background RMS array.
@@ -80,14 +80,14 @@ def make_segmentation_image(
         # suppress NoDetectionsWarning from photutils
         warnings.filterwarnings("ignore", category=NoDetectionsWarning)
 
-        finder = SourceFinder(npixels, deblend=deblend, contrast=1e-4)
+        finder = SourceFinder(n_pixels, deblend=deblend, contrast=1e-4)
         threshold = snr_threshold * bkg_rms
         segment_img = finder(convolved_data, threshold, mask=mask)
 
         if segment_img is None:
-            nsources = 0
+            n_sources = 0
         else:
-            nsources = segment_img.nlabels
-        log.info(f"Detected {nsources} sources")
+            n_sources = segment_img.n_labels
+        log.info(f"Detected {n_sources} sources")
 
     return segment_img

@@ -30,6 +30,11 @@ class SegmentCatalog:
         The 2D array used to calculate the source centroid and shape
         measurements. The image is assumed to be background subtracted.
 
+    mask : 2D bool `~numpy.ndarray` or `None`
+        A 2D boolean array with the same shape as the input data, where
+        `True` values indicate masked pixels. If `None`, then no pixels
+        are masked.
+
     pixel_area : `~astropy.units.Quantity`
         The pixel area in steradians. This is used to convert various
         measuments from pixels to arcseconds.
@@ -68,6 +73,7 @@ class SegmentCatalog:
         model,
         segment_img,
         convolved_data,
+        mask,
         pixel_area,
         wcs_angle,
         detection_cat=None,
@@ -76,6 +82,7 @@ class SegmentCatalog:
         self.model = model
         self.segment_img = segment_img
         self.convolved_data = convolved_data
+        self.mask = mask
         self.pixel_area = pixel_area
         self.wcs_angle = wcs_angle
         self.detection_cat = detection_cat
@@ -183,17 +190,18 @@ class SegmentCatalog:
             self.segment_img,
             convolved_data=self.convolved_data,
             error=self.model.err,
+            mask=self.mask,
             wcs=self.wcs,
-            apermask_method="mask",
-            detection_cat=detection_cat,
+            aperture_mask_method="mask",
+            detection_catalog=detection_cat,
         )
+
         self.source_cat = segm_cat
         self.meta.update(segm_cat.meta)
 
-        # Extract the properties from the segment catalog. These
-        # names are the SourceCatalog property names and the order
-        # is not important.
-
+        # Extract the properties from the segment catalog. These names
+        # are the photutils SourceCatalog property names; order is not
+        # important.
         # For dr_band and psf_matched catalogs (multiband filter and
         # PSF-matched catalogs), only calculate minimal properties
         # needed for photometry
@@ -201,18 +209,18 @@ class SegmentCatalog:
             photutils_names = [
                 "label",
                 "segment_flux",
-                "segment_fluxerr",
+                "segment_flux_err",
                 "kron_flux",
-                "kron_fluxerr",
+                "kron_flux_err",
             ]
         else:
             # Full catalog includes all core properties
             photutils_names = [
                 "label",
-                "xcentroid",
-                "ycentroid",
-                "xcentroid_win",
-                "ycentroid_win",
+                "x_centroid",
+                "y_centroid",
+                "x_centroid_win",
+                "y_centroid_win",
                 "sky_centroid",
                 "sky_centroid_win",
                 "bbox_xmin",
@@ -220,33 +228,30 @@ class SegmentCatalog:
                 "bbox_ymin",
                 "bbox_ymax",
                 "area",
-                "kron_radius",
-                "segment_flux",
-                "segment_fluxerr",
-                "kron_flux",
-                "kron_fluxerr",
-                "semimajor_sigma",
-                "semiminor_sigma",
-                "fwhm",
+                "semimajor_axis",
+                "semiminor_axis",
                 "orientation",
                 "ellipticity",
-                "cxx",
-                "cxy",
-                "cyy",
+                "ellipse_cxx",
+                "ellipse_cxy",
+                "ellipse_cyy",
+                "fwhm",
+                "segment_flux",
+                "segment_flux_err",
+                "kron_radius",
+                "kron_flux",
+                "kron_flux_err",
             ]
 
-        # if needed, map names from photutils to the output catalog names
+        # Map photutils names to the output catalog names
         name_map = {}
-        name_map["xcentroid"] = "x_centroid"
-        name_map["ycentroid"] = "y_centroid"
-        name_map["xcentroid_win"] = "x_centroid_win"
-        name_map["ycentroid_win"] = "y_centroid_win"
         name_map["area"] = "segment_area"
-        name_map["semimajor_sigma"] = "semimajor"
-        name_map["semiminor_sigma"] = "semiminor"
+        name_map["semimajor_axis"] = "semimajor"
+        name_map["semiminor_axis"] = "semiminor"
         name_map["orientation"] = "orientation_pix"
-        name_map["segment_fluxerr"] = "segment_flux_err"
-        name_map["kron_fluxerr"] = "kron_flux_err"
+        name_map["ellipse_cxx"] = "cxx"
+        name_map["ellipse_cxy"] = "cxy"
+        name_map["ellipse_cyy"] = "cyy"
 
         # set the source properties as attributes of this instance
         for name in photutils_names:
@@ -313,7 +318,8 @@ class SegmentCatalog:
             "x_centroid_win_err",
             "y_centroid_win_err",
         )
-        pix_value = np.zeros(self.source_cat.nlabels, dtype=np.float32) * u.pix
+        n_labels = self.source_cat.n_labels
+        pix_value = np.zeros(n_labels, dtype=np.float32) * u.pix
         for name in pix_columns:
             if not hasattr(self, name):
                 setattr(self, name, pix_value)
@@ -325,7 +331,7 @@ class SegmentCatalog:
             "ra_centroid_win_err",
             "dec_centroid_win_err",
         )
-        sky_value = np.zeros(self.source_cat.nlabels, dtype=np.float32) * u.arcsec
+        sky_value = np.zeros(n_labels, dtype=np.float32) * u.arcsec
         for name in sky_columns:
             if not hasattr(self, name):
                 setattr(self, name, sky_value)
@@ -339,9 +345,10 @@ class SegmentCatalog:
         The position angle of the source major axis in degrees measured
         East of North.
         """
-        return ((180.0 * u.deg) - self.wcs_angle + self.orientation_pix).astype(
-            np.float32
+        angle = ((180.0 * u.deg) - self.wcs_angle + self.orientation_pix) % (
+            360.0 * u.deg
         )
+        return angle.astype(np.float32)
 
     @lazyproperty
     def _kron_abmag(self):
@@ -366,5 +373,5 @@ class SegmentCatalog:
         """
         The radius (in arcsec) at which the flux fraction is 50%.
         """
-        value = self.source_cat.fluxfrac_radius(0.5)
+        value = self.source_cat.flux_radius(0.5)
         return (value.value * self.pixel_scale).astype(np.float32)
