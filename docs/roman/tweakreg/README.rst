@@ -26,11 +26,11 @@ indicate source *image* coordinates (in pixels). Pixel coordinates are
 
 Association files can also be used as ``tweakreg`` input for custom catalogs.
 When an association is provided, ``tweakreg`` reads the custom catalog
-information for each member from that member's ``tweakreg_catalog`` attribute 
-and sets it as the value for that member's 
-``meta.source_catalog.tweakreg_catalog_name`` metadata. 
-For example, the following association contains two members 
-(``image1.asdf`` and ``image2.asdf``) with custom catalogs and one member 
+information for each member from that member's ``tweakreg_catalog`` attribute
+and sets it as the value for that member's
+``meta.source_catalog.tweakreg_catalog_name`` metadata.
+For example, the following association contains two members
+(``image1.asdf`` and ``image2.asdf``) with custom catalogs and one member
 (``image3.asdf``) without a custom catalog:
 
   .. code-block:: json
@@ -55,8 +55,8 @@ For example, the following association contains two members
 
 In this case, ``tweakreg`` will read the custom catalogs for ``image1.asdf`` and
 ``image2.asdf`` from the specified file paths and use them for alignment, while
-it will attempt to read the source catalog for ``image3.asdf`` from the file path 
-specified in its ``meta.source_catalog.tweakreg_catalog_name`` metadata 
+it will attempt to read the source catalog for ``image3.asdf`` from the file path
+specified in its ``meta.source_catalog.tweakreg_catalog_name`` metadata
 (which is expected to be set by a previous step such as `SourceCatalogStep`).
 
 .. note::
