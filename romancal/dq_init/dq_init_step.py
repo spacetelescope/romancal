@@ -5,11 +5,9 @@ import logging
 from typing import TYPE_CHECKING
 
 import roman_datamodels as rdm
-from roman_datamodels.datamodels import FpsModel, RampModel, ScienceRawModel, TvacModel
-from roman_datamodels.dqflags import pixel
 
 from romancal.datamodels.fileio import open_dataset
-from romancal.dq_init import dq_initialization
+from romancal.dq_init.dq_initialization import do_dqinit
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:
@@ -51,85 +49,18 @@ class DQInitStep(RomanStep):
         """
         # Open datamodel
         input_model = open_dataset(dataset, update_version=self.update_version)
-        is_tvac = isinstance(input_model, (FpsModel | TvacModel))
-        try:
-            # note that this succeeds even for ScienceRawModels
-            input_model = ScienceRawModel.from_tvac_raw(input_model)
-        except ValueError:
-            pass
-
-        # Convert to RampModel
-        output_model = RampModel.from_science_raw(input_model)
-
-        # guide window range information
-        x_start = int(input_model.meta.guide_star.window_xstart)
-        x_stop = int(input_model.meta.guide_star.window_xstop)
-        y_start = int(input_model.meta.guide_star.window_ystart)
-        y_stop = int(input_model.meta.guide_star.window_ystop)
-        # set pixeldq array to GW_AFFECTED_DATA (2**4) for the given range
-        output_model.pixeldq[:, x_start:x_stop] = pixel.GW_AFFECTED_DATA
-        log.info(
-            f"Flagging rows from: {x_start} to {x_stop} as affected by guide window read"
-        )
-        output_model.pixeldq[y_start:y_stop, x_start:x_stop] |= pixel.DO_NOT_USE
 
         # Get reference file path
-        reference_file_name = self.get_reference_file(output_model, "mask")
-
-        # the reference read has been subtracted from the science data
-        # in the L1 files.  Add it back into the data.
-        # the TVAC files are special and there the reference read was
-        # already added back in
-        reference_read = getattr(input_model, "reference_read", None)
-        if reference_read is not None and not is_tvac:
-            output_model.data += reference_read
-            del output_model.reference_read
-        reference_amp33 = getattr(input_model, "reference_amp33", None)
-        if reference_amp33 is not None and not is_tvac:
-            output_model.amp33 += reference_amp33
-            del output_model.reference_amp33
-
-        # If a data encoding offset was added to the data, remove it
-        data_encoding_offset = getattr(
-            input_model.meta.instrument, "data_encoding_offset", 0
-        )
-        output_model.data -= data_encoding_offset
-
-        # Test for reference file
+        reference_file_name = self.get_reference_file(input_model, "mask")
         if reference_file_name != "N/A" and reference_file_name is not None:
             # If there are mask files, perform dq step
             # Open the relevant reference files as datamodels
             reference_file_model = rdm.open(reference_file_name)
             log.debug(f"Using MASK ref file: {reference_file_name}")
-
-            # Apply the DQ step, in place
-            dq_initialization.do_dqinit(
-                output_model,
-                reference_file_model,
-            )
-
-            # copy original border reference file arrays (data and dq)
-            # to their own attributes. they will also remain attached to
-            # the science data until they are trimmed at ramp_fit
-            # these arrays include the overlap regions in the corners
-
-            output_model.border_ref_pix_right = output_model.data[:, :, -4:].copy()
-            output_model.border_ref_pix_left = output_model.data[:, :, :4].copy()
-            output_model.border_ref_pix_top = output_model.data[:, :4, :].copy()
-            output_model.border_ref_pix_bottom = output_model.data[:, -4:, :].copy()
-
-            output_model.dq_border_ref_pix_right = output_model.pixeldq[:, -4:].copy()
-            output_model.dq_border_ref_pix_left = output_model.pixeldq[:, :4].copy()
-            output_model.dq_border_ref_pix_top = output_model.pixeldq[:4, :].copy()
-            output_model.dq_border_ref_pix_bottom = output_model.pixeldq[-4:, :].copy()
-
         else:
-            # Skip DQ step if no mask files
             reference_file_model = None
-            log.warning("No MASK reference file found.")
-            log.warning("DQ initialization step will be skipped.")
 
-            output_model.meta.cal_step.dq_init = "SKIPPED"
+        output_model = do_dqinit(input_model, mask=reference_file_model)
 
         # Close the input and reference files
         input_model.close()
