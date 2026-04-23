@@ -3,6 +3,7 @@ Module to calculate PSF photometry.
 """
 
 import logging
+import warnings
 from collections import OrderedDict
 
 import astropy.units as u
@@ -11,6 +12,7 @@ from astropy.convolution import Box2DKernel, convolve
 from astropy.nddata import NDData
 from astropy.table import Table
 from astropy.utils import lazyproperty
+from astropy.utils.exceptions import AstropyUserWarning
 from numpy import fft
 from photutils.psf import (
     GriddedPSFModel,
@@ -664,12 +666,17 @@ class PSFCatalog:
         init_params["x_init"] = x_init
         init_params["y_init"] = y_init
 
-        results = psfphot(
-            data=self.model.data,
-            error=self.model.err,
-            mask=self.mask,
-            init_params=init_params,
-        )
+        with warnings.catch_warnings():
+            # Ignore warnings about fits failing to converge
+            warnings.simplefilter("ignore", RuntimeWarning)
+            warnings.simplefilter("ignore", AstropyUserWarning)
+
+            results = psfphot(
+                data=self.model.data,
+                error=self.model.err,
+                mask=self.mask,
+                init_params=init_params,
+            )
 
         # set _name_map columns as attributes of this instance
         for old_name, new_name in self._name_map.items():
