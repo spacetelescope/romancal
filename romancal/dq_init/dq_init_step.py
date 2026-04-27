@@ -65,8 +65,11 @@ class DQInitStep(RomanStep):
         else:
             reference_file_model = None
 
-        output_model = do_dqinit(input_model, mask=reference_file_model,
-                                 expand_gw_flagging=self.expand_gw_flagging)
+        output_model = do_dqinit(
+            input_model,
+            mask=reference_file_model,
+            expand_gw_flagging=self.expand_gw_flagging,
+        )
 
         # Close the input and reference files
         input_model.close()
