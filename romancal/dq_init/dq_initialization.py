@@ -1,6 +1,6 @@
 import logging
-import numpy as np
 
+import numpy as np
 from roman_datamodels.datamodels import FpsModel, RampModel, ScienceRawModel, TvacModel
 from roman_datamodels.dqflags import pixel
 
@@ -58,11 +58,12 @@ def do_dqinit(model, mask, expand_gw_flagging=0):
             y_stop = np.clip(y_stop + expand_gw_flagging, 0, npix)
 
         output_model.pixeldq[y_start:y_stop, x_start:x_stop] |= (
-            pixel.DO_NOT_USE | pixel.GW_AFFECTED_DATA)
+            pixel.DO_NOT_USE | pixel.GW_AFFECTED_DATA
+        )
     else:
         log.info(
-            f'Invalid guide window location: {x_start}, {x_stop}, {y_start}, {y_stop}')
-
+            f"Invalid guide window location: {x_start}, {x_stop}, {y_start}, {y_stop}"
+        )
 
     # the reference read has been subtracted from the science data
     # in the L1 files.  Add it back into the data.
@@ -78,9 +79,7 @@ def do_dqinit(model, mask, expand_gw_flagging=0):
         del output_model.reference_amp33
 
     # If a data encoding offset was added to the data, remove it
-    data_encoding_offset = getattr(
-        model.meta.instrument, "data_encoding_offset", 0
-    )
+    data_encoding_offset = getattr(model.meta.instrument, "data_encoding_offset", 0)
     output_model.data -= data_encoding_offset
 
     if mask is not None and output_model.pixeldq.shape == mask.dq.shape:

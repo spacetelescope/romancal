@@ -356,7 +356,7 @@ def test_dqinit_gw_expansion():
     # Expanded rectangle should have both DO_NOT_USE and GW_AFFECTED_DATA set
     combined = pixel.DO_NOT_USE | pixel.GW_AFFECTED_DATA
     assert np.all(
-        pq[y_start - expand:y_stop + expand, x_start - expand:x_stop + expand]
+        pq[y_start - expand : y_stop + expand, x_start - expand : x_stop + expand]
         & combined
         == combined
     )
