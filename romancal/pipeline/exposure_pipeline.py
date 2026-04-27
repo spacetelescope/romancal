@@ -84,16 +84,16 @@ class ExposurePipeline(RomanPipeline):
         log.info("Starting Roman exposure calibration pipeline ...")
 
         # determine the input type
+        # Because we're processing raw files, let's open without any
+        # laziness; we need to propagate all of the bits into the ramps
+        # anyway.  It also avoids bugs like:
+        # https://github.com/spacetelescope/roman_datamodels/issues/631
         lib, input_type = open_dataset(
             dataset,
             update_version=self.update_version,
             return_type=True,
             as_library=True,
             open_kwargs={"on_disk": self.on_disk, "lazy_load": False},
-            # Because we're processing raw files, let's open without any
-            # laziness; we need to propagate all of the bits into the ramps
-            # anyway.  It also avoids bugs like:
-            # https://github.com/spacetelescope/roman_datamodels/issues/631
         )
         return_lib = input_type in ("ModelLibrary", "asn")
 

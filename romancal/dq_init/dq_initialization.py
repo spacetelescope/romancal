@@ -1,4 +1,5 @@
 import logging
+import numpy as np
 
 from roman_datamodels.datamodels import FpsModel, RampModel, ScienceRawModel, TvacModel
 from roman_datamodels.dqflags import pixel
@@ -15,7 +16,7 @@ def do_dqinit(model, mask, expand_gw_flagging=0):
     model : Roman data model, ScienceRawModel, FpsModel
         model for which to update DQ
 
-    mask : MaskRefModel
+    mask : MaskRefModel or None
         reference mask model to use to update model DQ
 
     expand_gw_flagging : int
@@ -53,8 +54,8 @@ def do_dqinit(model, mask, expand_gw_flagging=0):
         if expand_gw_flagging > 0:
             x_start = np.clip(x_start - expand_gw_flagging, 0, npix)
             x_stop = np.clip(x_stop + expand_gw_flagging, 0, npix)
-            y_start = np.clip(x_start - expand_gw_flagging, 0, npix)
-            y_stop = np.clip(x_stop + expand_gw_flagging, 0, npix)
+            y_start = np.clip(y_start - expand_gw_flagging, 0, npix)
+            y_stop = np.clip(y_stop + expand_gw_flagging, 0, npix)
 
         output_model.pixeldq[y_start:y_stop, x_start:x_stop] |= (
             pixel.DO_NOT_USE | pixel.GW_AFFECTED_DATA)
@@ -86,7 +87,7 @@ def do_dqinit(model, mask, expand_gw_flagging=0):
         output_model.pixeldq |= mask.dq
         output_model.meta.cal_step.dq_init = "COMPLETE"
     else:
-        log.warning("Mask data array is not the same shape as the science data")
+        log.warning("Mask data array is None or not the same shape as the science data")
         log.warning("Mask is not updated and step is marked skipped")
         output_model.meta.cal_step.dq_init = "SKIPPED"
 
