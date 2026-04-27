@@ -89,7 +89,11 @@ class ExposurePipeline(RomanPipeline):
             update_version=self.update_version,
             return_type=True,
             as_library=True,
-            open_kwargs={"on_disk": self.on_disk},
+            open_kwargs={"on_disk": self.on_disk, "lazy_load": False},
+            # Because we're processing raw files, let's open without any
+            # laziness; we need to propagate all of the bits into the ramps
+            # anyway.  It also avoids bugs like:
+            # https://github.com/spacetelescope/roman_datamodels/issues/631
         )
         return_lib = input_type in ("ModelLibrary", "asn")
 

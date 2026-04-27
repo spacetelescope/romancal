@@ -6,17 +6,8 @@ from roman_datamodels.dqflags import pixel
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
-# Guide star mode exposure types
-GUIDER_LIST = [
-    "WFI_WIM_ACQ",
-    "WFI_WIM_TRACK",
-    "WFI_WSM_ACQ1",
-    "WFI_WSM_ACQ2",
-    "WFI_WSM_TRACK",
-]
 
-
-def do_dqinit(model, mask):
+def do_dqinit(model, mask, expand_gw_flagging=0):
     """Convert model to a RampModel and update DQ flags.
 
     Parameters
@@ -26,6 +17,9 @@ def do_dqinit(model, mask):
 
     mask : MaskRefModel
         reference mask model to use to update model DQ
+
+    expand_gw_flagging : int
+        expand GW-flagged region by this many pixels
 
     Returns
     -------
@@ -46,15 +40,24 @@ def do_dqinit(model, mask):
     x_stop = int(output_model.meta.guide_star.window_xstop)
     y_start = int(output_model.meta.guide_star.window_ystart)
     y_stop = int(output_model.meta.guide_star.window_ystop)
-    # set pixeldq array to GW_AFFECTED_DATA (2**4) for the given range
 
     npix = output_model.pixeldq.shape[0]
     if x_start >= 0 and x_start < npix and y_start >= 0 and y_start < npix:
+        # set pixeldq array to GW_AFFECTED_DATA (2**4) for the given range
         output_model.pixeldq[:, x_start:x_stop] = pixel.GW_AFFECTED_DATA
         log.info(
             f"Flagging rows from: {x_start} to {x_stop} as affected by guide window read"
         )
-        output_model.pixeldq[y_start:y_stop, x_start:x_stop] |= pixel.DO_NOT_USE
+
+        # expand guide window if requested
+        if expand_gw_flagging > 0:
+            x_start = np.clip(x_start - expand_gw_flagging, 0, npix)
+            x_stop = np.clip(x_stop + expand_gw_flagging, 0, npix)
+            y_start = np.clip(x_start - expand_gw_flagging, 0, npix)
+            y_stop = np.clip(x_stop + expand_gw_flagging, 0, npix)
+
+        output_model.pixeldq[y_start:y_stop, x_start:x_stop] |= (
+            pixel.DO_NOT_USE | pixel.GW_AFFECTED_DATA)
     else:
         log.info(
             f'Invalid guide window location: {x_start}, {x_stop}, {y_start}, {y_stop}')
@@ -79,16 +82,12 @@ def do_dqinit(model, mask):
     )
     output_model.data -= data_encoding_offset
 
-    dqfield = 'pixeldq' if model.meta.exposure.type not in GUIDER_LIST else 'dq'
-
-    outmodeldq = getattr(output_model, dqfield)
-
-    if mask is not None and outmodeldq.shape == mask.dq.shape:
-        outmodeldq |= mask.dq
+    if mask is not None and output_model.pixeldq.shape == mask.dq.shape:
+        output_model.pixeldq |= mask.dq
         output_model.meta.cal_step.dq_init = "COMPLETE"
     else:
         log.warning("Mask data array is not the same shape as the science data")
-        log.warning("Mask is not updated and stel is marked skipped")
+        log.warning("Mask is not updated and step is marked skipped")
         output_model.meta.cal_step.dq_init = "SKIPPED"
 
     output_model.border_ref_pix_right = output_model.data[:, :, -4:].copy()

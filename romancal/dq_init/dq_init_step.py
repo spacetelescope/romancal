@@ -22,15 +22,20 @@ class DQInitStep(RomanStep):
     """Initialize the Data Quality extension from the
     mask reference file.
 
-    The dq_init step initializes the pixeldq attribute of the
-    input datamodel using the MASK reference file.  For some
-    Guiding and Image model types, initalize the dq attribute of
-    the input model instead.  The dq attribute of the MASK model
-    is bitwise OR'd with the pixeldq (or dq) attribute of the
-    input model.
+    The dq_init step initializes the pixeldq attribute of the input
+    datamodel using the MASK reference file.  The dq attribute of the
+    MASK model is bitwise OR'd with the pixeldq attribute of the input
+    model.
+
+    Also adjust data for data_encoding_offset and reference_read offsets,
+    and mark guide-window affected pixels' masks.
     """
 
     class_alias = "dq_init"
+
+    spec = """
+        expand_gw_flagging = integer(default=0)  # expand guide window flagging this many pixels around guide window
+    """
 
     reference_file_types: ClassVar = ["mask"]
 
@@ -60,7 +65,8 @@ class DQInitStep(RomanStep):
         else:
             reference_file_model = None
 
-        output_model = do_dqinit(input_model, mask=reference_file_model)
+        output_model = do_dqinit(input_model, mask=reference_file_model,
+                                 expand_gw_flagging=self.expand_gw_flagging)
 
         # Close the input and reference files
         input_model.close()
