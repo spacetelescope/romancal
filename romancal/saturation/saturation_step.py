@@ -25,6 +25,10 @@ class SaturationStep(RomanStep):
 
     class_alias = "saturation"
 
+    spec = """
+        n_pix_grow_sat = integer(default=0)  # grow saturated pixels by this number to accomodate charge spilling
+    """
+
     reference_file_types: ClassVar = ["saturation"]
 
     def process(self, dataset):
@@ -45,9 +49,7 @@ class SaturationStep(RomanStep):
         log.info("Using SATURATION reference file: %s", self.ref_name)
         with SaturationRefModel(self.ref_name) as ref_model:
             # Perform saturation check
-            saturation.flag_saturation(input_model, ref_model)
-
-        input_model.meta.cal_step.saturation = "COMPLETE"
+            saturation.flag_saturation(input_model, ref_model, n_pix_grow_sat=self.n_pix_grow_sat)
 
         if self.save_results:
             try:
