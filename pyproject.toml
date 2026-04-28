@@ -29,7 +29,7 @@ dependencies = [
     "romanisim>=0.13.1,<0.14",
     "asdf>=4.1.0,<6",
     #    "crds>=13.0.2",
-    "git+https://github.com/stscieisenhamer/crds.git@ccd-1743-fix",
+    "crds @ git+https://github.com/stscieisenhamer/crds.git@ccd-1743-fix",
     "drizzle>=2.2.0,<2.3.0",
     "gwcs>=1.0.1,<2",
     "stcal>=1.18.0,<1.19",
