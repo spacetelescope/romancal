@@ -334,6 +334,64 @@ def test_saturation_getbestref(setup_wfi_datamodels):
     assert result.meta.cal_step.saturation == "SKIPPED"
 
 
+def test_n_pix_grow_sat(setup_wfi_datamodels):
+    """Check that n_pix_grow_sat spatially expands saturation flags to neighbors."""
+    nresultants = 5
+    nrows = 20
+    ncols = 20
+    satvalue = 60000
+    ramp, satmap = setup_wfi_datamodels(nresultants, nrows, ncols)
+
+    satmap.data[:] = satvalue  # high threshold for all pixels
+    ramp.data[:] = 1000  # well below saturation for all pixels
+    ramp.data[3, 5, 5] = 62000
+    ramp.data[4, 5, 5] = 62000
+
+    output = flag_saturation(ramp, satmap, n_pix_grow_sat=1)
+
+    assert output.groupdq[3, 5, 5] & group.SATURATED
+    assert output.groupdq[3, 4, 5] & group.SATURATED
+    assert output.groupdq[3, 6, 5] & group.SATURATED
+    assert output.groupdq[3, 5, 4] & group.SATURATED
+    assert output.groupdq[3, 5, 6] & group.SATURATED
+    assert not (output.groupdq[3, 5, 7] & group.SATURATED)
+
+
+def test_backup_saturation(setup_wfi_datamodels):
+    """Check that backup extends saturation flags to preceding multi-read resultants."""
+    nresultants = 3
+    nrows = 20
+    ncols = 20
+    satvalue = 60000
+
+    ramp, satmap = setup_wfi_datamodels(nresultants, nrows, ncols)
+    ramp.meta.exposure.read_pattern = [[1], [2, 3], [4]]
+
+    ramp.data[0, 5, 5] = 0
+    ramp.data[1, 5, 5] = 30000
+    ramp.data[2, 5, 5] = 62000
+    satmap.data[5, 5] = satvalue
+
+    # Without backup: only resultant 2 is flagged
+    output = flag_saturation(ramp, satmap, backup=0)
+    assert output.groupdq[2, 5, 5] & group.SATURATED
+    assert not (output.groupdq[1, 5, 5] & group.SATURATED)
+
+    # Create fresh models for the backup=1 case
+    ramp2, satmap2 = setup_wfi_datamodels(nresultants, nrows, ncols)
+    ramp2.meta.exposure.read_pattern = [[1], [2, 3], [4]]
+    ramp2.data[0, 5, 5] = 0
+    ramp2.data[1, 5, 5] = 30000
+    ramp2.data[2, 5, 5] = 62000
+    satmap2.data[5, 5] = satvalue
+
+    # With backup=1: resultant 1 (multi-read) also gets SATURATED from resultant 2
+    output2 = flag_saturation(ramp2, satmap2, backup=1)
+    assert output2.groupdq[2, 5, 5] & group.SATURATED
+    assert output2.groupdq[1, 5, 5] & group.SATURATED
+    assert not (output2.groupdq[0, 5, 5] & group.SATURATED)  # single-read, not backed up
+
+
 @pytest.fixture(scope="function")
 def setup_wfi_datamodels():
     """Set up fake WFI data to test."""

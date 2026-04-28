@@ -45,7 +45,6 @@ class DarkCurrentStep(RomanStep):
 
         # Open dark model
         with rdm.open(self.dark_name) as dark_model:
-
             subtract_dark_current(input_model, dark_model)
 
             # Save dark data to file
@@ -60,6 +59,7 @@ class DarkCurrentStep(RomanStep):
                 self["suffix"] = "darkcurrent"
 
         return input_model
+
 
 def subtract_dark_current(input_model, dark_model):
     """Subtract dark current from input image model in place.
