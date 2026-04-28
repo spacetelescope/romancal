@@ -389,7 +389,9 @@ def test_backup_saturation(setup_wfi_datamodels):
     output2 = flag_saturation(ramp2, satmap2, backup=1)
     assert output2.groupdq[2, 5, 5] & group.SATURATED
     assert output2.groupdq[1, 5, 5] & group.SATURATED
-    assert not (output2.groupdq[0, 5, 5] & group.SATURATED)  # single-read, not backed up
+    assert not (
+        output2.groupdq[0, 5, 5] & group.SATURATED
+    )  # single-read, not backed up
 
 
 @pytest.fixture(scope="function")
