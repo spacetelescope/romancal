@@ -50,7 +50,12 @@ class SaturationStep(RomanStep):
         log.info("Using SATURATION reference file: %s", self.ref_name)
         with SaturationRefModel(self.ref_name) as ref_model:
             # Perform saturation check
-            saturation.flag_saturation(input_model, ref_model, n_pix_grow_sat=self.n_pix_grow_sat, backup=self.backup)
+            saturation.flag_saturation(
+                input_model,
+                ref_model,
+                n_pix_grow_sat=self.n_pix_grow_sat,
+                backup=self.backup,
+            )
 
         if self.save_results:
             try:

@@ -80,7 +80,8 @@ def flag_saturation(input_model, ref_model, n_pix_grow_sat=0, backup=0):
         for i in range(len(read_pattern) - 1):
             if len(read_pattern[i]) > 1:
                 input_model.groupdq[i, :, :] |= (
-                    input_model.groupdq[i + 1, :, :] & pixel.SATURATED)
+                    input_model.groupdq[i + 1, :, :] & pixel.SATURATED
+                )
 
     input_model.meta.cal_step.saturation = "COMPLETE"
 
