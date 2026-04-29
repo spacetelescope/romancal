@@ -53,7 +53,12 @@ def test_bad_readpattern():
     ramp_model, gain_model, readnoise_model, dark_model = make_data(
         SIMPLE_RESULTANTS, 1, 0.01, False
     )
-    bad_pattern = ramp_model.meta.exposure.read_pattern.data[1:]
+    # With LNode gone this is just a list now, this check is just
+    #   for backwards compatibility with the old code that expected a string.
+    if isinstance(ramp_model.meta.exposure.read_pattern, list):
+        bad_pattern = ramp_model.meta.exposure.read_pattern[1:]
+    else:
+        bad_pattern = ramp_model.meta.exposure.read_pattern.data[1:]
     ramp_model.meta.exposure.read_pattern = bad_pattern
 
     with pytest.raises(RuntimeError):
