@@ -11,7 +11,6 @@ from astropy.time import Time
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from romanisim.models import bandpass, parameters
 
-
 from romancal.skycell.tests.test_skycell_match import mk_gwcs
 from romancal.source_catalog import injection
 from romancal.source_catalog.injection import (
