@@ -268,14 +268,29 @@ class RomanSourceCatalog:
         xypos[nanmask] = -1000.0
         return xypos
 
-    def calc_segment_properties(self):
+    def _apply_subcatalog(self, subcatalog, *, store_as=None):
         """
-        Calculate the segment-based properties provided by
-        `~photutils.segmentation.SourceCatalog`.
+        Copy the named columns from a sub-catalog onto ``self`` and,
+        optionally, also store the sub-catalog itself for later use.
 
-        The results are set as dynamic attributes on the class instance.
+        Parameters
+        ----------
+        subcatalog : object
+            A sub-catalog instance with ``properties`` (iterable of
+            attribute names to copy) and optionally a ``meta`` dict.
+        store_as : str or `None`
+            If given, also store the sub-catalog as ``self.<store_as>``.
         """
-        segment_cat = SegmentCatalog(
+        meta = getattr(subcatalog, "meta", None)
+        if meta is not None:
+            self.meta.update(meta)
+        for name in subcatalog.properties:
+            setattr(self, name, getattr(subcatalog, name))
+        if store_as is not None:
+            setattr(self, store_as, subcatalog)
+
+    def _make_segment_cat(self):
+        return SegmentCatalog(
             self.model,
             self.segment_img,
             self.convolved_data,
@@ -283,67 +298,96 @@ class RomanSourceCatalog:
             self._pixel_area,
             self._wcs_angle,
             detection_cat=self.detection_cat,
-            cat_type=self.cat_type,
+            requested_properties=self.column_names,
         )
 
-        self.meta.update(segment_cat.meta)
-        for name in segment_cat.names:
-            setattr(self, name, getattr(segment_cat, name))
-
-        # needed for detection_cat
-        self.segment_cat = segment_cat
-
-    def calc_aperture_photometry(self):
-        """
-        Calculate aperture photometry.
-
-        The results are set as dynamic attributes on the class instance.
-        """
-        aperture_cat = ApertureCatalog(
+    def _make_aperture_cat(self):
+        return ApertureCatalog(
             self.model,
             self._pixel_scale,
             self._xypos_finite,
             ee_spline=self.ee_spline,
+            requested_properties=self.column_names,
         )
-        for name in aperture_cat.names:
-            setattr(self, name, getattr(aperture_cat, name))
 
-        # needed to get aperture flux column names and descriptions
-        self.aperture_cat = aperture_cat
-
-    def calc_psf_photometry(self):
-        """
-        Perform PSF photometry on the sources.
-
-        The results are set as dynamic attributes on the class instance.
-        """
-        psf_cat = PSFCatalog(self.model, self.psf_model, self._xypos, self.mask)
-        for name in psf_cat.names:
-            setattr(self, name, getattr(psf_cat, name))
-
-    def calc_daofind_properties(self):
-        """
-        Calculate the DAOFind sharpness and roundness1 statistics.
-
-        The results are set as dynamic attributes on the class instance.
-        """
-        daofind_cat = DAOFindCatalog(
-            self.model.data, self._xypos_finite, self.kernel_fwhm
+    def _make_daofind_cat(self):
+        return DAOFindCatalog(
+            self.model.data,
+            self._xypos_finite,
+            self.kernel_fwhm,
+            requested_properties=self.column_names,
         )
-        for name in daofind_cat.names:
-            setattr(self, name, getattr(daofind_cat, name))
 
-    def calc_nn_properties(self):
-        """
-        Calculate the nearest neighbor properties.
-
-        The results are set as dynamic attributes on the class instance.
-        """
-        nn_cat = NNCatalog(
-            self.label, self._xypos, self._xypos_finite, self._pixel_scale
+    def _make_nn_cat(self):
+        return NNCatalog(
+            self.label,
+            self._xypos,
+            self._xypos_finite,
+            self._pixel_scale,
+            requested_properties=self.column_names,
         )
-        for name in nn_cat.names:
-            setattr(self, name, getattr(nn_cat, name))
+
+    def _make_psf_cat(self):
+        return PSFCatalog(
+            self.model,
+            self.psf_model,
+            self._xypos,
+            self.mask,
+            requested_properties=self.column_names,
+        )
+
+    @property
+    def _measurement_registry(self):
+        """
+        Ordered list of measurement steps used to build the catalog.
+
+        Each entry is ``(label, factory, store_as, condition)``:
+
+        * ``label`` - human-readable name for log messages.
+        * ``factory`` - zero-arg callable returning the sub-catalog.
+        * ``store_as`` - attribute name to store the sub-catalog as,
+          or `None` if it does not need to be retained.
+        * ``condition`` - zero-arg callable returning `True` if the
+          step should run.
+
+        Order matters: segment must be first because downstream steps
+        depend on its outputs (``label``, ``x_centroid``, etc.) via
+        ``self._xypos``. Aperture must come before steps that may
+        reference its outputs.
+        """
+        cols = set(self.column_names)
+        return [
+            (
+                "segment properties",
+                self._make_segment_cat,
+                "segment_cat",
+                lambda: True,
+            ),
+            (
+                "aperture photometry",
+                self._make_aperture_cat,
+                "aperture_cat",
+                lambda: self.cat_type != "forced_det",
+            ),
+            (
+                "DAOFind properties",
+                self._make_daofind_cat,
+                None,
+                lambda: bool({"sharpness", "roundness1"} & cols),
+            ),
+            (
+                "nearest neighbor properties",
+                self._make_nn_cat,
+                None,
+                lambda: any(c.startswith("nn_") for c in cols),
+            ),
+            (
+                "PSF photometry",
+                self._make_psf_cat,
+                None,
+                lambda: any("psf" in c for c in cols),
+            ),
+        ]
 
     @lazyproperty
     def flagged_spatial_id(self):
@@ -370,10 +414,14 @@ class RomanSourceCatalog:
             return bad_return
 
         core_indices = sc.cores_containing(np.array([self.ra, self.dec]).T)
-        if len(core_indices.keys()) > 1:
-            raise ValueError("should only be one sky cell here?")
+        if len(core_indices) > 1:
+            raise RuntimeError(
+                f"Expected sources from at most one skycell, but found "
+                f"{len(core_indices)} skycells in flagged_spatial_id "
+                f"computation for skycell {skycell_name}."
+            )
         in_core = np.zeros(len(self.ra), dtype="bool")
-        if len(core_indices.keys()) == 1:
+        if len(core_indices) == 1:
             this_cell_idx = next(iter(core_indices.keys()))
             core_indices = core_indices[this_cell_idx]
             in_core[core_indices] = True
@@ -533,7 +581,13 @@ class RomanSourceCatalog:
 
         # define the aperture flux column names,
         # e.g, aper01_flux, aper01_flux_err, etc.
-        for colname in self.aperture_cat.aperture_flux_colnames:
+        # These are static and so can be computed before the
+        # ApertureCatalog is instantiated.
+        if self.aperture_cat is not None:
+            flux_colnames = self.aperture_cat.aperture_flux_colnames
+        else:
+            flux_colnames = ApertureCatalog.aperture_flux_colnames_for_radii()
+        for colname in flux_colnames:
             aper_colnames.append(colname)
             aper_colnames.append(f"{colname}_err")
 
@@ -582,6 +636,31 @@ class RomanSourceCatalog:
             raise ValueError(f"Unknown catalog type: {self.cat_type}")
 
         return flux_colnames
+
+    @lazyproperty
+    def band_colnames(self):
+        """
+        Band-specific columns for the multiband catalog. Also used for
+        the forced catalog.
+        """
+        xypsf_colnames = ["x_psf", "x_psf_err", "y_psf", "y_psf_err"]
+        skypsf_colnames = ["ra_psf", "dec_psf", "ra_psf_err", "dec_psf_err"]
+        psf_flags_colnames = ["psf_flags", "psf_gof"]
+        othershape_colnames = [
+            "sharpness",
+            "roundness1",
+            "is_extended",
+            "fluxfrac_radius_50",
+        ]
+
+        band_colnames = ["label"]  # needed to join the filter catalogs
+        if self.fit_psf:
+            band_colnames.extend(xypsf_colnames)
+            band_colnames.extend(skypsf_colnames)
+            band_colnames.extend(psf_flags_colnames)
+        band_colnames.extend(othershape_colnames)
+        band_colnames.extend(self.flux_colnames)
+        return band_colnames
 
     @lazyproperty
     def column_names(self):
@@ -676,17 +755,6 @@ class RomanSourceCatalog:
         det_colnames.extend(shape_colnames)
         det_colnames.extend(nn_colnames)
 
-        # These are band-specific columns for the multiband catalog.
-        # They are also used for the forced catalog.
-        band_colnames = ["label"]  # needed to join the filter catalogs
-        if self.fit_psf:
-            band_colnames.extend(xypsf_colnames)
-            band_colnames.extend(skypsf_colnames)
-            band_colnames.extend(psf_flags_colnames)
-        band_colnames.extend(othershape_colnames)
-        band_colnames.extend(self.flux_colnames)
-        self.band_colnames = band_colnames
-
         if self.cat_type in ("prompt", "forced_full"):
             colnames = []
             colnames.extend(base_colnames)
@@ -725,7 +793,7 @@ class RomanSourceCatalog:
             colnames.extend(flag_columns)
 
         elif self.cat_type == "dr_band":
-            colnames = band_colnames.copy()
+            colnames = self.band_colnames.copy()
 
         elif self.cat_type == "psf_matched":
             # Similar to dr_band but without the othershape_colnames
@@ -897,30 +965,15 @@ class RomanSourceCatalog:
         # Validate and convert units for all data arrays
         self._validate_and_convert_units()
 
-        # make measurements - the order of these calculations is important
-        log.info("Calculating segment properties")
-        self.calc_segment_properties()
-
-        # NOTE: we cannot access self.column_names before
-        # calc_aperture_photometry is called because the aperture columns
-        # names are dynmically generated
-        if self.cat_type != "forced_det":
-            log.info("Calculating aperture photometry")
-            self.calc_aperture_photometry()
-
-        daofind_cols = {"sharpness", "roundness1"}
-        if daofind_cols & set(self.column_names):
-            log.info("Calculating DAOFind properties")
-            self.calc_daofind_properties()
-
-        if any("nn_" in col for col in self.column_names):
-            log.info("Calculating nearest neighbor properties")
-            self.calc_nn_properties()
-
-        if any("psf" in col for col in self.column_names):
-            # TODO: compute force_full PSF photometry at forced positions
-            log.info("Calculating PSF photometry")
-            self.calc_psf_photometry()
+        # Run measurement steps in registry order. Order matters: each
+        # step may depend on attributes set by earlier steps (e.g.
+        # ``label`` and ``x_centroid`` from segment_cat are needed
+        # before nearest-neighbor and PSF photometry).
+        for label, factory, store_as, condition in self._measurement_registry:
+            if not condition():
+                continue
+            log.info(f"Calculating {label}")
+            self._apply_subcatalog(factory(), store_as=store_as)
 
         # put the measurements into a Table
         catalog = QTable()

@@ -602,16 +602,37 @@ class PSFCatalog:
         same one used to create the segmentation image.
     """
 
-    def __init__(self, model, psf_ref_model, xypos, mask=None):
+    def __init__(
+        self, model, psf_ref_model, xypos, mask=None, *, requested_properties=None
+    ):
         self.model = model
         self.psf_ref_model = psf_ref_model
         self.xypos = xypos
         self.mask = mask
 
-        self.names = list(self._name_map.values())
-        self.names.extend(["ra_psf", "dec_psf", "ra_psf_err", "dec_psf_err"])
+        if requested_properties is None:
+            self.properties = list(self.available_properties)
+        else:
+            requested = set(requested_properties)
+            self.properties = [
+                prop for prop in self.available_properties if prop in requested
+            ]
 
         self.calc_psf_photometry()
+
+    @lazyproperty
+    def available_properties(self):
+        """
+        The full set of source-property column names this catalog can
+        produce.
+        """
+        return (
+            *self._name_map.values(),
+            "ra_psf",
+            "dec_psf",
+            "ra_psf_err",
+            "dec_psf_err",
+        )
 
     @lazyproperty
     def psf_model(self):
@@ -678,17 +699,17 @@ class PSFCatalog:
                 init_params=init_params,
             )
 
-        # set _name_map columns as attributes of this instance
+        # Set these columns as attributes of this instance
         for old_name, new_name in self._name_map.items():
             value = results[old_name]
 
-            # change the photutils dtypes
+            # Change the photutils dtypes
             if np.issubdtype(value.dtype, np.integer):
                 value = value.astype(np.int32)
             elif np.issubdtype(value.dtype, np.floating):
                 value = value.astype(np.float32)
 
-            # handle any unit conversions
+            # Handle any unit conversions
             if new_name in ("x_psf", "y_psf", "x_psf_err", "y_psf_err"):
                 value *= u.pix
 

@@ -12,7 +12,12 @@ class NNCatalog:
     Class to compute nearest neighbors for a catalog of sources.
     """
 
-    def __init__(self, label, xypos, xypos_finite, pixel_scale):
+    # Source-property column names this catalog can produce
+    available_properties = ("nn_label", "nn_distance")
+
+    def __init__(
+        self, label, xypos, xypos_finite, pixel_scale, *, requested_properties=None
+    ):
         self.label = label
         self.xypos = xypos
         self.xypos_finite = xypos_finite
@@ -20,7 +25,13 @@ class NNCatalog:
 
         self.nonfinite_mask = ~np.isfinite(xypos).all(axis=1)
 
-        self.names = ["nn_label", "nn_distance"]
+        if requested_properties is None:
+            self.properties = list(self.available_properties)
+        else:
+            requested = set(requested_properties)
+            self.properties = [
+                prop for prop in self.available_properties if prop in requested
+            ]
 
     def __len__(self):
         """
@@ -36,7 +47,7 @@ class NNCatalog:
         if len(self) == 1:
             return [np.nan], [np.nan]
 
-        # non-finite xypos causes memory errors on linux, but not MacOS
+        # Non-finite xypos causes memory errors on linux, but not MacOS
         tree = KDTree(self.xypos_finite)
         qdist, qidx = tree.query(self.xypos_finite, k=[2])
         return np.transpose(qdist)[0], np.transpose(qidx)[0]
@@ -53,7 +64,7 @@ class NNCatalog:
             return np.int32(-1)
 
         nn_label = self.label[self._kdtree_query[1]].astype(np.int32)
-        # assign a label of -1 for non-finite xypos
+        # Assign a label of -1 for non-finite xypos
         nn_label[self.nonfinite_mask] = -1
 
         return nn_label
@@ -68,7 +79,7 @@ class NNCatalog:
         """
         nn_distance = self._kdtree_query[0]
         if len(self) != 1:
-            # assign a distance of np.nan for non-finite xypos
+            # Assign a distance of np.nan for non-finite xypos
             nn_distance[self.nonfinite_mask] = np.nan
 
         return (nn_distance * self.pixel_scale).astype(np.float32)
