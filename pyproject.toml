@@ -2,7 +2,7 @@
 name = "romancal"
 description = "Library for calibration of science observations from the Nancy Grace Roman Space Telescope"
 readme = "README.md"
-requires-python = ">=3.11,<3.14"  # <3.14 until stcal supports 3.14.
+requires-python = ">=3.11,<3.15"
 authors = [
     { name = "Roman calibration pipeline developers" },
 ]
@@ -12,13 +12,13 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
-    "astropy>=6.1.4",
+    "astropy>=6.1.4,<8",
     "jsonschema>=4.8",
     "numpy>=2.0",
     "scipy>=1.14.1",
     "requests>=2.26",
-    "photutils>=3.0",
-    "pyarrow>=16.0",  # for Table.read(...) support in astropy for parquet files
+    "photutils>=3.0,<4",
+    "pyarrow>=16.0",
     "pandas>=2.2.2",  # for Table.read(...) support in astropy for parquet files
     "pyyaml>=6.0",
     # Between the intermediate and build releases we want to keep

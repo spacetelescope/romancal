@@ -27,10 +27,11 @@ The actual process consists of the following steps:
  - Propagate the DQ flags from the reference file DQ array to the science data "PIXELDQ"
    array using numpy's ``bitwise_or`` function.
 
-Note that when applying the ``dq_init`` step to guide star data, the flags from the MASK reference
-file are propagated into the guide star dataset "dq" array, instead of the "pixeldq" array.
-The step identifies guide star data based on the following exposure type (exposure.type keyword attribute) values:
-WFI_WIM_ACQ, WFI_WIM_TRACK, WFI_WSM_ACQ1, WFI_WSM_ACQ2, WFI_WSM_TRACK.
+ - Flag pixels affected by the guide window readout. All pixels in the columns
+   spanned by the guide window are flagged ``GW_AFFECTED_DATA``. The pixels
+   within the guide window rectangle itself are additionally flagged
+   ``DO_NOT_USE``. The ``expand_gw_flagging`` step argument extends this
+   ``DO_NOT_USE`` region by a given number of pixels in each direction.
 
 Conversion from Level 1 uncal files
 -----------------------------------
