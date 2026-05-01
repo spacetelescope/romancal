@@ -14,20 +14,33 @@ from scipy import ndimage
 
 class DAOFindCatalog:
     """
-    Class to calculate DAOFind sharpness and roundness1 properties.
+    Class to calculate DAOFind ``sharpness`` and ``roundness1``
+    statistics for a set of source positions.
 
     Parameters
     ----------
     data : 2D `~numpy.ndarray`
-        The input 2D image data.
+        The input 2D image data (already background-subtracted and on
+        the same pixel grid as ``xypos``).
 
     xypos : 2D `~numpy.ndarray`
-        The x/y positions of the sources in the image.
+        Source positions with shape ``(N, 2)`` of ``(x, y)`` pixel
+        coordinates.
 
     kernel_fwhm : float
         The full-width at half-maximum (FWHM) of the Gaussian kernel
-        used for convolution. The kernel size is determined from this
-        value.
+        used for convolution, in pixels. The kernel size is derived from
+        this value.
+
+    requested_properties : iterable of str, optional
+        If given, restrict ``self.properties`` to this subset of
+        `available_properties` (``"sharpness"`` and/or ``"roundness1"``).
+
+    Raises
+    ------
+    ValueError
+        If ``data`` is not 2-D, ``xypos`` does not have shape ``(N, 2)``,
+        or ``kernel_fwhm`` is not positive.
     """
 
     # Source-property column names this catalog can produce

@@ -218,6 +218,12 @@ class ApertureCatalog:
 
     @lazyproperty
     def aperture_radius_name(self):
+        """
+        Two-digit aperture radius labels in tenths of arcsec.
+
+        For example, the aperture with radius ``0.2 arcsec`` produces
+        the label ``"02"`` and contributes the column ``aper02_flux``.
+        """
         return [
             f"{np.round((radius / 0.1 * u.arcsec).value).astype(int):02d}"
             for radius in self.aperture_radii["circle"]
@@ -271,9 +277,22 @@ class ApertureCatalog:
 
     def calc_aperture_photometry(self, subtract_local_bkg=False):
         """
-        Calculate the aperture photometry.
+        Calculate circular-aperture photometry for all sources.
 
-        The results are set as dynamic attributes on the class instance.
+        For each radius in `aperture_radii['circle_pix']` the flux
+        and flux error are stored on this instance as attributes
+        named ``aperXX_flux`` and ``aperXX_flux_err`` (see
+        `aperture_radius_name` for the ``XX`` formatting). When an
+        encircled-energy spline is configured, ``ee_fraction_XX``
+        attributes are also populated by `calc_ee_fractions`.
+
+        Parameters
+        ----------
+        subtract_local_bkg : bool, optional
+            If `True`, subtract the local annulus background
+            (`aper_bkg_flux`) scaled by the geometric overlap of each
+            aperture with the data array before assigning the flux
+            attributes.
         """
         apertures = [
             CircularAperture(self.xypos_finite, radius)
