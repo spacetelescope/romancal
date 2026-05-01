@@ -317,23 +317,32 @@ class SegmentCatalog:
                 "x_centroid_win",
                 "y_centroid_win",
             ):
-                value *= u.pix
+                if not isinstance(value, u.Quantity):
+                    value *= u.pix
 
             # pix**2 -> arcsec**2
             if new_name == "segment_area":
-                value = value.value * self.pixel_area.to(u.arcsec**2)
+                if isinstance(value, u.Quantity) and value.unit.is_equivalent(u.pix**2):
+                    value = value.value * self.pixel_area.to(u.arcsec**2)
 
             # pix -> arcsec
             if new_name in ("semimajor", "semiminor", "fwhm", "kron_radius"):
-                value = value.value * self.pixel_scale
+                if isinstance(value, u.Quantity) and value.unit.is_equivalent(u.pix):
+                    value = value.value * self.pixel_scale
 
             # 1 / pix**2 -> 1 / arcsec**-2
             if new_name in ("cxx", "cxy", "cyy"):
-                value = value.value / self.pixel_area.to(u.arcsec**2)
+                if isinstance(value, u.Quantity) and value.unit.is_equivalent(
+                    1 / u.pix**2
+                ):
+                    value = value.value / self.pixel_area.to(u.arcsec**2)
 
             # Remove dimensionless units
             if new_name == "ellipticity":
-                value = value.value
+                if isinstance(value, u.Quantity) and value.unit.is_equivalent(
+                    u.dimensionless_unscaled
+                ):
+                    value = value.value
 
             # Change dtypes for romancal catalog
             if new_name not in ("sky_centroid", "sky_centroid_win"):
