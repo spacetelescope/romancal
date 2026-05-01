@@ -37,9 +37,41 @@ class SourceCatalogStep(RomanStep):
     measurements.
 
     Parameters
-    -----------
+    ----------
     input : str, `ImageModel`, or `MosaicModel`
         Path to an ASDF file, or an `ImageModel` or `MosaicModel`.
+
+    Other Parameters
+    ----------------
+    bkg_boxsize : int, optional
+        Edge length, in pixels, of the square mesh boxes used by
+        `~photutils.background.Background2D` to estimate the global 2D
+        background.
+
+    kernel_fwhm : float, optional
+        Full-width-at-half-maximum, in pixels, of the Gaussian smoothing
+        kernel used for source detection.
+
+    snr_threshold : float, optional
+        Per-pixel signal-to-noise ratio above the background required
+        for a pixel to be considered part of a source.
+
+    npixels : int, optional
+        Minimum number of connected pixels above ``snr_threshold``
+        required for a detection to be retained as a source.
+
+    deblend : bool, optional
+        If `True`, deblend overlapping sources after detection.
+
+    suffix : str, optional
+        Suffix appended to the output filenames.  Default ``'cat'``.
+
+    fit_psf : bool, optional
+        If `True`, fit source PSFs.
+
+    forced_segmentation : str, optional
+        If non-empty, path to a pre-computed segmentation image to use
+        in place of fresh source detection (forced photometry mode).
     """
 
     class_alias = "source_catalog"
