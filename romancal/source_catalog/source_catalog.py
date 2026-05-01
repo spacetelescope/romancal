@@ -22,6 +22,9 @@ from romancal.source_catalog.daofind import DAOFindCatalog
 from romancal.source_catalog.neighbors import NNCatalog
 from romancal.source_catalog.psf import PSFCatalog
 from romancal.source_catalog.segment import SegmentCatalog
+from romancal.source_catalog.unit_conversion import (
+    validate_and_convert_to_flux_density,
+)
 
 from ._wcs_helpers import pixel_scale_angle_at_skycoord
 
@@ -198,57 +201,6 @@ class RomanSourceCatalog:
 
     def __len__(self):
         return self.n_sources
-
-    def _scale_data_arrays(self, factor, *, unit=None):
-        """
-        Multiply ``self.model.data``, ``self.model.err``, and the
-        convolved-data array by ``factor`` in place.
-
-        Parameters
-        ----------
-        factor : float or `~astropy.units.Quantity`
-            Multiplicative factor. If a `Quantity`, only its value is
-            applied here. Input ``unit`` to attach units after scaling.
-
-        unit : `~astropy.units.Unit`, optional
-            If given, attach this unit to each scaled array using the
-            in-place ``<<=`` operator after the multiplication.
-
-        Notes
-        -----
-        Dictionary syntax is used to assign back into ``self.model``
-        so that on-the-fly schema validation is not triggered for each
-        intermediate state of the array.
-        """
-        for attr in ("data", "err"):
-            self.model[attr] *= factor
-            if unit is not None:
-                self.model[attr] <<= unit
-
-        if self.convolved_data is not None:
-            self.convolved_data *= factor
-            if unit is not None:
-                self.convolved_data <<= unit
-
-    def convert_l2_to_sb(self):
-        """
-        Convert level-2 data from units of DN/s to MJy/sr (surface
-        brightness).
-        """
-        # The conversion is done in-place to avoid making copies of
-        # the data
-        self._scale_data_arrays(self.l2_to_sb)
-
-    def convert_sb_to_flux_density(self):
-        """
-        Convert level-3 data from units of MJy/sr (surface brightness)
-        to flux density units.
-
-        The flux density unit is defined by self.flux_unit.
-        """
-        # The conversion is done in-place to avoid making copies of
-        # the data
-        self._scale_data_arrays(self.sb_to_flux.value, unit=self.sb_to_flux.unit)
 
     @lazyproperty
     def _pixscale_angle(self):
@@ -650,130 +602,18 @@ class RomanSourceCatalog:
         """
         return self._schema.column_names
 
-    @staticmethod
-    def _get_compatible_unit(*arrays):
-        """
-        Check if multiple arrays have compatible units and return the
-        common unit.
-
-        This function verifies that either all arrays are plain NumPy
-        ndarrays (no units) or that they are all Astropy Quantity
-        objects with the same units.
-
-        Parameters
-        ----------
-        *arrays : `numpy.ndarray` or `astropy.units.Quantity`
-            The data arrays to check.
-
-        Returns
-        -------
-        result : astropy.units.Unit or None
-            The common `astropy.units.Unit` object if all are Quantity
-            arrays with the same unit. Otherwise, returns `None`.
-
-        Raises
-        ------
-        ValueError
-            If one input is a Quantity and another is not, or if they
-            are all Quantities but with different units.
-        """
-        if len(arrays) == 0:
-            return None
-
-        # Filter out None values
-        arrays = [arr for arr in arrays if arr is not None]
-        if len(arrays) == 0:
-            return None
-
-        # Check if first array is a Quantity
-        is_quantity = [isinstance(arr, u.Quantity) for arr in arrays]
-
-        # All must be quantities or all must not be quantities
-        if all(is_quantity):
-            # Check that all have the same unit
-            first_unit = arrays[0].unit
-            for i, arr in enumerate(arrays[1:], start=1):
-                if arr.unit != first_unit:
-                    raise ValueError(
-                        f"Incompatible units: array 0 has unit '{first_unit}' "
-                        f"but array {i} has unit '{arr.unit}'."
-                    )
-            return first_unit
-        elif not any(is_quantity):
-            return None
-        else:
-            # Mixed types
-            raise ValueError(
-                "Incompatible types: some arrays have units while others do not."
-            )
-
     def _validate_and_convert_units(self):
         """
         Validate that model data arrays have compatible units and
-        convert them to flux density units if needed.
-
-        This method checks that model.data and model.err have the same
-        units, then converts both them and convolved_data (if not None)
-        to the desired flux density unit (self.flux_unit).
-
-        Note: convolved_data is allowed to have different units from
-        model.data and model.err because it may come from a separate
-        source (e.g., a detection image from forced photometry).
-
-        For models without units:
-        - Level-2 (ImageModel): DN/s -> MJy/sr -> flux density
-        - Level-3 (MosaicModel): MJy/sr -> flux density
-
-        For models with units:
-        - Converts to self.flux_unit if the unit is compatible
-
-        Raises
-        ------
-        ValueError
-            If model.data and model.err have incompatible units.
+        convert them to ``self.flux_unit`` if needed.
         """
-        # Check that model.data and model.err have compatible units
-        unit = self._get_compatible_unit(self.model.data, self.model.err)
-
-        if unit is None:
-            # No units present - convert to flux density units
-            if isinstance(self.model, ImageModel):
-                # Level-2: DN/s -> MJy/sr
-                self.convert_l2_to_sb()
-            # Level-2 or Level-3: MJy/sr -> flux density
-            self.convert_sb_to_flux_density()
-        else:
-            # Units present - check compatibility and convert
-            if unit.is_equivalent(self.flux_unit):
-                # Convert to desired flux unit
-                self.model["data"] = self.model["data"].to(self.flux_unit)
-                self.model["err"] = self.model["err"].to(self.flux_unit)
-            else:
-                raise ValueError(
-                    f"Incompatible units: model data has unit '{unit}' "
-                    f"which is not equivalent to the desired flux unit "
-                    f"'{self.flux_unit}'."
-                )
-
-        # Handle convolved_data separately as it may have different units
-        if self.convolved_data is not None:
-            conv_unit = self._get_compatible_unit(self.convolved_data)
-            if conv_unit is None:
-                # No units - apply same conversion as model data
-                if isinstance(self.model, ImageModel):
-                    self.convolved_data *= self.l2_to_sb
-                self.convolved_data *= self.sb_to_flux.value
-                self.convolved_data <<= self.sb_to_flux.unit
-            else:
-                if conv_unit.is_equivalent(self.flux_unit):
-                    # Convert to desired flux unit
-                    self.convolved_data = self.convolved_data.to(self.flux_unit)
-                else:
-                    raise ValueError(
-                        f"Incompatible units: convolved_data has unit "
-                        f"'{conv_unit}' which is not equivalent to the "
-                        f"desired flux unit '{self.flux_unit}'."
-                    )
+        self.convolved_data = validate_and_convert_to_flux_density(
+            self.model,
+            self.convolved_data,
+            flux_unit=self.flux_unit,
+            l2_to_sb=self.l2_to_sb,
+            sb_to_flux=self.sb_to_flux,
+        )
 
     def _run_measurements(self):
         """
