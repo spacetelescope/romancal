@@ -1022,25 +1022,36 @@ class RomanSourceCatalog:
                         f"desired flux unit '{self.flux_unit}'."
                     )
 
-    @lazyproperty
-    def catalog(self):
+    def _run_measurements(self):
         """
-        The final source catalog as an Astropy Table.
-        """
-        # Validate and convert units for all data arrays
-        self._validate_and_convert_units()
+        Run each enabled `MeasurementStep` in registry order.
 
-        # Run measurement steps in registry order. Order matters: each
-        # step may depend on attributes set by earlier steps (e.g.,
-        # ``label`` and ``x_centroid`` from segment_cat are needed
-        # before nearest-neighbor and PSF photometry).
+        Order matters: each step may depend on attributes set by earlier
+        steps (e.g. ``label`` and ``x_centroid`` from ``segment_cat``
+        are needed before nearest-neighbor and PSF photometry). Steps
+        whose ``condition()`` returns `False` are skipped silently.
+        """
         for step in self._measurement_registry:
             if not step.condition():
                 continue
             log.info(f"Calculating {step.label}")
             self._apply_subcatalog(step.factory(), store_as=step.store_as)
 
-        # Put the measurements into a Table
+    def _assemble_catalog(self):
+        """
+        Build the output `~astropy.table.Table` from this catalog's
+        per-source attributes.
+
+        Returns
+        -------
+        catalog : `~astropy.table.Table`
+            One column per name in `column_names`, with column
+            descriptions sourced from ``self.cat_model``, ``forced_``
+            prefixes applied where applicable, and metadata
+            copied from `update_metadata`. The result is a plain
+            `~astropy.table.Table` (not `QTable`) so columns are not
+            `~astropy.units.Quantity`.
+        """
         catalog = QTable()
         for column in self.column_names:
             catalog[column] = getattr(self, column)
@@ -1053,6 +1064,19 @@ class RomanSourceCatalog:
         catalog = self._prefix_forced(catalog)
 
         # Convert QTable to Table to avoid having Quantity columns
-        catalog = Table(catalog)
+        return Table(catalog)
 
-        return catalog
+    @lazyproperty
+    def catalog(self):
+        """
+        The final source catalog as an Astropy Table.
+        """
+        # Validate and convert units for all data arrays.
+        self._validate_and_convert_units()
+
+        # Run all enabled measurement steps in registry order.
+        self._run_measurements()
+
+        # Assemble the column values populated by the measurement steps
+        # into the output Table.
+        return self._assemble_catalog()
