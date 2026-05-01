@@ -280,16 +280,8 @@ def get_gridded_psf_model(psf_ref_model, focus=0, spectral_type=1):
     for index in range(len(psf_positions_x)):
         position_list.append([psf_positions_x[index], psf_positions_y[index]])
 
-    # integrate over the native pixel scale
-    oversample = psf_ref_model.meta.oversample
-    pixel_response_kernel = Box2DKernel(width=oversample)
-    for i in range(psf_images.shape[0]):
-        psf = psf_images[i, :, :]
-        im = convolve(psf, pixel_response_kernel) * oversample**2
-        psf_images[i, :, :] = im
-
     meta["grid_xypos"] = position_list
-    meta["oversampling"] = oversample
+    meta["oversampling"] = psf_ref_model.meta.oversample
     nd = NDData(psf_images, meta=meta)
     model = GriddedPSFModel(nd)
 
