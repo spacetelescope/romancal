@@ -9,9 +9,8 @@ from roman_datamodels.dqflags import pixel
 if TYPE_CHECKING:
     from roman_datamodels.datamodels import RampModel, RefpixRefModel
 
-from .data import Coefficients, StandardView
 
-import numpy as np
+from .data import Coefficients, StandardView
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -32,7 +31,7 @@ def run_steps(
 
     # Read in the data from the datamodels
     log.debug("Reading data from datamodel into single array")
-    
+
     if zero_bad_ref_pix:
         mask_bad_ref_pixels(datamodel)
 
