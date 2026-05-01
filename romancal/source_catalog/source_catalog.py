@@ -4,6 +4,8 @@ Module to calculate the source catalog.
 
 import logging
 import re
+from collections.abc import Callable
+from dataclasses import dataclass
 
 import astropy.units as u
 import numpy as np
@@ -24,6 +26,41 @@ from ._wcs_helpers import pixel_scale_angle_at_skycoord
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
+
+
+@dataclass(frozen=True)
+class MeasurementStep:
+    """
+    A single step in the measurement registry used to assemble the
+    source catalog.
+
+    Attributes
+    ----------
+    label : str
+        Human-readable name used in log messages (e.g. ``"aperture
+        photometry"``).
+
+    factory : callable
+        Zero-argument callable returning a sub-catalog instance for
+        this step (e.g. an `ApertureCatalog`). Called only when
+        ``condition()`` is True.
+
+    store_as : str or None
+        Attribute name on `RomanSourceCatalog` under which to retain the
+        sub-catalog after measurement, or `None` if the sub-catalog is
+        consumed during attribute copy and does not need to be kept.
+
+    condition : callable
+        Zero-argument callable returning `True` if this step should
+        run for the current catalog (used to skip steps whose columns
+        were not requested or which do not apply to the current catalog
+        type).
+    """
+
+    label: str
+    factory: Callable[[], object]
+    store_as: str | None
+    condition: Callable[[], bool]
 
 
 class RomanSourceCatalog:
@@ -362,53 +399,53 @@ class RomanSourceCatalog:
     @property
     def _measurement_registry(self):
         """
-        Ordered list of measurement steps used to build the catalog.
-
-        Each entry is ``(label, factory, store_as, condition)``:
-
-        * ``label`` - human-readable name for log messages.
-        * ``factory`` - zero-arg callable returning the sub-catalog.
-        * ``store_as`` - attribute name to store the sub-catalog as,
-          or `None` if it does not need to be retained.
-        * ``condition`` - zero-arg callable returning `True` if the
-          step should run.
+        Ordered list of `MeasurementStep` entries used to build the
+        catalog.
 
         Order matters: segment must be first because downstream steps
         depend on its outputs (``label``, ``x_centroid``, etc.) via
         ``self._xypos``. Aperture must come before steps that may
         reference its outputs.
+
+        Returns
+        -------
+        result : list of `MeasurementStep`
+            Each entry's ``label``, ``factory``, ``store_as`` and
+            ``condition`` fields control how the corresponding
+            sub-catalog is constructed and stored. See `MeasurementStep`
+            for field semantics.
         """
         cols = set(self.column_names)
         return [
-            (
-                "segment properties",
-                self._make_segment_cat,
-                "segment_cat",
-                lambda: True,
+            MeasurementStep(
+                label="segment properties",
+                factory=self._make_segment_cat,
+                store_as="segment_cat",
+                condition=lambda: True,
             ),
-            (
-                "aperture photometry",
-                self._make_aperture_cat,
-                "aperture_cat",
-                lambda: self.cat_type != "forced_det",
+            MeasurementStep(
+                label="aperture photometry",
+                factory=self._make_aperture_cat,
+                store_as="aperture_cat",
+                condition=lambda: self.cat_type != "forced_det",
             ),
-            (
-                "DAOFind properties",
-                self._make_daofind_cat,
-                None,
-                lambda: bool({"sharpness", "roundness1"} & cols),
+            MeasurementStep(
+                label="DAOFind properties",
+                factory=self._make_daofind_cat,
+                store_as=None,
+                condition=lambda: bool({"sharpness", "roundness1"} & cols),
             ),
-            (
-                "nearest neighbor properties",
-                self._make_nn_cat,
-                None,
-                lambda: any(col.startswith("nn_") for col in cols),
+            MeasurementStep(
+                label="nearest neighbor properties",
+                factory=self._make_nn_cat,
+                store_as=None,
+                condition=lambda: any(col.startswith("nn_") for col in cols),
             ),
-            (
-                "PSF photometry",
-                self._make_psf_cat,
-                None,
-                lambda: any("psf" in col for col in cols),
+            MeasurementStep(
+                label="PSF photometry",
+                factory=self._make_psf_cat,
+                store_as=None,
+                condition=lambda: any("psf" in col for col in cols),
             ),
         ]
 
@@ -997,11 +1034,11 @@ class RomanSourceCatalog:
         # step may depend on attributes set by earlier steps (e.g.,
         # ``label`` and ``x_centroid`` from segment_cat are needed
         # before nearest-neighbor and PSF photometry).
-        for label, factory, store_as, condition in self._measurement_registry:
-            if not condition():
+        for step in self._measurement_registry:
+            if not step.condition():
                 continue
-            log.info(f"Calculating {label}")
-            self._apply_subcatalog(factory(), store_as=store_as)
+            log.info(f"Calculating {step.label}")
+            self._apply_subcatalog(step.factory(), store_as=step.store_as)
 
         # Put the measurements into a Table
         catalog = QTable()
