@@ -306,8 +306,8 @@ class RomanSourceCatalog:
     def _make_aperture_cat(self):
         return ApertureCatalog(
             self.model,
-            self._pixel_scale,
             self._xypos_finite,
+            self._pixel_scale,
             ee_spline=self.ee_spline,
             requested_properties=self.column_names,
         )
@@ -403,15 +403,21 @@ class RomanSourceCatalog:
         try:
             skycell_name = self.model.meta.wcsinfo.skycell_name
             pixel_scale = self.model.meta.wcsinfo.pixel_scale_ref
-        except AttributeError:  # L2 image or unrecognized schema, give up
+        except AttributeError:
+            # L2 image or unrecognized schema: skycell-based spatial id
+            # is not defined.
+            log.warning(
+                "meta.wcsinfo missing skycell_name/pixel_scale_ref; "
+                "flagged_spatial_id will be zero.",
+            )
             return bad_return
 
         try:
             sc = skymap.SkyCells.from_names([skycell_name])
         except KeyError:
             log.warning(
-                f"Could not find skycell {skycell_name}, "
-                "not filling out flagged_spatial_index."
+                f"Could not find skycell {skycell_name}; "
+                "flagged_spatial_id will be zero.",
             )
             return bad_return
 
@@ -498,15 +504,14 @@ class RomanSourceCatalog:
         # Sources whose centroid pixel is not finite
         flags[~xymask] = pixel.DO_NOT_USE
 
-        try:
-            # L2 images have a dq array
+        # Dispatch on data model type. L2 (ImageModel) has a ``dq``
+        # array, while L3 mosaics have a ``weight`` array.
+        if hasattr(self.model, "dq"):
+            # L2 images: propagate the DO_NOT_USE flag from the DQ array.
             dqflags = self.model.dq[xyidx[:, 1], xyidx[:, 0]]
-            # If dqflags contains the DO_NOT_USE flag, set to DO_NOT_USE
-            # (dq=1), otherwise 0.
             flags[xymask] = dqflags & pixel.DO_NOT_USE
-
-        except AttributeError:
-            # L3 images
+        else:
+            # L3 mosaics: zero-weight pixels are unusable.
             mask = self.model.weight == 0
             flags[xymask] = mask[xyidx[:, 1], xyidx[:, 0]].astype(np.int32)
 

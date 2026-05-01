@@ -17,7 +17,39 @@ log = logging.getLogger(__name__)
 
 class ApertureCatalog:
     """
-    Class to calculate aperture photometry.
+    Class to calculate circular-aperture photometry and a local
+    background estimate for each source.
+
+    The catalog produces one ``aperXX_flux`` / ``aperXX_flux_err``
+    column pair per radius in `CIRCLE_APERTURE_RADII_ARCSEC`, plus the
+    ``aper_bkg_flux`` / ``aper_bkg_flux_err`` columns from a circular
+    annulus around each source.
+
+    Parameters
+    ----------
+    model : `~roman_datamodels.datamodels.ImageModel` or \
+            `~roman_datamodels.datamodels.MosaicModel`
+        The data model providing ``model.data`` and ``model.err`` (both
+        carrying surface-brightness units).
+
+    xypos_finite : 2D `~numpy.ndarray`
+        Source positions with shape ``(N, 2)`` of ``(x, y)`` pixel
+        coordinates. Non-finite positions must already have been
+        replaced with finite placeholders by the caller.
+
+    pixel_scale : `~astropy.units.Quantity`
+        The pixel scale (with arcsec-compatible units), used to convert
+        the configured radii from arcsec to pixels.
+
+    ee_spline : callable, optional
+        Encircled-energy spline mapping aperture radius (pixels) to
+        encircled-energy fraction. Required for ``is_extended`` and
+        the per-aperture ``ee_fraction_*`` attributes; if `None`, the
+        extendedness criterion falls back to all-False with a warning.
+
+    requested_properties : iterable of str, optional
+        If given, restrict ``self.properties`` to this subset of
+        `available_properties`.
     """
 
     # Define the circular aperture radii in arcsec. The output flux
@@ -42,8 +74,8 @@ class ApertureCatalog:
     def __init__(
         self,
         model,
-        pixel_scale,
         xypos_finite,
+        pixel_scale,
         *,
         ee_spline=None,
         requested_properties=None,

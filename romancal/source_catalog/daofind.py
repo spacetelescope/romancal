@@ -34,6 +34,23 @@ class DAOFindCatalog:
     available_properties = ("sharpness", "roundness1")
 
     def __init__(self, data, xypos, kernel_fwhm, *, requested_properties=None):
+        data = np.asarray(data)
+        if data.ndim != 2:
+            msg = f"data must be a 2-D array; got shape {data.shape}."
+            raise ValueError(msg)
+
+        xypos = np.asarray(xypos)
+        if xypos.ndim != 2 or xypos.shape[1] != 2:
+            msg = (
+                "xypos must have shape (N, 2) of (x, y) pixel "
+                f"positions; got shape {xypos.shape}."
+            )
+            raise ValueError(msg)
+
+        if kernel_fwhm <= 0:
+            msg = f"kernel_fwhm must be positive; got {kernel_fwhm}."
+            raise ValueError(msg)
+
         self.data = data
         self.xypos = xypos
         self.kernel_sigma = kernel_fwhm * gaussian_fwhm_to_sigma

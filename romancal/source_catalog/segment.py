@@ -206,6 +206,9 @@ class SegmentCatalog:
         """
         Convert flux (and error) to AB magnitude (and error).
 
+        For non-positive fluxes (``flux <= 0``), both ``abmag`` and
+        ``abmag_err`` are set to NaN.
+
         Parameters
         ----------
         flux, flux_err : `~numpy.ndarray`
@@ -216,7 +219,10 @@ class SegmentCatalog:
         abmag, abmag_err : `~astropy.ndarray`
             The output AB magnitude and error arrays.
         """
-        # Ignore RunTimeWarning if flux or flux_err contains NaNs
+        # Mask non-positive fluxes
+        invalid = flux.value <= 0
+
+        # Ignore RunTimeWarnings from masked/non-finite values.
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
 
@@ -224,10 +230,8 @@ class SegmentCatalog:
             abmag_err = 2.5 * np.log10(1.0 + (flux_err / flux))
             abmag_err = abmag_err.value * u.ABmag
 
-            # Handle negative fluxes
-            idx = flux.value < 0
-            abmag[idx] = np.nan
-            abmag_err[idx] = np.nan
+            abmag[invalid] = np.nan
+            abmag_err[invalid] = np.nan
 
         return abmag, abmag_err
 

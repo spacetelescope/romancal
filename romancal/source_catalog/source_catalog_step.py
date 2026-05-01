@@ -86,10 +86,17 @@ class SourceCatalogStep(RomanStep):
             # except for those in ignored_dq_flags.
             # TODO: revisit these flags when CRDS reference files are updated
             ignored_dq_flags = pixel.NO_LIN_CORR
-            dq_mask = np.any(model.dq[..., None] & ~ignored_dq_flags, axis=-1)
+            if model.dq.shape != model.data.shape:
+                msg = (
+                    f"model.dq shape {model.dq.shape} does not match "
+                    f"model.data shape {model.data.shape}; expected a 2D "
+                    "DQ array."
+                )
+                raise ValueError(msg)
+            dq_mask = (model.dq & ~ignored_dq_flags) != 0
 
             # TODO: to set the mask to True for *only* dq_flags use:
-            # dq_mask = np.any(model.dq[..., None] & dq_flags, axis=-1)
+            # dq_mask = (model.dq & dq_flags) != 0
             mask |= dq_mask
 
         # Initialize the source catalog model, copying the metadata

@@ -93,7 +93,7 @@ def _make_aperture_inputs():
     model = SimpleNamespace(data=data, err=err)
     pixel_scale = 0.11 * u.arcsec
     xypos = np.array([[25.0, 25.0]])
-    return model, pixel_scale, xypos
+    return model, xypos, pixel_scale
 
 
 class TestApertureCatalogProperties:
@@ -109,8 +109,8 @@ class TestApertureCatalogProperties:
         ]
 
     def test_available_properties_includes_flux_and_err_and_bkg(self):
-        model, pixel_scale, xypos = _make_aperture_inputs()
-        cat = ApertureCatalog(model, pixel_scale, xypos)
+        model, xypos, pixel_scale = _make_aperture_inputs()
+        cat = ApertureCatalog(model, xypos, pixel_scale)
         available = set(cat.available_properties)
         # Every flux column should appear with a matching `_err`
         for name in ApertureCatalog.aperture_flux_colnames_for_radii():
@@ -120,28 +120,28 @@ class TestApertureCatalogProperties:
         assert "aper_bkg_flux_err" in available
 
     def test_default_properties_match_available(self):
-        model, pixel_scale, xypos = _make_aperture_inputs()
-        cat = ApertureCatalog(model, pixel_scale, xypos)
+        model, xypos, pixel_scale = _make_aperture_inputs()
+        cat = ApertureCatalog(model, xypos, pixel_scale)
         assert list(cat.properties) == list(cat.available_properties)
 
     def test_requested_properties_filter(self):
-        model, pixel_scale, xypos = _make_aperture_inputs()
+        model, xypos, pixel_scale = _make_aperture_inputs()
         requested = ["aper02_flux", "aper02_flux_err", "aper_bkg_flux"]
-        cat = ApertureCatalog(model, pixel_scale, xypos, requested_properties=requested)
+        cat = ApertureCatalog(model, xypos, pixel_scale, requested_properties=requested)
         assert set(cat.properties) == set(requested)
         # Order is preserved from `available_properties`
         assert cat.properties == [n for n in cat.available_properties if n in requested]
 
     def test_requested_properties_unknown_ignored(self):
-        model, pixel_scale, xypos = _make_aperture_inputs()
+        model, xypos, pixel_scale = _make_aperture_inputs()
         cat = ApertureCatalog(
-            model, pixel_scale, xypos, requested_properties=["unrelated"]
+            model, xypos, pixel_scale, requested_properties=["unrelated"]
         )
         assert cat.properties == []
 
     def test_is_extended_no_ee_spline_returns_all_false(self):
-        model, pixel_scale, xypos = _make_aperture_inputs()
-        cat = ApertureCatalog(model, pixel_scale, xypos)
+        model, xypos, pixel_scale = _make_aperture_inputs()
+        cat = ApertureCatalog(model, xypos, pixel_scale)
         result = cat.is_extended
         assert result.dtype == bool
         assert result.shape == (xypos.shape[0],)
