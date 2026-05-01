@@ -152,18 +152,45 @@ class RomanSourceCatalog:
     def __len__(self):
         return self.n_sources
 
+    def _scale_data_arrays(self, factor, *, unit=None):
+        """
+        Multiply ``self.model.data``, ``self.model.err``, and the
+        convolved-data array by ``factor`` in place.
+
+        Parameters
+        ----------
+        factor : float or `~astropy.units.Quantity`
+            Multiplicative factor. If a `Quantity`, only its value is
+            applied here. Input ``unit`` to attach units after scaling.
+
+        unit : `~astropy.units.Unit`, optional
+            If given, attach this unit to each scaled array using the
+            in-place ``<<=`` operator after the multiplication.
+
+        Notes
+        -----
+        Dictionary syntax is used to assign back into ``self.model``
+        so that on-the-fly schema validation is not triggered for each
+        intermediate state of the array.
+        """
+        for attr in ("data", "err"):
+            self.model[attr] *= factor
+            if unit is not None:
+                self.model[attr] <<= unit
+
+        if self.convolved_data is not None:
+            self.convolved_data *= factor
+            if unit is not None:
+                self.convolved_data <<= unit
+
     def convert_l2_to_sb(self):
         """
         Convert level-2 data from units of DN/s to MJy/sr (surface
         brightness).
         """
         # The conversion is done in-place to avoid making copies of
-        # the data. Use dictionary syntax to set the value to avoid
-        # on-the-fly validation.
-        for attr in ("data", "err"):
-            self.model[attr] *= self.l2_to_sb
-        if self.convolved_data is not None:
-            self.convolved_data *= self.l2_to_sb
+        # the data
+        self._scale_data_arrays(self.l2_to_sb)
 
     def convert_sb_to_flux_density(self):
         """
@@ -173,14 +200,8 @@ class RomanSourceCatalog:
         The flux density unit is defined by self.flux_unit.
         """
         # The conversion is done in-place to avoid making copies of
-        # the data. Use dictionary syntax to set the value to avoid
-        # on-the-fly validation.
-        for attr in ("data", "err"):
-            self.model[attr] *= self.sb_to_flux.value
-            self.model[attr] <<= self.sb_to_flux.unit
-        if self.convolved_data is not None:
-            self.convolved_data *= self.sb_to_flux.value
-            self.convolved_data <<= self.sb_to_flux.unit
+        # the data
+        self._scale_data_arrays(self.sb_to_flux.value, unit=self.sb_to_flux.unit)
 
     @lazyproperty
     def _pixscale_angle(self):
