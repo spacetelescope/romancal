@@ -136,7 +136,7 @@ class RomanSourceCatalog:
         self.meta = {}
         self.aperture_cat = None
 
-        # define flux unit conversion factors
+        # Define flux unit conversion factors
         if "photometry" in self.model.meta:
             self.l2_to_sb = self.model.meta.photometry.conversion_megajanskys
         else:
@@ -157,8 +157,9 @@ class RomanSourceCatalog:
         Convert level-2 data from units of DN/s to MJy/sr (surface
         brightness).
         """
-        # the conversion is done in-place to avoid making copies of the data;
-        # use dictionary syntax to set the value to avoid on-the-fly validation
+        # The conversion is done in-place to avoid making copies of
+        # the data. Use dictionary syntax to set the value to avoid
+        # on-the-fly validation.
         for attr in ("data", "err"):
             self.model[attr] *= self.l2_to_sb
         if self.convolved_data is not None:
@@ -171,8 +172,9 @@ class RomanSourceCatalog:
 
         The flux density unit is defined by self.flux_unit.
         """
-        # the conversion is done in-place to avoid making copies of the data;
-        # use dictionary syntax to set the value to avoid on-the-fly validation
+        # The conversion is done in-place to avoid making copies of
+        # the data. Use dictionary syntax to set the value to avoid
+        # on-the-fly validation.
         for attr in ("data", "err"):
             self.model[attr] *= self.sb_to_flux.value
             self.model[attr] <<= self.sb_to_flux.unit
@@ -187,8 +189,8 @@ class RomanSourceCatalog:
         counterclockwise from the positive x axis to the "North" axis of
         the celestial coordinate system.
 
-        The pixel is returns as a Quantity in arcsec and the angle is
-        returned as a Quantity in degrees.
+        The pixel scale is returned as a Quantity in arcsec and the
+        angle is returned as a Quantity in degrees.
 
         Both are measured at the center of the image.
         """
@@ -255,7 +257,7 @@ class RomanSourceCatalog:
     def _xypos_finite(self):
         """
         The (x, y) source positions where non-finite values have been
-        replaced by to a large negative value.
+        replaced with a large negative value.
 
         This is used with functions that fail with non-finite centroid
         values.
@@ -379,13 +381,13 @@ class RomanSourceCatalog:
                 "nearest neighbor properties",
                 self._make_nn_cat,
                 None,
-                lambda: any(c.startswith("nn_") for c in cols),
+                lambda: any(col.startswith("nn_") for col in cols),
             ),
             (
                 "PSF photometry",
                 self._make_psf_cat,
                 None,
-                lambda: any("psf" in c for c in cols),
+                lambda: any("psf" in col for col in cols),
             ),
         ]
 
@@ -493,14 +495,14 @@ class RomanSourceCatalog:
         xyidx = np.round(self._xypos[xymask, :]).astype(int)
         flags = np.full(self._xypos.shape[0], 0, dtype=np.int32)
 
-        # sources whose centroid pixel is not finite
+        # Sources whose centroid pixel is not finite
         flags[~xymask] = pixel.DO_NOT_USE
 
         try:
             # L2 images have a dq array
             dqflags = self.model.dq[xyidx[:, 1], xyidx[:, 0]]
-            # if dqflags contains the DO_NOT_USE flag, set to DO_NOT_USE
-            # (dq=1), otherwise 0
+            # If dqflags contains the DO_NOT_USE flag, set to DO_NOT_USE
+            # (dq=1), otherwise 0.
             flags[xymask] = dqflags & pixel.DO_NOT_USE
 
         except AttributeError:
@@ -527,7 +529,7 @@ class RomanSourceCatalog:
         """
         ver_key = "versions"
         if "version" in self.meta:
-            # depends on photutils version
+            # Depends on photutils version
             self.meta[ver_key] = self.meta.pop("version")
 
         ver_dict = self.meta.get("versions", None)
@@ -545,13 +547,13 @@ class RomanSourceCatalog:
             ver_dict = {key: ver_dict[key] for key in packages if key in ver_dict}
             self.meta[ver_key] = ver_dict
 
-        # reorder the metadata dictionary
+        # Reorder the metadata dictionary
         self.meta.pop("local_bkg_width", None)
         keys = ["date", "versions", "aperture_mask_method", "kron_params"]
         old_meta = self.meta.copy()
         self.meta = {key: old_meta.get(key, None) for key in keys}
 
-        # reformat the aperture radii for the metadata to remove
+        # Reformat the aperture radii for the metadata to remove
         # Quantity objects
         if self.aperture_cat is not None:
             aper_radii = self.aperture_cat.aperture_radii.copy()
@@ -573,16 +575,15 @@ class RomanSourceCatalog:
         """
         An ordered list of the aperture column names.
         """
-        # define the aperture background flux column names
+        # Define the aperture background flux column names
         aper_colnames = [
             "aper_bkg_flux",
             "aper_bkg_flux_err",
         ]
 
-        # define the aperture flux column names,
-        # e.g, aper01_flux, aper01_flux_err, etc.
-        # These are static and so can be computed before the
-        # ApertureCatalog is instantiated.
+        # Define the aperture flux column names, e.g, aper01_flux,
+        # aper01_flux_err, etc. These are static and so can be computed
+        # before the ApertureCatalog is instantiated.
         if self.aperture_cat is not None:
             flux_colnames = self.aperture_cat.aperture_flux_colnames
         else:
@@ -640,8 +641,9 @@ class RomanSourceCatalog:
     @lazyproperty
     def band_colnames(self):
         """
-        Band-specific columns for the multiband catalog. Also used for
-        the forced catalog.
+        Band-specific columns for the multiband catalog.
+
+        Also used for the forced catalog.
         """
         xypsf_colnames = ["x_psf", "x_psf_err", "y_psf", "y_psf_err"]
         skypsf_colnames = ["ra_psf", "dec_psf", "ra_psf_err", "dec_psf_err"]
@@ -818,13 +820,13 @@ class RomanSourceCatalog:
         catalog : `~astropy.table.Table`
             The updated source catalog.
         """
-        # prefix all columns (except "label") with "forced_"
+        # Prefix all columns (except "label") with "forced_"
         if self.cat_type == "forced_det":
             for colname in catalog.colnames:
                 if colname != "label":
                     catalog.rename_column(colname, f"forced_{colname}")
 
-        # prefix the self.band_colnames with "forced_"
+        # Prefix the self.band_colnames with "forced_"
         if self.cat_type == "forced_full":
             for colname in [*self.band_colnames, "warning_flags"]:
                 if colname in catalog.colnames and colname != "label":
@@ -966,7 +968,7 @@ class RomanSourceCatalog:
         self._validate_and_convert_units()
 
         # Run measurement steps in registry order. Order matters: each
-        # step may depend on attributes set by earlier steps (e.g.
+        # step may depend on attributes set by earlier steps (e.g.,
         # ``label`` and ``x_centroid`` from segment_cat are needed
         # before nearest-neighbor and PSF photometry).
         for label, factory, store_as, condition in self._measurement_registry:
@@ -975,7 +977,7 @@ class RomanSourceCatalog:
             log.info(f"Calculating {label}")
             self._apply_subcatalog(factory(), store_as=store_as)
 
-        # put the measurements into a Table
+        # Put the measurements into a Table
         catalog = QTable()
         for column in self.column_names:
             catalog[column] = getattr(self, column)
@@ -984,10 +986,10 @@ class RomanSourceCatalog:
         self.update_metadata()
         catalog.meta.update(self.meta)
 
-        # prefix select columns with "forced_" for the forced catalog
+        # Prefix select columns with "forced_" for the forced catalog
         catalog = self._prefix_forced(catalog)
 
-        # convert QTable to Table to avoid having Quantity columns
+        # Convert QTable to Table to avoid having Quantity columns
         catalog = Table(catalog)
 
         return catalog

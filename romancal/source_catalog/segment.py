@@ -38,7 +38,7 @@ class SegmentCatalog:
 
     pixel_area : `~astropy.units.Quantity`
         The pixel area in steradians. This is used to convert various
-        measuments from pixels to arcseconds.
+        measurements from pixels to arcseconds.
 
     wcs_angle : `~astropy.units.Quantity`
         The angle (as a Quantity in degrees) measured counterclockwise

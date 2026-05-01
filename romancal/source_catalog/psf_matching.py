@@ -164,7 +164,7 @@ def get_filter_wavelength(filter_name):
 
     Returns
     -------
-    wavelength : int
+    wavelength : float
         Approximate wavelength in microns (e.g., 1.58, 1.84), or 0 if
         cannot parse.
     """

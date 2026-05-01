@@ -24,9 +24,9 @@ class DAOFindCatalog:
     xypos : 2D `~numpy.ndarray`
         The x/y positions of the sources in the image.
 
-    kernel_sigma : float
-        The standard deviation of the Gaussian kernel used for
-        convolution. The kernel size is determined by the kernel_sigma
+    kernel_fwhm : float
+        The full-width at half-maximum (FWHM) of the Gaussian kernel
+        used for convolution. The kernel size is determined from this
         value.
     """
 

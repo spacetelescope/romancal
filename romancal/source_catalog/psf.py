@@ -124,7 +124,7 @@ def _downsample_by_interpolation(image, downsample):
     """Downsample an image by interpolating it, preserving the centering.
 
     This is conceptually similar to taking every nth pixel of the image,
-    but is careful about keeping the image centered and.  This is important
+    but is careful about keeping the image centered. This is important
     for PSFs, for example, where we want to keep the PSF precisely centered,
     including for cases where the shape of the image and the amount of
     downsampling don't align neatly.
@@ -252,7 +252,7 @@ def get_gridded_psf_model(psf_ref_model, focus=0, spectral_type=1):
     reference files in CRDS.
     The input reference files have 3 focus positions and this is using
     the in-focus images. There are also three spectral types that are
-    available and this code uses the M5V spectal type.
+    available and this code uses the G2V spectral type.
 
     Parameters
     ----------
