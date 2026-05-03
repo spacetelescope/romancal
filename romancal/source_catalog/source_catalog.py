@@ -290,127 +290,6 @@ class RomanSourceCatalog:
         xypos[nanmask] = -1000.0
         return xypos
 
-    def _apply_subcatalog(self, subcatalog, *, store_as=None):
-        """
-        Copy the named columns from a sub-catalog onto ``self`` and,
-        optionally, also store the sub-catalog itself for later use.
-
-        Parameters
-        ----------
-        subcatalog : object
-            A sub-catalog instance with ``properties`` (iterable of
-            attribute names to copy) and optionally a ``meta`` dict.
-        store_as : str or `None`
-            If given, also store the sub-catalog as ``self.<store_as>``.
-        """
-        meta = getattr(subcatalog, "meta", None)
-        if meta is not None:
-            self.meta.update(meta)
-        for name in subcatalog.properties:
-            setattr(self, name, getattr(subcatalog, name))
-        if store_as is not None:
-            setattr(self, store_as, subcatalog)
-
-    def _make_segment_cat(self):
-        return SegmentCatalog(
-            self.model,
-            self.segment_img,
-            self.convolved_data,
-            self.mask,
-            self._pixel_area,
-            self._wcs_angle,
-            detection_cat=self.detection_cat,
-            requested_properties=self.column_names,
-        )
-
-    def _make_aperture_cat(self):
-        return ApertureCatalog(
-            self.model,
-            self._xypos_finite,
-            self._pixel_scale,
-            ee_spline=self.ee_spline,
-            requested_properties=self.column_names,
-        )
-
-    def _make_daofind_cat(self):
-        return DAOFindCatalog(
-            self.model.data,
-            self._xypos_finite,
-            self.kernel_fwhm,
-            requested_properties=self.column_names,
-        )
-
-    def _make_nn_cat(self):
-        return NNCatalog(
-            self.label,
-            self._xypos,
-            self._xypos_finite,
-            self._pixel_scale,
-            requested_properties=self.column_names,
-        )
-
-    def _make_psf_cat(self):
-        return PSFCatalog(
-            self.model,
-            self.psf_model,
-            self._xypos,
-            self.mask,
-            requested_properties=self.column_names,
-        )
-
-    @property
-    def _measurement_registry(self):
-        """
-        Ordered list of `MeasurementStep` entries used to build the
-        catalog.
-
-        Order matters: segment must be first because downstream steps
-        depend on its outputs (``label``, ``x_centroid``, etc.) via
-        ``self._xypos``. Aperture must come before steps that may
-        reference its outputs.
-
-        Returns
-        -------
-        result : list of `MeasurementStep`
-            Each entry's ``label``, ``factory``, ``store_as`` and
-            ``condition`` fields control how the corresponding
-            sub-catalog is constructed and stored. See `MeasurementStep`
-            for field semantics.
-        """
-        cols = set(self.column_names)
-        return [
-            MeasurementStep(
-                label="segment properties",
-                factory=self._make_segment_cat,
-                store_as="segment_cat",
-                condition=lambda: True,
-            ),
-            MeasurementStep(
-                label="aperture photometry",
-                factory=self._make_aperture_cat,
-                store_as="aperture_cat",
-                condition=lambda: self.cat_type != "forced_det",
-            ),
-            MeasurementStep(
-                label="DAOFind properties",
-                factory=self._make_daofind_cat,
-                store_as=None,
-                condition=lambda: bool({"sharpness", "roundness1"} & cols),
-            ),
-            MeasurementStep(
-                label="nearest neighbor properties",
-                factory=self._make_nn_cat,
-                store_as=None,
-                condition=lambda: any(col.startswith("nn_") for col in cols),
-            ),
-            MeasurementStep(
-                label="PSF photometry",
-                factory=self._make_psf_cat,
-                store_as=None,
-                condition=lambda: any("psf" in col for col in cols),
-            ),
-        ]
-
     @lazyproperty
     def flagged_spatial_id(self):
         """
@@ -547,6 +426,163 @@ class RomanSourceCatalog:
         """
         return np.zeros(self.n_sources, dtype=np.int32)
 
+    def _validate_and_convert_units(self):
+        """
+        Validate that model data arrays have compatible units and
+        convert them to ``self.flux_unit`` if needed.
+        """
+        self.convolved_data = validate_and_convert_to_flux_density(
+            self.model,
+            self.convolved_data,
+            flux_unit=self.flux_unit,
+            l2_to_sb=self.l2_to_sb,
+            sb_to_flux=self.sb_to_flux,
+        )
+
+    @property
+    def column_names(self):
+        """
+        An ordered list of the output catalog column names.
+        """
+        return self._schema.column_names
+
+    def _make_segment_cat(self):
+        return SegmentCatalog(
+            self.model,
+            self.segment_img,
+            self.convolved_data,
+            self.mask,
+            self._pixel_area,
+            self._wcs_angle,
+            detection_cat=self.detection_cat,
+            requested_properties=self.column_names,
+        )
+
+    def _make_aperture_cat(self):
+        return ApertureCatalog(
+            self.model,
+            self._xypos_finite,
+            self._pixel_scale,
+            ee_spline=self.ee_spline,
+            requested_properties=self.column_names,
+        )
+
+    def _make_daofind_cat(self):
+        return DAOFindCatalog(
+            self.model.data,
+            self._xypos_finite,
+            self.kernel_fwhm,
+            requested_properties=self.column_names,
+        )
+
+    def _make_nn_cat(self):
+        return NNCatalog(
+            self.label,
+            self._xypos,
+            self._xypos_finite,
+            self._pixel_scale,
+            requested_properties=self.column_names,
+        )
+
+    def _make_psf_cat(self):
+        return PSFCatalog(
+            self.model,
+            self.psf_model,
+            self._xypos,
+            self.mask,
+            requested_properties=self.column_names,
+        )
+
+    @property
+    def _measurement_registry(self):
+        """
+        Ordered list of `MeasurementStep` entries used to build the
+        catalog.
+
+        Order matters: segment must be first because downstream steps
+        depend on its outputs (``label``, ``x_centroid``, etc.) via
+        ``self._xypos``. Aperture must come before steps that may
+        reference its outputs.
+
+        Returns
+        -------
+        result : list of `MeasurementStep`
+            Each entry's ``label``, ``factory``, ``store_as`` and
+            ``condition`` fields control how the corresponding
+            sub-catalog is constructed and stored. See `MeasurementStep`
+            for field semantics.
+        """
+        cols = set(self.column_names)
+        return [
+            MeasurementStep(
+                label="segment properties",
+                factory=self._make_segment_cat,
+                store_as="segment_cat",
+                condition=lambda: True,
+            ),
+            MeasurementStep(
+                label="aperture photometry",
+                factory=self._make_aperture_cat,
+                store_as="aperture_cat",
+                condition=lambda: self.cat_type != "forced_det",
+            ),
+            MeasurementStep(
+                label="DAOFind properties",
+                factory=self._make_daofind_cat,
+                store_as=None,
+                condition=lambda: bool({"sharpness", "roundness1"} & cols),
+            ),
+            MeasurementStep(
+                label="nearest neighbor properties",
+                factory=self._make_nn_cat,
+                store_as=None,
+                condition=lambda: any(col.startswith("nn_") for col in cols),
+            ),
+            MeasurementStep(
+                label="PSF photometry",
+                factory=self._make_psf_cat,
+                store_as=None,
+                condition=lambda: any("psf" in col for col in cols),
+            ),
+        ]
+
+    def _apply_subcatalog(self, subcatalog, *, store_as=None):
+        """
+        Copy the named columns from a sub-catalog onto ``self`` and,
+        optionally, also store the sub-catalog itself for later use.
+
+        Parameters
+        ----------
+        subcatalog : object
+            A sub-catalog instance with ``properties`` (iterable of
+            attribute names to copy) and optionally a ``meta`` dict.
+
+        store_as : str or `None`
+            If given, also store the sub-catalog as ``self.<store_as>``.
+        """
+        meta = getattr(subcatalog, "meta", None)
+        if meta is not None:
+            self.meta.update(meta)
+        for name in subcatalog.properties:
+            setattr(self, name, getattr(subcatalog, name))
+        if store_as is not None:
+            setattr(self, store_as, subcatalog)
+
+    def _run_measurements(self):
+        """
+        Run each enabled `MeasurementStep` in registry order.
+
+        Order matters: each step may depend on attributes set by earlier
+        steps (e.g. ``label`` and ``x_centroid`` from ``segment_cat``
+        are needed before nearest-neighbor and PSF photometry). Steps
+        whose ``condition()`` returns `False` are skipped silently.
+        """
+        for step in self._measurement_registry:
+            if not step.condition():
+                continue
+            log.info(f"Calculating {step.label}")
+            self._apply_subcatalog(step.factory(), store_as=step.store_as)
+
     def update_metadata(self):
         """
         Update the metadata dictionary with the package version
@@ -594,41 +630,6 @@ class RomanSourceCatalog:
                     fractions.append(fraction)
 
                 self.meta["ee_fractions"] = np.array(fractions).astype(np.float32)
-
-    @property
-    def column_names(self):
-        """
-        An ordered list of the output catalog column names.
-        """
-        return self._schema.column_names
-
-    def _validate_and_convert_units(self):
-        """
-        Validate that model data arrays have compatible units and
-        convert them to ``self.flux_unit`` if needed.
-        """
-        self.convolved_data = validate_and_convert_to_flux_density(
-            self.model,
-            self.convolved_data,
-            flux_unit=self.flux_unit,
-            l2_to_sb=self.l2_to_sb,
-            sb_to_flux=self.sb_to_flux,
-        )
-
-    def _run_measurements(self):
-        """
-        Run each enabled `MeasurementStep` in registry order.
-
-        Order matters: each step may depend on attributes set by earlier
-        steps (e.g. ``label`` and ``x_centroid`` from ``segment_cat``
-        are needed before nearest-neighbor and PSF photometry). Steps
-        whose ``condition()`` returns `False` are skipped silently.
-        """
-        for step in self._measurement_registry:
-            if not step.condition():
-                continue
-            log.info(f"Calculating {step.label}")
-            self._apply_subcatalog(step.factory(), store_as=step.store_as)
 
     def _assemble_catalog(self):
         """
