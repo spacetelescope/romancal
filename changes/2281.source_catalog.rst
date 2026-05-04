@@ -1,0 +1,1 @@
+Changed PSF fitting region from (15, 15) to (5, 5) and removed PSF local background subtraction.

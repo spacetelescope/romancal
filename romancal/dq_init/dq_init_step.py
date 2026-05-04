@@ -72,8 +72,6 @@ class DQInitStep(RomanStep):
         )
 
         # Close the input and reference files
-        input_model.close()
-
         try:
             reference_file_model.close()
         except AttributeError:

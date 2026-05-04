@@ -152,7 +152,7 @@ def process_detection_image(self, library, example_model, ee_spline, catalog_mod
     )
 
     # Generate the catalog for the detection image. The catalog
-    # is lazily evalated, so we need to access it before we pass
+    # is lazily evaluated, so we need to access it before we pass
     # detection_catobj to the RomanSourceCatalog constructor.
     detection_catalog = detection_catobj.catalog
 
@@ -341,7 +341,7 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
         Example model.
     catalog_model : `MultibandSourceCatalogModel`
         Catalog model.
-    ee_spline : `astropy.modeling.fitting.SplineSplrepFitter
+    ee_spline : `~astropy.modeling.fitting.SplineSplrepFitter`
 
     Returns
     -------
@@ -502,14 +502,15 @@ def initialize_catalog_model(library, example_model):
 
 def make_source_injected_library(library, seed=None):
     """
-    Create a library of source injected models.
+    Create a library of source-injected models.
 
     Parameters
-    -----------
-    input : str or `~romancal.datamodels.ModelLibrary`
-        Path to an ASDF file or a `~romancal.datamodels.ModelLibrary`
-        that contains `~roman_datamodels.datamodels.MosaicImageModel`
-        models.
+    ----------
+    library : `~romancal.datamodels.ModelLibrary`
+        The library of models into which sources will be injected.
+
+    seed : int, optional
+        Random number generator seed for reproducibility.
 
     Returns
     -------
@@ -591,8 +592,8 @@ def make_source_injected_library(library, seed=None):
 
 def match_recovered_sources(original, injected, si_catalogs):
     """
-    Create recovered sources which matches sources between
-    an original catalog and injected catalog.
+    Create a recovered-sources catalog by matching sources between
+    an original catalog and an injected catalog.
 
     Parameters
     -----------

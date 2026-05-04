@@ -155,9 +155,6 @@ def make_detection_image(library, kernel_fwhms):
     -------
     detection_data : 2D `numpy.ndarray`
         The detection image data.
-
-    detection_error : 2D `numpy.ndarray`
-        The detection image (standard deviation) error.
     """
     log.info("Making detection image")
     det_img = -np.inf

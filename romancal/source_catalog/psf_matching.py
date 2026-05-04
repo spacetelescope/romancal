@@ -8,7 +8,6 @@ import numpy as np
 from astropy.convolution import convolve_fft
 from roman_datamodels.datamodels import MosaicModel
 
-from romancal.multiband_catalog.utils import add_filter_to_colnames
 from romancal.source_catalog.psf import (
     create_convolution_kernel,
     create_l3_psf_model,
@@ -105,18 +104,30 @@ def create_psf_matched_image(
     input_oversampling = input_l3_psf_model.oversampling
     if input_oversampling[0] != input_oversampling[1]:
         msg = (
-            "Input PSF model has different oversampling factors in x and y directions."
+            "Input PSF model has anisotropic oversampling "
+            f"(x={input_oversampling[0]}, y={input_oversampling[1]}); "
+            "x and y oversampling factors must be equal."
         )
         raise ValueError(msg)
+
     target_oversampling = target_l3_psf_model.oversampling
     if target_oversampling[0] != target_oversampling[1]:
         msg = (
-            "Target PSF model has different oversampling factors in x and y directions."
+            "Target PSF model has anisotropic oversampling "
+            f"(x={target_oversampling[0]}, y={target_oversampling[1]}); "
+            "x and y oversampling factors must be equal."
         )
         raise ValueError(msg)
+
     if np.any(input_oversampling != target_oversampling):
-        msg = "Input and target PSF models have different oversampling factors."
+        msg = (
+            "Input and target PSF models have mismatched oversampling "
+            f"(input={tuple(input_oversampling)}, "
+            f"target={tuple(target_oversampling)}); both PSFs must use "
+            "the same oversampling factor."
+        )
         raise ValueError(msg)
+
     oversampling = input_oversampling[0]
 
     matching_kernel = create_convolution_kernel(
@@ -165,7 +176,7 @@ def get_filter_wavelength(filter_name):
 
     Returns
     -------
-    wavelength : int
+    wavelength : float
         Approximate wavelength in microns (e.g., 1.58, 1.84), or 0 if
         cannot parse.
     """
@@ -327,7 +338,10 @@ def compute_psf_correction_factors(
         ee_spline=ee_spline,
     )
 
-    # add filter name to catalog column names
+    # Prevent circular import
+    from romancal.multiband_catalog.utils import add_filter_to_colnames
+
+    # Add filter name to catalog column names
     cat_matched = add_filter_to_colnames(catobj_matched.catalog, ref_filter)
 
     # Compute correction factors C = flux_original / flux_matched
