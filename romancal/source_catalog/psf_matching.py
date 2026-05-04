@@ -8,7 +8,6 @@ import numpy as np
 from astropy.convolution import convolve_fft
 from roman_datamodels.datamodels import MosaicModel
 
-from romancal.multiband_catalog.utils import add_filter_to_colnames
 from romancal.source_catalog.psf import (
     create_convolution_kernel,
     create_l3_psf_model,
@@ -327,7 +326,10 @@ def compute_psf_correction_factors(
         ee_spline=ee_spline,
     )
 
-    # add filter name to catalog column names
+    # Prevent circular import
+    from romancal.multiband_catalog.utils import add_filter_to_colnames
+
+    # Add filter name to catalog column names
     cat_matched = add_filter_to_colnames(catobj_matched.catalog, ref_filter)
 
     # Compute correction factors C = flux_original / flux_matched

@@ -79,20 +79,24 @@ position and flux. The PSF model is generated using reference
 files on CRDS.  PSF photometry is performed using the
 :py:class:`photutils.psf.PSFPhotometry` class from Photutils.
 
-For Level 3 data, since the data contains a mixture of individual detector PSFs
-with different orientations, further processing is done. The
-base PSF is calculated for the center of the WFI02 detector. It is then scaled and smoothed to
-roughly account for the different pixel scale of the coadded images relative to the detector images,
-and the effect of the image drizzling on the PSF.  Finally, the PSF is
-azimuthally averaged to remove any azimuthal signatures, which will be different in the coadded
-product than in the individual input exposures.
+For Level 2 data, a gridded PSF model is generated for each individual
+detector using the reference files in CRDS. These PSF models account
+for jitter by deconvolving the amount of jitter indicated to be present
+in the PSF reference file, and reconvolving with the amount of jitter
+present in the individual image. Because the amount of jitter present
+in the reference file is small (~8 mas), this deconvolution does not
+introduce significant noise. The convolution process works in the
+Fourier domain using the approach of Lang (2020) because the jitter
+kernel would otherwise be badly undersampled.
 
-A local background is estimated using a circular annulus around the
-source. The annulus is defined by the inner and outer radii of 2.4 and
-2.8 arcsec, respectively. The local background flux is calculated as
-the sigma-clipped median value within the annulus. Although this local
-background value is included in the source catalog, it is not subtracted
-from any of the measured fluxes.
+For Level 3 data, since the data contains a mixture of individual
+detector PSFs with different orientations, further processing is done.
+The base PSF is calculated for the center of the WFI02 detector. It
+is then scaled and smoothed to roughly account for the different
+pixel scale of the coadded images relative to the detector images,
+and the effect of the image drizzling on the PSF. Finally, the PSF is
+azimuthally averaged to remove any azimuthal signatures, which will be
+different in the coadded product than in the individual input exposures.
 
 All fluxes are reported in nJy. To calculate AB magnitudes, use the
 following formula:
@@ -104,6 +108,13 @@ following formula:
 Photometric errors are calculated from the resampled total-error array
 contained in the ``model.err`` array. Note that this array includes
 source Poisson noise.
+
+A local background is estimated for each source measured within a
+circular annulus centered on the source. The circular annulus has an
+inner and outer radius of 2.4 and 2.8 arcsec, respectively. The local
+background flux is calculated as the sigma-clipped median value within
+the annulus. Although this local background value is included in the
+source catalog, it is not subtracted from any of the measured fluxes.
 
 
 Source Catalog Table
@@ -133,13 +144,12 @@ radius will contain an ``aper01_f184_flux`` column.
 
 .. source_catalog_columns::
 
-Star finding algorithms like `~photutils.detection.DAOStarFinder` provide
-approximate stellar centroids. More precise centroids may be inferred by
-fitting model PSFs to the observations. Setting the SourceCatalogStep's
-option `fit_psf` to True will generate model Roman PSFs with
-PSF reference files in CRDS, and fit
-those models to each of the sources detected by
-`~photutils.detection.DAOStarFinder`. More details are in :doc:`psf`.
+Star finding algorithms like `~photutils.detection.DAOStarFinder`
+provide approximate stellar centroids. More precise centroids may
+be inferred by fitting model PSFs to the observations. Setting the
+SourceCatalogStep's option `fit_psf` to True will generate model Roman
+PSFs with PSF reference files in CRDS, and fit those models to each of
+the sources detected by `~photutils.detection.DAOStarFinder`.
 
 * `SourceCatalog
   <https://photutils.readthedocs.io/en/latest/api/photutils.segmentation.SourceCatalog.html>`_
