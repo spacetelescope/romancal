@@ -94,7 +94,7 @@ because the jitter kernel would otherwise be badly undersampled.
 
 For Level 3 data, since the data contains a mixture of individual
 detector PSFs with different orientations, further processing is done.
-The base PSF is calculated for the center of the detector SCA. It
+The base PSF is calculated for the center of the WFI02 detector. It
 is then scaled and smoothed to roughly account for the different
 pixel scale of the coadded images relative to the detector images,
 and the effect of the image drizzling on the PSF. Finally, the PSF is
