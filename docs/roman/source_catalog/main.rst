@@ -151,16 +151,17 @@ an ``aper01_f184_flux`` column.
 Further details for some of the columns are provided below.
 
 ``flagged_spatial_id`` is a bit flag encoding the overlap flag,
-projection, skycell, and pixel coordinates of the source. From high to
-low, bit 64 is 1 if the object was outside of the core region of this
-skycell or projection region. There is likely to be a better measurement
-of the object in a different skycell with this bit set to 0. This bit
-is the same as bit **TBD** of ``warning_flags``. Bits 49-63 encode the
-primary projection region for this object. Bits 33-40 and 41-48 encode
-the (x, y) skycell indices within this projection region, starting from
-(0, 0) at the lower left. Bits 1-15 and 16-31 encode the x & y pixel
-coordinate of the object within this skycell in virtual 0.05" pixels
-(regardless of the pixel scale of the skycell).
+projection, skycell, and pixel coordinates of the source. Bit positions
+are 0-indexed (i.e., bit N has value ``2**N``). From high to low, bit
+59 is 1 if the object was outside of the core region of this skycell or
+projection region. There is likely to be a better measurement of the
+object in a different skycell with this bit set to 0. This bit is the
+same as bit **TBD** of ``warning_flags``. Bits 46-58 encode the primary
+projection region for this object. Bits 32-38 and 39-45 encode the x and
+y skycell indices within this projection region, starting from (0, 0) at
+the lower left. Bits 0-15 and 16-31 encode the x and y pixel coordinates
+of the object within this skycell in virtual 0.05" pixels (regardless of
+the pixel scale of the skycell).
 
 The ``psf_gof`` metric is the reduced chi-squared of the PSF fit.
 
