@@ -13,7 +13,8 @@ Background Subtraction
 
 A two-dimensional background is estimated and subtracted from the
 data. The background and background noise are estimated using the
-:external+photutils:py:class:`photutils.background.Background2D` class from `Photutils
+:external+photutils:py:class:`photutils.background.Background2D`
+class from `Photutils
 <https://photutils.readthedocs.io/en/stable/index.html>`_. This class
 calculates the background by measuring the sigma-clipped median within
 user-defined boxes of a specified size (``bkg_boxsize``). The background
@@ -47,22 +48,23 @@ Overlapping sources are deblended using the `Photutils deblender
 #source-deblending>`_. The deblending algorithm first applies
 a multi-thresholding approach to identify potentially
 overlapping sources, then uses `watershed segmentation
-<https://en.wikipedia.org/wiki/Watershed_(image_processing)>`_
-to separate them. For successful deblending, the sources must be
-sufficiently separated so that a saddle exists between them. Currently,
-the ``deblend`` keyword must be set to deblend sources.
+<https://en.wikipedia.org/wiki/Watershed_(image_processing)>`_ to
+separate them. For successful deblending, the sources must be separated
+enough that there is a saddle point between them. Currently, the
+``deblend`` keyword must be set to deblend sources.
 
 
 Source Photometry and Properties
 --------------------------------
 
-After detecting sources using image segmentation, we can measure their
+After detecting sources using image segmentation, we measure their
 photometry, centroids, and shape/morphological properties.
 
-The source centroids and shape properties are derived from 2D image
-moments of the pixel values within the source segments. These properties
-include the semimajor and semiminor axes, ellipticity, and orientation
-of the major axis.
+The source centroids and shape properties are derived from 2D
+image moments of the pixel values within the source segments using
+:external+photutils:py:class:`photutils.segmentation.SourceCatalog`.
+These properties include the semimajor and semiminor axes, ellipticity,
+and orientation of the major axis.
 
 Circular aperture photometry is performed at several aperture sizes
 (:math:`r` = 0.1, 0.2, 0.4, 0.8, 1.6 arcsec) for each source. Elliptical
@@ -72,26 +74,27 @@ determined by the source shape.
 Isophotal photometry is measured using the total flux within the source
 segment.
 
-Optionally, Point Spread Function (PSF) photometry can be
-performed by setting the ``fit_psf`` keyword. Enabling
-this option fits a model PSF to each source to measure its
-position and flux. The PSF model is generated using reference
-files on CRDS.  PSF photometry is performed using the
-:external+photutils:py:class:`photutils.psf.PSFPhotometry` class from Photutils.
+Optionally, Point Spread Function (PSF) photometry can be performed
+by setting the ``fit_psf`` keyword. Enabling this option fits a model
+PSF to each source to measure its position and flux. The PSF model is
+generated using reference files on CRDS. PSF photometry is performed
+using the :external+photutils:py:class:`photutils.psf.PSFPhotometry`
+class.
 
 For Level 2 data, a gridded PSF model is generated for each individual
 detector using the reference files in CRDS. These PSF models account
-for jitter by deconvolving the amount of jitter indicated to be present
-in the PSF reference file, and reconvolving with the amount of jitter
-present in the individual image. Because the amount of jitter present
-in the reference file is small (~8 mas), this deconvolution does not
-introduce significant noise. The convolution process works in the
-Fourier domain using the approach of Lang (2020) because the jitter
-kernel would otherwise be badly undersampled.
+for jitter by deconvolving the amount of jitter indicated to be
+present in the PSF reference file, and reconvolving with the amount
+of jitter present in the individual image. Because the amount
+of jitter present in the reference file is small (~8 mas), this
+deconvolution does not introduce significant noise. The convolution
+process works in the Fourier domain using the approach of `Lang (2020)
+<https://ui.adsabs.harvard.edu/abs/2020arXiv201215797L/abstract>`_
+because the jitter kernel would otherwise be badly undersampled.
 
 For Level 3 data, since the data contains a mixture of individual
 detector PSFs with different orientations, further processing is done.
-The base PSF is calculated for the center of the WFI02 detector. It
+The base PSF is calculated for the center of the detector SCA. It
 is then scaled and smoothed to roughly account for the different
 pixel scale of the coadded images relative to the detector images,
 and the effect of the image drizzling on the PSF. Finally, the PSF is
@@ -121,7 +124,8 @@ Source Catalog Table
 --------------------
 
 The source catalog table contains one row for each source, with the
-columns listed below (assuming PSF-photometry is requested).
+columns listed below (assuming PSF-photometry is requested, i.e.,
+``fit_psf=True``).
 
 All pixel coordinates are 0-indexed, following Python's 0-based
 indexing. This means pixel coordinate 0 corresponds to the center of the
@@ -132,37 +136,21 @@ Celestial Reference System (ICRS) reference frame.
 
 Uncertainties are reported as the 1-sigma (68.27% confidence) errors.
 
-Some column names contain templated strings that will be replaced
-with values specific to the generated file. For example ``~band~``
-will be replaced with a filter wavelength band (for example ``f184``)
-where approriate and removed for single-filter files. ``~radius~``
-will be replaced with the aperture radius in tenths of an arcsecond.
-For example, a single filter catalog with 0.1 arcsecond apeture
-photometry will contain an ``aper01_flux`` column. A catalog derived
-from multiple filters (including ``f184``) and the same apeture
-radius will contain an ``aper01_f184_flux`` column.
+Some column names contain templated strings that will be replaced with
+values specific to the generated file. For example ``~band~`` will be
+replaced with a filter wavelength band (for example ``f184``) where
+appropriate and removed for single-filter files. ``~radius~`` will
+be replaced with the aperture radius in tenths of an arcsecond. For
+example, a single filter catalog with 0.1 arcsecond aperture photometry
+will contain an ``aper01_flux`` column. A catalog derived from multiple
+filters (including ``f184``) and the same aperture radius will contain
+an ``aper01_f184_flux`` column.
 
 .. source_catalog_columns::
 
-Star finding algorithms like :external+photutils:py:class:`~photutils.detection.DAOStarFinder`
-provide approximate stellar centroids. More precise centroids may
-be inferred by fitting model PSFs to the observations. Setting the
-SourceCatalogStep's option `fit_psf` to True will generate model Roman
-PSFs with PSF reference files in CRDS, and fit those models to each of
-the sources detected by :external+photutils:py:class:`~photutils.detection.DAOStarFinder`.
-
-* `SourceCatalog
-  <https://photutils.readthedocs.io/en/latest/api/photutils.segmentation.SourceCatalog.html>`_
-
-* `PSFPhotometry
-  <https://photutils.readthedocs.io/en/latest/api/photutils.psf.PSFPhotometry.html>`_
-
-* `DAOStarFinder
-  <https://photutils.readthedocs.io/en/latest/api/photutils.detection.DAOStarFinder.html>`_
-
 Further details for some of the columns are provided below.
 
-``flagged_spatial_index`` is a bit flag encoding the overlap flag,
+``flagged_spatial_id`` is a bit flag encoding the overlap flag,
 projection, skycell, and pixel coordinates of the source. From high to
 low, bit 64 is 1 if the object was outside of the core region of this
 skycell or projection region. There is likely to be a better measurement
