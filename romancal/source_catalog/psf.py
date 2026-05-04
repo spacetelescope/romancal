@@ -2,24 +2,21 @@
 Module to calculate PSF photometry.
 """
 
-import inspect
 import logging
+import warnings
 from collections import OrderedDict
 
 import astropy.units as u
 import numpy as np
 from astropy.convolution import Box2DKernel, convolve
-from astropy.modeling.fitting import LevMarLSQFitter
 from astropy.nddata import NDData
-from astropy.table import QTable, Table
+from astropy.table import Table
 from astropy.utils import lazyproperty
+from astropy.utils.exceptions import AstropyUserWarning
 from numpy import fft
-from photutils.background import LocalBackground
-from photutils.detection import DAOStarFinder
 from photutils.psf import (
     GriddedPSFModel,
     ImagePSF,
-    IterativePSFPhotometry,
     PSFPhotometry,
     SourceGrouper,
 )
@@ -127,7 +124,7 @@ def _downsample_by_interpolation(image, downsample):
     """Downsample an image by interpolating it, preserving the centering.
 
     This is conceptually similar to taking every nth pixel of the image,
-    but is careful about keeping the image centered and.  This is important
+    but is careful about keeping the image centered. This is important
     for PSFs, for example, where we want to keep the PSF precisely centered,
     including for cases where the shape of the image and the amount of
     downsampling don't align neatly.
@@ -255,7 +252,7 @@ def get_gridded_psf_model(psf_ref_model, focus=0, spectral_type=1):
     reference files in CRDS.
     The input reference files have 3 focus positions and this is using
     the in-focus images. There are also three spectral types that are
-    available and this code uses the M5V spectal type.
+    available and this code uses the G2V spectral type.
 
     Parameters
     ----------
@@ -585,183 +582,6 @@ def create_l3_psf_model(
     return psf_model
 
 
-def fit_psf_to_image_model(
-    image_model=None,
-    data=None,
-    error=None,
-    mask=None,
-    photometry_cls=PSFPhotometry,
-    psf_model=None,
-    grouper=None,
-    fitter=None,
-    local_bkg_estimator=None,
-    finder=None,
-    x_init=None,
-    y_init=None,
-    progress_bar=False,
-    error_lower_limit=None,
-    fit_shape=(15, 15),
-    exclude_out_of_bounds=True,
-):
-    """
-    Fit PSF models to an ``ImageModel``.
-
-    Parameters
-    ----------
-    image_model : `roman_datamodels.datamodels.ImageModel`
-        Image datamodel. If ``image_model`` is supplied,
-        ``data,error`` should be `None`.
-    data : `astropy.units.Quantity`
-        Fit a PSF model to the rate image ``data``.
-        If ``data,error`` are supplied, ``image_model`` should be `None`.
-    error : `astropy.units.Quantity`
-        Uncertainties on fluxes in ``data``. Should be `None` if
-        ``image_model`` is supplied.
-    mask : 2D bool `numpy.ndarray`, optional
-        Mask to apply to the data. Default is `None`.
-    photometry_cls : {`photutils.psf.PSFPhotometry`,
-            `photutils.psf.IterativePSFPhotometry`}
-        Choose a photutils PSF photometry technique (default or iterative).
-    psf_model : `astropy.modeling.Fittable2DModel`
-        The 2D PSF model to fit to the rate image. Usually this model is an instance
-        of `photutils.psf.GriddedPSFModel`.
-    grouper : `photutils.psf.SourceGrouper`
-        Specifies rules for attempting joint fits of multiple PSFs when
-         there are nearby sources at small separations.
-    fitter : `astropy.modeling.fitting.Fitter`, optional
-        Modeling class which optimizes the PSF fit.
-        Default is `astropy.modeling.fitting.LevMarLSQFitter(calc_uncertainties=True)`.
-    local_bkg_estimator : `photutils.background.LocalBackground`, optional
-        Specifies inner and outer radii for computing flux background near
-        a source. Default has ``inner_radius=10, outer_radius=30``.
-    finder : subclass of `photutils.detection.StarFinderBase`, optional
-        When ``photutils_cls`` is `photutils.psf.IterativePSFPhotometry`, the
-        ``finder`` is called to determine if sources remain in the rate image
-        after one PSF model is fit to the observations and removed.
-        Default was extracted from the `DAOStarFinder` call in the
-        Source Detection step.
-    x_init : `numpy.ndarray`, optional
-        Initial guesses for the ``x`` pixel coordinates of each source to fit.
-    y_init : `numpy.ndarray`, optional
-        Initial guesses for the ``y`` pixel coordinates of each source to fit.
-    progress_bar : bool, optional
-        Render a progress bar via photutils. Default is False.
-    error_lower_limit : `astropy.units.Quantity`, optional
-        Since some synthetic images may have bright sources with very
-        small statistical uncertainties, the ``error`` can be clipped at
-        ``error_lower_limit`` to prevent over-confident fits.
-    fit_shape : int, or tuple of length 2, optional
-        Rectangular shape around the center of a star that will
-        be used to define the PSF-fitting data. See docs for
-        `photutils.psf.PSFPhotometry` for details. Default is ``(16, 16)``.
-    exclude_out_of_bounds : bool, optional
-        If `True`, do not attempt to fit stars which have initial centroids
-        that fall outside the pixel limits of the SCA. Default is False.
-
-    Returns
-    -------
-    results_table : `astropy.table.QTable`
-        PSF photometry results.
-    photometry : instance of class ``photutils_cls``
-        PSF photometry instance with configuration settings and results.
-
-    """
-    if grouper is None:
-        # minimum separation before sources are fit simultaneously:
-        grouper = SourceGrouper(min_separation=5)  # [pix]
-
-    if fitter is None:
-        fitter = LevMarLSQFitter(calc_uncertainties=True)
-
-    # the iterative PSF method requires a finder:
-    psf_photometry_kwargs = {}
-    if photometry_cls is IterativePSFPhotometry or (x_init is None and y_init is None):
-        if finder is None:
-            # these defaults extracted from the
-            # romancal SourceDetectionStep
-
-            finder_args = list(inspect.signature(DAOStarFinder).parameters)
-            if "sharpness_range" in finder_args:
-                # Use new new kwargs for photutils v3.0 and later
-                finder = DAOStarFinder(
-                    fwhm=1.0,
-                    threshold=0.0,
-                    sharpness_range=(0.0, 1.0),
-                    roundness_range=(-1.0, 1.0),
-                    peak_max=None,
-                )
-            else:
-                finder = DAOStarFinder(
-                    fwhm=1.0,
-                    threshold=0.0,
-                    sharplo=0.0,
-                    sharphi=1.0,
-                    roundlo=-1.0,
-                    roundhi=1.0,
-                    peakmax=None,
-                )
-
-        psf_photometry_kwargs["finder"] = finder
-
-    if local_bkg_estimator is None:
-        local_bkg_estimator = LocalBackground(
-            inner_radius=10,  # [pix]
-            outer_radius=30,  # [pix]
-        )
-
-    photometry = photometry_cls(
-        grouper=grouper,
-        local_bkg_estimator=local_bkg_estimator,
-        psf_model=psf_model,
-        fitter=fitter,
-        fit_shape=fit_shape,
-        aperture_radius=fit_shape[0],
-        progress_bar=progress_bar,
-        **psf_photometry_kwargs,
-    )
-
-    if x_init is not None and y_init is not None:
-        guesses = Table(np.column_stack([x_init, y_init]), names=["x_init", "y_init"])
-    else:
-        guesses = None
-
-    if image_model is None:
-        if data is None and error is None:
-            raise ValueError(
-                "PSF fitting requires either an ImageModel, "
-                "or arrays for the data and error."
-            )
-
-    if data is None and image_model is not None:
-        data = image_model.data
-
-    if error is None and image_model is not None:
-        error = image_model.err
-
-    if error_lower_limit is not None:
-        # option to enforce a lower limit on the flux uncertainties
-        error = np.clip(error, error_lower_limit, None)
-
-    if exclude_out_of_bounds and guesses is not None:
-        # don't attempt to fit PSFs for objects with initial centroids
-        # outside the detector boundaries:
-        init_centroid_in_range = (
-            (guesses["x_init"] > 0)
-            & (guesses["x_init"] < data.shape[1])
-            & (guesses["y_init"] > 0)
-            & (guesses["y_init"] < data.shape[0])
-        )
-        guesses = guesses[init_centroid_in_range]
-
-    # fit the model PSF to the data:
-    results_table = photometry(data=data, error=error, init_params=guesses, mask=mask)
-    # Convert from DeprecatedColumnQTable (remove when require photutils 4+)
-    results_table = QTable(results_table)
-
-    # results are stored on the PSFPhotometry instance:
-    return results_table, photometry
-
-
 class PSFCatalog:
     """
     Class to calculate PSF photometry.
@@ -782,16 +602,37 @@ class PSFCatalog:
         same one used to create the segmentation image.
     """
 
-    def __init__(self, model, psf_ref_model, xypos, mask=None):
+    def __init__(
+        self, model, psf_ref_model, xypos, mask=None, *, requested_properties=None
+    ):
         self.model = model
         self.psf_ref_model = psf_ref_model
         self.xypos = xypos
         self.mask = mask
 
-        self.names = list(self._name_map.values())
-        self.names.extend(["ra_psf", "dec_psf", "ra_psf_err", "dec_psf_err"])
+        if requested_properties is None:
+            self.properties = list(self.available_properties)
+        else:
+            requested = set(requested_properties)
+            self.properties = [
+                prop for prop in self.available_properties if prop in requested
+            ]
 
         self.calc_psf_photometry()
+
+    @lazyproperty
+    def available_properties(self):
+        """
+        The full set of source-property column names this catalog can
+        produce.
+        """
+        return (
+            *self._name_map.values(),
+            "ra_psf",
+            "dec_psf",
+            "ra_psf_err",
+            "dec_psf_err",
+        )
 
     @lazyproperty
     def psf_model(self):
@@ -804,10 +645,10 @@ class PSFCatalog:
             psf_model = get_gridded_psf_model(self.psf_ref_model)
         else:
             # MosaicModel (L3 datamodel)
+            pixel_scale = self.model.meta.wcsinfo.pixel_scale * 3600.0  # arcsec
             psf_model = create_l3_psf_model(
                 self.psf_ref_model,
-                pixel_scale=self.model.meta.wcsinfo.pixel_scale
-                * 3600.0,  # wcsinfo is in degrees. Need arcsec
+                pixel_scale=pixel_scale,
                 pixfrac=self.model.meta.resample.pixfrac,
             )
 
@@ -827,34 +668,48 @@ class PSFCatalog:
         name_map["flux_err"] = "psf_flux_err"
         name_map["reduced_chi2"] = "psf_gof"
         name_map["flags"] = "psf_flags"
+
         return name_map
 
-    def calc_psf_photometry(self):
+    def calc_psf_photometry(self, fit_shape=(5, 5)):
         """
         Perform PSF photometry by fitting PSF models to detected
         sources.
         """
-        xinit, yinit = np.transpose(self.xypos)
-        psf_photometry_table, _ = fit_psf_to_image_model(
-            image_model=self.model,
-            mask=self.mask,
-            psf_model=self.psf_model,
-            x_init=xinit,
-            y_init=yinit,
-            exclude_out_of_bounds=True,
+        # Define minimum separation before sources are fit simultaneously
+        grouper = SourceGrouper(min_separation=5)  # pixels
+        psfphot = PSFPhotometry(
+            self.psf_model, fit_shape, grouper=grouper, aperture_radius=fit_shape[0]
         )
 
-        # set these columns as attributes of this instance
-        for old_name, new_name in self._name_map.items():
-            value = psf_photometry_table[old_name]
+        init_params = Table()
+        x_init, y_init = np.transpose(self.xypos)
+        init_params["x_init"] = x_init
+        init_params["y_init"] = y_init
 
-            # change the photutils dtypes
+        with warnings.catch_warnings():
+            # Ignore warnings about fits failing to converge
+            warnings.simplefilter("ignore", RuntimeWarning)
+            warnings.simplefilter("ignore", AstropyUserWarning)
+
+            results = psfphot(
+                data=self.model.data,
+                error=self.model.err,
+                mask=self.mask,
+                init_params=init_params,
+            )
+
+        # Set these columns as attributes of this instance
+        for old_name, new_name in self._name_map.items():
+            value = results[old_name]
+
+            # Change the photutils dtypes
             if np.issubdtype(value.dtype, np.integer):
                 value = value.astype(np.int32)
             elif np.issubdtype(value.dtype, np.floating):
                 value = value.astype(np.float32)
 
-            # handle any unit conversions
+            # Handle any unit conversions
             if new_name in ("x_psf", "y_psf", "x_psf_err", "y_psf_err"):
                 value *= u.pix
 

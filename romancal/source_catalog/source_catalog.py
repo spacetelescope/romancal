@@ -4,6 +4,8 @@ Module to calculate the source catalog.
 
 import logging
 import re
+from collections.abc import Callable
+from dataclasses import dataclass
 
 import astropy.units as u
 import numpy as np
@@ -15,15 +17,54 @@ from roman_datamodels.dqflags import pixel
 from romancal import __version__ as romancal_version
 from romancal.skycell import skymap
 from romancal.source_catalog.aperture import ApertureCatalog
+from romancal.source_catalog.column_schema import CatalogSchema
 from romancal.source_catalog.daofind import DAOFindCatalog
 from romancal.source_catalog.neighbors import NNCatalog
 from romancal.source_catalog.psf import PSFCatalog
 from romancal.source_catalog.segment import SegmentCatalog
+from romancal.source_catalog.unit_conversion import (
+    validate_and_convert_to_flux_density,
+)
 
 from ._wcs_helpers import pixel_scale_angle_at_skycoord
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
+
+
+@dataclass(frozen=True)
+class MeasurementStep:
+    """
+    A single step in the measurement registry used to assemble the
+    source catalog.
+
+    Attributes
+    ----------
+    label : str
+        Human-readable name used in log messages (e.g. ``"aperture
+        photometry"``).
+
+    factory : callable
+        Zero-argument callable returning a sub-catalog instance for
+        this step (e.g. an `ApertureCatalog`). Called only when
+        ``condition()`` is True.
+
+    store_as : str or None
+        Attribute name on `RomanSourceCatalog` under which to retain the
+        sub-catalog after measurement, or `None` if the sub-catalog is
+        consumed during attribute copy and does not need to be kept.
+
+    condition : callable
+        Zero-argument callable returning `True` if this step should
+        run for the current catalog (used to skip steps whose columns
+        were not requested or which do not apply to the current catalog
+        type).
+    """
+
+    label: str
+    factory: Callable[[], object]
+    store_as: str | None
+    condition: Callable[[], bool]
 
 
 class RomanSourceCatalog:
@@ -136,7 +177,7 @@ class RomanSourceCatalog:
         self.meta = {}
         self.aperture_cat = None
 
-        # define flux unit conversion factors
+        # Define flux unit conversion factors
         if "photometry" in self.model.meta:
             self.l2_to_sb = self.model.meta.photometry.conversion_megajanskys
         else:
@@ -149,36 +190,17 @@ class RomanSourceCatalog:
             )
             self.fit_psf = False
 
+        # Output column schema (depends only on cat_type, fit_psf, and
+        # the aperture flux column names — all known at this point).
+        # Encapsulated in CatalogSchema for ease of maintenance.
+        self._schema = CatalogSchema(
+            cat_type=self.cat_type,
+            fit_psf=self.fit_psf,
+            aperture_flux_colnames=ApertureCatalog.aperture_flux_colnames_for_radii(),
+        )
+
     def __len__(self):
         return self.n_sources
-
-    def convert_l2_to_sb(self):
-        """
-        Convert level-2 data from units of DN/s to MJy/sr (surface
-        brightness).
-        """
-        # the conversion is done in-place to avoid making copies of the data;
-        # use dictionary syntax to set the value to avoid on-the-fly validation
-        for attr in ("data", "err"):
-            self.model[attr] *= self.l2_to_sb
-        if self.convolved_data is not None:
-            self.convolved_data *= self.l2_to_sb
-
-    def convert_sb_to_flux_density(self):
-        """
-        Convert level-3 data from units of MJy/sr (surface brightness)
-        to flux density units.
-
-        The flux density unit is defined by self.flux_unit.
-        """
-        # the conversion is done in-place to avoid making copies of the data;
-        # use dictionary syntax to set the value to avoid on-the-fly validation
-        for attr in ("data", "err"):
-            self.model[attr] *= self.sb_to_flux.value
-            self.model[attr] <<= self.sb_to_flux.unit
-        if self.convolved_data is not None:
-            self.convolved_data *= self.sb_to_flux.value
-            self.convolved_data <<= self.sb_to_flux.unit
 
     @lazyproperty
     def _pixscale_angle(self):
@@ -187,8 +209,8 @@ class RomanSourceCatalog:
         counterclockwise from the positive x axis to the "North" axis of
         the celestial coordinate system.
 
-        The pixel is returns as a Quantity in arcsec and the angle is
-        returned as a Quantity in degrees.
+        The pixel scale is returned as a Quantity in arcsec and the
+        angle is returned as a Quantity in degrees.
 
         Both are measured at the center of the image.
         """
@@ -255,7 +277,7 @@ class RomanSourceCatalog:
     def _xypos_finite(self):
         """
         The (x, y) source positions where non-finite values have been
-        replaced by to a large negative value.
+        replaced with a large negative value.
 
         This is used with functions that fail with non-finite centroid
         values.
@@ -267,83 +289,6 @@ class RomanSourceCatalog:
         nanmask = ~np.isfinite(xypos)
         xypos[nanmask] = -1000.0
         return xypos
-
-    def calc_segment_properties(self):
-        """
-        Calculate the segment-based properties provided by
-        `~photutils.segmentation.SourceCatalog`.
-
-        The results are set as dynamic attributes on the class instance.
-        """
-        segment_cat = SegmentCatalog(
-            self.model,
-            self.segment_img,
-            self.convolved_data,
-            self.mask,
-            self._pixel_area,
-            self._wcs_angle,
-            detection_cat=self.detection_cat,
-            cat_type=self.cat_type,
-        )
-
-        self.meta.update(segment_cat.meta)
-        for name in segment_cat.names:
-            setattr(self, name, getattr(segment_cat, name))
-
-        # needed for detection_cat
-        self.segment_cat = segment_cat
-
-    def calc_aperture_photometry(self):
-        """
-        Calculate aperture photometry.
-
-        The results are set as dynamic attributes on the class instance.
-        """
-        aperture_cat = ApertureCatalog(
-            self.model,
-            self._pixel_scale,
-            self._xypos_finite,
-            ee_spline=self.ee_spline,
-        )
-        for name in aperture_cat.names:
-            setattr(self, name, getattr(aperture_cat, name))
-
-        # needed to get aperture flux column names and descriptions
-        self.aperture_cat = aperture_cat
-
-    def calc_psf_photometry(self):
-        """
-        Perform PSF photometry on the sources.
-
-        The results are set as dynamic attributes on the class instance.
-        """
-        psf_cat = PSFCatalog(self.model, self.psf_model, self._xypos, self.mask)
-        for name in psf_cat.names:
-            setattr(self, name, getattr(psf_cat, name))
-
-    def calc_daofind_properties(self):
-        """
-        Calculate the DAOFind sharpness and roundness1 statistics.
-
-        The results are set as dynamic attributes on the class instance.
-        """
-        daofind_cat = DAOFindCatalog(
-            self.model.data, self._xypos_finite, self.kernel_fwhm
-        )
-        for name in daofind_cat.names:
-            setattr(self, name, getattr(daofind_cat, name))
-
-    def calc_nn_properties(self):
-        """
-        Calculate the nearest neighbor properties.
-
-        The results are set as dynamic attributes on the class instance.
-        """
-        nn_cat = NNCatalog(
-            self.label, self._xypos, self._xypos_finite, self._pixel_scale
-        )
-        for name in nn_cat.names:
-            setattr(self, name, getattr(nn_cat, name))
 
     @lazyproperty
     def flagged_spatial_id(self):
@@ -357,23 +302,33 @@ class RomanSourceCatalog:
         try:
             skycell_name = self.model.meta.wcsinfo.skycell_name
             pixel_scale = self.model.meta.wcsinfo.pixel_scale_ref
-        except AttributeError:  # L2 image or unrecognized schema, give up
+        except AttributeError:
+            # L2 image or unrecognized schema: skycell-based spatial id
+            # is not defined.
+            log.warning(
+                "meta.wcsinfo missing skycell_name/pixel_scale_ref; "
+                "flagged_spatial_id will be zero.",
+            )
             return bad_return
 
         try:
             sc = skymap.SkyCells.from_names([skycell_name])
         except KeyError:
             log.warning(
-                f"Could not find skycell {skycell_name}, "
-                "not filling out flagged_spatial_index."
+                f"Could not find skycell {skycell_name}; "
+                "flagged_spatial_id will be zero.",
             )
             return bad_return
 
         core_indices = sc.cores_containing(np.array([self.ra, self.dec]).T)
-        if len(core_indices.keys()) > 1:
-            raise ValueError("should only be one sky cell here?")
+        if len(core_indices) > 1:
+            raise RuntimeError(
+                f"Expected sources from at most one skycell, but found "
+                f"{len(core_indices)} skycells in flagged_spatial_id "
+                f"computation for skycell {skycell_name}."
+            )
         in_core = np.zeros(len(self.ra), dtype="bool")
-        if len(core_indices.keys()) == 1:
+        if len(core_indices) == 1:
             this_cell_idx = next(iter(core_indices.keys()))
             core_indices = core_indices[this_cell_idx]
             in_core[core_indices] = True
@@ -445,18 +400,17 @@ class RomanSourceCatalog:
         xyidx = np.round(self._xypos[xymask, :]).astype(int)
         flags = np.full(self._xypos.shape[0], 0, dtype=np.int32)
 
-        # sources whose centroid pixel is not finite
+        # Sources whose centroid pixel is not finite
         flags[~xymask] = pixel.DO_NOT_USE
 
-        try:
-            # L2 images have a dq array
+        # Dispatch on data model type. L2 (ImageModel) has a ``dq``
+        # array, while L3 mosaics have a ``weight`` array.
+        if hasattr(self.model, "dq"):
+            # L2 images: propagate the DO_NOT_USE flag from the DQ array.
             dqflags = self.model.dq[xyidx[:, 1], xyidx[:, 0]]
-            # if dqflags contains the DO_NOT_USE flag, set to DO_NOT_USE
-            # (dq=1), otherwise 0
             flags[xymask] = dqflags & pixel.DO_NOT_USE
-
-        except AttributeError:
-            # L3 images
+        else:
+            # L3 mosaics: zero-weight pixels are unusable.
             mask = self.model.weight == 0
             flags[xymask] = mask[xyidx[:, 1], xyidx[:, 0]].astype(np.int32)
 
@@ -472,6 +426,163 @@ class RomanSourceCatalog:
         """
         return np.zeros(self.n_sources, dtype=np.int32)
 
+    def _validate_and_convert_units(self):
+        """
+        Validate that model data arrays have compatible units and
+        convert them to ``self.flux_unit`` if needed.
+        """
+        self.convolved_data = validate_and_convert_to_flux_density(
+            self.model,
+            self.convolved_data,
+            flux_unit=self.flux_unit,
+            l2_to_sb=self.l2_to_sb,
+            sb_to_flux=self.sb_to_flux,
+        )
+
+    @property
+    def column_names(self):
+        """
+        An ordered list of the output catalog column names.
+        """
+        return self._schema.column_names
+
+    def _make_segment_cat(self):
+        return SegmentCatalog(
+            self.model,
+            self.segment_img,
+            self.convolved_data,
+            self.mask,
+            self._pixel_area,
+            self._wcs_angle,
+            detection_cat=self.detection_cat,
+            requested_properties=self.column_names,
+        )
+
+    def _make_aperture_cat(self):
+        return ApertureCatalog(
+            self.model,
+            self._xypos_finite,
+            self._pixel_scale,
+            ee_spline=self.ee_spline,
+            requested_properties=self.column_names,
+        )
+
+    def _make_daofind_cat(self):
+        return DAOFindCatalog(
+            self.model.data,
+            self._xypos_finite,
+            self.kernel_fwhm,
+            requested_properties=self.column_names,
+        )
+
+    def _make_nn_cat(self):
+        return NNCatalog(
+            self.label,
+            self._xypos,
+            self._xypos_finite,
+            self._pixel_scale,
+            requested_properties=self.column_names,
+        )
+
+    def _make_psf_cat(self):
+        return PSFCatalog(
+            self.model,
+            self.psf_model,
+            self._xypos,
+            self.mask,
+            requested_properties=self.column_names,
+        )
+
+    @property
+    def _measurement_registry(self):
+        """
+        Ordered list of `MeasurementStep` entries used to build the
+        catalog.
+
+        Order matters: segment must be first because downstream steps
+        depend on its outputs (``label``, ``x_centroid``, etc.) via
+        ``self._xypos``. Aperture must come before steps that may
+        reference its outputs.
+
+        Returns
+        -------
+        result : list of `MeasurementStep`
+            Each entry's ``label``, ``factory``, ``store_as`` and
+            ``condition`` fields control how the corresponding
+            sub-catalog is constructed and stored. See `MeasurementStep`
+            for field semantics.
+        """
+        cols = set(self.column_names)
+        return [
+            MeasurementStep(
+                label="segment properties",
+                factory=self._make_segment_cat,
+                store_as="segment_cat",
+                condition=lambda: True,
+            ),
+            MeasurementStep(
+                label="aperture photometry",
+                factory=self._make_aperture_cat,
+                store_as="aperture_cat",
+                condition=lambda: self.cat_type != "forced_det",
+            ),
+            MeasurementStep(
+                label="DAOFind properties",
+                factory=self._make_daofind_cat,
+                store_as=None,
+                condition=lambda: bool({"sharpness", "roundness1"} & cols),
+            ),
+            MeasurementStep(
+                label="nearest neighbor properties",
+                factory=self._make_nn_cat,
+                store_as=None,
+                condition=lambda: any(col.startswith("nn_") for col in cols),
+            ),
+            MeasurementStep(
+                label="PSF photometry",
+                factory=self._make_psf_cat,
+                store_as=None,
+                condition=lambda: any("psf" in col for col in cols),
+            ),
+        ]
+
+    def _apply_subcatalog(self, subcatalog, *, store_as=None):
+        """
+        Copy the named columns from a sub-catalog onto ``self`` and,
+        optionally, also store the sub-catalog itself for later use.
+
+        Parameters
+        ----------
+        subcatalog : object
+            A sub-catalog instance with ``properties`` (iterable of
+            attribute names to copy) and optionally a ``meta`` dict.
+
+        store_as : str or `None`
+            If given, also store the sub-catalog as ``self.<store_as>``.
+        """
+        meta = getattr(subcatalog, "meta", None)
+        if meta is not None:
+            self.meta.update(meta)
+        for name in subcatalog.properties:
+            setattr(self, name, getattr(subcatalog, name))
+        if store_as is not None:
+            setattr(self, store_as, subcatalog)
+
+    def _run_measurements(self):
+        """
+        Run each enabled `MeasurementStep` in registry order.
+
+        Order matters: each step may depend on attributes set by earlier
+        steps (e.g. ``label`` and ``x_centroid`` from ``segment_cat``
+        are needed before nearest-neighbor and PSF photometry). Steps
+        whose ``condition()`` returns `False` are skipped silently.
+        """
+        for step in self._measurement_registry:
+            if not step.condition():
+                continue
+            log.info(f"Calculating {step.label}")
+            self._apply_subcatalog(step.factory(), store_as=step.store_as)
+
     def update_metadata(self):
         """
         Update the metadata dictionary with the package version
@@ -479,7 +590,7 @@ class RomanSourceCatalog:
         """
         ver_key = "versions"
         if "version" in self.meta:
-            # depends on photutils version
+            # Depends on photutils version
             self.meta[ver_key] = self.meta.pop("version")
 
         ver_dict = self.meta.get("versions", None)
@@ -497,13 +608,13 @@ class RomanSourceCatalog:
             ver_dict = {key: ver_dict[key] for key in packages if key in ver_dict}
             self.meta[ver_key] = ver_dict
 
-        # reorder the metadata dictionary
+        # Reorder the metadata dictionary
         self.meta.pop("local_bkg_width", None)
         keys = ["date", "versions", "aperture_mask_method", "kron_params"]
         old_meta = self.meta.copy()
         self.meta = {key: old_meta.get(key, None) for key in keys}
 
-        # reformat the aperture radii for the metadata to remove
+        # Reformat the aperture radii for the metadata to remove
         # Quantity objects
         if self.aperture_cat is not None:
             aper_radii = self.aperture_cat.aperture_radii.copy()
@@ -520,409 +631,21 @@ class RomanSourceCatalog:
 
                 self.meta["ee_fractions"] = np.array(fractions).astype(np.float32)
 
-    @lazyproperty
-    def aper_colnames(self):
+    def _assemble_catalog(self):
         """
-        An ordered list of the aperture column names.
-        """
-        # define the aperture background flux column names
-        aper_colnames = [
-            "aper_bkg_flux",
-            "aper_bkg_flux_err",
-        ]
-
-        # define the aperture flux column names,
-        # e.g, aper01_flux, aper01_flux_err, etc.
-        for colname in self.aperture_cat.aperture_flux_colnames:
-            aper_colnames.append(colname)
-            aper_colnames.append(f"{colname}_err")
-
-        return aper_colnames
-
-    @lazyproperty
-    def flux_colnames(self):
-        """
-        An ordered list of the flux column names.
-        """
-        other_colnames = [
-            "segment_flux",
-            "segment_flux_err",
-            "kron_flux",
-            "kron_flux_err",
-            "kron_abmag",
-            "kron_abmag_err",
-        ]
-        psf_colnames = ["psf_flux", "psf_flux_err"]
-        # PSF-matched catalogs omit abmag columns (redundant, since they
-        # can be derived from flux via -2.5*log10; we provide at least
-        # one magnitude per source but not all variants) and PSF columns
-        # (fit_psf is always False for matched images, but be explicit
-        # for clarity).
-        matched_other_colnames = [
-            "segment_flux",
-            "segment_flux_err",
-            "kron_flux",
-            "kron_flux_err",
-        ]
-
-        if self.cat_type in ("prompt", "forced_full", "dr_band"):
-            flux_colnames = self.aper_colnames
-            if self.fit_psf:
-                flux_colnames.extend(psf_colnames)
-            flux_colnames.extend(other_colnames)
-
-        elif self.cat_type == "psf_matched":
-            flux_colnames = self.aper_colnames
-            flux_colnames.extend(matched_other_colnames)
-
-        elif self.cat_type in ("dr_det", "forced_det"):
-            flux_colnames = []
-
-        else:
-            raise ValueError(f"Unknown catalog type: {self.cat_type}")
-
-        return flux_colnames
-
-    @lazyproperty
-    def column_names(self):
-        """
-        An ordered list of the output catalog column names.
-
-        This list determines which values are calculated in the output
-        catalog.
-        """
-        base_colnames = [
-            "label",
-            "flagged_spatial_id",
-            "x_centroid",
-            "y_centroid",
-            "x_centroid_err",
-            "y_centroid_err",
-        ]
-        xywin_colnames = [
-            "x_centroid_win",
-            "y_centroid_win",
-            "x_centroid_win_err",
-            "y_centroid_win_err",
-        ]
-        skybest_colnames = [
-            "ra",
-            "dec",
-        ]
-        sky_colnames = [
-            "ra_centroid",
-            "dec_centroid",
-            "ra_centroid_err",
-            "dec_centroid_err",
-        ]
-        skywin_colnames = [
-            "ra_centroid_win",
-            "dec_centroid_win",
-            "ra_centroid_win_err",
-            "dec_centroid_win_err",
-        ]
-        skypsf_colnames = [
-            "ra_psf",
-            "dec_psf",
-            "ra_psf_err",
-            "dec_psf_err",
-        ]
-        segm_colnames = [
-            "bbox_xmin",
-            "bbox_xmax",
-            "bbox_ymin",
-            "bbox_ymax",
-            "segment_area",
-        ]
-        shape_colnames = [
-            "semimajor",
-            "semiminor",
-            "fwhm",
-            "ellipticity",
-            "orientation_pix",
-            "orientation_sky",
-            "cxx",
-            "cxy",
-            "cyy",
-            "kron_radius",
-        ]
-        nn_colnames = [
-            "nn_label",
-            "nn_distance",
-        ]
-        othershape_colnames = [
-            "sharpness",
-            "roundness1",
-            "is_extended",
-            "fluxfrac_radius_50",
-        ]
-        xypsf_colnames = [
-            "x_psf",
-            "x_psf_err",
-            "y_psf",
-            "y_psf_err",
-        ]
-        flag_columns = [
-            "warning_flags",
-            "image_flags",
-        ]
-        psf_flags_colnames = [
-            "psf_flags",
-            "psf_gof",
-        ]
-
-        det_colnames = []
-        det_colnames.extend(segm_colnames)
-        det_colnames.extend(shape_colnames)
-        det_colnames.extend(nn_colnames)
-
-        # These are band-specific columns for the multiband catalog.
-        # They are also used for the forced catalog.
-        band_colnames = ["label"]  # needed to join the filter catalogs
-        if self.fit_psf:
-            band_colnames.extend(xypsf_colnames)
-            band_colnames.extend(skypsf_colnames)
-            band_colnames.extend(psf_flags_colnames)
-        band_colnames.extend(othershape_colnames)
-        band_colnames.extend(self.flux_colnames)
-        self.band_colnames = band_colnames
-
-        if self.cat_type in ("prompt", "forced_full"):
-            colnames = []
-            colnames.extend(base_colnames)
-            colnames.extend(xywin_colnames)
-            if self.fit_psf:
-                colnames.extend(xypsf_colnames)
-            colnames.extend(skybest_colnames)
-            colnames.extend(sky_colnames)
-            colnames.extend(skywin_colnames)
-            if self.fit_psf:
-                colnames.extend(skypsf_colnames)
-            colnames.extend(det_colnames)
-            colnames.extend(othershape_colnames)
-            colnames.extend(self.flux_colnames)
-
-            colnames.extend(flag_columns)
-            if self.fit_psf:
-                colnames.extend(psf_flags_colnames)
-
-        elif self.cat_type == "forced_det":
-            colnames = ["label"]  # needed to join the forced catalogs
-            colnames.extend(base_colnames)
-            colnames.extend(skybest_colnames)
-            colnames.extend(sky_colnames)
-            colnames.extend(shape_colnames)
-            colnames.extend(nn_colnames)
-
-        elif self.cat_type == "dr_det":
-            colnames = []
-            colnames.extend(base_colnames)
-            colnames.extend(xywin_colnames)
-            colnames.extend(skybest_colnames)
-            colnames.extend(sky_colnames)
-            colnames.extend(skywin_colnames)
-            colnames.extend(det_colnames)
-            colnames.extend(flag_columns)
-
-        elif self.cat_type == "dr_band":
-            colnames = band_colnames.copy()
-
-        elif self.cat_type == "psf_matched":
-            # Similar to dr_band but without the othershape_colnames
-            # (sharpness, roundness1, is_extended, fluxfrac_radius_50)
-            colnames = ["label"]
-            colnames.extend(self.flux_colnames)
-
-        return colnames
-
-    def _prefix_forced(self, catalog):
-        """
-        Prefix select columns of the catalog with "forced_" for the
-        forced catalog.
-
-        Parameters
-        ----------
-        catalog : `~astropy.table.Table`
-            The source catalog to prefix.
+        Build the output `~astropy.table.Table` from this catalog's
+        per-source attributes.
 
         Returns
         -------
         catalog : `~astropy.table.Table`
-            The updated source catalog.
+            One column per name in `column_names`, with column
+            descriptions sourced from ``self.cat_model``, ``forced_``
+            prefixes applied where applicable, and metadata
+            copied from `update_metadata`. The result is a plain
+            `~astropy.table.Table` (not `QTable`) so columns are not
+            `~astropy.units.Quantity`.
         """
-        # prefix all columns (except "label") with "forced_"
-        if self.cat_type == "forced_det":
-            for colname in catalog.colnames:
-                if colname != "label":
-                    catalog.rename_column(colname, f"forced_{colname}")
-
-        # prefix the self.band_colnames with "forced_"
-        if self.cat_type == "forced_full":
-            for colname in [*self.band_colnames, "warning_flags"]:
-                if colname in catalog.colnames and colname != "label":
-                    catalog.rename_column(colname, f"forced_{colname}")
-
-        return catalog
-
-    @staticmethod
-    def _get_compatible_unit(*arrays):
-        """
-        Check if multiple arrays have compatible units and return the
-        common unit.
-
-        This function verifies that either all arrays are plain NumPy
-        ndarrays (no units) or that they are all Astropy Quantity
-        objects with the same units.
-
-        Parameters
-        ----------
-        *arrays : `numpy.ndarray` or `astropy.units.Quantity`
-            The data arrays to check.
-
-        Returns
-        -------
-        result : astropy.units.Unit or None
-            The common `astropy.units.Unit` object if all are Quantity
-            arrays with the same unit. Otherwise, returns `None`.
-
-        Raises
-        ------
-        ValueError
-            If one input is a Quantity and another is not, or if they
-            are all Quantities but with different units.
-        """
-        if len(arrays) == 0:
-            return None
-
-        # Filter out None values
-        arrays = [arr for arr in arrays if arr is not None]
-        if len(arrays) == 0:
-            return None
-
-        # Check if first array is a Quantity
-        is_quantity = [isinstance(arr, u.Quantity) for arr in arrays]
-
-        # All must be quantities or all must not be quantities
-        if all(is_quantity):
-            # Check that all have the same unit
-            first_unit = arrays[0].unit
-            for i, arr in enumerate(arrays[1:], start=1):
-                if arr.unit != first_unit:
-                    raise ValueError(
-                        f"Incompatible units: array 0 has unit '{first_unit}' "
-                        f"but array {i} has unit '{arr.unit}'."
-                    )
-            return first_unit
-        elif not any(is_quantity):
-            return None
-        else:
-            # Mixed types
-            raise ValueError(
-                "Incompatible types: some arrays have units while others do not."
-            )
-
-    def _validate_and_convert_units(self):
-        """
-        Validate that model data arrays have compatible units and
-        convert them to flux density units if needed.
-
-        This method checks that model.data and model.err have the same
-        units, then converts both them and convolved_data (if not None)
-        to the desired flux density unit (self.flux_unit).
-
-        Note: convolved_data is allowed to have different units from
-        model.data and model.err because it may come from a separate
-        source (e.g., a detection image from forced photometry).
-
-        For models without units:
-        - Level-2 (ImageModel): DN/s -> MJy/sr -> flux density
-        - Level-3 (MosaicModel): MJy/sr -> flux density
-
-        For models with units:
-        - Converts to self.flux_unit if the unit is compatible
-
-        Raises
-        ------
-        ValueError
-            If model.data and model.err have incompatible units.
-        """
-        # Check that model.data and model.err have compatible units
-        unit = self._get_compatible_unit(self.model.data, self.model.err)
-
-        if unit is None:
-            # No units present - convert to flux density units
-            if isinstance(self.model, ImageModel):
-                # Level-2: DN/s -> MJy/sr
-                self.convert_l2_to_sb()
-            # Level-2 or Level-3: MJy/sr -> flux density
-            self.convert_sb_to_flux_density()
-        else:
-            # Units present - check compatibility and convert
-            if unit.is_equivalent(self.flux_unit):
-                # Convert to desired flux unit
-                self.model["data"] = self.model["data"].to(self.flux_unit)
-                self.model["err"] = self.model["err"].to(self.flux_unit)
-            else:
-                raise ValueError(
-                    f"Incompatible units: model data has unit '{unit}' "
-                    f"which is not equivalent to the desired flux unit "
-                    f"'{self.flux_unit}'."
-                )
-
-        # Handle convolved_data separately as it may have different units
-        if self.convolved_data is not None:
-            conv_unit = self._get_compatible_unit(self.convolved_data)
-            if conv_unit is None:
-                # No units - apply same conversion as model data
-                if isinstance(self.model, ImageModel):
-                    self.convolved_data *= self.l2_to_sb
-                self.convolved_data *= self.sb_to_flux.value
-                self.convolved_data <<= self.sb_to_flux.unit
-            else:
-                if conv_unit.is_equivalent(self.flux_unit):
-                    # Convert to desired flux unit
-                    self.convolved_data = self.convolved_data.to(self.flux_unit)
-                else:
-                    raise ValueError(
-                        f"Incompatible units: convolved_data has unit "
-                        f"'{conv_unit}' which is not equivalent to the "
-                        f"desired flux unit '{self.flux_unit}'."
-                    )
-
-    @lazyproperty
-    def catalog(self):
-        """
-        The final source catalog as an Astropy Table.
-        """
-        # Validate and convert units for all data arrays
-        self._validate_and_convert_units()
-
-        # make measurements - the order of these calculations is important
-        log.info("Calculating segment properties")
-        self.calc_segment_properties()
-
-        # NOTE: we cannot access self.column_names before
-        # calc_aperture_photometry is called because the aperture columns
-        # names are dynmically generated
-        if self.cat_type != "forced_det":
-            log.info("Calculating aperture photometry")
-            self.calc_aperture_photometry()
-
-        daofind_cols = {"sharpness", "roundness1"}
-        if daofind_cols & set(self.column_names):
-            log.info("Calculating DAOFind properties")
-            self.calc_daofind_properties()
-
-        if any("nn_" in col for col in self.column_names):
-            log.info("Calculating nearest neighbor properties")
-            self.calc_nn_properties()
-
-        if any("psf" in col for col in self.column_names):
-            # TODO: compute force_full PSF photometry at forced positions
-            log.info("Calculating PSF photometry")
-            self.calc_psf_photometry()
-
-        # put the measurements into a Table
         catalog = QTable()
         for column in self.column_names:
             catalog[column] = getattr(self, column)
@@ -931,10 +654,23 @@ class RomanSourceCatalog:
         self.update_metadata()
         catalog.meta.update(self.meta)
 
-        # prefix select columns with "forced_" for the forced catalog
-        catalog = self._prefix_forced(catalog)
+        # Prefix select columns with "forced_" for the forced catalog
+        catalog = self._schema.prefix_forced(catalog)
 
-        # convert QTable to Table to avoid having Quantity columns
-        catalog = Table(catalog)
+        # Convert QTable to Table to avoid having Quantity columns
+        return Table(catalog)
 
-        return catalog
+    @lazyproperty
+    def catalog(self):
+        """
+        The final source catalog as an Astropy Table.
+        """
+        # Validate and convert units for all data arrays.
+        self._validate_and_convert_units()
+
+        # Run all enabled measurement steps in registry order.
+        self._run_measurements()
+
+        # Assemble the column values populated by the measurement steps
+        # into the output Table.
+        return self._assemble_catalog()

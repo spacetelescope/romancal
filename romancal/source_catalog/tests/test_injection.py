@@ -9,7 +9,7 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.time import Time
 from roman_datamodels.datamodels import ImageModel, MosaicModel
-from romanisim import bandpass, parameters
+from romanisim.models import bandpass, parameters
 
 from romancal.skycell.tests.test_skycell_match import mk_gwcs
 from romancal.source_catalog import injection
