@@ -174,13 +174,15 @@ the (x, y) skycell indices within this projection region, starting from
 coordinate of the object within this skycell in virtual 0.05" pixels
 (regardless of the pixel scale of the skycell).
 
+The ``psf_gof`` metric is the reduced chi-squared of the PSF fit.
+
 
 Flag Columns
 ^^^^^^^^^^^^
 
 The ``warning_flags`` column contains the following bit flags:
 
-- 0 : good
+- 0 : Good
 - 1 :
 
   * Level 2: sources whose rounded centroid pixel is not finite or has
@@ -191,19 +193,25 @@ The ``warning_flags`` column contains the following bit flags:
 
 The ``image_flags`` column contains the following bit flags:
 
-- 0 : good
-- 1 : one or more pixels in the source segment was flagged
+- 0 : Good
+- 1 : One or more pixels in the source segment was flagged
 
 The ``psf_flags`` column contains the following bit flags defined by the
 :py:class:`photutils.psf.PSFPhotometry` class:
 
-- 0 : good
-- 1 : one or more pixels in the ``fit_shape`` region were masked
-- 2 : the fit x and/or y position lies outside of the input data
-- 4 : the fit flux is less than or equal to zero
-- 8 : the fitter may not have converged
-- 16 : the fitter parameter covariance matrix was not returned
-- 32 : the fit x or y position is at the bounded value
+- 0 : Good
+- 1 : One or more pixels in the ``fit_shape`` region were masked
+- 2 : The fitted source position is outside the bounds of the input image
+- 4 : The fitted flux value is negative or zero
+- 8 : The PSF fitting algorithm may not have converged to a stable solution
+- 16 : Parameter covariance matrix is not available, preventing error estimation
+- 32 : One or more fitted parameters are very close to their imposed bounds
+- 64 : The source PSF fitting region has no overlap with valid data pixels
+- 128 : All pixels in the source fitting region are masked
+- 256 : Insufficient unmasked pixels available for reliable PSF fitting
+- 512 : The fitted x or y position is NaN or inf, indicating an invalid or failed fit
+- 1024 : The fitted flux value is NaN or inf, indicating an invalid or failed fit
+- 2048 : The local background value is NaN or inf, so it was not subtracted before fitting
 
 
 Output Products
