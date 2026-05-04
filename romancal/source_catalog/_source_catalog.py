@@ -16,17 +16,16 @@ from roman_datamodels.dqflags import pixel
 
 from romancal import __version__ as romancal_version
 from romancal.skycell import skymap
-from romancal.source_catalog.aperture import ApertureCatalog
-from romancal.source_catalog.column_schema import CatalogSchema
-from romancal.source_catalog.daofind import DAOFindCatalog
-from romancal.source_catalog.neighbors import NNCatalog
-from romancal.source_catalog.psf import PSFCatalog
-from romancal.source_catalog.segment import SegmentCatalog
-from romancal.source_catalog.unit_conversion import (
+from romancal.source_catalog._aperture import ApertureCatalog
+from romancal.source_catalog._column_schema import CatalogSchema
+from romancal.source_catalog._daofind import DAOFindCatalog
+from romancal.source_catalog._neighbors import NNCatalog
+from romancal.source_catalog._segment import SegmentCatalog
+from romancal.source_catalog._unit_conversion import (
     validate_and_convert_to_flux_density,
 )
-
-from ._wcs_helpers import pixel_scale_angle_at_skycoord
+from romancal.source_catalog._wcs_helpers import pixel_scale_angle_at_skycoord
+from romancal.source_catalog.psf import _PSFCatalog
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -485,7 +484,7 @@ class RomanSourceCatalog:
         )
 
     def _make_psf_cat(self):
-        return PSFCatalog(
+        return _PSFCatalog(
             self.model,
             self.psf_model,
             self._xypos,

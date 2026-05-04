@@ -14,7 +14,7 @@ from roman_datamodels.datamodels import MosaicModel, MultibandSegmentationMapMod
 
 from romancal.datamodels import ModelLibrary
 from romancal.multiband_catalog import MultibandCatalogStep
-from romancal.multiband_catalog.multiband_catalog import match_recovered_sources
+from romancal.multiband_catalog._multiband_catalog import match_recovered_sources
 from romancal.skycell.tests.test_skycell_match import mk_gwcs
 
 

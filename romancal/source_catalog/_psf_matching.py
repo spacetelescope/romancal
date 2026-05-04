@@ -8,11 +8,8 @@ import numpy as np
 from astropy.convolution import convolve_fft
 from roman_datamodels.datamodels import MosaicModel
 
-from romancal.source_catalog.psf import (
-    create_convolution_kernel,
-    create_l3_psf_model,
-)
-from romancal.source_catalog.utils import copy_model_arrays, make_model_mask
+from romancal.source_catalog._utils import copy_model_arrays, make_model_mask
+from romancal.source_catalog.psf import _create_convolution_kernel, create_l3_psf_model
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -130,7 +127,7 @@ def create_psf_matched_image(
 
     oversampling = input_oversampling[0]
 
-    matching_kernel = create_convolution_kernel(
+    matching_kernel = _create_convolution_kernel(
         input_l3_psf_model.data,
         target_l3_psf_model.data,
         downsample=oversampling,
@@ -303,7 +300,7 @@ def compute_psf_correction_factors(
         factors. Values are arrays with one correction factor per
         source.
     """
-    from romancal.source_catalog.source_catalog import RomanSourceCatalog
+    from romancal.source_catalog._source_catalog import RomanSourceCatalog
 
     ref_filter = ref_model.meta.instrument.optical_element
     target_filter = target_model.meta.instrument.optical_element
@@ -339,7 +336,7 @@ def compute_psf_correction_factors(
     )
 
     # Prevent circular import
-    from romancal.multiband_catalog.utils import add_filter_to_colnames
+    from romancal.multiband_catalog._utils import add_filter_to_colnames
 
     # Add filter name to catalog column names
     cat_matched = add_filter_to_colnames(catobj_matched.catalog, ref_filter)

@@ -9,9 +9,9 @@ import astropy.units as u
 import numpy as np
 import pytest
 
-from romancal.source_catalog.aperture import ApertureCatalog
-from romancal.source_catalog.daofind import DAOFindCatalog
-from romancal.source_catalog.neighbors import NNCatalog
+from romancal.source_catalog._aperture import ApertureCatalog
+from romancal.source_catalog._daofind import DAOFindCatalog
+from romancal.source_catalog._neighbors import NNCatalog
 
 NN_AVAILABLE_PROPERTIES = ("nn_label", "nn_distance")
 DAO_AVAILABLE_PROPERTIES = ("sharpness", "roundness1")
