@@ -13,7 +13,7 @@ Background Subtraction
 
 A two-dimensional background is estimated and subtracted from the
 data. The background and background noise are estimated using the
-:py:class:`photutils.background.Background2D` class from `Photutils
+:external+photutils:py:class:`photutils.background.Background2D` class from `Photutils
 <https://photutils.readthedocs.io/en/stable/index.html>`_. This class
 calculates the background by measuring the sigma-clipped median within
 user-defined boxes of a specified size (``bkg_boxsize``). The background
@@ -77,7 +77,7 @@ performed by setting the ``fit_psf`` keyword. Enabling
 this option fits a model PSF to each source to measure its
 position and flux. The PSF model is generated using reference
 files on CRDS.  PSF photometry is performed using the
-:py:class:`photutils.psf.PSFPhotometry` class from Photutils.
+:external+photutils:py:class:`photutils.psf.PSFPhotometry` class from Photutils.
 
 For Level 2 data, a gridded PSF model is generated for each individual
 detector using the reference files in CRDS. These PSF models account
@@ -144,12 +144,12 @@ radius will contain an ``aper01_f184_flux`` column.
 
 .. source_catalog_columns::
 
-Star finding algorithms like `~photutils.detection.DAOStarFinder`
+Star finding algorithms like :external+photutils:py:class:`~photutils.detection.DAOStarFinder`
 provide approximate stellar centroids. More precise centroids may
 be inferred by fitting model PSFs to the observations. Setting the
 SourceCatalogStep's option `fit_psf` to True will generate model Roman
 PSFs with PSF reference files in CRDS, and fit those models to each of
-the sources detected by `~photutils.detection.DAOStarFinder`.
+the sources detected by :external+photutils:py:class:`~photutils.detection.DAOStarFinder`.
 
 * `SourceCatalog
   <https://photutils.readthedocs.io/en/latest/api/photutils.segmentation.SourceCatalog.html>`_
@@ -197,7 +197,7 @@ The ``image_flags`` column contains the following bit flags:
 - 1 : One or more pixels in the source segment was flagged
 
 The ``psf_flags`` column contains the following bit flags defined by the
-:py:class:`photutils.psf.PSFPhotometry` class:
+:external+photutils:py:class:`photutils.psf.PSFPhotometry` class:
 
 - 0 : Good
 - 1 : One or more pixels in the ``fit_shape`` region were masked
