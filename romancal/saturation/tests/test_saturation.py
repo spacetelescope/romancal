@@ -6,7 +6,7 @@ Unit tests for saturation flagging
 
 import numpy as np
 import pytest
-from roman_datamodels.datamodels import RampModel, SaturationRefModel, ScienceRawModel
+from roman_datamodels.datamodels import RampModel, SaturationRefModel
 from roman_datamodels.dqflags import group, pixel
 
 from romancal.saturation import SaturationStep
@@ -319,15 +319,13 @@ def test_saturation_getbestref(setup_wfi_datamodels):
     shape = (2, 20, 20)
 
     # Create test science raw model
-    wfi_sci_raw_model = ScienceRawModel.create_fake_data(shape=shape)
-    wfi_sci_raw_model.meta.instrument.name = "WFI"
-    wfi_sci_raw_model.meta.instrument.detector = "WFI01"
-    wfi_sci_raw_model.meta.instrument.optical_element = "F158"
-    wfi_sci_raw_model.meta["guide_star"]["window_xstart"] = 1012
-    wfi_sci_raw_model.meta["guide_star"]["window_xsize"] = 16
-    wfi_sci_raw_model.meta.exposure.type = "WFI_IMAGE"
-    wfi_sci_raw_model.data = np.ones(shape, dtype=np.uint16)
-    input_model = RampModel.from_science_raw(wfi_sci_raw_model)
+    input_model = RampModel.create_fake_data(shape=shape)
+    input_model.meta.instrument.name = "WFI"
+    input_model.meta.instrument.detector = "WFI01"
+    input_model.meta.instrument.optical_element = "F158"
+    input_model.meta["guide_star"]["window_xstart"] = 1012
+    input_model.meta["guide_star"]["window_xsize"] = 16
+    input_model.meta.exposure.type = "WFI_IMAGE"
 
     # Run the pipeline
     result = SaturationStep.call(input_model, override_saturation="N/A")

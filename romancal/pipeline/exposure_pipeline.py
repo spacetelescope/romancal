@@ -93,7 +93,7 @@ class ExposurePipeline(RomanPipeline):
             update_version=self.update_version,
             return_type=True,
             as_library=True,
-            open_kwargs={"on_disk": self.on_disk, "lazy_load": False},
+            open_kwargs={"on_disk": self.on_disk},
         )
         return_lib = input_type in ("ModelLibrary", "asn")
 
@@ -105,7 +105,10 @@ class ExposurePipeline(RomanPipeline):
                 self.dq_init.suffix = "dq_init"
                 result = self.dq_init.run(model)
 
-                del model
+                if model is not result:
+                    # dq_init converted this to a new model type so close the input
+                    model.close()
+                    del model
 
                 result = self.saturation.run(result)
 

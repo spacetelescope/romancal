@@ -105,7 +105,8 @@ def make_cosmoslike_catalog(cen, ra, dec, exptimes, filters=None, seed=None, **k
     all_cat : astropy.Table
         Table for use with table_to_catalog to generate catalog for simulation.
     """
-    from romanisim import bandpass, catalog
+    from romanisim import catalog
+    from romanisim.models import bandpass
 
     # WFI bandpasses
     if filters is None:
