@@ -357,39 +357,45 @@ def test_n_pix_grow_sat(setup_wfi_datamodels):
 
 def test_backup_saturation(setup_wfi_datamodels):
     """Check that backup extends saturation flags to preceding multi-read resultants."""
-    nresultants = 3
+    nresultants = 4
     nrows = 20
     ncols = 20
     satvalue = 60000
 
     ramp, satmap = setup_wfi_datamodels(nresultants, nrows, ncols)
-    ramp.meta.exposure.read_pattern = [[1], [2, 3], [4]]
+    ramp.meta.exposure.read_pattern = [[1], [2, 3], [4, 5], [6, 7]]
 
     ramp.data[0, 5, 5] = 0
     ramp.data[1, 5, 5] = 30000
-    ramp.data[2, 5, 5] = 62000
+    ramp.data[2, 5, 5] = 30000
+    ramp.data[3, 5, 5] = satvalue + 10000
     satmap.data[5, 5] = satvalue
 
-    # Without backup: only resultant 2 is flagged
-    output = flag_saturation(ramp, satmap, backup=0)
+    # Without backup: only resultant 3 is flagged
+    output = flag_saturation(ramp.copy(), satmap, backup=0)
+    assert output.groupdq[3, 5, 5] & group.SATURATED
+    assert not (output.groupdq[2, 5, 5] & group.SATURATED)
+
+    # With backup=1: resultant 2 (multi-read) also gets SATURATED from resultant 3
+    output = flag_saturation(ramp.copy(), satmap, backup=1)
+    assert output.groupdq[3, 5, 5] & group.SATURATED
     assert output.groupdq[2, 5, 5] & group.SATURATED
     assert not (output.groupdq[1, 5, 5] & group.SATURATED)
 
-    # Create fresh models for the backup=1 case
-    ramp2, satmap2 = setup_wfi_datamodels(nresultants, nrows, ncols)
-    ramp2.meta.exposure.read_pattern = [[1], [2, 3], [4]]
-    ramp2.data[0, 5, 5] = 0
-    ramp2.data[1, 5, 5] = 30000
-    ramp2.data[2, 5, 5] = 62000
-    satmap2.data[5, 5] = satvalue
+    # With backup=2: resultant 1 & 2 (multi-read) gets SATURATED from resultant 3
+    output = flag_saturation(ramp.copy(), satmap, backup=2)
+    assert output.groupdq[3, 5, 5] & group.SATURATED
+    assert output.groupdq[2, 5, 5] & group.SATURATED
+    assert output.groupdq[1, 5, 5] & group.SATURATED
+    assert not (output.groupdq[0, 5, 5] & group.SATURATED)
 
-    # With backup=1: resultant 1 (multi-read) also gets SATURATED from resultant 2
-    output2 = flag_saturation(ramp2, satmap2, backup=1)
-    assert output2.groupdq[2, 5, 5] & group.SATURATED
-    assert output2.groupdq[1, 5, 5] & group.SATURATED
-    assert not (
-        output2.groupdq[0, 5, 5] & group.SATURATED
-    )  # single-read, not backed up
+    # With backup=3: resultant 1 & 2 (multi-read) gets SATURATED from resultant 3
+    # resultant 0 still doesn't since it's a single read
+    output = flag_saturation(ramp.copy(), satmap, backup=3)
+    assert output.groupdq[3, 5, 5] & group.SATURATED
+    assert output.groupdq[2, 5, 5] & group.SATURATED
+    assert output.groupdq[1, 5, 5] & group.SATURATED
+    assert not (output.groupdq[0, 5, 5] & group.SATURATED)
 
 
 @pytest.fixture(scope="function")
