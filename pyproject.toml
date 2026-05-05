@@ -395,6 +395,3 @@ showcontent = true
 directory = "docs"
 name = "Documentation"
 showcontent = true
-
-[tool.uv]
-override-dependencies = ["rad @ git+https://github.com/mairanteodoro/rad@RCAL-1380"]
