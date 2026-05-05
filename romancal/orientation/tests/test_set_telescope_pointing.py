@@ -248,10 +248,6 @@ def test_mnemonic_list():
             "SCF_AC_EST_FGS_QBR_2",
             "SCF_AC_EST_FGS_QBR_3",
             "SCF_AC_EST_FGS_QBR_4",
-            "SCF_AC_FGS_TBL_Qb1",
-            "SCF_AC_FGS_TBL_Qb2",
-            "SCF_AC_FGS_TBL_Qb3",
-            "SCF_AC_FGS_TBL_Qb4",
         )
     )
 
