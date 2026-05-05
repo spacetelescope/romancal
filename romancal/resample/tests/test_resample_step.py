@@ -17,7 +17,7 @@ from romancal.assign_wcs.utils import add_s_region
 from romancal.datamodels import ModelLibrary
 from romancal.regtest import util
 from romancal.resample import ResampleStep
-from romancal.resample.l3_wcs import l3wcsinfo_to_wcs
+from romancal.resample._l3_wcs import l3wcsinfo_to_wcs
 
 
 def create_wcs_object_without_distortion(fiducial_world, pscale, shape, **kwargs):
