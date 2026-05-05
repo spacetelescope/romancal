@@ -10,14 +10,14 @@
 # - {aperture: '''WFI01_FULL'''}
 # - {default_quaternion: None}
 # - {gscommanded: None}
-# - {obsend: '<Time object: scale=''utc'' format=''isot'' value=2027-03-23T19:21:36.000>'}
-# - {obsstart: '<Time object: scale=''utc'' format=''isot'' value=2027-03-23T19:20:40.000>'}
-# - {pointing: 'Pointing(fgs_q=None, obstime=<Time object: scale=''utc'' format=''unix'' value=1805829668.0275648>, q=array([-0.52558752,  0.3719724
-#     , -0.52016581,  0.38150882]))'}
-# - {reduce_func: <function pointing_from_average at 0x11c2f4900>}
+# - {obsend: '<Time object: scale=''utc'' format=''isot'' value=2025-09-12T12:34:28.000>'}
+# - {obsstart: '<Time object: scale=''utc'' format=''isot'' value=2025-09-12T12:33:28.000>'}
+# - {pointing: 'Pointing(fgs_q=None, obstime=<Time object: scale=''utc'' format=''unix'' value=1757680438.0280416>, q=array([-0.70264027,
+#     -0.09765787,  0.6867813 ,  0.1584015 ]))'}
+# - {reduce_func: <function pointing_from_average at 0x11ce4c0e0>}
 # - {service_kwargs: None}
 # - {tolerance: '60.0'}
 # - {velocity: '(-999999.0, -999999.0, -999999.0)'}
 # schema: astropy-2.0
 obstime ra dec pa_v3
-2027-03-23T19:21:08.028 1.8515542645716951 56.161123809866474 261.6410904500064
+2025-09-12T12:33:58.028 83.95259568012658 -69.09685668405076 91.04084191764971

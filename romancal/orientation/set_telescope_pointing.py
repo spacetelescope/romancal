@@ -103,7 +103,7 @@ TYPES_TO_UPDATE = set()
 
 # Mnemonics needed.
 COARSE_MNEMONICS_QUATERNION_ECI = [f"SCF_AC_SDR_QBJ_{idx + 1}" for idx in range(4)]
-COARSE_MNEMONICS_B2FGS_EST = [f"SCF_AC_EST_FGS_qbr{idx + 1}" for idx in range(4)]
+COARSE_MNEMONICS_B2FGS_EST = [f"SCF_AC_EST_FGS_QBR_{idx + 1}" for idx in range(4)]
 COARSE_MNEMONICS_B2FGS_PRELOAD = [f"SCF_AC_FGS_TBL_Qb{idx + 1}" for idx in range(4)]
 COARSE_MNEMONICS = (
     COARSE_MNEMONICS_QUATERNION_ECI
@@ -967,7 +967,7 @@ def get_mnemonics(
     except EXPECTED_ERRORS as exception:
         raise ValueError(
             f"Cannot open engineering DB connection\nException: {exception}"
-        ) from None
+        ) from exception
     logger.info("Querying engineering DB: %s", engdb)
 
     # Construct the mnemonic values structure.
@@ -1019,7 +1019,7 @@ def get_mnemonics(
                 if allowed_start <= value.obstime <= allowed_end
             ]
             if not len(allowed):
-                raise ValueError(
+                logger.warning(
                     "No telemetry exists for mnemonic {} within {} and {}".format(
                         mnemonic,
                         Time(allowed_start, format="mjd").isot,
