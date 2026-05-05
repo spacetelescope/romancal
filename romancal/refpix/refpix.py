@@ -28,7 +28,7 @@ def run_steps(
 
     # Read in the data from the datamodels
     log.debug("Reading data from datamodel into single array")
-    
+
     if zero_bad_ref_pix:
         mask_bad_ref_pixels(datamodel)
 
