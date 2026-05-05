@@ -2,7 +2,6 @@
 
 import numpy as np
 import pytest
-import roman_datamodels as rdm
 from roman_datamodels.datamodels import DarkRefModel, ImageModel
 
 from romancal.dark_current import DarkCurrentStep
