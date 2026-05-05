@@ -84,22 +84,24 @@ class RampFitStep(RomanStep):
                 threshold_constant=self.threshold_constant,
             )
         elif algorithm == "likely":
-            jump_kw = dict(maximum_cores=self.maximum_cores,
-                           expand_large_events=self.expand_large_events,
-                           min_sat_area=self.min_sat_area,
-                           min_jump_area=self.min_jump_area,
-                           expand_factor=self.expand_factor,
-                           sat_required_snowball=self.sat_required_snowball,
-                           min_sat_radius_extend=self.min_sat_radius_extend,
-                           sat_expand=self.sat_expand,
-                           edge_size=self.edge_size,)
-                           
+            jump_kw = dict(
+                maximum_cores=self.maximum_cores,
+                expand_large_events=self.expand_large_events,
+                min_sat_area=self.min_sat_area,
+                min_jump_area=self.min_jump_area,
+                expand_factor=self.expand_factor,
+                sat_required_snowball=self.sat_required_snowball,
+                min_sat_radius_extend=self.min_sat_radius_extend,
+                sat_expand=self.sat_expand,
+                edge_size=self.edge_size,
+            )
+
             out_model = likely(
                 input_model,
                 readnoise_model,
                 gain_model,
                 include_var_rnoise=self.include_var_rnoise,
-                jump_kw=jump_kw
+                jump_kw=jump_kw,
             )
         else:
             log.error("Algorithm %s is not supported. Skipping step.")
@@ -111,9 +113,13 @@ class RampFitStep(RomanStep):
 
 @deprecated("0.22.0")
 def ols_cas22(
-    input_model, readnoise_model, gain_model, include_var_rnoise=False,
-    use_jump=True, threshold_intercept=None, threshold_constant=None,
-        
+    input_model,
+    readnoise_model,
+    gain_model,
+    include_var_rnoise=False,
+    use_jump=True,
+    threshold_intercept=None,
+    threshold_constant=None,
 ):
     """Peform Optimal Linear Fitting on arbitrarily space resulants
 
@@ -206,8 +212,14 @@ def ols_cas22(
     return image_model
 
 
-def likely(input_model, readnoise_model, gain_model, rejection_threshold=4.5,
-           include_var_rnoise=False, jump_kw=None):
+def likely(
+    input_model,
+    readnoise_model,
+    gain_model,
+    rejection_threshold=4.5,
+    include_var_rnoise=False,
+    jump_kw=None,
+):
     """Perform Maximum Likelihood Algorithm
 
     Parameters
@@ -280,9 +292,20 @@ def likely(input_model, readnoise_model, gain_model, rejection_threshold=4.5,
     return out_model
 
 
-def _setup_jump_data(result, rnoise_m, gain_m, expand_large_events=False, min_jump_area=6,
-                     min_sat_area=1, expand_factor=1.9, sat_required_snowball=True,
-                     min_sat_radius_extend=0.5, sat_expand=2, edge_size=0, maximum_cores='1'):
+def _setup_jump_data(
+    result,
+    rnoise_m,
+    gain_m,
+    expand_large_events=False,
+    min_jump_area=6,
+    min_sat_area=1,
+    expand_factor=1.9,
+    sat_required_snowball=True,
+    min_sat_radius_extend=0.5,
+    sat_expand=2,
+    edge_size=0,
+    maximum_cores="1",
+):
     """
     Create a JumpData instance to be used by STCAL jump.
 
