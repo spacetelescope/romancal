@@ -310,11 +310,11 @@ def test_dqinit_add_reference_read():
     shape = (2, 20, 20)
 
     wfi_sci_raw_model = rawim(shape, "WFI", "WFI_IMAGE")
-    result = DQInitStep.call(wfi_sci_raw_model)
+    result = DQInitStep.call(wfi_sci_raw_model.copy())
 
     wfi_sci_raw_model.reference_read = wfi_sci_raw_model.data[0] * 0 + offset
     wfi_sci_raw_model.reference_amp33 = wfi_sci_raw_model.amp33[0] * 0 + offset
-    result2 = DQInitStep.call(wfi_sci_raw_model)
+    result2 = DQInitStep.call(wfi_sci_raw_model.copy())
 
     assert np.allclose(result2.data - result.data, offset)
     assert np.allclose(result2.amp33 - result.amp33, offset)
@@ -325,9 +325,44 @@ def test_dqinit_sub_data_encoding_offset():
     shape = (2, 20, 20)
 
     wfi_sci_raw_model = rawim(shape, "WFI", "WFI_IMAGE")
-    result = DQInitStep.call(wfi_sci_raw_model)
+    result = DQInitStep.call(wfi_sci_raw_model.copy())
 
     wfi_sci_raw_model.meta.instrument.data_encoding_offset = offset
-    result2 = DQInitStep.call(wfi_sci_raw_model)
+    result2 = DQInitStep.call(wfi_sci_raw_model.copy())
 
     assert np.allclose(result.data - result2.data, offset)
+
+
+def test_dqinit_gw_expansion():
+    """Test that expand_gw_flagging extends the DO_NOT_USE zone around the guide window."""
+    shape = (2, 100, 100)
+    x_start, x_stop = 30, 40
+    y_start, y_stop = 50, 60
+    expand = 5
+
+    model = rawim(shape, "WFI", "WFI_IMAGE")
+    model.meta["guide_star"]["window_xstart"] = x_start
+    model.meta["guide_star"]["window_xstop"] = x_stop
+    model.meta["guide_star"]["window_ystart"] = y_start
+    model.meta["guide_star"]["window_ystop"] = y_stop
+
+    result = do_dqinit(model, mask=None, expand_gw_flagging=expand)
+    pq = result.pixeldq
+
+    # All rows in the GW column range should be flagged GW_AFFECTED_DATA
+    assert np.all(pq[:, x_start:x_stop] & pixel.GW_AFFECTED_DATA != 0)
+    assert pq[0, x_start - 1] & pixel.GW_AFFECTED_DATA == 0
+
+    # Expanded rectangle should have both DO_NOT_USE and GW_AFFECTED_DATA set
+    combined = pixel.DO_NOT_USE | pixel.GW_AFFECTED_DATA
+    assert np.all(
+        pq[y_start - expand : y_stop + expand, x_start - expand : x_stop + expand]
+        & combined
+        == combined
+    )
+
+    # Pixels just outside the expanded rectangle should not have DO_NOT_USE
+    assert pq[y_start - expand - 1, x_start] & pixel.DO_NOT_USE == 0
+    assert pq[y_stop + expand, x_start] & pixel.DO_NOT_USE == 0
+    assert pq[y_start, x_start - expand - 1] & pixel.DO_NOT_USE == 0
+    assert pq[y_start, x_stop + expand] & pixel.DO_NOT_USE == 0

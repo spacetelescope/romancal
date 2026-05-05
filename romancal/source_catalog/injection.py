@@ -41,15 +41,14 @@ HRGALMAGLIMIT = {
 
 def inject_sources(model, si_cat, seed=None, **kwargs):
     """
-    Convolve the background-subtracted model image with a Gaussian
-    kernel.
+    Inject sources from a catalog into an image model.
 
     Parameters
     ----------
     model : `ImageModel` or `MosaicModel`
         Model into which to inject sources.
-    si_cat: astropy.table.Table
-        Catalog of sources to inject into image.
+    si_cat : `~astropy.table.Table`
+        Catalog of sources to inject into the image.
 
     Returns
     -------
@@ -105,7 +104,8 @@ def make_cosmoslike_catalog(cen, ra, dec, exptimes, filters=None, seed=None, **k
     all_cat : astropy.Table
         Table for use with table_to_catalog to generate catalog for simulation.
     """
-    from romanisim import bandpass, catalog
+    from romanisim import catalog
+    from romanisim.models import bandpass
 
     # WFI bandpasses
     if filters is None:

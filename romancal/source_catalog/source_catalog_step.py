@@ -37,9 +37,41 @@ class SourceCatalogStep(RomanStep):
     measurements.
 
     Parameters
-    -----------
+    ----------
     input : str, `ImageModel`, or `MosaicModel`
         Path to an ASDF file, or an `ImageModel` or `MosaicModel`.
+
+    Other Parameters
+    ----------------
+    bkg_boxsize : int, optional
+        Edge length, in pixels, of the square mesh boxes used by
+        `~photutils.background.Background2D` to estimate the global 2D
+        background.
+
+    kernel_fwhm : float, optional
+        Full-width-at-half-maximum, in pixels, of the Gaussian smoothing
+        kernel used for source detection.
+
+    snr_threshold : float, optional
+        Per-pixel signal-to-noise ratio above the background required
+        for a pixel to be considered part of a source.
+
+    npixels : int, optional
+        Minimum number of connected pixels above ``snr_threshold``
+        required for a detection to be retained as a source.
+
+    deblend : bool, optional
+        If `True`, deblend overlapping sources after detection.
+
+    suffix : str, optional
+        Suffix appended to the output filenames.  Default ``'cat'``.
+
+    fit_psf : bool, optional
+        If `True`, fit source PSFs.
+
+    forced_segmentation : str, optional
+        If non-empty, path to a pre-computed segmentation image to use
+        in place of fresh source detection (forced photometry mode).
     """
 
     class_alias = "source_catalog"
@@ -86,10 +118,17 @@ class SourceCatalogStep(RomanStep):
             # except for those in ignored_dq_flags.
             # TODO: revisit these flags when CRDS reference files are updated
             ignored_dq_flags = pixel.NO_LIN_CORR
-            dq_mask = np.any(model.dq[..., None] & ~ignored_dq_flags, axis=-1)
+            if model.dq.shape != model.data.shape:
+                msg = (
+                    f"model.dq shape {model.dq.shape} does not match "
+                    f"model.data shape {model.data.shape}; expected a 2D "
+                    "DQ array."
+                )
+                raise ValueError(msg)
+            dq_mask = (model.dq & ~ignored_dq_flags) != 0
 
             # TODO: to set the mask to True for *only* dq_flags use:
-            # dq_mask = np.any(model.dq[..., None] & dq_flags, axis=-1)
+            # dq_mask = (model.dq & dq_flags) != 0
             mask |= dq_mask
 
         # Initialize the source catalog model, copying the metadata

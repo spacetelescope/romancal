@@ -45,10 +45,10 @@ class RomanBackground:
 
     Attributes
     ----------
-    background : 2D `~numpy.ndimage`
+    background : 2D `~numpy.ndarray`
         The estimated 2D background image.
 
-    background_rms : 2D `~numpy.ndimage`
+    background_rms : 2D `~numpy.ndarray`
         The estimated 2D background RMS image.
     """
 
@@ -84,7 +84,7 @@ class RomanBackground:
                 bkg_estimator=bkg_estimator,
             )
         except ValueError:
-            # use the entire unmasked array
+            # Use the entire unmasked array
             bkg = Background2D(
                 self.data,
                 self.data.shape,

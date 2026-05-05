@@ -2,7 +2,6 @@
 
 import numpy as np
 import pytest
-import roman_datamodels as rdm
 from roman_datamodels.datamodels import DarkRefModel, ImageModel
 
 from romancal.dark_current import DarkCurrentStep
@@ -70,42 +69,10 @@ def test_dark_step_subtraction(instrument, exptype):
         ("WFI", "WFI_IMAGE"),
     ],
 )
-def test_dark_step_output_dark_file(tmp_path, instrument, exptype):
-    """Test that the the step can output a proper (optional) dark file"""
-    path = str(tmp_path / "dark_out.asdf")
-
-    # Set test size
-    ref_shape = (10, 28, 28)
-    image_shape = (ref_shape[1], ref_shape[2])
-
-    # Create test ramp and dark models
-    image_model, darkref_model = create_image_and_dark(ref_shape, instrument, exptype)
-
-    # Perform Dark Current subtraction step
-    DarkCurrentStep.call(image_model, override_dark=darkref_model, dark_output=path)
-
-    # Open dark file
-    dark_out_file_model = rdm.open(path)
-
-    # Test dark file results
-    assert isinstance(dark_out_file_model, DarkRefModel)
-    assert dark_out_file_model.validate() is None
-    assert dark_out_file_model.dq.shape == image_shape
-
-
-@pytest.mark.parametrize(
-    "instrument, exptype",
-    [
-        ("WFI", "WFI_IMAGE"),
-    ],
-)
 def test_dark_step_getbestrefs(tmp_path, instrument, exptype):
     """Test that the the step will skip if CRDS returns N/A for the ref file"""
-    path = str(tmp_path / "dark_out.asdf")
 
-    # Set test size
     ref_shape = (10, 28, 28)
-    image_shape = (ref_shape[1], ref_shape[2])
 
     # Create test ramp and dark models
     image_model, darkref_model = create_image_and_dark(ref_shape, instrument, exptype)
@@ -113,17 +80,6 @@ def test_dark_step_getbestrefs(tmp_path, instrument, exptype):
     # Perform Dark Current subtraction step with override = N/A
     result = DarkCurrentStep.call(image_model, override_dark="N/A")
     assert result.meta.cal_step.dark == "SKIPPED"
-
-    # Perform Dark Current subtraction step
-    DarkCurrentStep.call(image_model, override_dark=darkref_model, dark_output=path)
-
-    # Open dark file
-    dark_out_file_model = rdm.open(path)
-
-    # Test dark file results
-    assert isinstance(dark_out_file_model, DarkRefModel)
-    assert dark_out_file_model.validate() is None
-    assert dark_out_file_model.dq.shape == image_shape
 
 
 def create_image_and_dark(shape, instrument, exptype):

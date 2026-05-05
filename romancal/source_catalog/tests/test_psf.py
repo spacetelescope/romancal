@@ -15,12 +15,11 @@ from astropy.stats import mad_std
 from astropy.table import QTable
 from astropy.time import Time
 from photutils.datasets import make_model_image
-from photutils.psf import PSFPhotometry
 from roman_datamodels.datamodels import ImageModel
 
 from romancal.source_catalog import psf
 from romancal.source_catalog.psf import (
-    fit_psf_to_image_model,
+    PSFCatalog,
     get_gridded_psf_model,
 )
 
@@ -105,27 +104,23 @@ def add_sources(image_model, psf_model, x_true, y_true, flux_true, background=10
 def test_psf_fit(setup_inputs, dx, dy, true_flux):
     image_model = setup_inputs["image"]
     psf_model = setup_inputs["psf_model"]
+    psf_ref_model = setup_inputs["psf_ref_model_f087"]
     image_model = deepcopy(image_model)
 
     # add synthetic sources to the ImageModel:
     true_x = image_model_shape[0] / 2 + dx
     true_y = image_model_shape[1] / 2 + dy
-    add_sources(image_model, psf_model, true_x, true_y, true_flux)
+    add_sources(image_model, psf_model, true_x, true_y, true_flux, background=0)
     init_data_stddev = np.std(image_model.data)
 
     # fit the PSF to the ImageModel:
-    results_table, photometry = fit_psf_to_image_model(
-        image_model=image_model,
-        photometry_cls=PSFPhotometry,
-        psf_model=psf_model,
-        x_init=true_x,
-        y_init=true_y,
-    )
+    xypos = np.array([[true_x, true_y]])
+    catalog = PSFCatalog(image_model, psf_ref_model, xypos)
 
     # difference between input and output, normalized by the
     # uncertainty. Has units of sigma:
-    delta_x = np.abs(true_x - results_table["x_fit"]) / results_table["x_err"]
-    delta_y = np.abs(true_y - results_table["y_fit"]) / results_table["y_err"]
+    delta_x = np.abs(true_x - catalog.x_psf.value) / catalog.x_psf_err.value
+    delta_y = np.abs(true_y - catalog.y_psf.value) / catalog.y_psf_err.value
 
     sigma_threshold = 3.5
     assert np.all(delta_x < sigma_threshold)
@@ -142,8 +137,8 @@ def test_psf_fit(setup_inputs, dx, dy, true_flux):
     # centroid err heuristic above is an underestimate, so we scale it up:
     scale_factor_approx = 2
 
-    assert np.all(results_table["x_err"] < scale_factor_approx * approx_centroid_err)
-    assert np.all(results_table["y_err"] < scale_factor_approx * approx_centroid_err)
+    assert np.all(catalog.x_psf_err.value < scale_factor_approx * approx_centroid_err)
+    assert np.all(catalog.y_psf_err.value < scale_factor_approx * approx_centroid_err)
 
 
 # new routines: render_stamp, _get_jitter_params, _evaluate_gaussian_fft, add_jitter

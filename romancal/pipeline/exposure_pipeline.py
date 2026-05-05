@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import roman_datamodels.datamodels as rdm
-from roman_datamodels.dqflags import group
+from roman_datamodels.dqflags import group, pixel
 
 # step imports
 from romancal.assign_wcs import AssignWcsStep
@@ -15,7 +15,6 @@ from romancal.dark_decay import DarkDecayStep
 from romancal.datamodels.fileio import open_dataset
 from romancal.dq_init import dq_init_step
 from romancal.flatfield import FlatFieldStep
-from romancal.lib.basic_utils import is_fully_saturated
 from romancal.lib.save_wcs import save_wfiwcs
 from romancal.linearity import LinearityStep
 from romancal.photom import PhotomStep
@@ -36,6 +35,19 @@ __all__ = ["ExposurePipeline"]
 # Define logging
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
+
+
+def _is_fully_saturated(model):
+    """
+    Check to see if all data pixels are flagged as saturated.
+    """
+
+    if np.all(np.bitwise_and(model.groupdq, group.SATURATED) == group.SATURATED):
+        return True
+    elif np.all(np.bitwise_and(model.pixeldq, pixel.SATURATED) == pixel.SATURATED):
+        return True
+
+    return False
 
 
 class ExposurePipeline(RomanPipeline):
@@ -84,6 +96,10 @@ class ExposurePipeline(RomanPipeline):
         log.info("Starting Roman exposure calibration pipeline ...")
 
         # determine the input type
+        # Because we're processing raw files, let's open without any
+        # laziness; we need to propagate all of the bits into the ramps
+        # anyway.  It also avoids bugs like:
+        # https://github.com/spacetelescope/roman_datamodels/issues/631
         lib, input_type = open_dataset(
             dataset,
             update_version=self.update_version,
@@ -101,11 +117,14 @@ class ExposurePipeline(RomanPipeline):
                 self.dq_init.suffix = "dq_init"
                 result = self.dq_init.run(model)
 
-                del model
+                if model is not result:
+                    # dq_init converted this to a new model type so close the input
+                    model.close()
+                    del model
 
                 result = self.saturation.run(result)
 
-                if is_fully_saturated(result):
+                if _is_fully_saturated(result):
                     log.info("All pixels are saturated. Returning a zeroed-out image.")
                     result = self.create_fully_saturated_zeroed_image(result)
 
