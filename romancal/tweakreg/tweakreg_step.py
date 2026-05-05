@@ -49,7 +49,7 @@ class TweakRegStep(RomanStep):
         catalog_path = string(default='') # Catalog output file path
         enforce_user_order = boolean(default=False) # Align images in user specified order?
         expand_refcat = boolean(default=False) # Expand reference catalog with new sources?
-        minobj = integer(default=15) # Minimum number of objects acceptable for matching
+        minobj = integer(default=10) # Minimum number of objects acceptable for matching
         searchrad = float(default=2.0) # The search radius in arcsec for a match
         use2dhist = boolean(default=True) # Use 2d histogram to find initial offset?
         separation = float(default=1.0) # Minimum object separation in arcsec
@@ -59,7 +59,7 @@ class TweakRegStep(RomanStep):
         sigma = float(min=0.0, default=3.0) # Clipping limit in sigma units
         abs_refcat = string(default='{DEFAULT_ABS_REFCAT}')  # Absolute reference catalog
         save_abs_catalog = boolean(default=False)  # Write out used absolute astrometric reference catalog as a separate product
-        abs_minobj = integer(default=15) # Minimum number of objects acceptable for matching when performing absolute astrometry
+        abs_minobj = integer(default=10) # Minimum number of objects acceptable for matching when performing absolute astrometry
         abs_searchrad = float(default=6.0) # The search radius in arcsec for a match when performing absolute astrometry
         # We encourage setting this parameter to True. Otherwise, xoffset and yoffset will be set to zero.
         abs_use2dhist = boolean(default=True) # Use 2D histogram to find initial offset when performing absolute astrometry?
