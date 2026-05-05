@@ -5,19 +5,15 @@ from pathlib import Path
 import numpy as np
 import pytest
 from astropy.table import Table
-from astropy.time import Time
 from roman_datamodels.datamodels import ScienceRawModel
 
+import romancal.orientation.tests.test_set_telescope_pointing as tstp
 import romancal.orientation.v1_calculate as v1c
 
 # pysiaf is not a required dependency. If not present, ignore all this.
 pysiaf = pytest.importorskip("pysiaf")
 
 DATA_PATH = Path(__file__).parent / "data"
-
-# Engineering parameters
-MAST_GOOD_STARTTIME = Time("2027-03-23T19:20:40", format="isot")
-MAST_GOOD_ENDTIME = Time("2027-03-23T19:21:36", format="isot")
 
 
 def test_from_models_mast(tmp_path):
@@ -26,8 +22,8 @@ def test_from_models_mast(tmp_path):
         {
             "meta": {
                 "exposure": {
-                    "start_time": MAST_GOOD_STARTTIME,
-                    "end_time": MAST_GOOD_ENDTIME,
+                    "start_time": tstp.STARTTIME,
+                    "end_time": tstp.ENDTIME,
                 },
             }
         }
@@ -54,7 +50,7 @@ def test_from_models_mast(tmp_path):
 def test_over_time_mast(tmp_path):
     """Test v1_calculate_over_time for basic running"""
     try:
-        v1_table = v1c.v1_calculate_over_time(MAST_GOOD_STARTTIME, MAST_GOOD_ENDTIME)
+        v1_table = v1c.v1_calculate_over_time(tstp.STARTTIME, tstp.ENDTIME)
     except ValueError as exception:
         pytest.skip(
             f"MAST engineering database not available, possibly no token specified: {exception}"

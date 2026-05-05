@@ -15,18 +15,22 @@ from astropy.time import Time
 from roman_datamodels import datamodels
 
 from romancal.datamodels import ModelLibrary
-from romancal.multiband_catalog.background import subtract_background_library
-from romancal.multiband_catalog.catalog_generator import create_filter_catalog
-from romancal.multiband_catalog.detection_image import make_detection_image
-from romancal.multiband_catalog.metadata import blend_image_metadata
-from romancal.source_catalog import injection
-from romancal.source_catalog.background import RomanBackground
-from romancal.source_catalog.detection import make_segmentation_image
-from romancal.source_catalog.psf_matching import (
+from romancal.multiband_catalog._background import subtract_background_library
+from romancal.multiband_catalog._catalog_generator import create_filter_catalog
+from romancal.multiband_catalog._detection_image import make_detection_image
+from romancal.multiband_catalog._metadata import blend_image_metadata
+from romancal.source_catalog._background import RomanBackground
+from romancal.source_catalog._detection import make_segmentation_image
+from romancal.source_catalog._injection import (
+    inject_sources,
+    make_cosmoslike_catalog,
+    make_source_grid,
+)
+from romancal.source_catalog._psf_matching import (
     get_filter_wavelength,
     get_reddest_filter,
 )
-from romancal.source_catalog.source_catalog import RomanSourceCatalog
+from romancal.source_catalog._source_catalog import RomanSourceCatalog
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -543,7 +547,7 @@ def make_source_injected_library(library, seed=None):
             # This only needs to be done once per library
             if si_cen is None:
                 # Create source grid points
-                si_x_pos, si_y_pos = injection.make_source_grid(
+                si_x_pos, si_y_pos = make_source_grid(
                     si_model,
                     yxmax=si_model.data.shape,
                     yxoffset=(50, 50),
@@ -563,7 +567,7 @@ def make_source_injected_library(library, seed=None):
                 )
 
                 # Generate cosmos-like catalog
-                si_cat = injection.make_cosmoslike_catalog(
+                si_cat = make_cosmoslike_catalog(
                     cen=si_cen,
                     ra=si_ra,
                     dec=si_dec,
@@ -577,7 +581,7 @@ def make_source_injected_library(library, seed=None):
                 si_cat["label"] = np.arange(len(si_x_pos))
 
             # Inject sources into the detection image
-            si_model = injection.inject_sources(
+            si_model = inject_sources(
                 si_model,
                 si_cat,
                 seed,

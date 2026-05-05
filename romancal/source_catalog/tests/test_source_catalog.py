@@ -20,7 +20,7 @@ from roman_datamodels.datamodels import (
     SegmentationMapModel,
 )
 
-from romancal.source_catalog.source_catalog import RomanSourceCatalog
+from romancal.source_catalog._source_catalog import RomanSourceCatalog
 from romancal.source_catalog.source_catalog_step import SourceCatalogStep
 
 from .helpers import compare_model_and_parquet_metadata
