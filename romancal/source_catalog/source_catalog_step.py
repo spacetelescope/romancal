@@ -15,12 +15,12 @@ from roman_datamodels.datamodels import ImageModel
 from roman_datamodels.dqflags import pixel
 
 from romancal.datamodels.fileio import open_dataset
-from romancal.source_catalog.background import RomanBackground
-from romancal.source_catalog.detection import convolve_data, make_segmentation_image
+from romancal.source_catalog._background import RomanBackground
+from romancal.source_catalog._detection import convolve_data, make_segmentation_image
+from romancal.source_catalog._save_utils import save_all_results, save_empty_results
+from romancal.source_catalog._source_catalog import RomanSourceCatalog
+from romancal.source_catalog._utils import copy_model_arrays, get_ee_spline
 from romancal.source_catalog.psf import add_jitter
-from romancal.source_catalog.save_utils import save_all_results, save_empty_results
-from romancal.source_catalog.source_catalog import RomanSourceCatalog
-from romancal.source_catalog.utils import copy_model_arrays, get_ee_spline
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:

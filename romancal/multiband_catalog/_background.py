@@ -4,7 +4,7 @@ import numpy as np
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 
 from romancal.datamodels import ModelLibrary
-from romancal.source_catalog.background import RomanBackground
+from romancal.source_catalog._background import RomanBackground
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)

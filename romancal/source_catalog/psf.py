@@ -169,7 +169,7 @@ def _downsample_by_interpolation(image, downsample):
     return low_res
 
 
-def create_convolution_kernel(
+def _create_convolution_kernel(
     input_psf, target_psf, min_fft_power_ratio=1e-5, downsample=None, size=None
 ):
     """Find convolution kernel which convolves input_psf to match target_psf.
@@ -241,7 +241,7 @@ def create_convolution_kernel(
         kernel = convolve(kernel, Box2DKernel(width=downsample), boundary="extend")
         kernel = _downsample_by_interpolation(kernel, downsample)
     if size is not None:
-        return central_stamp(kernel, size).copy()
+        return _central_stamp(kernel, size).copy()
     return kernel
 
 
@@ -329,7 +329,7 @@ def render_stamp(x, y, grid, size, oversample=1):
     return stamp
 
 
-def central_stamp(im, size):
+def _central_stamp(im, size):
     """Extract the central region of an image.
 
     The image must be square and we extract a square stamp.  The parity
@@ -582,7 +582,7 @@ def create_l3_psf_model(
     return psf_model
 
 
-class PSFCatalog:
+class _PSFCatalog:
     """
     Class to calculate PSF photometry.
 

@@ -12,8 +12,9 @@ from roman_datamodels.datamodels import ImageModel, MosaicModel
 from romanisim.models import bandpass, parameters
 
 from romancal.skycell.tests.test_skycell_match import mk_gwcs
-from romancal.source_catalog import injection
-from romancal.source_catalog.injection import (
+from romancal.source_catalog._injection import (
+    HRGALMAGLIMIT,
+    HRPOINTMAGLIMIT,
     inject_sources,
     make_cosmoslike_catalog,
     make_source_grid,
@@ -263,7 +264,7 @@ def test_create_cosmoscat():
         # Normalize the mag limit to exptimes
         if bp in exptimes:
             point_band_mag_limit.append(
-                injection.HRPOINTMAGLIMIT[bp]
+                HRPOINTMAGLIMIT[bp]
                 + (1.25 * np.log10((exptimes[bp] * u.s).to(u.hour).value))
             )
     point_mag_limit = max(point_band_mag_limit)
@@ -290,7 +291,7 @@ def test_create_cosmoscat():
         # Normalize the mag limit to exptimes
         if bp in exptimes:
             gal_band_mag_limit.append(
-                injection.HRGALMAGLIMIT[bp]
+                HRGALMAGLIMIT[bp]
                 + (1.25 * np.log10((exptimes[bp] * u.s).to(u.hour).value))
             )
     gal_mag_limit = max(gal_band_mag_limit)

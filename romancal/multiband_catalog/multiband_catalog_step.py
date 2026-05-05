@@ -9,14 +9,14 @@ import logging
 from typing import TYPE_CHECKING
 
 from romancal.datamodels.fileio import open_dataset
-from romancal.multiband_catalog.multiband_catalog import (
+from romancal.multiband_catalog._multiband_catalog import (
     initialize_catalog_model,
     make_source_injected_library,
     match_recovered_sources,
     multiband_catalog,
 )
-from romancal.source_catalog.save_utils import save_all_results, save_empty_results
-from romancal.source_catalog.utils import get_ee_spline
+from romancal.source_catalog._save_utils import save_all_results, save_empty_results
+from romancal.source_catalog._utils import get_ee_spline
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:
