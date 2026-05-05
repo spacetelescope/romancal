@@ -1,13 +1,14 @@
 """Test module v1_calculate"""
+
 from pathlib import Path
-import pytest
 
 import numpy as np
+import pytest
 from astropy.table import Table
 from roman_datamodels.datamodels import ScienceRawModel
 
-import romancal.orientation.v1_calculate as v1c
 import romancal.orientation.tests.test_set_telescope_pointing as tstp
+import romancal.orientation.v1_calculate as v1c
 
 # pysiaf is not a required dependency. If not present, ignore all this.
 pysiaf = pytest.importorskip("pysiaf")

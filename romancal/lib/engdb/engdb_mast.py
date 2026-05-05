@@ -419,10 +419,8 @@ class EngdbMast(EngdbABC):
 
         # Check for explicit errors from the service.
         response = literal_eval(self.response.text)
-        if (detail := response.get('detail')) is not None:
-            raise ValueError(
-                f'Failure retrieving mnemonic {mnemonic}: {detail}'
-            )
+        if (detail := response.get("detail")) is not None:
+            raise ValueError(f"Failure retrieving mnemonic {mnemonic}: {detail}")
 
         # Convert to table.
         data = response["Data"]
