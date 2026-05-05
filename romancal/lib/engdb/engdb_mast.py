@@ -417,8 +417,14 @@ class EngdbMast(EngdbABC):
         logger.debug("Response: %s", self.response)
         logger.debug("Response test: %s", self.response.text)
 
-        # Convert to table.
+        # Check for explicit errors from the service.
         response = literal_eval(self.response.text)
+        if (detail := response.get('detail')) is not None:
+            raise ValueError(
+                f'Failure retrieving mnemonic {mnemonic}: {detail}'
+            )
+
+        # Convert to table.
         data = response["Data"]
         del response["Data"]
         table = Table(rows=data, meta=response)
