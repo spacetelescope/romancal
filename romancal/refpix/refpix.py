@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from roman_datamodels.datamodels import RampModel, RefpixRefModel
-    from roman_datamodels.dqflags import pixel
 
 from .data import Coefficients, StandardView
 
@@ -16,7 +15,6 @@ log.setLevel(logging.DEBUG)
 def run_steps(
     datamodel: RampModel,
     refs: RefpixRefModel,
-    zero_bad_ref_pix: bool = True,
     remove_offset: bool = True,
     remove_trends: bool = True,
     cosine_interpolate: bool = True,
@@ -28,9 +26,6 @@ def run_steps(
 
     # Read in the data from the datamodels
     log.debug("Reading data from datamodel into single array")
-
-    if zero_bad_ref_pix:
-        mask_bad_ref_pixels(datamodel)
 
     coeffs = Coefficients.from_ref(refs)
     standard = StandardView.from_datamodel(datamodel)
@@ -69,17 +64,5 @@ def run_steps(
     # Write the data back to the datamodel
     standard.update(datamodel)
     log.debug("Updated the datamodel with the corrected data.")
-
-    return datamodel
-
-
-def mask_bad_ref_pixels(datamodel):
-    """
-    Zero out BAD_REF_PIXEL pixels before refpix correction.
-    """
-    dq = datamodel.dq
-    bad_ref_mask = (dq & pixel.BAD_REF_PIXEL) != 0
-
-    datamodel.data[bad_ref_mask] = 0
 
     return datamodel
