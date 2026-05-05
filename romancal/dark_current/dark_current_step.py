@@ -23,10 +23,6 @@ class DarkCurrentStep(RomanStep):
 
     class_alias = "dark"
 
-    spec = """
-        dark_output = output_file(default = None) # Dark corrected model
-    """
-
     reference_file_types: ClassVar = ["dark"]
 
     def process(self, dataset):
@@ -45,18 +41,7 @@ class DarkCurrentStep(RomanStep):
 
         # Open dark model
         with rdm.open(self.dark_name) as dark_model:
-            # get the dark slope from the reference file & trim ref pixels
-            dark_slope = dark_model.dark_slope[4:-4, 4:-4]
-
-            # Do the dark correction
-            input_model.data -= dark_slope
-            input_model.dq |= dark_model.dq[4:-4, 4:-4]
-            input_model.meta.cal_step.dark = "COMPLETE"
-
-            # Save dark data to file
-            if self.dark_output is not None:
-                dark_model.save(self.dark_output)
-                # not clear to me that this makes any sense for Roman
+            subtract_dark_current(input_model, dark_model)
 
         if self.save_results:
             try:
@@ -65,3 +50,24 @@ class DarkCurrentStep(RomanStep):
                 self["suffix"] = "darkcurrent"
 
         return input_model
+
+
+def subtract_dark_current(input_model, dark_model):
+    """Subtract dark current from input image model in place.
+
+    Parameters
+    ----------
+    input_model : ImageModel
+        Model from which dark current should be subtracted
+
+    dark_model: DarkRefModel
+        Dark reference model containing dark_slope and dq.
+    """
+
+    # get the dark slope from the reference file & trim ref pixels
+    dark_slope = dark_model.dark_slope[4:-4, 4:-4]
+
+    # Do the dark correction
+    input_model.data -= dark_slope
+    input_model.dq |= dark_model.dq[4:-4, 4:-4]
+    input_model.meta.cal_step.dark = "COMPLETE"
