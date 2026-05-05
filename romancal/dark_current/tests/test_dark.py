@@ -72,10 +72,6 @@ def test_dark_step_subtraction(instrument, exptype):
 def test_dark_step_getbestrefs(tmp_path, instrument, exptype):
     """Test that the the step will skip if CRDS returns N/A for the ref file"""
 
-    # Set test size
-    ref_shape = (10, 28, 28)
-    image_shape = (ref_shape[1], ref_shape[2])
-
     # Create test ramp and dark models
     image_model, darkref_model = create_image_and_dark(ref_shape, instrument, exptype)
 
