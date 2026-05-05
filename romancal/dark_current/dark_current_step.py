@@ -23,10 +23,6 @@ class DarkCurrentStep(RomanStep):
 
     class_alias = "dark"
 
-    spec = """
-        dark_output = output_file(default = None) # Dark corrected model
-    """
-
     reference_file_types: ClassVar = ["dark"]
 
     def process(self, dataset):
@@ -46,11 +42,6 @@ class DarkCurrentStep(RomanStep):
         # Open dark model
         with rdm.open(self.dark_name) as dark_model:
             subtract_dark_current(input_model, dark_model)
-
-            # Save dark data to file
-            if self.dark_output is not None:
-                dark_model.save(self.dark_output)
-                # not clear to me that this makes any sense for Roman
 
         if self.save_results:
             try:
