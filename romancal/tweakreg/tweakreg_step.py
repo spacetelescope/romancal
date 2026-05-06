@@ -18,7 +18,7 @@ from roman_datamodels import dqflags
 from stcal.tweakreg import tweakreg
 from stcal.tweakreg.tweakreg import TweakregError
 
-from romancal.assign_wcs.utils import add_s_region
+from romancal.assign_wcs.assign_wcs import add_s_region
 from romancal.datamodels.fileio import open_dataset
 from romancal.lib.save_wcs import save_wfiwcs
 

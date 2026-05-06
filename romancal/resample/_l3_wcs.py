@@ -12,7 +12,7 @@ from stcal.alignment.util import (
     compute_scale,
 )
 
-from romancal.assign_wcs.utils import _create_footprint
+from romancal.assign_wcs.assign_wcs import _create_footprint
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
