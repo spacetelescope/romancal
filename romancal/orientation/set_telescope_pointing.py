@@ -104,18 +104,16 @@ TYPES_TO_UPDATE = set()
 # Mnemonics needed.
 COARSE_MNEMONICS_QUATERNION_ECI = [f"SCF_AC_SDR_QBJ_{idx + 1}" for idx in range(4)]
 COARSE_MNEMONICS_B2FGS_EST = [f"SCF_AC_EST_FGS_QBR_{idx + 1}" for idx in range(4)]
-COARSE_MNEMONICS_B2FGS_PRELOAD = [f"SCF_AC_FGS_TBL_Qb{idx + 1}" for idx in range(4)]
-COARSE_MNEMONICS = (
-    COARSE_MNEMONICS_QUATERNION_ECI
-    + COARSE_MNEMONICS_B2FGS_EST
-    + COARSE_MNEMONICS_B2FGS_PRELOAD
-)
+COARSE_MNEMONICS = COARSE_MNEMONICS_QUATERNION_ECI + COARSE_MNEMONICS_B2FGS_EST
 
 # Default and pre-defined matricies.
 # Conversion of the FGS Unified Frame (FGS) reference point from the V-Frame.
 # This is the pre-launch value, later to be refined and provided
-# in the SIAF
-FGS_DEFAULT_QUATERNION = np.array([-0.18597289, 0.68379795, -0.18006017, 0.68221269])
+# in the SIAF.
+# Last update: 20260505 by T.Sohn
+FGS_DEFAULT_QUATERNION = np.array(
+    [-0.18596734175399293, 0.6837984564491885, -0.1800546332580956, 0.6822141509826322]
+)
 
 # Maximum absolute speed of the observatory. Used for sanity check is defined
 # as the sum of the absolute components of the velocity.
@@ -1088,16 +1086,6 @@ def mnemonics_to_pointings(ordered_mnemonics):
                 "One or more of the B-to-FGS quaternion mnemonics are not in the telementry %s",
                 COARSE_MNEMONICS_B2FGS_EST,
             )
-        if fgs_q is None:
-            try:
-                fgs_q = np.array(
-                    [mnemonics_at_time[m].value for m in COARSE_MNEMONICS_B2FGS_PRELOAD]
-                )
-            except KeyError:
-                logger.warning(
-                    "One or more of the B-to-FGS quaternion mnemonics are not in the telementry %s",
-                    COARSE_MNEMONICS_B2FGS_PRELOAD,
-                )
 
         pointing = Pointing(fgs_q=fgs_q, obstime=obstime, q=q)
         pointings.append(pointing)
