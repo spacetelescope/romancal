@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from roman_datamodels.datamodels import RampModel, RefpixRefModel
 
-from romancal.refpix.data import Coefficients, Const, StandardView
+from romancal.refpix._data import Coefficients, Const, StandardView
 
 RNG = np.random.default_rng(42)
 

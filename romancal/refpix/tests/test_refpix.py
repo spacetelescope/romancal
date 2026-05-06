@@ -1,4 +1,4 @@
-from romancal.refpix.data import StandardView
+from romancal.refpix._data import StandardView
 from romancal.refpix.refpix import run_steps
 
 from . import reference_utils

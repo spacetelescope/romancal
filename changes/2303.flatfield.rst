@@ -1,0 +1,1 @@
+Remove the ``do_correction`` wrapper function and rename ``apply_flat_field`` to ``_apply_flat_field`` to reduce the public API.
