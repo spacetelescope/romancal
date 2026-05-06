@@ -1,7 +1,7 @@
 import warnings
 
 from astropy.time import Time
-from roman_datamodels.datamodels import ImageModel, ScienceRawModel
+from roman_datamodels.datamodels import DataModel, ImageModel, ScienceRawModel
 
 __all__ = ["update_model_version"]
 
@@ -10,7 +10,9 @@ class MigrationWarning(UserWarning):
     """A potentially incorrect migration was performed"""
 
 
-def update_model_version(model, *, close_on_update=False):
+def update_model_version(
+    model: DataModel, *, tag: str | None = None, close_on_update: bool = False
+):
     """
     Update a DataModel instance to the newest version.
 
@@ -19,6 +21,9 @@ def update_model_version(model, *, close_on_update=False):
 
     Parameters
     ----------
+    tag : str, optional
+        If provided, migrate to the specified tag version. Otherwise,
+        migrate to the latest version.
     close_on_update : bool, optional
         If enabled, call model.close if an updated (and copied)
         DataModel is returned.
@@ -28,10 +33,8 @@ def update_model_version(model, *, close_on_update=False):
     DataModel
         Either the provided DataModel or an updated (copy).
     """
-    if model.tag == model._node_type._default_tag:
+    if (updated_model := model.migrate_tag(tag=tag)) is model:
         return model
-
-    updated_model = model.__class__.create_from_model(model)
 
     # old files (<B20) used a custom Time class
     if type(updated_model.meta.file_date) is not Time:
