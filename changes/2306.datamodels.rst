@@ -1,0 +1,2 @@
+Tweak the migration function to use the public RDM ``migrate_tag`` method, rather
+than API that is private to RDM.
