@@ -204,7 +204,7 @@ class ExposurePipeline(RomanPipeline):
             "err": err,
         }
 
-        fully_saturated_model = ramp_fit_step.create_image_model(
+        fully_saturated_model = ramp_fit_step._create_image_model(
             input_model, image_info_allsat
         )
 

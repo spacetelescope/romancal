@@ -1,0 +1,1 @@
+Rename ``photom_io`` and ``save_area_info`` to ``_photom_io`` and ``_save_area_info`` to reduce the public API.
