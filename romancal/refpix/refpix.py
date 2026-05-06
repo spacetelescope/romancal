@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from roman_datamodels.datamodels import RampModel, RefpixRefModel
 
-from .data import Coefficients, StandardView
+from ._data import Coefficients, StandardView
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -26,6 +26,7 @@ def run_steps(
 
     # Read in the data from the datamodels
     log.debug("Reading data from datamodel into single array")
+
     coeffs = Coefficients.from_ref(refs)
     standard = StandardView.from_datamodel(datamodel)
 

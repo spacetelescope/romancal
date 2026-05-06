@@ -58,4 +58,7 @@ including the reference read contribution.  Accordingly, the DQ
 initialization step also adds the reference read and the
 reference_amp33 read to the data and amp33 pixels, respectively, so
 that the ramp model always contains the total number of DN present
-in the detector.
+in the detector. Additionally, if an encoding offset was added to the
+pixel values onboard (used to ensure no negative pixel values after reference
+read subtraction), then the offset value is also subtracted from the data
+and amp33 arrays.
