@@ -1,0 +1,1 @@
+Made ``wfi_distortion``, ``dva_corr_model``, and ``create_footprint`` private.
