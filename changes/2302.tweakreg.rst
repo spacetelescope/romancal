@@ -1,0 +1,1 @@
+Updated default value for the numbers of matched gaia sources to determine if a local detector solution is appropriate or not.

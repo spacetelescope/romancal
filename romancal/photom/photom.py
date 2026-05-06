@@ -5,7 +5,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-def photom_io(input_model, photom_metadata):
+def _photom_io(input_model, photom_metadata):
     """
     Combine photometric scalar conversion factors and add to the science metadata.
 
@@ -39,7 +39,7 @@ def photom_io(input_model, photom_metadata):
     return input_model
 
 
-def save_area_info(input_model, photom_parameters):
+def _save_area_info(input_model, photom_parameters):
     """
     Read the pixel area value in the photom parameters, then convert and
     copy them to the metadata of the input datamodel.
@@ -99,10 +99,10 @@ def apply_photom(input_model, photom):
         return input_model
 
     # Copy pixel area information to output datamodel
-    output_model = save_area_info(input_model, photom_parameters)
+    output_model = _save_area_info(input_model, photom_parameters)
 
     # Copy conversions to output model
-    output_model = photom_io(output_model, photom_parameters)
+    output_model = _photom_io(output_model, photom_parameters)
 
     # Return updated output model
     return output_model

@@ -10,34 +10,6 @@ from roman_datamodels.dqflags import pixel
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
-MICRONS_100 = 1.0e-4  # 100 microns, in meters
-
-
-def do_correction(input_model, flat=None, include_var_flat=False):
-    """Flat-field a Roman data model using a flat-field model
-
-    Parameters
-    ----------
-    input_model : Roman data model
-        Input science data model to be flat-fielded.
-
-    flat : Roman data model, or None
-        Data model containing flat-field for all instruments
-
-    include_var_flat : bool
-        compute & store the flat field variance?
-
-    Returns
-    -------
-    output_model : data model
-        The data model for the flat-fielded science data.
-        The data is modified in place.
-    """
-
-    do_flat_field(input_model, flat, include_var_flat=include_var_flat)
-
-    return input_model
-
 
 def do_flat_field(output_model, flat_model, include_var_flat=False):
     """Apply flat-fielding, and update the output model.
@@ -67,11 +39,11 @@ def do_flat_field(output_model, flat_model, include_var_flat=False):
         log.info("Skipping flat field - no flat reference file.")
         output_model.meta.cal_step.flat_field = "SKIPPED"
     else:
-        apply_flat_field(output_model, flat_model, include_var_flat=include_var_flat)
+        _apply_flat_field(output_model, flat_model, include_var_flat=include_var_flat)
         output_model.meta.cal_step.flat_field = "COMPLETE"
 
 
-def apply_flat_field(science, flat, include_var_flat=False):
+def _apply_flat_field(science, flat, include_var_flat=False):
     """Flat field the data and error arrays.
 
     Extended summary
