@@ -111,11 +111,11 @@ def load_wcs(input_model, reference_files=None):
     world = cf.CelestialFrame(reference_frame=coord.ICRS(), name="world")
 
     # Transforms between frames
-    distortion = wfi_distortion(output_model, reference_files)
+    distortion = _wfi_distortion(output_model, reference_files)
     tel2sky = pointing.v23tosky(output_model)
 
     # Compute differential velocity aberration (DVA) correction:
-    va_corr = pointing.dva_corr_model(
+    va_corr = pointing._dva_corr_model(
         va_scale=input_model.meta.velocity_aberration.scale_factor,
         v2_ref=input_model.meta.wcsinfo.v2_ref,
         v3_ref=input_model.meta.wcsinfo.v3_ref,
@@ -141,7 +141,7 @@ def load_wcs(input_model, reference_files=None):
     return output_model
 
 
-def wfi_distortion(model, reference_files):
+def _wfi_distortion(model, reference_files):
     """
     Create the "detector" to "v2v3" transform for WFI
 

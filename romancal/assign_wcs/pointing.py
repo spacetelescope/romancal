@@ -52,7 +52,7 @@ def v23tosky(input_model, wrap_v2_at=180, wrap_lon_at=360):
     return model
 
 
-def dva_corr_model(va_scale, v2_ref, v3_ref):
+def _dva_corr_model(va_scale, v2_ref, v3_ref):
     """
     Create transformation that accounts for differential velocity aberration
     (scale).

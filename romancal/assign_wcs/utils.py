@@ -6,7 +6,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-def create_footprint(wcs, shape=None, center=False):
+def _create_footprint(wcs, shape=None, center=False):
     """Calculate sky footprint
 
     Parameters
@@ -60,7 +60,7 @@ def add_s_region(model):
     A formatted string representing the detector's footprint
     """
     _update_s_region_keyword(
-        model, create_footprint(model.meta.wcs, shape=model.shape, center=False)
+        model, _create_footprint(model.meta.wcs, shape=model.shape, center=False)
     )
 
 
