@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Add velocity aberration correction information to the FITS files provided."""
+"""Add velocity aberration correction information to the Roman files provided."""
 
 import argparse
 import sys
