@@ -83,6 +83,6 @@ def mask_bad_ref_pixels(datamodel):
     dq = datamodel.pixeldq
     bad_ref_mask = (dq & pixel.BAD_REF_PIXEL) != 0
 
-    datamodel.data[:, bad_ref_mask] = 0
+    datamodel.data[..., bad_ref_mask] = 0
 
     return datamodel
