@@ -26,6 +26,7 @@ def run_steps(
 
     # Read in the data from the datamodels
     log.debug("Reading data from datamodel into single array")
+
     coeffs = Coefficients.from_ref(refs)
     standard = StandardView.from_datamodel(datamodel)
 

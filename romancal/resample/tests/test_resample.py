@@ -10,7 +10,7 @@ from gwcs import coordinate_frames as cf
 from roman_datamodels import datamodels
 from stcal.resample.utils import compute_mean_pixel_area
 
-from romancal.assign_wcs.utils import add_s_region
+from romancal.assign_wcs.assign_wcs import add_s_region
 from romancal.datamodels import ModelLibrary
 from romancal.lib.tests.helpers import word_precision_check
 from romancal.resample import ResampleStep

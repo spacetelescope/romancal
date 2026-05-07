@@ -13,7 +13,7 @@ from gwcs import coordinate_frames as cf
 from numpy.testing import assert_allclose, assert_equal
 from roman_datamodels import datamodels
 
-from romancal.assign_wcs.utils import add_s_region
+from romancal.assign_wcs.assign_wcs import add_s_region
 from romancal.datamodels import ModelLibrary
 from romancal.regtest import util
 from romancal.resample import ResampleStep
