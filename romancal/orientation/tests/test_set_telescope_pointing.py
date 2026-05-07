@@ -16,6 +16,8 @@ from romancal.lib.engdb import engdb_mast, engdb_tools
 from romancal.orientation import set_telescope_pointing as stp
 from romancal.orientation import _lib as olib
 from romancal.orientation import _pointing as plib
+from romancal.orientation import _transforms as tlib
+from romancal.orientation import _wcs as wlib
 
 # pysiaf is not a required dependency. If not present, ignore all this.
 pysiaf = pytest.importorskip("pysiaf")
@@ -292,8 +294,8 @@ def test_strict_pointing(science_raw_model, tmp_path):
 
 @pytest.mark.parametrize(
     "matrix",
-    [matrix for matrix in dataclasses.fields(olib.Transforms())],
-    ids=[matrix.name for matrix in dataclasses.fields(olib.Transforms())],
+    [matrix for matrix in dataclasses.fields(tlib.Transforms())],
+    ids=[matrix.name for matrix in dataclasses.fields(tlib.Transforms())],
 )
 def test_transforms(calc_wcs, matrix):
     """Ensure expected calculate of the specified matrix
@@ -316,9 +318,9 @@ def test_transform_serialize(calc_wcs, tmp_path):
 
     path = tmp_path / "transforms.asdf"
     transforms.write_to_asdf(path)
-    from_asdf = olib.Transforms.from_asdf(path)
+    from_asdf = tlib.Transforms.from_asdf(path)
 
-    assert isinstance(from_asdf, olib.Transforms)
+    assert isinstance(from_asdf, tlib.Transforms)
     assert str(transforms) == str(from_asdf)
 
 
@@ -370,7 +372,7 @@ def calc_wcs(tmp_path_factory):
     t_pars = _make_t_pars(**TRANSFORM_KWARGS)
 
     # Calculate the transforms and WCS information
-    wcsinfo, vinfo, transforms = olib.calc_wcs(t_pars)
+    wcsinfo, vinfo, transforms = wlib.calc_wcs(t_pars)
 
     # Save all for later examination.
     transforms_path = tmp_path_factory.mktemp("transforms")
@@ -443,7 +445,7 @@ def _make_t_pars(**transform_kwargs):
         dict to use to initialize the `TransformParameters` object.
         See `TransformParameters` for more information.`
     """
-    t_pars = olib.TransformParameters(**transform_kwargs)
+    t_pars = tlib.TransformParameters(**transform_kwargs)
 
     # Force MAST service
     t_pars.service_kwargs = {"service": "mast"}
@@ -470,7 +472,7 @@ def _test_transforms(transforms, t_pars, matrix):
     matrix : str
         The matrix to compare
     """
-    expected_tforms = olib.Transforms.from_asdf(DATA_PATH / "transforms.asdf")
+    expected_tforms = tlib.Transforms.from_asdf(DATA_PATH / "transforms.asdf")
     expected_value = getattr(expected_tforms, matrix)
 
     value = getattr(transforms, matrix)

@@ -62,6 +62,8 @@ import logging
 import roman_datamodels as rdm
 
 from . import _lib as lib
+from . import _transforms as tlib
+from . import _wcs as wlib
 
 __all__ = [
     "add_wcs",
@@ -180,11 +182,11 @@ def update_wcs(
         performed.
     """
     # Configure transformation parameters.
-    t_pars = lib.TransformParameters(**transform_kwargs)
-    lib.t_pars_from_model(model, t_pars)
+    t_pars = tlib.TransformParameters(**transform_kwargs)
+    tlib.t_pars_from_model(model, t_pars)
 
     # Calculate WCS.
-    transforms = lib.update_wcs_from_telem(model, t_pars)
+    transforms = wlib.update_wcs_from_telem(model, t_pars)
 
     return t_pars, transforms
 
