@@ -84,7 +84,7 @@ class EngdbEDP(EngdbABC):
         logger.debug("kwargs not used by this service: %s", service_kwargs)
 
         try:
-            self.configure(environment, path_to_cc)
+            self._configure(environment, path_to_cc)
         except (FileNotFoundError, ModuleNotFoundError) as exception:
             raise RuntimeError(
                 f"Cannot instantiate EDP service with environment: {environment}, path_to_cc: {path_to_cc}"
@@ -92,32 +92,6 @@ class EngdbEDP(EngdbABC):
 
         # Check for basic aliveness.
         self.mr.get_mnemonic_metadata()
-
-    def configure(self, ops_env, path_to_cc):
-        """
-        Configure from parameters and environment.
-
-        Parameters
-        ----------
-        environment : ['dev', 'test', 'int', 'ops']
-            The operating environment currently working under.
-
-        path_to_cc : Path-like
-            Path to the kerberos keytab required to access the database.
-        """
-        self.ops_env = ops_env
-        self.path_to_cc = path_to_cc
-
-        # Create the mnemonic reader
-        from edp.mnemonics_reader import MnemonicsReader
-
-        self.mr = MnemonicsReader(
-            mission="roman", env=ops_env, access_type="FqA", path_to_cc=path_to_cc
-        )
-
-        # Get various timeout parameters
-        self.retries = int(getenv("ENG_RETRIES", RETRIES))
-        self.timeout = int(getenv("ENG_TIMEOUT", TIMEOUT))
 
     def get_meta(self, *kwargs):
         """
@@ -208,24 +182,31 @@ class EngdbEDP(EngdbABC):
 
         return results.collection
 
-    def set_session(self):
-        """Set up HTTP session."""
-        self._req = requests.Request(
-            method="GET",
-            url=self.base_url + API_URI,
-            headers={"Authorization": f"token {self.token}"},
+    def _configure(self, ops_env, path_to_cc):
+        """
+        Configure from parameters and environment.
+
+        Parameters
+        ----------
+        environment : ['dev', 'test', 'int', 'ops']
+            The operating environment currently working under.
+
+        path_to_cc : Path-like
+            Path to the kerberos keytab required to access the database.
+        """
+        self.ops_env = ops_env
+        self.path_to_cc = path_to_cc
+
+        # Create the mnemonic reader
+        from edp.mnemonics_reader import MnemonicsReader
+
+        self.mr = MnemonicsReader(
+            mission="roman", env=ops_env, access_type="FqA", path_to_cc=path_to_cc
         )
 
-        s = requests.Session()
-        retries = Retry(
-            total=self.retries,
-            backoff_factor=1.0,
-            status_forcelist=FORCE_STATUSES,
-            raise_on_status=True,
-        )
-        s.mount("https://", HTTPAdapter(max_retries=retries))
-
-        self._session = s
+        # Get various timeout parameters
+        self.retries = int(getenv("ENG_RETRIES", RETRIES))
+        self.timeout = int(getenv("ENG_TIMEOUT", TIMEOUT))
 
     def _get_records(
         self, mnemonic, starttime, endtime, time_format=None, **other_kwargs
