@@ -6,7 +6,6 @@ import numpy as np
 import pyarrow
 import pytest
 from astropy.modeling.models import Gaussian2D
-from astropy.io import fits
 from astropy.table import Table
 from astropy.time import Time
 from numpy.testing import assert_equal
@@ -612,6 +611,7 @@ def test_get_dust_ebv_shape_mismatch_raises(ra, dec):
 
 def test_dust_ebv_property_returns_nan_on_failure(monkeypatch):
     """Return NaNs when CRDS lookup/interpolation fails."""
+
     def fail_getreferences(*args, **kwargs):
         raise RuntimeError()
 

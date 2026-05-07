@@ -35,6 +35,7 @@ from romancal.source_catalog.psf import _PSFCatalog
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
+
 @dataclass(frozen=True)
 class MeasurementStep:
     """
@@ -141,6 +142,7 @@ class RomanSourceCatalog:
     all sources of error, including the Poisson error of the sources. It
     must also have the same shape and units as the science data array.
     """
+
     north_galactic_pole_id = "ngp"
     south_galactic_pole_id = "sgp"
 
@@ -194,7 +196,6 @@ class RomanSourceCatalog:
                 "PSF fitting is requested but no PSF reference model is provided. Skipping PSF photometry."
             )
             self.fit_psf = False
-
 
         # Output column schema (depends only on cat_type, fit_psf, and
         # the aperture flux column names — all known at this point).
