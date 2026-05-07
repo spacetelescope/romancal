@@ -4,12 +4,12 @@ WCS construction utilities for Roman WFI images.
 
 import logging
 
+import gwcs.coordinate_frames as cf
 import numpy as np
 from astropy import coordinates as coord
 from astropy import units as u
 from astropy.modeling import bind_bounding_box
 from astropy.modeling.models import Identity, RotationSequence3D, Scale, Shift
-import gwcs.coordinate_frames as cf
 from gwcs.geometry import CartesianToSpherical, SphericalToCartesian
 from gwcs.wcs import WCS, Step
 from roman_datamodels import datamodels as rdm
