@@ -9,10 +9,15 @@ from dataclasses import dataclass
 
 import astropy.units as u
 import numpy as np
+from astropy.coordinates import SkyCoord
+from astropy.io import fits
 from astropy.table import QTable, Table
 from astropy.utils import lazyproperty
+from astropy.wcs import WCS
+from crds import getreferences
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.dqflags import pixel
+from scipy.ndimage import map_coordinates
 
 from romancal import __version__ as romancal_version
 from romancal.skycell import skymap
@@ -29,7 +34,6 @@ from romancal.source_catalog.psf import _PSFCatalog
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
-
 
 @dataclass(frozen=True)
 class MeasurementStep:
@@ -137,6 +141,8 @@ class RomanSourceCatalog:
     all sources of error, including the Poisson error of the sources. It
     must also have the same shape and units as the science data array.
     """
+    north_galactic_pole_id = "ngp"
+    south_galactic_pole_id = "sgp"
 
     def __init__(
         self,
@@ -188,6 +194,7 @@ class RomanSourceCatalog:
                 "PSF fitting is requested but no PSF reference model is provided. Skipping PSF photometry."
             )
             self.fit_psf = False
+
 
         # Output column schema (depends only on cat_type, fit_psf, and
         # the aperture flux column names — all known at this point).
@@ -425,6 +432,181 @@ class RomanSourceCatalog:
         """
         return np.zeros(self.n_sources, dtype=np.int32)
 
+    @lazyproperty
+    def dust_ebv(self):
+        """
+        Return per-source dust E(B-V) from SFD maps referenced by CRDS.
+
+        This property queries CRDS for north/south SFD map references,
+        evaluates E(B-V) at each source `ra`/`dec` position, and returns
+        one value per source.
+
+        Returns
+        -------
+        result : `~numpy.ndarray`
+            Array of dtype ``float32`` and shape ``(n_sources,)``.
+            If any step fails (CRDS lookup, file I/O, WCS transform, or
+            interpolation), returns all-NaN values with the same shape.
+
+        Warns
+        -----
+        Emits a warning before returning all-NaN values on failure.
+        """
+        try:
+            dust_map_paths = self._get_sfd_map_paths()
+            return self._get_dust_ebv(self.ra, self.dec, dust_map_paths)
+        except Exception as exc:
+            log.warning(
+                "Failed to compute dust_ebv from SFD reference maps: %s; "
+                "setting dust_ebv to NaN.",
+                exc,
+            )
+            return np.full(self.n_sources, np.nan, dtype=np.float32)
+
+    def _get_sfd_map_paths(self):
+        """
+        Resolve CRDS references for north/south SFD dust maps.
+
+        Returns
+        -------
+        result : dict
+            Mapping from pole ID to resolved dust-map file path.
+
+        Raises
+        ------
+        Exception
+            Propagates exceptions from CRDS lookups or malformed CRDS return
+            values. The caller (`dust_ebv`) handles these errors and falls
+            back to NaNs.
+        """
+        map_paths = {}
+        for field, pole in (
+            ("north", self.north_galactic_pole_id),
+            ("south", self.south_galactic_pole_id),
+        ):
+            dm_headers = {"roman.meta.instrument.name": "wfi", "roman.field": field}
+            reference = getreferences(
+                dm_headers, reftypes=["dustmap"], observatory="roman"
+            )
+            map_paths[pole] = self._extract_dustmap_path(reference, field)
+        return map_paths
+
+    @staticmethod
+    def _extract_dustmap_path(reference, field):
+        """
+        Normalize CRDS reference return values to a single dust-map path.
+
+        Parameters
+        ----------
+        reference : str or dict
+            Value returned by `crds.getreferences`.
+        field : str
+            CRDS ``roman.field`` value (for error context).
+
+        Returns
+        -------
+        result : str
+            Dust-map file path.
+
+        Raises
+        ------
+        KeyError
+            If ``reference`` is a dict without a ``'dustmap'`` key.
+        """
+        if isinstance(reference, dict):
+            try:
+                return reference["dustmap"]
+            except KeyError as exc:
+                raise KeyError(
+                    f"CRDS dustmap reference for '{field}' missing 'dustmap' key."
+                ) from exc
+        return reference
+
+    @staticmethod
+    def _as_degree_quantity(values):
+        """
+        Convert coordinate-like input to a degree `~astropy.units.Quantity`.
+
+        Parameters
+        ----------
+        values : array-like or `~astropy.units.Quantity`
+            Coordinate values. If already a quantity, converted to degrees.
+
+        Returns
+        -------
+        result : `~astropy.units.Quantity`
+            Values expressed in degree units.
+        """
+        if isinstance(values, u.Quantity):
+            return values.to(u.deg)
+        return np.asarray(values) * u.deg
+
+    def _get_dust_ebv(self, ra, dec, map_paths, order=3):
+        """
+        Interpolate SFD E(B-V) at ICRS coordinates.
+
+        Parameters
+        ----------
+        ra, dec : array-like or `~astropy.units.Quantity`
+            Right ascension and declination. If unitless, interpreted as
+            degrees.
+
+        map_paths : dict
+            Mapping containing FITS file paths for galactic pole ID.
+
+        order : int, optional
+            Interpolation order passed to `scipy.ndimage.map_coordinates`.
+
+        Returns
+        -------
+        result : `~numpy.ndarray`
+            Array of E(B-V) values with the same shape as input positions.
+
+        Raises
+        ------
+        ValueError
+            If ``ra`` and ``dec`` shapes do not match.
+        KeyError
+            If required pole keys are missing from ``map_paths``.
+        Exception
+            Propagates FITS/WCS/interpolation errors to caller, which is
+            handled by `dust_ebv` fallback logic.
+        """
+        ra = self._as_degree_quantity(ra)
+        dec = self._as_degree_quantity(dec)
+
+        ra = np.atleast_1d(ra)
+        dec = np.atleast_1d(dec)
+        if ra.shape != dec.shape:
+            raise ValueError("ra.shape must equal dec.shape")
+
+        if ra.size == 0:
+            return np.array([], dtype=np.float32)
+
+        sky = SkyCoord(ra=ra, dec=dec, frame="icrs")
+        gal = sky.galactic
+        l = gal.l.deg
+        b = gal.b.deg
+
+        out = np.full(ra.shape, np.nan, dtype=np.float32)
+        masks = {
+            self.north_galactic_pole_id: b >= 0,
+            self.south_galactic_pole_id: b < 0,
+        }
+
+        for pole, pole_mask in masks.items():
+            if not np.any(pole_mask):
+                continue
+
+            with fits.open(map_paths[pole]) as hdulist:
+                imwcs = WCS(hdulist[0].header)
+                x, y = imwcs.wcs_world2pix(l[pole_mask], b[pole_mask], 0)
+                out[pole_mask] = map_coordinates(
+                    hdulist[0].data, [y, x], order=order, mode="nearest"
+                ).astype(np.float32)
+
+        return out
+
     def _validate_and_convert_units(self):
         """
         Validate that model data arrays have compatible units and
@@ -649,7 +831,8 @@ class RomanSourceCatalog:
         for column in self.column_names:
             catalog[column] = getattr(self, column)
             definition = self.cat_model.get_column_definition(column)
-            catalog[column].info.description = definition["description"]
+            if definition is not None:
+                catalog[column].info.description = definition["description"]
         self.update_metadata()
         catalog.meta.update(self.meta)
 
