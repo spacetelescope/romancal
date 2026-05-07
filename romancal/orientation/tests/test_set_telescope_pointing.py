@@ -14,6 +14,7 @@ from astropy.time import Time
 
 from romancal.lib.engdb import engdb_mast, engdb_tools
 from romancal.orientation import set_telescope_pointing as stp
+from romancal.orientation import _lib as olib
 
 # pysiaf is not a required dependency. If not present, ignore all this.
 pysiaf = pytest.importorskip("pysiaf")
@@ -40,7 +41,7 @@ TARG_DEC = 66.0
 TRANSFORM_KWARGS = {
     "aperture": "WFI01_FULL",
     "gscommanded": (916.4728835141, -186.8939737044),
-    "pointing": stp.Pointing(
+    "pointing": olib.Pointing(
         fgs_q=np.array(
             [
                 -0.18596734175399293,
@@ -123,7 +124,7 @@ def test_change_base_url():
     """
     service_kwargs = {"service": "mast", "eng_base_url": engdb_mast.MAST_BASE_URL}
     with pytest.raises(ValueError):
-        stp.get_pointing(
+        olib.get_pointing(
             Time("2015-06-15"), Time("2015-06-17"), service_kwargs=service_kwargs
         )
 
@@ -135,7 +136,7 @@ def test_change_base_url_fail():
         "eng_base_url": "https://nonexistent.fake.example",
     }
     with pytest.raises(ValueError):
-        stp.get_pointing(
+        olib.get_pointing(
             Time(STARTTIME, format="isot"),
             Time(ENDTIME, format="isot"),
             service_kwargs=service_kwargs,
@@ -146,11 +147,11 @@ def test_change_base_url_fail():
 def test_get_mnemonics():
     """Test getting mnemonics"""
     try:
-        mnemonics = stp.get_mnemonics(STARTTIME, ENDTIME, 60)
+        mnemonics = olib.get_mnemonics(STARTTIME, ENDTIME, 60)
     except ValueError as exception:
         pytest.xfail(reason=str(exception))
 
-    assert len(mnemonics) == len(stp.COARSE_MNEMONICS)
+    assert len(mnemonics) == len(olib.COARSE_MNEMONICS)
 
 
 @pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")
@@ -161,7 +162,7 @@ def test_get_pointing():
     This will most likely change again.
     """
     try:
-        pointing = stp.get_pointing(STARTTIME, ENDTIME)
+        pointing = olib.get_pointing(STARTTIME, ENDTIME)
     except ValueError as exception:
         pytest.xfail(reason=str(exception))
 
@@ -173,7 +174,7 @@ def test_get_pointing():
 
 def test_get_pointing_fail():
     with pytest.raises(ValueError):
-        obstime, q = stp.get_pointing(BADSTARTTIME, BADENDTIME)
+        obstime, q = olib.get_pointing(BADSTARTTIME, BADENDTIME)
 
 
 @pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")
@@ -184,7 +185,7 @@ def test_get_pointing_list():
     This will most likely change again.
     """
     try:
-        results = stp.get_pointing(STARTTIME, ENDTIME, reduce_func=stp.all_pointings)
+        results = olib.get_pointing(STARTTIME, ENDTIME, reduce_func=olib.all_pointings)
     except ValueError as exception:
         pytest.xfail(reason=str(exception))
     assert isinstance(results, list)
@@ -202,7 +203,7 @@ def test_hv_to_fgs():
     hv = TRANSFORM_KWARGS["gscommanded"]
     fgs_expected = (346.06680318732685, -148.7528870949794)
 
-    fgs = stp.hv_to_fgs("WFI01_FULL", *hv)
+    fgs = olib.hv_to_fgs("WFI01_FULL", *hv)
 
     assert np.allclose(fgs, fgs_expected)
 
@@ -211,23 +212,23 @@ def test_hv_to_fgs():
 def test_mnemonics_chronologically():
     """Test ordering mnemonics chronologically"""
     try:
-        mnemonics = stp.get_mnemonics(STARTTIME, ENDTIME, 60)
+        mnemonics = olib.get_mnemonics(STARTTIME, ENDTIME, 60)
     except ValueError as exception:
         pytest.xfail(reason=str(exception))
-    ordered = stp.mnemonics_chronologically(mnemonics)
+    ordered = olib.mnemonics_chronologically(mnemonics)
 
     assert len(ordered) > 1
 
     first = ordered[0]
     assert isinstance(first[0], Time)
     assert isinstance(first[1], dict)
-    assert len(first[1]) >= len(stp.COARSE_MNEMONICS_QUATERNION_ECI)
+    assert len(first[1]) >= len(olib.COARSE_MNEMONICS_QUATERNION_ECI)
 
 
 @pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")
 def test_logging(caplog):
     try:
-        stp.get_pointing(STARTTIME, ENDTIME)
+        olib.get_pointing(STARTTIME, ENDTIME)
     except ValueError as exception:
         pytest.xfail(reason=str(exception))
     assert "Determining pointing between observations times" in caplog.text
@@ -251,7 +252,7 @@ def test_mnemonic_list():
         )
     )
 
-    assert expected == set(stp.COARSE_MNEMONICS)
+    assert expected == set(olib.COARSE_MNEMONICS)
 
 
 @pytest.mark.parametrize("wcs_type", ["wcsinfo", "vinfo"])
@@ -290,8 +291,8 @@ def test_strict_pointing(science_raw_model, tmp_path):
 
 @pytest.mark.parametrize(
     "matrix",
-    [matrix for matrix in dataclasses.fields(stp.Transforms())],
-    ids=[matrix.name for matrix in dataclasses.fields(stp.Transforms())],
+    [matrix for matrix in dataclasses.fields(olib.Transforms())],
+    ids=[matrix.name for matrix in dataclasses.fields(olib.Transforms())],
 )
 def test_transforms(calc_wcs, matrix):
     """Ensure expected calculate of the specified matrix
@@ -314,9 +315,9 @@ def test_transform_serialize(calc_wcs, tmp_path):
 
     path = tmp_path / "transforms.asdf"
     transforms.write_to_asdf(path)
-    from_asdf = stp.Transforms.from_asdf(path)
+    from_asdf = olib.Transforms.from_asdf(path)
 
-    assert isinstance(from_asdf, stp.Transforms)
+    assert isinstance(from_asdf, olib.Transforms)
     assert str(transforms) == str(from_asdf)
 
 
@@ -368,7 +369,7 @@ def calc_wcs(tmp_path_factory):
     t_pars = _make_t_pars(**TRANSFORM_KWARGS)
 
     # Calculate the transforms and WCS information
-    wcsinfo, vinfo, transforms = stp.calc_wcs(t_pars)
+    wcsinfo, vinfo, transforms = olib.calc_wcs(t_pars)
 
     # Save all for later examination.
     transforms_path = tmp_path_factory.mktemp("transforms")
@@ -419,7 +420,7 @@ def updated_model(calc_wcs):
             }
         }
     )
-    stp.update_meta(m, t_pars, wcsinfo, vinfo, "CALCULATED")
+    olib.update_meta(m, t_pars, wcsinfo, vinfo, "CALCULATED")
     return m
 
 
@@ -441,7 +442,7 @@ def _make_t_pars(**transform_kwargs):
         dict to use to initialize the `TransformParameters` object.
         See `TransformParameters` for more information.`
     """
-    t_pars = stp.TransformParameters(**transform_kwargs)
+    t_pars = olib.TransformParameters(**transform_kwargs)
 
     # Force MAST service
     t_pars.service_kwargs = {"service": "mast"}
@@ -468,7 +469,7 @@ def _test_transforms(transforms, t_pars, matrix):
     matrix : str
         The matrix to compare
     """
-    expected_tforms = stp.Transforms.from_asdf(DATA_PATH / "transforms.asdf")
+    expected_tforms = olib.Transforms.from_asdf(DATA_PATH / "transforms.asdf")
     expected_value = getattr(expected_tforms, matrix)
 
     value = getattr(transforms, matrix)
