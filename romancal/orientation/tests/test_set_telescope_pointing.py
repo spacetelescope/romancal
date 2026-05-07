@@ -13,11 +13,11 @@ import roman_datamodels as rdm
 from astropy.time import Time
 
 from romancal.lib.engdb import engdb_mast, engdb_tools
-from romancal.orientation import set_telescope_pointing as stp
 from romancal.orientation import _lib as olib
 from romancal.orientation import _pointing as plib
 from romancal.orientation import _transforms as tlib
 from romancal.orientation import _wcs as wlib
+from romancal.orientation import set_telescope_pointing as stp
 
 # pysiaf is not a required dependency. If not present, ignore all this.
 pysiaf = pytest.importorskip("pysiaf")

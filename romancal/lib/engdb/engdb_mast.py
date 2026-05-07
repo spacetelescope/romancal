@@ -128,7 +128,6 @@ class EngdbMast(EngdbABC):
         if check_aliveness:
             self.isalive()
 
-
     def get_meta(self, search=None):
         """
         Get the mnemonics meta info.

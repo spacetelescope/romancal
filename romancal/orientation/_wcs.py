@@ -136,7 +136,9 @@ def update_wcs_from_telem(model, t_pars: tlib.TransformParameters):
             )
             logger.warning("    at time %s", obstime.iso)
             logger.info("Setting pointing quality to PLANNED")
-            t_pars.pointing = plib.Pointing(q=t_pars.default_quaternion, obstime=obstime)
+            t_pars.pointing = plib.Pointing(
+                q=t_pars.default_quaternion, obstime=obstime
+            )
             quality = "PLANNED"
     else:
         logger.info("Successful read of engineering quaternions:")

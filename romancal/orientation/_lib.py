@@ -1,11 +1,10 @@
 """Private library to support the orientation utilities"""
 
-from collections import namedtuple
 import logging
+from collections import namedtuple
 from math import cos, sin
 
 import numpy as np
-
 
 __all__ = []
 

@@ -4,13 +4,10 @@ import logging
 from os import getenv
 
 import numpy as np
-import requests
 from astropy.table import Table
 from astropy.time import Time
-from requests.adapters import HTTPAdapter, Retry
 
 from .engdb_lib import (
-    FORCE_STATUSES,
     RETRIES,
     TIMEOUT,
     EngdbABC,

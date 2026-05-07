@@ -6,7 +6,6 @@ from collections import defaultdict
 import roman_datamodels as rdm
 from astropy.table import Table
 
-from . import _lib as olib
 from . import _transforms as tlib
 from . import _wcs as wlib
 

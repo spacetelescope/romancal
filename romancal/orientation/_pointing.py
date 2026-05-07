@@ -8,10 +8,9 @@ import numpy as np
 from astropy.table import Table
 from astropy.time import Time, TimeDelta
 
-from . import _lib as olib
-
 from ..lib.engdb.engdb_lib import EngDB_Value
 from ..lib.engdb.engdb_tools import engdb_service
+from . import _lib as olib
 
 __all__ = []
 
@@ -33,6 +32,7 @@ COARSE_MNEMONICS = COARSE_MNEMONICS_QUATERNION_ECI + COARSE_MNEMONICS_B2FGS_EST
 #    q            : Quaternion of the FGS.
 Pointing = namedtuple("Pointing", ["fgs_q", "obstime", "q"])
 Pointing.__new__.__defaults__ = (None,) * 3
+
 
 def all_pointings(mnemonics):
     """

@@ -57,11 +57,11 @@ The following meta values are populated:
     - meta.wcsinfo.s_region
 
 """
+
 import logging
 
 import roman_datamodels as rdm
 
-from . import _lib as lib
 from . import _transforms as tlib
 from . import _wcs as wlib
 
@@ -189,4 +189,3 @@ def update_wcs(
     transforms = wlib.update_wcs_from_telem(model, t_pars)
 
     return t_pars, transforms
-
