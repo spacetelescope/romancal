@@ -605,7 +605,7 @@ def test_get_dust_ebv_shape_mismatch_raises(ra, dec):
         RomanSourceCatalog.north_galactic_pole_id: "north.fits",
         RomanSourceCatalog.south_galactic_pole_id: "south.fits",
     }
-    with pytest.raises(ValueError, match="ra.shape must equal dec.shape"):
+    with pytest.raises(ValueError, match=r"ra\.shape must equal dec\.shape"):
         cat._get_dust_ebv(ra, dec, map_paths)
 
 
