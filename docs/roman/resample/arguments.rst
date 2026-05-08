@@ -111,8 +111,7 @@ image.
     Either a single bit value or a combination of them can be provided.
     If the string starts with a tilde (`~`), then the provided bit(s)
     will be excluded when creating the resampling mask.
-    A value of ``~DO_NOT_USE+NON_SCIENCE`` will exclude pixels
-    flagged with ``DO_NOT_USE`` and ``NON_SCIENCE``.
+    A value of ``~DO_NOT_USE`` will exclude pixels flagged with ``DO_NOT_USE``.
 
     The bit value can be provided in a few different ways, but always as
     a string type. For example, if the user deems OK to use pixels with

@@ -153,10 +153,8 @@ def test_wcs_wcsinfo_matches(base_image):
 @pytest.mark.parametrize(
     "good_bits",
     [
-        "~DO_NOT_USE+NON_SCIENCE",
-        "~513",
-        "~1+512",
-        "~1,512",
+        "~DO_NOT_USE",
+        "~1",
         "LOW_QE+NONLINEAR",
         "73728",
         "8192+65536",
