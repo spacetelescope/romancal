@@ -70,12 +70,12 @@ jobs:
       cache-key: data-${{ needs.crds_context.outputs.context }}
       envs: |
         - linux: py311-oldestdeps-cov
-        - linux: py311-nolegacypath
-        - linux: py312
-        - linux: py313
-        - linux: py314-cov
+        - linux: py311-nolegacypath-ci-gitdeps
+        - linux: py312-ci-gitdeps
+        - linux: py313-ci-gitdeps
+        - linux: py314-cov-ci-gitdeps
           coverage: codecov
           pytest-results-summary: true
-        - macos: py314
-        - macos: py314-pyargs
+        - macos: py314-ci-gitdeps
+        - macos: py314-pyargs-ci-gitdeps
           pytest-results-summary: true
