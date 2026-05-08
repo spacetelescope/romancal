@@ -458,9 +458,8 @@ class RomanSourceCatalog:
             return self._get_dust_ebv(self.ra, self.dec, dust_map_paths)
         except Exception as exc:
             log.warning(
-                "Failed to compute dust_ebv from SFD reference maps: %s; "
-                "setting dust_ebv to NaN.",
-                exc,
+                f"Failed to compute dust_ebv from SFD reference maps: {exc}; "
+                "setting dust_ebv to NaN."
             )
             return np.full(self.n_sources, np.nan, dtype=np.float32)
 
@@ -489,39 +488,8 @@ class RomanSourceCatalog:
             reference = getreferences(
                 dm_headers, reftypes=["dustmap"], observatory="roman"
             )
-            map_paths[pole] = self._extract_dustmap_path(reference, field)
+            map_paths[pole] = reference["dustmap"]
         return map_paths
-
-    @staticmethod
-    def _extract_dustmap_path(reference, field):
-        """
-        Normalize CRDS reference return values to a single dust-map path.
-
-        Parameters
-        ----------
-        reference : str or dict
-            Value returned by `crds.getreferences`.
-        field : str
-            CRDS ``roman.field`` value (for error context).
-
-        Returns
-        -------
-        result : str
-            Dust-map file path.
-
-        Raises
-        ------
-        KeyError
-            If ``reference`` is a dict without a ``'dustmap'`` key.
-        """
-        if isinstance(reference, dict):
-            try:
-                return reference["dustmap"]
-            except KeyError as exc:
-                raise KeyError(
-                    f"CRDS dustmap reference for '{field}' missing 'dustmap' key."
-                ) from exc
-        return reference
 
     @staticmethod
     def _as_degree_quantity(values):
@@ -832,8 +800,7 @@ class RomanSourceCatalog:
         for column in self.column_names:
             catalog[column] = getattr(self, column)
             definition = self.cat_model.get_column_definition(column)
-            if definition is not None:
-                catalog[column].info.description = definition["description"]
+            catalog[column].info.description = definition["description"]
         self.update_metadata()
         catalog.meta.update(self.meta)
 
