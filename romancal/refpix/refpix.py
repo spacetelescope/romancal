@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-# Move this OUTSIDE the TYPE_CHECKING block!
 from roman_datamodels.dqflags import pixel
 
 if TYPE_CHECKING:
