@@ -74,7 +74,7 @@ def run_steps(
     return datamodel
 
 
-def mask_bad_ref_pixels(datamodel):
+def _mask_bad_ref_pixels(datamodel):
     """
     Zero out BAD_REF_PIXEL pixels before refpix correction.
     """
