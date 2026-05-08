@@ -77,7 +77,10 @@ def frame_read_times(
     nrow = 4096
     ncol = 128
 
-    # The clock cycle time, in pixels; this will likely never change.
+    # The "padding," or clock cycles between rows, will likely never change.
+    npad = 14
+
+    # The clock cycle time, in seconds; this will likely never change.
     pixtime = 4.915263e-06
 
     # Define a 2D timing pattern for a single readout channel
