@@ -32,7 +32,9 @@ def parse_visitID(visit_id):
     return visit_id_parts
 
 
-def frame_read_times(frame_time, sca, frame_number=0, stride_gw=256, gw_pseudotime_factor=1.5):
+def frame_read_times(
+    frame_time, sca, frame_number=0, stride_gw=256, gw_pseudotime_factor=1.5
+):
     """
     Compute the pixel read times for a single frame.
 
@@ -92,14 +94,14 @@ def frame_read_times(frame_time, sca, frame_number=0, stride_gw=256, gw_pseudoti
     cycles_per_gw = clockcycles_gw / num_gw_readouts * gw_pseudotime_factor
 
     for i in range(1, num_gw_readouts):
-        science_clocknum[i * stride_gw:] += cycles_per_gw
+        science_clocknum[i * stride_gw :] += cycles_per_gw
 
     # Scale the clock cycles to the appropriate frame time, leaving
     # one last guide window excursion at the end.  We cannot just
     # multiply by the pixel time because gw_pseudotime_factor may not
     # be unity.
     one_channel_read_time = frame_time * science_clocknum
-    one_channel_read_time /= (np.amax(science_clocknum) + cycles_per_gw)
+    one_channel_read_time /= np.amax(science_clocknum) + cycles_per_gw
 
     # WFI channels alternate readout direction in the +x and -x directions
     # we implement this by flipping the x direction of every other channel
