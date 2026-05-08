@@ -119,6 +119,12 @@ background flux is calculated as the sigma-clipped median value within
 the annulus. Although this local background value is included in the
 source catalog, it is not subtracted from any of the measured fluxes.
 
+Each source has a field, `is_extended`, intended to indicate whether the
+source is more extended than expected, were the object a point source.
+The determination is made on the basis of the ratio of aperture fluxes
+at 0.4 and 0.2 arcsec being more than 1.2x larger than expected for
+a point source.
+
 
 Source Catalog Table
 --------------------
