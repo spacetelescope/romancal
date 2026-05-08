@@ -31,7 +31,7 @@ def run_steps(
     log.debug("Reading data from datamodel into single array")
 
     if zero_bad_ref_pix:
-        mask_bad_ref_pixels(datamodel)
+        _mask_bad_ref_pixels(datamodel)
 
     coeffs = Coefficients.from_ref(refs)
     standard = StandardView.from_datamodel(datamodel)
