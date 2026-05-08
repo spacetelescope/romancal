@@ -286,10 +286,10 @@ def get_gridded_psf_model(psf_ref_model, focus=0, spectral_type=1):
     # New style PSF stamps are integrated over the PSF and sum to oversample ** 2.
     # this checks to see whether the summation over the pixel is needed based on
     # the normalization
-    is_old_format = np.median(np.sum(psf_images, axis=(-1, -2))) < oversample ** 2 / 2
+    is_old_format = np.median(np.sum(psf_images, axis=(-1, -2))) < oversample**2 / 2
 
     if is_old_format:
-        log.info('Integrating over the native pixel scale.')
+        log.info("Integrating over the native pixel scale.")
         # integrate over the native pixel scale
         pixel_response_kernel = Box2DKernel(width=oversample)
         for i in range(psf_images.shape[0]):
