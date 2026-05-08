@@ -144,8 +144,10 @@ def do_dqinit(model, mask, expand_gw_flagging=0):
         del output_model.reference_amp33
 
     # If a data encoding offset was added to the data, remove it
+    # from the data and amp33 arrays
     data_encoding_offset = getattr(model.meta.instrument, "data_encoding_offset", 0)
     output_model.data -= data_encoding_offset
+    output_model.amp33 -= data_encoding_offset
 
     if mask is not None and output_model.pixeldq.shape == mask.dq.shape:
         output_model.pixeldq |= mask.dq

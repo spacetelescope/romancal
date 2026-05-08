@@ -29,15 +29,15 @@ RAD_TO_ARCSEC = 180.0 / np.pi * 3600.0
 
 
 def find_intersecting_projregions(
-    footprint: sm.ImageFootprint,
+    footprint: sm._ImageFootprint,
     skymap: sc.SkyMap = None,
 ) -> list[int]:
     """Out of all projection regions, find ones that intersect the given image footprint
 
     Parameters
     ----------
-    footprint: sm.ImageFootprint :
-        sequence of points (ra, dec) or an `ImageFootprint` object
+    footprint: sm._ImageFootprint :
+        sequence of points (ra, dec) or an `_ImageFootprint` object
     skymap: sc.SkyMap :
         skymap instance; defaults to global SKYMAP (Default value = None)
 
@@ -181,7 +181,7 @@ def plot_skycells(
 
 
 def plot_image_footprint_and_skycells(
-    footprint: list[tuple[float, float]] | sm.ImageFootprint,
+    footprint: list[tuple[float, float]] | sm._ImageFootprint,
     skycells: sc.SkyCells,
     skymap: sc.SkyMap = None,
 ) -> list[tuple[Axis, tuple[float, float, float]]]:
@@ -191,14 +191,14 @@ def plot_image_footprint_and_skycells(
 
     Parameters
     ----------
-    footprint : list | sm.ImageFootprint :
-        sequence of points (ra, dec) or an `ImageFootprint` object
+    footprint : list | sm._ImageFootprint :
+        sequence of points (ra, dec) or an `_ImageFootprint` object
     skymap : sc.SkyMap :
         skymap instance; defaults to global SKYMAP (Default value = None)
     """
 
-    if not isinstance(footprint, sm.ImageFootprint):
-        footprint = sm.ImageFootprint(footprint)
+    if not isinstance(footprint, sm._ImageFootprint):
+        footprint = sm._ImageFootprint(footprint)
 
     if skymap is None:
         skymap = sc.SKYMAP

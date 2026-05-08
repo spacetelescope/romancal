@@ -38,12 +38,15 @@ def copy_mosaic_meta(model, cat_model):
 
 def get_ee_spline(input_model, apcorr_file):
     """
-    Create a spline fit to the encircled energy fraction vs radius data
+    Create a spline fit to the encircled energy fraction vs. radius data.
 
     Parameters
     ----------
     input_model : `~roman_datamodels.datamodels.ImageModel` or `~roman_datamodels.datamodels.MosaicModel`
         The input data model.
+
+    apcorr_file : str
+        Path to the aperture correction (apcorr) reference file.
     """
 
     optical_element = input_model.meta.instrument.optical_element
@@ -79,8 +82,8 @@ def make_model_mask(model):
 
 def copy_model_arrays(model):
     """
-    Create a shallow copy of ImageModel or MosaicModel with data and err
-    copied.
+    Create a copy of an `ImageModel` or `MosaicModel` with independent
+    ``data`` and ``err`` arrays.
 
     This function creates a new model instance that shares the metadata
     with the input model but has independent copies of the data and err

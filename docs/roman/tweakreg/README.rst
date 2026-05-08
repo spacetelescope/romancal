@@ -130,7 +130,7 @@ Step Arguments
   - ``'rscale'``: rotation, shifts, and scale
   - ``'general'``: rotation, shifts, scale, and skew
 
-  The default value is "rshift".
+  The default value is "general".
 
   .. note::
       Mathematically, alignment of images observed in different tangent planes
@@ -191,7 +191,7 @@ Parameters used for absolute astrometry to a reference catalog.
   - ``'rscale'``: rotation and scale
   - ``'general'``: shift, rotation, and scale
 
-  The default value is "rshift". Note that the same conditions/restrictions
+  The default value is "general". Note that the same conditions/restrictions
   that apply to ``fitgeometry`` also apply to ``abs_fitgeometry``.
 
 * ``abs_nclip``: A non-negative integer number of clipping iterations

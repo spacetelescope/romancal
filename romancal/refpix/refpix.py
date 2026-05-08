@@ -9,8 +9,7 @@ from roman_datamodels.dqflags import pixel
 if TYPE_CHECKING:
     from roman_datamodels.datamodels import RampModel, RefpixRefModel
 
-
-from .data import Coefficients, StandardView
+from ._data import Coefficients, StandardView
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)

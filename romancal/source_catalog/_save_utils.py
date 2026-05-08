@@ -153,7 +153,7 @@ def save_all_results(
     self.output_ext = "asdf"
 
     # Always save the source catalog, but don't save it twice.
-    # If save_results=False or return_update_model=True, we need to
+    # If save_results=False or return_updated_model=True, we need to
     # explicitly save it.
     return_updated_model = getattr(self, "return_updated_model", False)
     if not self.save_results or return_updated_model:

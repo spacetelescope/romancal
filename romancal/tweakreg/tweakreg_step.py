@@ -18,7 +18,7 @@ from roman_datamodels import dqflags
 from stcal.tweakreg import tweakreg
 from stcal.tweakreg.tweakreg import TweakregError
 
-from romancal.assign_wcs.utils import add_s_region
+from romancal.assign_wcs.assign_wcs import add_s_region
 from romancal.datamodels.fileio import open_dataset
 from romancal.lib.save_wcs import save_wfiwcs
 
@@ -49,24 +49,24 @@ class TweakRegStep(RomanStep):
         catalog_path = string(default='') # Catalog output file path
         enforce_user_order = boolean(default=False) # Align images in user specified order?
         expand_refcat = boolean(default=False) # Expand reference catalog with new sources?
-        minobj = integer(default=15) # Minimum number of objects acceptable for matching
+        minobj = integer(default=10) # Minimum number of objects acceptable for matching
         searchrad = float(default=2.0) # The search radius in arcsec for a match
         use2dhist = boolean(default=True) # Use 2d histogram to find initial offset?
         separation = float(default=1.0) # Minimum object separation in arcsec
         tolerance = float(default=0.7) # Matching tolerance for xyxymatch in arcsec
-        fitgeometry = option('shift', 'rshift', 'rscale', 'general', default='rshift') # Fitting geometry
+        fitgeometry = option('shift', 'rshift', 'rscale', 'general', default='general') # Fitting geometry
         nclip = integer(min=0, default=3) # Number of clipping iterations in fit
         sigma = float(min=0.0, default=3.0) # Clipping limit in sigma units
         abs_refcat = string(default='{DEFAULT_ABS_REFCAT}')  # Absolute reference catalog
         save_abs_catalog = boolean(default=False)  # Write out used absolute astrometric reference catalog as a separate product
-        abs_minobj = integer(default=15) # Minimum number of objects acceptable for matching when performing absolute astrometry
+        abs_minobj = integer(default=10) # Minimum number of objects acceptable for matching when performing absolute astrometry
         abs_searchrad = float(default=6.0) # The search radius in arcsec for a match when performing absolute astrometry
         # We encourage setting this parameter to True. Otherwise, xoffset and yoffset will be set to zero.
         abs_use2dhist = boolean(default=True) # Use 2D histogram to find initial offset when performing absolute astrometry?
         abs_separation = float(default=1.0) # Minimum object separation in arcsec when performing absolute astrometry
         abs_tolerance = float(default=0.7) # Matching tolerance for xyxymatch in arcsec when performing absolute astrometry
         # Fitting geometry when performing absolute astrometry
-        abs_fitgeometry = option('shift', 'rshift', 'rscale', 'general', default='rshift')
+        abs_fitgeometry = option('shift', 'rshift', 'rscale', 'general', default='general')
         abs_nclip = integer(min=0, default=3) # Number of clipping iterations in fit when performing absolute astrometry
         abs_sigma = float(min=0.0, default=3.0) # Clipping limit in sigma units when performing absolute astrometry
         output_use_model = boolean(default=True)  # When saving use `DataModel.meta.filename`
