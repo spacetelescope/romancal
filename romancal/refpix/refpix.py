@@ -84,12 +84,12 @@ def mask_bad_ref_pixels(datamodel):
 
     # Protect against incorrectly shaped mock data in the unit tests.
     # Production datamodels enforce strict matching schemas.
-    if bad_ref_mask.shape == datamodel.data.shape[-len(bad_ref_mask.shape):]:
+    if bad_ref_mask.shape == datamodel.data.shape[-len(bad_ref_mask.shape) :]:
         datamodel.data[..., bad_ref_mask] = 0
     else:
         log.debug(
             "Skipping bad_ref_pixel masking: pixeldq shape %s does not match data trailing shape",
-            bad_ref_mask.shape
+            bad_ref_mask.shape,
         )
 
     return datamodel
