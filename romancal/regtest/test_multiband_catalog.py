@@ -35,7 +35,7 @@ fieldlist = [
     "aper02_f213m_flux",  # DMS539 PSF-matched photometry
     "segment_f213m_flux",  # DMS539
     "kron_f213m_flux",  # DMS539
-    "dust_ebv",  # DMSXXX dust extinction values
+    "dust_ebv",  # dust extinction values
 ]
 
 
