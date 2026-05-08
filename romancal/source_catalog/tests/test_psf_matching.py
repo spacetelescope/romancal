@@ -10,7 +10,7 @@ from astropy.modeling.fitting import TRFLSQFitter
 from astropy.modeling.models import Gaussian2D
 from roman_datamodels.datamodels import MosaicModel
 
-from romancal.source_catalog.psf_matching import (
+from romancal.source_catalog._psf_matching import (
     create_psf_matched_image,
     get_filter_wavelength,
     get_reddest_filter,
@@ -119,7 +119,7 @@ def mock_create_l3_psf_patch():
         return MockL3PSF()
 
     return patch(
-        "romancal.source_catalog.psf_matching.create_l3_psf_model",
+        "romancal.source_catalog._psf_matching.create_l3_psf_model",
         side_effect=mock_create_l3_psf,
     )
 
@@ -399,19 +399,21 @@ def test_psf_matching_kernel_validation():
     def mock_create_kernel(input_psf, target_psf, downsample=1):
         """Mock that captures the kernel."""
         # Import the real function
-        from romancal.source_catalog.psf import create_convolution_kernel
+        from romancal.source_catalog.psf import _create_convolution_kernel
 
-        kernel = create_convolution_kernel(input_psf, target_psf, downsample=downsample)
+        kernel = _create_convolution_kernel(
+            input_psf, target_psf, downsample=downsample
+        )
         captured_kernel["kernel"] = kernel
         return kernel
 
     with (
         patch(
-            "romancal.source_catalog.psf_matching.create_l3_psf_model",
+            "romancal.source_catalog._psf_matching.create_l3_psf_model",
             side_effect=mock_create_l3_psf,
         ),
         patch(
-            "romancal.source_catalog.psf_matching.create_convolution_kernel",
+            "romancal.source_catalog._psf_matching._create_convolution_kernel",
             side_effect=mock_create_kernel,
         ),
     ):

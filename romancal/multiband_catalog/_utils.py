@@ -11,7 +11,7 @@ def insert_substring(original, insert_str, substring, before=True):
         Original string to modify.
     insert_str : str
         Substring to insert.
-    substrings : str
+    substring : str
         Substring to match.
     before : bool, optional
         If True, insert before the substring. If False, insert

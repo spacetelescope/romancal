@@ -12,7 +12,7 @@ from stcal.alignment.util import (
     compute_scale,
 )
 
-from romancal.assign_wcs.utils import create_footprint
+from romancal.assign_wcs.assign_wcs import _create_footprint
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -50,7 +50,7 @@ def assign_l3_wcs(model, wcs):
 
     l3_wcsinfo.orientation = calc_pa(wcs, *world_center)
 
-    footprint = create_footprint(wcs, model.shape, center=False)
+    footprint = _create_footprint(wcs, model.shape, center=False)
     l3_wcsinfo.s_region = compute_s_region_keyword(footprint)
 
     try:

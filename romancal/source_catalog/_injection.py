@@ -41,15 +41,14 @@ HRGALMAGLIMIT = {
 
 def inject_sources(model, si_cat, seed=None, **kwargs):
     """
-    Convolve the background-subtracted model image with a Gaussian
-    kernel.
+    Inject sources from a catalog into an image model.
 
     Parameters
     ----------
     model : `ImageModel` or `MosaicModel`
         Model into which to inject sources.
-    si_cat: astropy.table.Table
-        Catalog of sources to inject into image.
+    si_cat : `~astropy.table.Table`
+        Catalog of sources to inject into the image.
 
     Returns
     -------

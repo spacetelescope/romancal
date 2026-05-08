@@ -1,0 +1,5 @@
+Consolidated ``assign_wcs`` step internals into a new ``assign_wcs.py`` module;
+functions previously spread across ``assign_wcs_step``, ``pointing``, and
+``utils`` are now in ``romancal.assign_wcs.assign_wcs``. ``wfi_distortion``,
+``dva_corr_model``, and ``create_footprint`` have been made private
+(``_wfi_distortion``, ``_dva_corr_model``, ``_create_footprint``).

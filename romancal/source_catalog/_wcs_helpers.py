@@ -50,8 +50,8 @@ def pixel_scale_angle_at_skycoord(skycoord, wcs, offset=1 * u.arcsec):
     # Convert to pixel coordinates
     xpos, ypos = wcs.world_to_pixel(skycoord)
 
-    # We take a point directly North (i.e., latitude offset) the
-    # input sky coordinate and convert it to pixel coordinates,
+    # We take a point directly North of (i.e., a latitude offset from)
+    # the input sky coordinate and convert it to pixel coordinates,
     # then we use the pixel deltas between the input and offset sky
     # coordinate to calculate the pixel scale and angle.
     skycoord_offset = skycoord.directional_offset_by(0.0, offset)

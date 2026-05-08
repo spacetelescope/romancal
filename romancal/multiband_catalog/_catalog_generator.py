@@ -8,14 +8,14 @@ import logging
 from astropy.table import join
 from roman_datamodels import datamodels
 
-from romancal.multiband_catalog.utils import add_filter_to_colnames
-from romancal.source_catalog.psf_matching import (
+from romancal.multiband_catalog._utils import add_filter_to_colnames
+from romancal.source_catalog._psf_matching import (
     compute_psf_correction_factors,
     create_psf_matched_image,
     get_filter_wavelength,
 )
-from romancal.source_catalog.source_catalog import RomanSourceCatalog
-from romancal.source_catalog.utils import get_ee_spline, make_model_mask
+from romancal.source_catalog._source_catalog import RomanSourceCatalog
+from romancal.source_catalog._utils import get_ee_spline, make_model_mask
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)

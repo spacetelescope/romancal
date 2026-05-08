@@ -6,7 +6,8 @@ from numpy.testing import assert_allclose
 from roman_datamodels import datamodels as rdm
 from stcal.alignment.util import wcs_bbox_from_shape
 
-from romancal.assign_wcs.assign_wcs_step import AssignWcsStep, load_wcs
+from romancal.assign_wcs.assign_wcs import load_wcs
+from romancal.assign_wcs.assign_wcs_step import AssignWcsStep
 
 DATA_SHAPE = (100, 100)
 TEST_TRANSFORM = models.Shift(1) & models.Shift(2)

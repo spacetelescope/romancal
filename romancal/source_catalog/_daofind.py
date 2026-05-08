@@ -14,35 +14,74 @@ from scipy import ndimage
 
 class DAOFindCatalog:
     """
-    Class to calculate DAOFind sharpness and roundness1 properties.
+    Class to calculate DAOFind ``sharpness`` and ``roundness1``
+    statistics for a set of source positions.
 
     Parameters
     ----------
     data : 2D `~numpy.ndarray`
-        The input 2D image data.
+        The input 2D image data (already background-subtracted and on
+        the same pixel grid as ``xypos``).
 
     xypos : 2D `~numpy.ndarray`
-        The x/y positions of the sources in the image.
+        Source positions with shape ``(N, 2)`` of ``(x, y)`` pixel
+        coordinates.
 
-    kernel_sigma : float
-        The standard deviation of the Gaussian kernel used for
-        convolution. The kernel size is determined by the kernel_sigma
-        value.
+    kernel_fwhm : float
+        The full-width at half-maximum (FWHM) of the Gaussian kernel
+        used for convolution, in pixels. The kernel size is derived from
+        this value.
+
+    requested_properties : iterable of str, optional
+        If given, restrict ``self.properties`` to this subset of
+        `available_properties` (``"sharpness"`` and/or ``"roundness1"``).
+
+    Raises
+    ------
+    ValueError
+        If ``data`` is not 2-D, ``xypos`` does not have shape ``(N, 2)``,
+        or ``kernel_fwhm`` is not positive.
     """
 
-    def __init__(self, data, xypos, kernel_fwhm):
+    # Source-property column names this catalog can produce
+    available_properties = ("sharpness", "roundness1")
+
+    def __init__(self, data, xypos, kernel_fwhm, *, requested_properties=None):
+        data = np.asarray(data)
+        if data.ndim != 2:
+            msg = f"data must be a 2-D array; got shape {data.shape}."
+            raise ValueError(msg)
+
+        xypos = np.asarray(xypos)
+        if xypos.ndim != 2 or xypos.shape[1] != 2:
+            msg = (
+                "xypos must have shape (N, 2) of (x, y) pixel "
+                f"positions; got shape {xypos.shape}."
+            )
+            raise ValueError(msg)
+
+        if kernel_fwhm <= 0:
+            msg = f"kernel_fwhm must be positive; got {kernel_fwhm}."
+            raise ValueError(msg)
+
         self.data = data
         self.xypos = xypos
         self.kernel_sigma = kernel_fwhm * gaussian_fwhm_to_sigma
 
-        self.names = ["sharpness", "roundness1"]
+        if requested_properties is None:
+            self.properties = list(self.available_properties)
+        else:
+            requested = set(requested_properties)
+            self.properties = [
+                prop for prop in self.available_properties if prop in requested
+            ]
 
     @lazyproperty
     def kernel_size(self):
         """
         The DAOFind kernel size (in both x and y dimensions).
         """
-        # always odd
+        # Always odd
         return 2 * int(max(2.0, 1.5 * self.kernel_sigma)) + 1
 
     @lazyproperty
@@ -74,7 +113,7 @@ class DAOFindCatalog:
         kernel *= self.kernel_mask
         kernel /= np.max(kernel)
 
-        # normalize the kernel to zero sum
+        # Normalize the kernel to zero sum
         npixels = self.kernel_mask.sum()
         denom = np.sum(kernel**2) - (np.sum(kernel) ** 2 / npixels)
         return ((kernel - (kernel.sum() / npixels)) / denom) * self.kernel_mask
@@ -158,7 +197,7 @@ class DAOFindCatalog:
         data_mean = (np.sum(data_masked, axis=(1, 2)) - data_peak) / npixels
 
         with warnings.catch_warnings():
-            # ignore 0 / 0 for non-finite xypos
+            # Ignore 0 / 0 for non-finite xypos
             warnings.simplefilter("ignore", category=RuntimeWarning)
             value = (data_peak - data_mean) / conv_peak
             return value.astype(np.float32)
@@ -175,11 +214,11 @@ class DAOFindCatalog:
         "Round" objects have a "roundness1" close to 0, generally
         between -1 and 1.
         """
-        # set the central (peak) pixel to zero
+        # Set the central (peak) pixel to zero
         data = self.cutouts_conv.copy()
         data[:, self.kernel_center, self.kernel_center] = 0.0
 
-        # calculate the four roundness quadrants
+        # Calculate the four roundness quadrants
         quad1 = data[:, 0 : self.kernel_center + 1, self.kernel_center + 1 :]
         quad2 = data[:, 0 : self.kernel_center, 0 : self.kernel_center + 1]
         quad3 = data[:, self.kernel_center :, 0 : self.kernel_center]
@@ -198,7 +237,7 @@ class DAOFindCatalog:
         sum4[sum4 == 0] = np.nan
 
         with warnings.catch_warnings():
-            # ignore 0 / 0 for non-finite xypos
+            # Ignore 0 / 0 for non-finite xypos
             warnings.simplefilter("ignore", category=RuntimeWarning)
             value = 2.0 * sum2 / sum4
             return value.astype(np.float32)

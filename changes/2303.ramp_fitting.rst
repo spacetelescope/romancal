@@ -1,0 +1,1 @@
+Move ``ols_cas22`` and ``likely`` from instance methods on ``RampFitStep`` to module-level functions to reduce the public API.

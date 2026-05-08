@@ -124,7 +124,7 @@ def _downsample_by_interpolation(image, downsample):
     """Downsample an image by interpolating it, preserving the centering.
 
     This is conceptually similar to taking every nth pixel of the image,
-    but is careful about keeping the image centered and.  This is important
+    but is careful about keeping the image centered. This is important
     for PSFs, for example, where we want to keep the PSF precisely centered,
     including for cases where the shape of the image and the amount of
     downsampling don't align neatly.
@@ -169,7 +169,7 @@ def _downsample_by_interpolation(image, downsample):
     return low_res
 
 
-def create_convolution_kernel(
+def _create_convolution_kernel(
     input_psf, target_psf, min_fft_power_ratio=1e-5, downsample=None, size=None
 ):
     """Find convolution kernel which convolves input_psf to match target_psf.
@@ -241,7 +241,7 @@ def create_convolution_kernel(
         kernel = convolve(kernel, Box2DKernel(width=downsample), boundary="extend")
         kernel = _downsample_by_interpolation(kernel, downsample)
     if size is not None:
-        return central_stamp(kernel, size).copy()
+        return _central_stamp(kernel, size).copy()
     return kernel
 
 
@@ -252,7 +252,7 @@ def get_gridded_psf_model(psf_ref_model, focus=0, spectral_type=1):
     reference files in CRDS.
     The input reference files have 3 focus positions and this is using
     the in-focus images. There are also three spectral types that are
-    available and this code uses the M5V spectal type.
+    available and this code uses the G2V spectral type.
 
     Parameters
     ----------
@@ -321,7 +321,7 @@ def render_stamp(x, y, grid, size, oversample=1):
     return stamp
 
 
-def central_stamp(im, size):
+def _central_stamp(im, size):
     """Extract the central region of an image.
 
     The image must be square and we extract a square stamp.  The parity
@@ -574,7 +574,7 @@ def create_l3_psf_model(
     return psf_model
 
 
-class PSFCatalog:
+class _PSFCatalog:
     """
     Class to calculate PSF photometry.
 
@@ -594,16 +594,37 @@ class PSFCatalog:
         same one used to create the segmentation image.
     """
 
-    def __init__(self, model, psf_ref_model, xypos, mask=None):
+    def __init__(
+        self, model, psf_ref_model, xypos, mask=None, *, requested_properties=None
+    ):
         self.model = model
         self.psf_ref_model = psf_ref_model
         self.xypos = xypos
         self.mask = mask
 
-        self.names = list(self._name_map.values())
-        self.names.extend(["ra_psf", "dec_psf", "ra_psf_err", "dec_psf_err"])
+        if requested_properties is None:
+            self.properties = list(self.available_properties)
+        else:
+            requested = set(requested_properties)
+            self.properties = [
+                prop for prop in self.available_properties if prop in requested
+            ]
 
         self.calc_psf_photometry()
+
+    @lazyproperty
+    def available_properties(self):
+        """
+        The full set of source-property column names this catalog can
+        produce.
+        """
+        return (
+            *self._name_map.values(),
+            "ra_psf",
+            "dec_psf",
+            "ra_psf_err",
+            "dec_psf_err",
+        )
 
     @lazyproperty
     def psf_model(self):
@@ -670,17 +691,17 @@ class PSFCatalog:
                 init_params=init_params,
             )
 
-        # set _name_map columns as attributes of this instance
+        # Set these columns as attributes of this instance
         for old_name, new_name in self._name_map.items():
             value = results[old_name]
 
-            # change the photutils dtypes
+            # Change the photutils dtypes
             if np.issubdtype(value.dtype, np.integer):
                 value = value.astype(np.int32)
             elif np.issubdtype(value.dtype, np.floating):
                 value = value.astype(np.float32)
 
-            # handle any unit conversions
+            # Handle any unit conversions
             if new_name in ("x_psf", "y_psf", "x_psf_err", "y_psf_err"):
                 value *= u.pix
 
