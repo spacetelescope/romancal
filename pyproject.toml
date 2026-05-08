@@ -395,14 +395,3 @@ showcontent = true
 directory = "docs"
 name = "Documentation"
 showcontent = true
-
-### remove all this after the next RAD/RDM releases
-[tool.uv]
-override-dependencies = [
-  # pretending to be rad 0.31.0 to satisfy the roman_datamodels pin in the dependencies
-    "rad==0.31.0"
-]
-[tool.uv.sources]
-roman-datamodels = { git = "https://github.com/spacetelescope/roman_datamodels.git", rev = "main" }
-rad = { git = "https://github.com/mairanteodoro/rad.git", rev = "RCAL-1380" }
-### remove all this after the next RAD/RDM releases
