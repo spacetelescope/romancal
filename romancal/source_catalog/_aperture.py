@@ -247,7 +247,7 @@ class ApertureCatalog:
         """
         if self.ee_spline is not None:
             for radius, name in zip(
-                self.aperture_radii["circle_pix"],
+                self.aperture_radii["circle"],
                 self.aperture_radius_name,
                 strict=True,
             ):
@@ -273,7 +273,7 @@ class ApertureCatalog:
             return np.zeros(self.xypos_finite.shape[0], dtype=bool)
 
         ee_ratio = self.ee_fraction_04 / self.ee_fraction_02
-        return self.aper04_flux > (self.aper02_flux * 1.1 * ee_ratio)
+        return self.aper04_flux > (self.aper02_flux * 1.2 * ee_ratio)
 
     def calc_aperture_photometry(self, subtract_local_bkg=False):
         """
