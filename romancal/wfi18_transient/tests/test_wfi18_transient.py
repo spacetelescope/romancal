@@ -16,7 +16,7 @@ def create_ramp_model(nresultants, nrows=4096, ncols=4096):
 
     # add necessary metadata
     ramp_model.meta.instrument.detector = "WFI18"
-    ramp_model.meta.exposure.frame_time = 1.0
+    ramp_model.meta.exposure.frame_time = 3.0
 
     # add required cal steps
     ramp_model.meta.cal_step = {}
