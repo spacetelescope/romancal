@@ -1,0 +1,1 @@
+Remove ``NON_SCIENCE`` from the default ``good_bits``/``dqbits`` parameter in the resample, skymatch, and outlier_detection steps.
