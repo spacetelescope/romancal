@@ -41,9 +41,9 @@ def create_ramp_model(nresultants, nrows=4096, ncols=4096):
     return ramp_model
 
 
-def transient_glow():
-    read_times = frame_read_times(1.0, 18)
-    glow = _double_exp(read_times, 0.1, 0.01, 0.01, 0.01)
+def transient_glow(frame_time):
+    read_times = frame_read_times(frame_time, 18)
+    glow = _double_exp(read_times, -0.5, 0.1, 0.1, 0.5)
     return glow
 
 
@@ -55,7 +55,7 @@ def test_wfi18_transient(caplog):
 
     # Add a glow to the bottom of the detector in the first read,
     # not including the reference pixels
-    model.data[0, 4:-4, 4:-4] += transient_glow()[4:-4, 4:-4]
+    model.data[0, 4:-4, 4:-4] += transient_glow(model.meta.exposure.frame_time)[4:-4, 4:-4]
     assert not np.allclose(model.data, 1.0, atol=1e-5)
 
     # Correct out the glow
