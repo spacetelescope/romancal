@@ -15,9 +15,8 @@ from astropy.stats import mad_std
 from astropy.table import QTable
 from astropy.time import Time
 from photutils.datasets import make_model_image
-from roman_datamodels.datamodels import ImageModel, MosaicModel
-
 from photutils.psf import GriddedPSFModel, ImagePSF
+from roman_datamodels.datamodels import ImageModel, MosaicModel
 
 from romancal.source_catalog.psf import (
     _azimuthally_average_via_fft,
