@@ -55,7 +55,9 @@ def test_wfi18_transient(caplog):
 
     # Add a glow to the bottom of the detector in the first read,
     # not including the reference pixels
-    model.data[0, 4:-4, 4:-4] += transient_glow(model.meta.exposure.frame_time)[4:-4, 4:-4]
+    model.data[0, 4:-4, 4:-4] += transient_glow(model.meta.exposure.frame_time)[
+        4:-4, 4:-4
+    ]
     assert not np.allclose(model.data, 1.0, atol=1e-5)
 
     # Correct out the glow
