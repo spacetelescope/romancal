@@ -144,14 +144,6 @@ def make_catalog(metadata):
     return tabcat
 
 
-# Ignore this warning - it comes from stpsf,
-#   and they are aware of the need for an upgrade.
-@pytest.mark.filterwarnings(
-    "ignore:Python 3.14 will, by default,"
-    " filter extracted tar archives and"
-    " reject files or modify their metadata."
-    " Use the filter argument to control this behavior.:DeprecationWarning"
-)
 def test_inject_sources(image_model, mosaic_model):
     for si_model in (image_model, mosaic_model):
         """Test simple source injection"""
@@ -224,8 +216,13 @@ def test_create_cosmoscat():
         shape=SHAPE,
     )
 
+    # Set multiplier of objects to create enough artificial objects
+    # to test that 0 J-band flux objects are removed
+    obj_fact = 100
+
     # Convert x,y to ra, dec
-    ra, dec = wcsobj.pixel_to_world_values(np.array(XPOS_IDX), np.array(YPOS_IDX))
+    ra, dec = wcsobj.pixel_to_world_values(np.array(obj_fact * XPOS_IDX),
+                                           np.array(obj_fact * YPOS_IDX))
 
     # Exposure times (s)
     exptimes = {}
@@ -236,6 +233,12 @@ def test_create_cosmoscat():
     cat = make_cosmoslike_catalog(
         cen, ra, dec, exptimes, filters=FILTERS, seed=RNG_SEED
     )
+
+    # Test that the catalog contains no 0 flux J-Band objects
+    assert np.all(cat["F129"] > 0)
+
+    # Remove the artificial duplicates from the catalog
+    cat = cat[np.arange(-int(len(XPOS_IDX) / 4), 3 * int(len(XPOS_IDX) / 4))]
 
     # Set simple wcs metadata for mcat
     meta = {
