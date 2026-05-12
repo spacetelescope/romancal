@@ -442,6 +442,12 @@ class ResampleData(Resample):
             "data_release_id", "p"
         )
 
+        output_model.meta.background.level = self.output_model.get("level", None)
+        output_model.meta.background.subtracted = self.output_model.get(
+            "subtracted",
+            False
+        )
+
         return output_model
 
     def reset_arrays(self, n_input_models=None):
