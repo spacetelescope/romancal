@@ -569,7 +569,7 @@ def create_l3_psf_model(
     xx, yy = np.meshgrid(pts, pts)
     psf = gridpsf.evaluate(xx, yy, 1, center, center)
     detector_pixel_scale = 0.11  # Roman native scale
-    # psf is now a stamp going 10 pixels out from the center of the PSF
+    # psf is now a stamp going stamp_radius pixels out from the center of the PSF
     # at the native PSF scale, oversampled by a factor of oversample.
 
     # Smooth to account for the pixfrac used to create the L3 image.
@@ -649,7 +649,7 @@ class _PSFCatalog:
         A gridded PSF model based on instrument and detector
         information.
         """
-        if hasattr(self.model.meta, "instrument"):
+        if not hasattr(self.model.meta, "resample"):
             # ImageModel (L2 datamodel)
             psf_model = get_gridded_psf_model(self.psf_ref_model)
         else:
