@@ -16,10 +16,6 @@ from .engdb_lib import (
 
 __all__ = ["EngdbEDP"]
 
-# Default MAST info.
-MAST_BASE_URL = "https://masttest.stsci.edu"
-API_URI = "edp/api/v0.1/mnemonics/spa/roman/data"
-
 # Configure logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
