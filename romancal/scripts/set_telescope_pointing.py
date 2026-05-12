@@ -16,6 +16,7 @@ import warnings
 from pathlib import Path
 
 import romancal.orientation.set_telescope_pointing as stp
+import romancal.orientation._lib as olib
 from romancal.lib.engdb.engdb_tools import AVAILABLE_SERVICES
 
 
@@ -155,7 +156,7 @@ def main():
     logger_format_debug = logging.Formatter(
         "%(levelname)s:%(filename)s::%(funcName)s: %(message)s"
     )
-    level = stp.LOGLEVELS[min(len(stp.LOGLEVELS) - 1, args.verbose)]
+    level = olib.LOGLEVELS[min(len(olib.LOGLEVELS) - 1, args.verbose)]
     logger.setLevel(level)
     if level <= logging.DEBUG:
         logger_handler.setFormatter(logger_format_debug)

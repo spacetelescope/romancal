@@ -8,15 +8,16 @@ from sys import stdout
 
 from astropy.time import Time
 
-import romancal.orientation.set_telescope_pointing as stp
+import romancal.orientation._lib as olib
+import romancal.orientation._pointing as plib
 from romancal.lib.engdb.engdb_tools import AVAILABLE_SERVICES
 from romancal.orientation import v1_calculate
 
 # Available reduce functions
 REDUCE_FUNCS_MAPPING = {
-    "all": stp.all_pointings,
-    "first": stp.first_pointing,
-    "average": stp.pointing_from_average,
+    "all": plib.all_pointings,
+    "first": plib.first_pointing,
+    "average": plib.pointing_from_average,
 }
 REDUCE_FUNCS = list(REDUCE_FUNCS_MAPPING.keys())
 
@@ -105,7 +106,7 @@ def main():
     logger_format_debug = logging.Formatter(
         "%(levelname)s:%(filename)s::%(funcName)s: %(message)s"
     )
-    level = stp.LOGLEVELS[min(len(stp.LOGLEVELS) - 1, args.verbose)]
+    level = olib.LOGLEVELS[min(len(olib.LOGLEVELS) - 1, args.verbose)]
     logger.setLevel(level)
     if level <= logging.DEBUG:
         logger_handler.setFormatter(logger_format_debug)
