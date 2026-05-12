@@ -216,13 +216,9 @@ def test_create_cosmoscat():
         shape=SHAPE,
     )
 
-    # Set multiplier of objects to create enough artificial objects
-    # to test that 0 J-band flux objects are removed
-    obj_fact = 100
-
     # Convert x,y to ra, dec
-    ra, dec = wcsobj.pixel_to_world_values(np.array(obj_fact * XPOS_IDX),
-                                           np.array(obj_fact * YPOS_IDX))
+    ra, dec = wcsobj.pixel_to_world_values(np.array(XPOS_IDX),
+                                           np.array(YPOS_IDX))
 
     # Exposure times (s)
     exptimes = {}
@@ -233,12 +229,6 @@ def test_create_cosmoscat():
     cat = make_cosmoslike_catalog(
         cen, ra, dec, exptimes, filters=FILTERS, seed=RNG_SEED
     )
-
-    # Test that the catalog contains no 0 flux J-Band objects
-    assert np.all(cat["F129"] > 0)
-
-    # Remove the artificial duplicates from the catalog
-    cat = cat[np.arange(-int(len(XPOS_IDX) / 4), 3 * int(len(XPOS_IDX) / 4))]
 
     # Set simple wcs metadata for mcat
     meta = {
@@ -306,6 +296,42 @@ def test_create_cosmoscat():
         )
         assert np.all(cat[cat["type"] == "SER"][bp] >= 0)
 
+
+def test_nonzero_jband_flux():
+    # Set a test filter
+    test_filter = FILTERS[0]
+
+    # Pointing
+    cen = SkyCoord(ra=RA * u.deg, dec=DEC * u.deg)
+
+    # WCS object for ra & dec conversion
+    wcsobj = mk_gwcs(
+        RA,
+        DEC,
+        ROLL,
+        bounding_box=((-0.5, SHAPE[0] - 0.5), (-0.5, SHAPE[1] - 0.5)),
+        shape=SHAPE,
+    )
+
+    # Set number of objects needed to test that 0 J-band flux objects are removed
+    obj_fact = 100
+
+    # Convert x,y to ra, dec (accurate locations don't matter for this test)
+    ra, dec = wcsobj.pixel_to_world_values(np.arange(obj_fact),
+                                           np.arange(obj_fact))
+
+    # Exposure times (s)
+    exptimes = {}
+    for bp in FILTERS:
+        exptimes[bp] = 300
+
+    # Generate cosmos-like catalog
+    cat = make_cosmoslike_catalog(
+        cen, ra, dec, exptimes, filters=FILTERS, seed=RNG_SEED
+    )
+
+    # Test that the catalog contains no 0 flux J-Band objects
+    assert np.all(cat["F129"] > 0)
 
 def test_make_source_grid(image_model, mosaic_model):
     for si_model in (image_model, mosaic_model):
