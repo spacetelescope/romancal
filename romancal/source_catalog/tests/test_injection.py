@@ -217,8 +217,7 @@ def test_create_cosmoscat():
     )
 
     # Convert x,y to ra, dec
-    ra, dec = wcsobj.pixel_to_world_values(np.array(XPOS_IDX),
-                                           np.array(YPOS_IDX))
+    ra, dec = wcsobj.pixel_to_world_values(np.array(XPOS_IDX), np.array(YPOS_IDX))
 
     # Exposure times (s)
     exptimes = {}
@@ -314,8 +313,7 @@ def test_nonzero_jband_flux():
     obj_fact = 100
 
     # Convert x,y to ra, dec (accurate locations don't matter for this test)
-    ra, dec = wcsobj.pixel_to_world_values(np.arange(obj_fact),
-                                           np.arange(obj_fact))
+    ra, dec = wcsobj.pixel_to_world_values(np.arange(obj_fact), np.arange(obj_fact))
 
     # Exposure times (s)
     exptimes = {}
@@ -329,6 +327,7 @@ def test_nonzero_jband_flux():
 
     # Test that the catalog contains no 0 flux J-Band objects
     assert np.all(cat["F129"] > 0)
+
 
 def test_make_source_grid(image_model, mosaic_model):
     for si_model in (image_model, mosaic_model):
