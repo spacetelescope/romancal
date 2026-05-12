@@ -11,7 +11,7 @@ import jsonschema
 from stpipe.format_template import FormatTemplate
 
 from . import __version__
-from .exceptions import AssociationNotValidError
+from ._exceptions import AssociationNotValidError
 from .lib.constraint import Constraint, meets_conditions
 from .lib.ioregistry import IORegistry
 

@@ -3,7 +3,7 @@
 import pytest
 
 import romancal.associations.skycell_asn as skycell_asn
-from romancal.associations.skycell_asn import _cli
+from romancal.associations.skycell_asn import _cli, parse_visitID, _create_groups
 
 
 @pytest.mark.parametrize(
@@ -23,7 +23,7 @@ def test_parse_visitID():
     filelist1 = [
         "r0000101002003004005_0001_wfi10_cal.asdf",
     ]
-    visitid_parts = skycell_asn.parse_visitID(filelist1[0][1:20])
+    visitid_parts = parse_visitID(filelist1[0][1:20])
     assert visitid_parts["Program"] == "00001"
     assert visitid_parts["Execution"] == "01"
     assert visitid_parts["Pass"] == "002"  # noqa: S105
@@ -51,7 +51,7 @@ def sample_filelist():
     ],
 )
 def test_create_groups_param(sample_filelist, product_type, expected_key_count):
-    groups = skycell_asn._create_groups(sample_filelist, product_type)
+    groups = _create_groups(sample_filelist, product_type)
     assert all(isinstance(v, list) for v in groups.values())
     if product_type in ("visit", "full", None):
         assert len(groups) == expected_key_count
@@ -171,7 +171,7 @@ def test_cli_parsing(monkeypatch):
     """Test _cli parses arguments and calls skycell_asn with correct values."""
     called = {}
 
-    def fake_skycell_asn(filelist, output_file_root, product_type, data_release_id):
+    def fake_run_skycell_asn(filelist, output_file_root, product_type, data_release_id):
         called.update(
             {
                 "filelist": filelist,
@@ -181,7 +181,7 @@ def test_cli_parsing(monkeypatch):
             }
         )
 
-    monkeypatch.setattr(skycell_asn, "skycell_asn", fake_skycell_asn)
+    monkeypatch.setattr(skycell_asn, "run_skycell_asn", fake_run_skycell_asn)
     _cli_args = [
         "-o",
         "root",

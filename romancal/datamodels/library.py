@@ -2,7 +2,6 @@ import asdf
 from roman_datamodels import open as datamodels_open
 from stpipe.library import AbstractModelLibrary, NoGroupID
 
-from romancal.associations import AssociationNotValidError, load_asn
 
 from .migration import update_model_version
 
@@ -30,6 +29,8 @@ class ModelLibrary(AbstractModelLibrary):
 
     @classmethod
     def _load_asn(cls, asn_path):
+        # Import here to avoid circular import
+        from romancal.associations import AssociationNotValidError, load_asn
         try:
             with open(asn_path) as asn_file:
                 asn_data = load_asn(asn_file)

@@ -97,4 +97,3 @@ def _cli(args=None):
         parsed.output_dir,
         parsed.filelist,
     )
-// This file has been renamed to _mk_skycell_list.py

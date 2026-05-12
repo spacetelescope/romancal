@@ -1,3 +1,4 @@
+from . import _config as config
 """Main entry for the association generator"""
 
 import argparse
@@ -14,7 +15,9 @@ import numpy as np
 #    AssociationRegistry,
 #    generate,
 # )
-from romancal.associations import __version__, config, generate
+from romancal.associations import __version__
+from ._config import *
+from ._generate import *
 from romancal.associations.lib.dms_base import DMSAttrConstraint
 from romancal.associations.lib.log_config import DMS_config, log_config
 from romancal.associations._pool import AssociationPool

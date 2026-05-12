@@ -19,7 +19,6 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 logger.setLevel("INFO")
 
-// This file has been renamed to _mk_skycell_asn_from_skycell_list.py
 
 def mk_skycell_asn_from_skycell_list(
     filelist, release_product, product_type, optical_element

@@ -6,7 +6,7 @@ from inspect import getmembers, isclass, isfunction, ismethod, ismodule
 from os.path import basename, expanduser, expandvars
 
 from . import libpath
-from .exceptions import AssociationError, AssociationNotValidError
+from ._exceptions import AssociationError, AssociationNotValidError
 from .lib.callback_registry import CallbackRegistry
 
 __all__ = ["AssociationRegistry", "RegistryMarker"]

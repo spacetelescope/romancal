@@ -34,7 +34,7 @@ logger.addHandler(logging.NullHandler())
 logger.setLevel("INFO")
 
 
-def skycell_asn(
+def run_skycell_asn(
     filelist: list[str],
     output_file_root: os.PathLike | str,
     product_type: str,
@@ -503,7 +503,7 @@ def _cli(args=None):
     parsed = parser.parse_args(args=args)
     logger.info("Command-line arguments: %s", parsed)
 
-    skycell_asn(
+    run_skycell_asn(
         parsed.filelist,
         parsed.output_file_root,
         parsed.product_type,

@@ -7,7 +7,7 @@ import re
 from copy import deepcopy
 from itertools import chain
 
-from ..pool import PoolRow
+from .._pool import PoolRow
 from .process_list import ListCategory, ProcessList
 from .utilities import evaluate, getattr_from_list, is_iterable
 

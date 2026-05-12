@@ -8,8 +8,8 @@ import logging
 import numpy as np
 import yaml as yaml_lib
 
-from .association import Association
-from .exceptions import AssociationNotValidError
+from ._association import Association
+from ._exceptions import AssociationNotValidError
 from .lib.member import Member
 
 # Configure logging

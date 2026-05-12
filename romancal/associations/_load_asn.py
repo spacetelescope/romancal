@@ -2,8 +2,8 @@
 
 from inspect import isclass
 
-from .association import Association
-from .registry import AssociationRegistry
+from ._association import Association
+from ._registry import AssociationRegistry
 
 
 def load_asn(
