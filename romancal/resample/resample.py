@@ -444,8 +444,7 @@ class ResampleData(Resample):
 
         output_model.meta.background.level = self.output_model.get("level", None)
         output_model.meta.background.subtracted = self.output_model.get(
-            "subtracted",
-            False
+            "subtracted", False
         )
 
         return output_model
