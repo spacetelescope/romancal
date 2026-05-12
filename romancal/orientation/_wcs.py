@@ -1,4 +1,4 @@
-"""Private library to support the orientation utilities"""
+"""World Coordinate System (WCS) utilities"""
 
 import logging
 

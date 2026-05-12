@@ -1,4 +1,4 @@
-"""Private library to support the orientation utilities"""
+"""Orientation Direct Cosine Matrix (DCM) transformations and utilities"""
 
 import dataclasses
 import logging

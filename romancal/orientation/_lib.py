@@ -1,4 +1,4 @@
-"""Private library to support the orientation utilities"""
+"""General library to support the orientation utilities"""
 
 import logging
 from collections import namedtuple
