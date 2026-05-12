@@ -4,7 +4,7 @@ import logging
 
 from romancal.associations.lib.constraint import Constraint
 from romancal.associations.lib.rules_elpp_base import *
-from romancal.associations.registry import RegistryMarker
+from romancal.associations._registry import RegistryMarker
 
 __all__ = [
     "AsnMinxin_Lv2FOV",

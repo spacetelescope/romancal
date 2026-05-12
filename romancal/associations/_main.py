@@ -7,7 +7,7 @@ import sys
 
 import numpy as np
 
-# from romancal.associations.main import  *
+# from romancal.associations._main import  *
 # from romancal.associations import (
 #    __version__,
 #    AssociationPool,
@@ -17,8 +17,8 @@ import numpy as np
 from romancal.associations import __version__, config, generate
 from romancal.associations.lib.dms_base import DMSAttrConstraint
 from romancal.associations.lib.log_config import DMS_config, log_config
-from romancal.associations.pool import AssociationPool
-from romancal.associations.registry import AssociationRegistry
+from romancal.associations._pool import AssociationPool
+from romancal.associations._registry import AssociationRegistry
 
 __all__ = ["Main"]
 

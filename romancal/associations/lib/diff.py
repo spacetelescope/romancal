@@ -5,7 +5,7 @@ import re
 from collections import Counter, UserList
 from copy import copy
 
-from romancal.associations.load_asn import load_asn
+from romancal.associations._load_asn import load_asn
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())

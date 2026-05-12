@@ -45,7 +45,7 @@ class AssociationRegistry(dict):
     The general workflow is as follows:
 
         * Create the registry
-            >>> from romancal.associations.registry import AssociationRegistry
+            >>> from romancal.associations._registry import AssociationRegistry
             >>> registry = AssociationRegistry()
 
         * Create associations from an item

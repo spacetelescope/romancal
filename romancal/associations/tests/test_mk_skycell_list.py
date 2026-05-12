@@ -3,7 +3,7 @@
 import pytest
 
 # from romancal.associations import Association, AssociationRegistry, load_asn
-from romancal.associations.mk_skycell_list import _cli
+from romancal.associations._mk_skycell_list import _cli
 
 
 def test_cmdline_fails():

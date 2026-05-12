@@ -528,7 +528,7 @@ def finalize(asns):
 
     .. code-block:: python
 
-       from romancal.associations.association import finalize as generic_finalize
+    from romancal.associations._association import finalize as generic_finalize
        RegistryMarker.callback('finalize')(generic_finalize)
     """
     finalized_asns = list(
