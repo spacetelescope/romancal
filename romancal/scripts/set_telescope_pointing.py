@@ -15,8 +15,8 @@ import logging
 import warnings
 from pathlib import Path
 
-import romancal.orientation.set_telescope_pointing as stp
 import romancal.orientation._lib as olib
+import romancal.orientation.set_telescope_pointing as stp
 from romancal.lib.engdb.engdb_tools import AVAILABLE_SERVICES
 
 
