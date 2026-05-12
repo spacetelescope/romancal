@@ -298,9 +298,6 @@ def test_create_cosmoscat():
 
 
 def test_nonzero_jband_flux():
-    # Set a test filter
-    test_filter = FILTERS[0]
-
     # Pointing
     cen = SkyCoord(ra=RA * u.deg, dec=DEC * u.deg)
 
