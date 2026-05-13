@@ -151,21 +151,23 @@ class ExposurePipeline(RomanPipeline):
         result = self.rampfit.run(result)
         result = self.dark_current.run(result)
         result = self.assign_wcs.run(result)
+        result = self.photom.run(result)
 
+        # WFI_FLAT, WFI_SPECTRAL, WFI_IM_DARK, WFI_SP_DARK stop here
         exp_type = result.meta.exposure.type
         if exp_type not in ("WFI_IMAGE", "WFI_LOLO", "WFI_WFSC"):
             result.meta.cal_step.flat_field = "SKIPPED"
-            result.meta.cal_step.photom = "SKIPPED"
             result.meta.cal_step.source_catalog = "SKIPPED"
             return result
 
         result = self.flatfield.run(result)
-        result = self.photom.run(result)
 
+        # WFI_WFSC doesn't get a source catalog (and therefore also no tweakreg)
         if exp_type == "WFI_WFSC":
             result.meta.cal_step.source_catalog = "SKIPPED"
             return result
 
+        # WFI_IMAGE and WFI_LOLO get source catalog
         result = self.source_catalog.run(result)
         return result
 

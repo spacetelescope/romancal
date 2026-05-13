@@ -31,14 +31,14 @@ The steps applied depend on the exposure type, as shown in the table below.
  :ref:`ramp_fitting <ramp_fitting_step>`            |check|    |check|      |check|
  :ref:`dark_current <dark_current_step>`            |check|    |check|      |check|
  :ref:`assign_wcs <assign_wcs_step>`                |check|    |check|      |check|
+ :ref:`photom <photom_step>`                        |check|    |check|      |check|
  :ref:`flatfield <flatfield_step>`                  |check|    |check|
- :ref:`photom <photom_step>`                        |check|    |check|
  :ref:`source_catalog <source_catalog_step>`        |check|
  :ref:`tweakreg <tweakreg_step>`                    |check|
 ================================================== ========= ============= ==========
 
 WFI-Other covers ``WFI_SPECTRAL``, ``WFI_FLAT``, ``WFI_IM_DARK``, and
-``WFI_SP_DARK`` exposure types, which stop after ``assign_wcs``.
+``WFI_SP_DARK`` exposure types, which stop after ``photom``.
 
 
 Arguments

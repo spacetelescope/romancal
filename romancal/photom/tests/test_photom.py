@@ -175,13 +175,7 @@ def test_apply_photom2():
     assert np.allclose(output_model.data[iy, ix], input_model.data[iy, ix], rtol=1.0e-7)
 
 
-@pytest.mark.parametrize(
-    "instrument, exptype",
-    [
-        ("WFI", "WFI_IMAGE"),
-    ],
-)
-def test_photom_step_interface(instrument, exptype):
+def test_photom_step_interface():
     """Test that the basic inferface works for data requiring a photom reffile"""
 
     # Create a small area for the file

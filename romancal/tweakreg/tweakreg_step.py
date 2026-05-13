@@ -113,7 +113,7 @@ class TweakRegStep(RomanStep):
             for i, image_model in enumerate(images):
                 source_catalog = getattr(image_model.meta, "source_catalog", None)
                 if source_catalog is None:
-                    log.info(
+                    log.warning(
                         f"Skipping TweakReg for {image_model.meta.filename}: "
                         "no source catalog available."
                     )

@@ -18,7 +18,6 @@ def test_outlier_skips_step_on_invalid_number_of_elements_in_input(base_image):
             res.shelve(m, i, modify=False)
 
 
-
 def test_outlier_valid_input_asn(tmp_path, base_image, create_mock_asn_file):
     """
     Test that OutlierDetection runs with valid ASN file as input.
