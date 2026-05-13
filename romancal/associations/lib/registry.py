@@ -6,8 +6,8 @@ import logging
 from inspect import getmembers, isclass, isfunction, ismethod, ismodule
 from os.path import basename, expanduser, expandvars
 
-from romancal.associations.lib.utilities import libpath
-from romancal.asssociations.lib.exceptions import AssociationError, AssociationNotValidError
+from romancal.associations import libpath
+from romancal.associations._exceptions import AssociationError, AssociationNotValidError
 # If callback_registry is needed, migrate it as well
 # from romancal.associations.lib.callback_registry import CallbackRegistry
 
