@@ -44,13 +44,12 @@ def test_dq_im(xstart, ystart, xsize, ysize, nresultants, instrument, exp_type):
     dq[100, 100] = 2  # Saturated pixel
     dq[200, 100] = 4  # Jump detected pixel
     dq[300, 100] = 8  # Dropout
-    dq[400, 100] = 32  # Persistence
+    dq[400, 100] = 16  # GW_AFFECTED_DATA
     dq[500, 100] = 1  # Do_not_use
-    dq[600, 100] = 16  # guide window affected data
     dq[100, 200] = 3  # Saturated pixel + do not use
     dq[200, 200] = 5  # Jump detected pixel + do not use
     dq[300, 200] = 9  # Dropout + do not use
-    dq[400, 200] = 33  # Persistence + do not use
+    dq[400, 200] = 17  # GW_AFFECTED_DATA + do not use
 
     # write mask model
     ref_data = MaskRefModel.create_fake_data(shape=csize[1:])
@@ -69,13 +68,12 @@ def test_dq_im(xstart, ystart, xsize, ysize, nresultants, instrument, exp_type):
     assert dqdata[100, 100] == pixel.SATURATED
     assert dqdata[200, 100] == pixel.JUMP_DET
     assert dqdata[300, 100] == pixel.DROPOUT
-    assert dqdata[400, 100] == pixel.PERSISTENCE
+    assert dqdata[400, 100] == pixel.GW_AFFECTED_DATA
     assert dqdata[500, 100] == pixel.DO_NOT_USE
-    assert dqdata[600, 100] == pixel.GW_AFFECTED_DATA
     assert dqdata[100, 200] == pixel.SATURATED + pixel.DO_NOT_USE
     assert dqdata[200, 200] == pixel.JUMP_DET + pixel.DO_NOT_USE
     assert dqdata[300, 200] == pixel.DROPOUT + pixel.DO_NOT_USE
-    assert dqdata[400, 200] == pixel.PERSISTENCE + pixel.DO_NOT_USE
+    assert dqdata[400, 200] == pixel.GW_AFFECTED_DATA + pixel.DO_NOT_USE
 
 
 def test_groupdq():
