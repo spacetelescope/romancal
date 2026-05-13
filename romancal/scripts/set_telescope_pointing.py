@@ -12,7 +12,6 @@ for a list of exposures.
 
 import argparse
 import logging
-import warnings
 from pathlib import Path
 
 import romancal.orientation._lib as olib
