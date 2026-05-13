@@ -1,0 +1,1 @@
+Remove exposure-type gating from ``FlatFieldStep``; routing is now handled by ``ExposurePipeline``.
