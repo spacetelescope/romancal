@@ -229,6 +229,24 @@ def test_multiband_catalog(
     shared_tests(result, cat, library_model, save_results, function_jail)
 
 
+def test_multiband_catalog_populates_dust_ebv(library_model):
+    """Ensure the joined multiband catalog contains the detection-level dust_ebv."""
+    step = MultibandCatalogStep()
+    result = step.call(
+        library_model,
+        bkg_boxsize=50,
+        snr_threshold=3,
+        npixels=10,
+        fit_psf=False,
+        save_results=False,
+        deblend=True,
+    )
+    cat = result.source_catalog
+    assert "dust_ebv" in cat.colnames
+    assert len(cat["dust_ebv"]) == len(cat)
+    assert cat["dust_ebv"].dtype == np.float32
+
+
 @pytest.mark.parametrize("save_results", (True, False))
 def test_multiband_catalog_no_detections(library_model, save_results, function_jail):
     step = MultibandCatalogStep()
