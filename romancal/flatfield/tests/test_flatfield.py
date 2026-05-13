@@ -117,5 +117,3 @@ def test_skip_var_flat(include_var_flat):
     wfi_image_model.meta.cal_logs = []
     result = FlatFieldStep.call(wfi_image_model, include_var_flat=include_var_flat)
     assert hasattr(result, "var_flat") == include_var_flat
-
-
