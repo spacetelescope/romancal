@@ -1,0 +1,1 @@
+Source catalog DQ masking now excludes only pixels with DO_NOT_USE set, rather than any set DQ bit.
