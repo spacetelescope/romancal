@@ -11,7 +11,7 @@ from stcal.velocity_aberration import compute_va_effects
 __all__ = []  # type: ignore[var-annotated]
 
 
-def parse_args(args):
+def _parse_args(args):
     """
     Parse given arguments.
 
@@ -52,9 +52,9 @@ def parse_args(args):
     return parser.parse_args(args)
 
 
-def main():
+def _main():
     """Parse arguments and add velocity aberration correction information to the files provided."""
-    args = parse_args(sys.argv[1:])
+    args = _parse_args(sys.argv[1:])
     for filename in args.filename:
         add_dva(filename)
 
@@ -91,4 +91,4 @@ def add_dva(filename):
 
 
 if __name__ == "__main__":
-    main()
+    _main()

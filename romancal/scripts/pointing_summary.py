@@ -10,7 +10,7 @@ from romancal.orientation import pointing_summary
 
 
 # Begin execution
-def main():
+def _main():
     """Run pointing verification."""
     parser = argparse.ArgumentParser(
         description="""Summarize various pointing information in a table. Compare
@@ -63,4 +63,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    _main()

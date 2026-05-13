@@ -23,7 +23,7 @@ REDUCE_FUNCS = list(REDUCE_FUNCS_MAPPING.keys())
 
 
 # Begin execution
-def main():
+def _main():
     """Calculate V1, the telescope's boresight axis, the direction the telescope is pointing."""
     parser = argparse.ArgumentParser(description="Calculate V1 over a time period.")
 
@@ -165,4 +165,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    _main()
