@@ -309,8 +309,8 @@ class ResampleData(Resample):
             level = model.meta.background.level
             subtracted = model.meta.background.subtracted
         else:
-            level = 0
-            subtracted = True
+            level = None
+            subtracted = False
         return {
             "data": model.data,
             "dq": model.dq,
@@ -440,11 +440,6 @@ class ResampleData(Resample):
         # get data release ID
         output_model.meta.data_release_id = self.input_models.asn.get(
             "data_release_id", "p"
-        )
-
-        output_model.meta.background.level = self.output_model.get("level", None)
-        output_model.meta.background.subtracted = self.output_model.get(
-            "subtracted", False
         )
 
         return output_model
