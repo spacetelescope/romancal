@@ -11,7 +11,7 @@ from astropy.time import Time
 import romancal.orientation._lib as olib
 import romancal.orientation._pointing as plib
 from romancal.lib.engdb.engdb_tools import AVAILABLE_SERVICES
-from romancal.orientation import v1_calculate
+from romancal.orientation import _v1_calculate as v1c
 
 # Available reduce functions
 REDUCE_FUNCS_MAPPING = {
@@ -146,20 +146,20 @@ def _main():
     # Process the file list.
     logger.info("Starting V1 calculation...")
     if input_as_files:
-        v1s = v1_calculate.v1_calculate_from_models(
+        v1s = v1c.v1_calculate_from_models(
             args.time_sources,
             reduce_func=REDUCE_FUNCS_MAPPING[args.pointing],
             service_kwargs=service_kwargs,
         )
     else:
-        v1s = v1_calculate.v1_calculate_over_time(
+        v1s = v1c.v1_calculate_over_time(
             obsstart,
             obsend,
             reduce_func=REDUCE_FUNCS_MAPPING[args.pointing],
             service_kwargs=service_kwargs,
         )
 
-    formatted = v1_calculate.simplify_table(v1s)
+    formatted = v1c.simplify_table(v1s)
     formatted.write(args.output, format="ascii.ecsv")
     logger.info("...V1 calculation completed.")
 
