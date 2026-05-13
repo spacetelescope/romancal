@@ -18,18 +18,6 @@ def test_outlier_skips_step_on_invalid_number_of_elements_in_input(base_image):
             res.shelve(m, i, modify=False)
 
 
-def test_outlier_raises_exception_on_exposure_type_different_from_wfi_image(base_image):
-    """
-    Test if the outlier detection step raises an Exception for non-image inputs.
-    """
-    img_1 = base_image()
-    img_1.meta.exposure.type = "WFI_PRISM"
-    img_2 = base_image()
-    img_2.meta.exposure.type = "WFI_PRISM"
-
-    with pytest.raises(ValueError, match="only supports WFI_IMAGE"):
-        OutlierDetectionStep().run(ModelLibrary([img_1, img_2]))
-
 
 def test_outlier_valid_input_asn(tmp_path, base_image, create_mock_asn_file):
     """

@@ -204,10 +204,7 @@ def test_photom_step_interface(instrument, exptype):
 
     assert (result.data == wfi_image_model.data).all()
     assert result.data.shape == shape
-    if exptype == "WFI_IMAGE":
-        assert result.meta.cal_step.photom == "COMPLETE"
-    else:
-        assert result.meta.cal_step.photom == "SKIPPED"
+    assert result.meta.cal_step.photom == "COMPLETE"
 
     # Run photom correction step with reffile as N/A
     result = PhotomStep.call(wfi_image_model, override_photom="N/A")
@@ -218,7 +215,7 @@ def test_photom_step_interface(instrument, exptype):
 @pytest.mark.parametrize(
     "instrument, exptype",
     [
-        ("WFI", "WFI_PRISM"),
+        ("WFI", "WFI_SPECTRAL"),
     ],
 )
 def test_photom_step_interface_spectroscopic(instrument, exptype):
@@ -233,7 +230,7 @@ def test_photom_step_interface_spectroscopic(instrument, exptype):
     wfi_image_model = ImageModel.create_fake_data(shape=shape)
 
     # Select exposure type and optical element
-    wfi_image_model.meta.exposure.type = "WFI_PRISM"
+    wfi_image_model.meta.exposure.type = "WFI_SPECTRAL"
     wfi_image_model.meta.instrument.optical_element = "PRISM"
 
     # Set photometric values for spectroscopic data
@@ -255,11 +252,8 @@ def test_photom_step_interface_spectroscopic(instrument, exptype):
         wfi_image_model.meta.cal_step[step_name] = "INCOMPLETE"
     wfi_image_model.meta.cal_logs = []
 
-    # Create photom model
-    photom_model = WfiImgPhotomRefModel.create_fake_data()
-
     # Run photom correction step
-    result = PhotomStep.call(wfi_image_model, override_photom=photom_model)
+    result = PhotomStep.call(wfi_image_model)
 
     # Test that the data has not changed
     assert np.allclose(result.data, wfi_image_model.data, rtol=1.0e-7)

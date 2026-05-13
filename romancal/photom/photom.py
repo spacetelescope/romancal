@@ -25,14 +25,14 @@ def _photom_io(input_model, photom_metadata):
     conversion = photom_metadata["photmjsr"]  # unit is MJy / sr
 
     # Store the conversion factor in the meta data
-    log.info(f"photmjsr value: {conversion:.6g}")
+    log.info(f"photmjsr value: {conversion}")
     input_model.meta.photometry.conversion_megajanskys = conversion
 
     # Get the scalar conversion uncertainty factor
     uncertainty_conv = photom_metadata["uncertainty"]
 
     # Store the uncertainty conversion factor in the meta data
-    log.info(f"uncertainty value: {uncertainty_conv:.6g}")
+    log.info(f"uncertainty value: {uncertainty_conv}")
     input_model.meta.photometry.conversion_megajanskys_uncertainty = uncertainty_conv
 
     # Return updated input model

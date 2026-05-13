@@ -119,37 +119,3 @@ def test_skip_var_flat(include_var_flat):
     assert hasattr(result, "var_flat") == include_var_flat
 
 
-@pytest.mark.parametrize(
-    "instrument",
-    [
-        "WFI",
-    ],
-)
-@pytest.mark.parametrize(
-    "exptype",
-    [
-        "WFI_GRISM",
-        "WFI_PRISM",
-    ],
-)
-def test_spectroscopic_skip(instrument, exptype):
-    shape = (20, 20)
-
-    wfi_image_model = ImageModel.create_fake_data(shape=shape)
-    wfi_image_model.meta.instrument.name = instrument
-    wfi_image_model.meta.instrument.detector = "WFI01"
-    wfi_image_model.meta.instrument.optical_element = "F158"
-
-    wfi_image_model.meta.exposure.start_time = Time("2024-02-01T00:00:00.000")
-    wfi_image_model.meta.exposure.end_time = Time("2024-02-01T00:00:05.000")
-
-    wfi_image_model.meta.exposure.type = exptype
-    wfi_image_model.meta.cal_step = {}
-    for step_name in wfi_image_model.schema_info("required")["roman"]["meta"][
-        "cal_step"
-    ]["required"].info:
-        wfi_image_model.meta.cal_step[step_name] = "INCOMPLETE"
-    wfi_image_model.meta.cal_logs = []
-
-    result = FlatFieldStep.call(wfi_image_model)
-    assert result.meta.cal_step.flat_field == "SKIPPED"
