@@ -206,6 +206,9 @@ class CatalogSchema:
             "psf_flags",
             "psf_gof",
         ]
+        dust_colnames = [
+            "dust_ebv",
+        ]
 
         det_colnames = []
         det_colnames.extend(segm_colnames)
@@ -230,6 +233,7 @@ class CatalogSchema:
             colnames.extend(flag_columns)
             if self.fit_psf:
                 colnames.extend(psf_flags_colnames)
+            colnames.extend(dust_colnames)
 
         elif self.cat_type == "forced_det":
             colnames = ["label"]  # needed to join the forced catalogs
@@ -248,6 +252,7 @@ class CatalogSchema:
             colnames.extend(skywin_colnames)
             colnames.extend(det_colnames)
             colnames.extend(flag_columns)
+            colnames.extend(dust_colnames)
 
         elif self.cat_type == "dr_band":
             colnames = self.band_colnames.copy()
