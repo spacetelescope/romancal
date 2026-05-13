@@ -113,11 +113,6 @@ class SourceCatalogStep(RomanStep):
 
         # Create a DQ mask for ImageModel
         if isinstance(input_model, ImageModel):
-            # Create a DQ mask for pixels to be excluded; currently all
-            # pixels with any DQ flag are excluded from the source catalog
-            # except for those in ignored_dq_flags.
-            # TODO: revisit these flags when CRDS reference files are updated
-            ignored_dq_flags = pixel.NO_LIN_CORR
             if model.dq.shape != model.data.shape:
                 msg = (
                     f"model.dq shape {model.dq.shape} does not match "
@@ -125,10 +120,7 @@ class SourceCatalogStep(RomanStep):
                     "DQ array."
                 )
                 raise ValueError(msg)
-            dq_mask = (model.dq & ~ignored_dq_flags) != 0
-
-            # TODO: to set the mask to True for *only* dq_flags use:
-            # dq_mask = (model.dq & dq_flags) != 0
+            dq_mask = (model.dq & pixel.DO_NOT_USE) != 0
             mask |= dq_mask
 
         # Initialize the source catalog model, copying the metadata
