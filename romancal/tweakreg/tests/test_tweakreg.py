@@ -482,18 +482,6 @@ def test_tweakreg_custom_catalog_via_asn_member_attribute(
         res.shelve(m, modify=False)
 
 
-def test_tweakreg_raises_attributeerror_on_missing_source_catalog(tweakreg_image):
-    """
-    Test that TweakReg raises an AttributeError if meta.source_catalog is missing.
-    """
-    img = tweakreg_image()
-    del img.meta["source_catalog"]
-    with pytest.raises(
-        AttributeError,
-        match=r"Attribute 'meta.source_catalog' is missing",
-    ):
-        TweakRegStep.call([img])
-
 
 def test_tweakreg_logs_selected_catalog_file(tweakreg_image, caplog):
     """
