@@ -348,7 +348,7 @@ def test_source_catalog_populates_dust_ebv(model_fixture, request, tmp_path):
         snr_threshold=3,
         npixels=10,
         save_results=False,
-        output_dir=str(tmp_path)
+        output_dir=str(tmp_path),
     )
     cat = result.source_catalog
     assert "dust_ebv" in cat.colnames
