@@ -23,9 +23,9 @@ FGS_DEFAULT_QUATERNION = np.array(
     [-0.18596734175399293, 0.6837984564491885, -0.1800546332580956, 0.6822141509826322]
 )
 
-# Maximum absolute speed of the observatory. Used for sanity check is defined
-# as the sum of the absolute components of the velocity.
-MAX_OBSERVATORY_SPEED = 150
+# Maximum absolute speed of the observatory. Used for sanity check for any
+# individual component of the velocity.
+MAX_OBSERVATORY_SPEED = 500  # km/s
 
 # Common conversions.
 # Yes, these are available in a number of packages. However, they are explicitly defined
