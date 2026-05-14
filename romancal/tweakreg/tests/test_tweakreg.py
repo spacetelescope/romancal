@@ -482,7 +482,6 @@ def test_tweakreg_custom_catalog_via_asn_member_attribute(
         res.shelve(m, modify=False)
 
 
-
 def test_tweakreg_logs_selected_catalog_file(tweakreg_image, caplog):
     """
     Test that TweakReg logs which catalog file is used for an image.
