@@ -117,13 +117,22 @@ def test_get_values_nozip(engdb):
 
 
 @pytest.mark.parametrize(
-    'envs, expected',
+    "envs, expected",
     [
-        ({'MAST_AUTH_TOKEN': None, 'MAST_API_TOKEN': None}, {}),
-        ({'MAST_AUTH_TOKEN': 'MAST_AUTH_TOKEN', 'MAST_API_TOKEN': None}, {'x-asb-auth': 'MAST_AUTH_TOKEN'}),
-        ({'MAST_AUTH_TOKEN': None, 'MAST_API_TOKEN': 'MAST_API_TOKEN'}, {'Authorization': 'token MAST_API_TOKEN'}),
-        ({'MAST_AUTH_TOKEN': 'MAST_AUTH_TOKEN', 'MAST_API_TOKEN': 'MAST_API_TOKEN'}, {'x-asb-auth': 'MAST_AUTH_TOKEN'}),
-    ]
+        ({"MAST_AUTH_TOKEN": None, "MAST_API_TOKEN": None}, {}),
+        (
+            {"MAST_AUTH_TOKEN": "MAST_AUTH_TOKEN", "MAST_API_TOKEN": None},
+            {"x-asb-auth": "MAST_AUTH_TOKEN"},
+        ),
+        (
+            {"MAST_AUTH_TOKEN": None, "MAST_API_TOKEN": "MAST_API_TOKEN"},
+            {"Authorization": "token MAST_API_TOKEN"},
+        ),
+        (
+            {"MAST_AUTH_TOKEN": "MAST_AUTH_TOKEN", "MAST_API_TOKEN": "MAST_API_TOKEN"},
+            {"x-asb-auth": "MAST_AUTH_TOKEN"},
+        ),
+    ],
 )
 def test_headers_env(envs, expected, monkeypatch):
     """Check that headers are being appropriately set from environment"""
@@ -139,12 +148,12 @@ def test_headers_env(envs, expected, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    'kwargs, expected',
+    "kwargs, expected",
     [
         ({}, {}),
-        ({'token': 'token'}, {'Authorization': 'token token'}),
-        ({'token': 'token', 'rsdp_auth': True}, {'x-asb-auth': 'token'})
-    ]
+        ({"token": "token"}, {"Authorization": "token token"}),
+        ({"token": "token", "rsdp_auth": True}, {"x-asb-auth": "token"}),
+    ],
 )
 def test_headers_kwargs(kwargs, expected):
     """Check that headers are being appropriately set"""

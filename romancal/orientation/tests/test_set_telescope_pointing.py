@@ -360,13 +360,13 @@ def test_update_meta(attr, expected, updated_model):
 
 
 @pytest.mark.parametrize(
-    'velocity, is_identity',
+    "velocity, is_identity",
     [
         ([None, None, None], True),
         ([0, 0, 0], True),
         ([2000, 2000, 2000], True),
         ([-50, 0, 50], False),
-    ]
+    ],
 )
 def test_velocity_check(velocity, is_identity):
     """Test velocity check"""

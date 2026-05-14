@@ -231,9 +231,11 @@ def calc_gsapp2gs(m_eci2gsapp, velocity):
     # Check velocity. If present, negate the velocity since
     # the desire is to remove the correction.
     velocity = np.array(velocity)
-    if None in velocity \
-       or np.all(velocity == 0.) \
-       or np.sum(np.abs(velocity) > olib.MAX_OBSERVATORY_SPEED):
+    if (
+        None in velocity
+        or np.all(velocity == 0.0)
+        or np.sum(np.abs(velocity) > olib.MAX_OBSERVATORY_SPEED)
+    ):
         logger.warning(
             "Velocity: %s is either unspecified or contains unreasonable values. Cannot calculate aberration. Returning identity matrix",
             velocity,
