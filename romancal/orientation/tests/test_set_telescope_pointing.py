@@ -359,6 +359,27 @@ def test_update_meta(attr, expected, updated_model):
         assert value == expected
 
 
+@pytest.mark.parametrize(
+    'velocity, is_identity',
+    [
+        ([None, None, None], True),
+        ([0, 0, 0], True),
+        ([2000, 2000, 2000], True),
+        ([-50, 0, 50], False),
+    ]
+)
+def test_velocity_check(velocity, is_identity):
+    """Test velocity check"""
+    m = np.identity(3)
+
+    m_v = tlib.calc_gsapp2gs(m, velocity)
+
+    if is_identity:
+        assert np.array_equal(m_v, m)
+    else:
+        assert not np.array_equal(m_v, m)
+
+
 # ######################
 # Utilities and fixtures
 # ######################
