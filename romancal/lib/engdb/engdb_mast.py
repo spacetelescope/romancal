@@ -117,95 +117,16 @@ class EngdbMast(EngdbABC):
     ):
         logger.debug("kwargs not used by this service: %s", service_kwargs)
 
-        self.configure(
+        self._configure(
             eng_base_url=eng_base_url,
             data_uri=data_uri,
             meta_uri=meta_uri,
             token=token,
             rsdp_auth=rsdp_auth,
         )
-        self.set_session()
+        self._set_session()
         if check_aliveness:
             self.isalive()
-
-    def isalive(self):
-        """Check that the database is reachable"""
-        try:
-            self.get_meta(search="engdb_mastaliveness")
-        except (
-            requests.exceptions.ConnectionError,
-            requests.exceptions.HTTPError,
-        ) as exception:
-            raise RuntimeError(
-                f"MAST url: {self.eng_base_url} is unreachable."
-            ) from exception
-
-    def configure(
-        self,
-        eng_base_url=None,
-        data_uri=None,
-        meta_uri=None,
-        token=None,
-        rsdp_auth=False,
-    ):
-        """
-        Configure from parameters and environment.
-
-        Parameters
-        ----------
-        eng_base_url : str or None
-            The base url for the engineering RESTful service. If not defined,
-            the environmental variable ENG_BASE_URL is queried. Otherwise
-            the default MAST website is used.
-
-        data_uri : str or None
-            The URI component required to retrieve the engineering data. This
-            is concatenated to the `eng_base_url`. If not defined, the environment
-            variable ENG_DATA_URI is queried. Otherwise, the default
-            data URI is used.
-
-        meta_uri : str or None
-            The URI component required to retrieve the engineering metadata. This
-            is concatenated to the `eng_base_url`. If not defined, the environment
-            variable ENG_META_URI is queried. Otherwise, the default
-            metadata URI is used.
-
-        token : str or None
-            The MAST access token. If not defined, the environmental variable
-            MAST_API_TOKEN is queried. For ground operations, MAST_AUTH_TOKEN
-            is also queried.
-            For more information, see 'https://auth.mast.stsci.edu/'
-
-        rsdp_auth : bool
-           Use RSDP authentication
-        """
-        # Determine database access.
-        if eng_base_url is None:
-            eng_base_url = getenv("ENG_BASE_URL", MAST_BASE_URL)
-        if eng_base_url[-1] != "/":
-            eng_base_url += "/"
-        self.eng_base_url = eng_base_url
-
-        if data_uri is None:
-            data_uri = getenv("ENG_DATA_URI", DATA_URI)
-        self.data_uri = data_uri
-
-        if meta_uri is None:
-            meta_uri = getenv("ENG_META_URI", META_URI)
-        self.meta_uri = meta_uri
-
-        # Get the token
-        self.rsdp_auth = rsdp_auth
-        if token is None:
-            token = getenv("MAST_AUTH_TOKEN", None)
-            self.rsdp_auth = token is not None
-        if token is None:
-            token = getenv("MAST_API_TOKEN", None)
-        self.token = token
-
-        # Get various timeout parameters
-        self.retries = int(getenv("ENG_RETRIES", RETRIES))
-        self.timeout = int(getenv("ENG_TIMEOUT", TIMEOUT))
 
     def get_meta(self, search=None):
         """
@@ -219,8 +140,10 @@ class EngdbMast(EngdbABC):
 
         Returns
         -------
-        meta : ???
-            The meta information
+        meta : dict
+            The meta information. The primary keys are "Count" and "TlmMnemonics".
+            The count is the number of mnemonics returned and TlmMnemonics is a list
+            of dicts containing information for each mnemonic.
         """
 
         # Make the request
@@ -325,36 +248,84 @@ class EngdbMast(EngdbABC):
 
         return results.collection
 
-    def set_session(self):
-        """Set up HTTP session."""
-        headers = dict()
-        if self.rsdp_auth:
-            headers["x-asb-auth"] = self.token
-        else:
-            headers["Authorization"] = f"token {self.token}"
+    def isalive(self):
+        """Check that the database is reachable"""
+        try:
+            self.get_meta(search="engdb_mastaliveness")
+        except (
+            requests.exceptions.ConnectionError,
+            requests.exceptions.HTTPError,
+        ) as exception:
+            raise RuntimeError(
+                f"MAST url: {self.eng_base_url} is unreachable."
+            ) from exception
 
-        self._datareq = requests.Request(
-            method="GET",
-            url=self.eng_base_url + self.data_uri,
-            headers=headers,
-        )
+    def _configure(
+        self,
+        eng_base_url=None,
+        data_uri=None,
+        meta_uri=None,
+        token=None,
+        rsdp_auth=False,
+    ):
+        """
+        Configure from parameters and environment.
 
-        self._metareq = requests.Request(
-            method="GET",
-            url=self.eng_base_url + self.meta_uri,
-            headers=headers,
-        )
+        Parameters
+        ----------
+        eng_base_url : str or None
+            The base url for the engineering RESTful service. If not defined,
+            the environmental variable ENG_BASE_URL is queried. Otherwise
+            the default MAST website is used.
 
-        s = requests.Session()
-        retries = Retry(
-            total=self.retries,
-            backoff_factor=1.0,
-            status_forcelist=FORCE_STATUSES,
-            raise_on_status=True,
-        )
-        s.mount("https://", HTTPAdapter(max_retries=retries))
+        data_uri : str or None
+            The URI component required to retrieve the engineering data. This
+            is concatenated to the `eng_base_url`. If not defined, the environment
+            variable ENG_DATA_URI is queried. Otherwise, the default
+            data URI is used.
 
-        self._session = s
+        meta_uri : str or None
+            The URI component required to retrieve the engineering metadata. This
+            is concatenated to the `eng_base_url`. If not defined, the environment
+            variable ENG_META_URI is queried. Otherwise, the default
+            metadata URI is used.
+
+        token : str or None
+            The MAST access token. If not defined, the environmental variable
+            MAST_API_TOKEN is queried. For ground operations, MAST_AUTH_TOKEN
+            is also queried.
+            For more information, see 'https://auth.mast.stsci.edu/'
+
+        rsdp_auth : bool
+           Use RSDP authentication
+        """
+        # Determine database access.
+        if eng_base_url is None:
+            eng_base_url = getenv("ENG_BASE_URL", MAST_BASE_URL)
+        if eng_base_url[-1] != "/":
+            eng_base_url += "/"
+        self.eng_base_url = eng_base_url
+
+        if data_uri is None:
+            data_uri = getenv("ENG_DATA_URI", DATA_URI)
+        self.data_uri = data_uri
+
+        if meta_uri is None:
+            meta_uri = getenv("ENG_META_URI", META_URI)
+        self.meta_uri = meta_uri
+
+        # Get the token
+        self.rsdp_auth = rsdp_auth
+        if token is None:
+            token = getenv("MAST_AUTH_TOKEN", None)
+            self.rsdp_auth = token is not None
+        if token is None:
+            token = getenv("MAST_API_TOKEN", None)
+        self.token = token
+
+        # Get various timeout parameters
+        self.retries = int(getenv("ENG_RETRIES", RETRIES))
+        self.timeout = int(getenv("ENG_TIMEOUT", TIMEOUT))
 
     def _get_records(
         self, mnemonic, starttime, endtime, time_format=None, **other_kwargs
@@ -433,6 +404,37 @@ class EngdbMast(EngdbABC):
             table["MJD"] = obstime.mjd
 
         return table
+
+    def _set_session(self):
+        """Set up HTTP session."""
+        headers = dict()
+        if self.rsdp_auth:
+            headers["x-asb-auth"] = self.token
+        else:
+            headers["Authorization"] = f"token {self.token}"
+
+        self._datareq = requests.Request(
+            method="GET",
+            url=self.eng_base_url + self.data_uri,
+            headers=headers,
+        )
+
+        self._metareq = requests.Request(
+            method="GET",
+            url=self.eng_base_url + self.meta_uri,
+            headers=headers,
+        )
+
+        s = requests.Session()
+        retries = Retry(
+            total=self.retries,
+            backoff_factor=1.0,
+            status_forcelist=FORCE_STATUSES,
+            raise_on_status=True,
+        )
+        s.mount("https://", HTTPAdapter(max_retries=retries))
+
+        self._session = s
 
     def __repr__(self):
         """What am I"""
