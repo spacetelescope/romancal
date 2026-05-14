@@ -116,6 +116,52 @@ def test_get_values_nozip(engdb):
     assert_xfail(isinstance(result.value[0], str))
 
 
+@pytest.mark.parametrize(
+    "envs, expected",
+    [
+        ({"MAST_AUTH_TOKEN": None, "MAST_API_TOKEN": None}, {}),
+        (
+            {"MAST_AUTH_TOKEN": "MAST_AUTH_TOKEN", "MAST_API_TOKEN": None},
+            {"x-asb-auth": "MAST_AUTH_TOKEN"},
+        ),
+        (
+            {"MAST_AUTH_TOKEN": None, "MAST_API_TOKEN": "MAST_API_TOKEN"},
+            {"Authorization": "token MAST_API_TOKEN"},
+        ),
+        (
+            {"MAST_AUTH_TOKEN": "MAST_AUTH_TOKEN", "MAST_API_TOKEN": "MAST_API_TOKEN"},
+            {"x-asb-auth": "MAST_AUTH_TOKEN"},
+        ),
+    ],
+)
+def test_headers_env(envs, expected, monkeypatch):
+    """Check that headers are being appropriately set from environment"""
+    for env, value in envs.items():
+        if value is None:
+            monkeypatch.delenv(env, raising=False)
+        else:
+            monkeypatch.setenv(env, value)
+
+    edb = engdb_mast.EngdbMast(check_aliveness=False)
+
+    assert edb._metareq.headers == expected
+
+
+@pytest.mark.parametrize(
+    "kwargs, expected",
+    [
+        ({}, {}),
+        ({"token": "token"}, {"Authorization": "token token"}),
+        ({"token": "token", "rsdp_auth": True}, {"x-asb-auth": "token"}),
+    ],
+)
+def test_headers_kwargs(kwargs, expected):
+    """Check that headers are being appropriately set"""
+    edb = engdb_mast.EngdbMast(check_aliveness=False, **kwargs)
+
+    assert edb._metareq.headers == expected
+
+
 def test_negative_aliveness():
     """Ensure failure occurs with a bad url"""
     with pytest.raises(RuntimeError):
