@@ -1,13 +1,8 @@
 :ref:`genindex`  |  :ref:`modindex`
 
-.. image:: _static/stsci_logo.png
-   :width: 15%
-   :alt: STScI Logo
-   :target: https://stsci.edu
-
-.. image:: _static/stsci_name.png
-   :width: 68%
-   :alt: STScI Logo
+.. image:: _static/stsci_pri_combo_mark_horizonal_white_bkgd.png
+   :width: 83%
+   :alt: Space Telescope Science Institute
    :target: https://stsci.edu
 
 .. image:: _static/A_Rst_1020_Logo_Box_Color_Seafoamondarkblue_Logo_Full_Color_RGB_850px@72ppi.png
