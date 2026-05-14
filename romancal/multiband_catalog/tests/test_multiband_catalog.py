@@ -240,7 +240,6 @@ def test_multiband_catalog_populates_dust_ebv(library_model, function_jail):
         fit_psf=False,
         save_results=False,
         deblend=True,
-        output_dir=str(tmp_path),
     )
     cat = result.source_catalog
     assert "dust_ebv" in cat.colnames
