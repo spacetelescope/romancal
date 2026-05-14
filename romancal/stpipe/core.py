@@ -81,6 +81,7 @@ class RomanStep(Step):
             "stpipe",
             "tweakwcs",
             "py.warnings",  # python uses this since stipe enables captureWarnings
+            "CRDS",  # crds uses a specially named logger
         )
 
     def finalize_result(self, model, reference_files_used):

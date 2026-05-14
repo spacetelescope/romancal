@@ -15,7 +15,8 @@ from astropy.stats import mad_std
 from astropy.table import QTable
 from astropy.time import Time
 from photutils.datasets import make_model_image
-from roman_datamodels.datamodels import ImageModel
+from photutils.psf import GriddedPSFModel, ImagePSF
+from roman_datamodels.datamodels import ImageModel, MosaicModel
 
 from romancal.source_catalog.psf import (
     _azimuthally_average_via_fft,
@@ -325,3 +326,22 @@ def test_central_stamp():
     assert cen.shape[0] == 20
     cen = _central_stamp(img, 21)
     assert cen.shape[0] == 22  # needed to make it bigger to be central
+
+
+def test_psf_model_type(setup_inputs):
+    """ImageModel uses GriddedPSFModel; MosaicModel uses ImagePSF (L3 PSF)."""
+    psf_ref_model = setup_inputs["psf_ref_model_f087"]
+    center = np.array([[image_model_shape[0] / 2, image_model_shape[1] / 2]])
+
+    # L2: ImageModel gets a GriddedPSFModel
+    catalog = _PSFCatalog(setup_inputs["image"], psf_ref_model, center)
+    assert isinstance(catalog.psf_model, GriddedPSFModel)
+
+    # L3: MosaicModel gets an ImagePSF
+    mosaic = MosaicModel.create_fake_data(shape=image_model_shape)
+    mosaic.meta.resample.pixfrac = 1.0
+    mosaic.meta.wcsinfo.pixel_scale = 1.5277777769528157e-05  # 0.055 arcsec
+    mosaic.data = setup_inputs["image"].data
+    mosaic.err = setup_inputs["image"].err
+    catalog2 = _PSFCatalog(mosaic, psf_ref_model, center)
+    assert isinstance(catalog2.psf_model, ImagePSF)

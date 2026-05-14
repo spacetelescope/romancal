@@ -280,13 +280,22 @@ def get_gridded_psf_model(psf_ref_model, focus=0, spectral_type=1):
     for index in range(len(psf_positions_x)):
         position_list.append([psf_positions_x[index], psf_positions_y[index]])
 
-    # integrate over the native pixel scale
     oversample = psf_ref_model.meta.oversample
-    pixel_response_kernel = Box2DKernel(width=oversample)
-    for i in range(psf_images.shape[0]):
-        psf = psf_images[i, :, :]
-        im = convolve(psf, pixel_response_kernel) * oversample**2
-        psf_images[i, :, :] = im
+
+    # current PSF stamps are not integrated over the PSF and sum to 1.
+    # New style PSF stamps are integrated over the PSF and sum to oversample ** 2.
+    # this checks to see whether the summation over the pixel is needed based on
+    # the normalization
+    is_old_format = np.median(np.sum(psf_images, axis=(-1, -2))) < oversample**2 / 2
+
+    if is_old_format:
+        log.info("Integrating over the native pixel scale.")
+        # integrate over the native pixel scale
+        pixel_response_kernel = Box2DKernel(width=oversample)
+        for i in range(psf_images.shape[0]):
+            psf = psf_images[i, :, :]
+            im = convolve(psf, pixel_response_kernel) * oversample**2
+            psf_images[i, :, :] = im
 
     meta["grid_xypos"] = position_list
     meta["oversampling"] = oversample
@@ -560,7 +569,7 @@ def create_l3_psf_model(
     xx, yy = np.meshgrid(pts, pts)
     psf = gridpsf.evaluate(xx, yy, 1, center, center)
     detector_pixel_scale = 0.11  # Roman native scale
-    # psf is now a stamp going 10 pixels out from the center of the PSF
+    # psf is now a stamp going stamp_radius pixels out from the center of the PSF
     # at the native PSF scale, oversampled by a factor of oversample.
 
     # Smooth to account for the pixfrac used to create the L3 image.
@@ -640,7 +649,7 @@ class _PSFCatalog:
         A gridded PSF model based on instrument and detector
         information.
         """
-        if hasattr(self.model.meta, "instrument"):
+        if not hasattr(self.model.meta, "resample"):
             # ImageModel (L2 datamodel)
             psf_model = get_gridded_psf_model(self.psf_ref_model)
         else:

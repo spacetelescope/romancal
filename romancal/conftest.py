@@ -19,8 +19,7 @@ from gwcs import coordinate_frames as cf
 from gwcs import wcs
 from roman_datamodels import datamodels as rdm
 
-from romancal.assign_wcs import pointing
-from romancal.assign_wcs.utils import add_s_region
+from romancal.assign_wcs.assign_wcs import add_s_region, v23tosky
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -208,7 +207,7 @@ def _create_wcs(input_dm, shift_1=0, shift_2=0):
 
     # create necessary transformations
     distortion = Shift(-shift_1) & Shift(-shift_2)
-    tel2sky = pointing.v23tosky(input_dm)
+    tel2sky = v23tosky(input_dm)
 
     # create required frames
     detector = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))

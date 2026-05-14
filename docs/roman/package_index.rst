@@ -1,6 +1,7 @@
 .. toctree::
    :maxdepth: 2
 
+   versioning.rst
    assign_wcs/index.rst
    associations/index.rst
    dark_current/index.rst

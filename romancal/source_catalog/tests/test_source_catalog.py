@@ -336,6 +336,25 @@ def test_background(mosaic_model, function_jail):
     assert isinstance(cat, Table)
 
 
+@pytest.mark.parametrize("model_fixture", ("image_model", "mosaic_model"))
+def test_source_catalog_populates_dust_ebv(model_fixture, request):
+    """Ensure prompt source catalogs include a per-source dust_ebv column."""
+    model = request.getfixturevalue(model_fixture)
+    step = SourceCatalogStep()
+    result = step.call(
+        model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=3,
+        npixels=10,
+        save_results=False,
+    )
+    cat = result.source_catalog
+    assert "dust_ebv" in cat.colnames
+    assert len(cat["dust_ebv"]) == len(cat)
+    assert cat["dust_ebv"].dtype == np.float32
+
+
 def test_l2_input_model_unchanged(image_model, function_jail):
     """
     Test that the input model data and error arrays are unchanged after
@@ -570,6 +589,45 @@ def test_l2_source_catalog_keywords(
             assert isinstance(tbl, pyarrow.Table)
         else:
             assert isinstance(rdm.open(filepath), expected_outputs.get(suffix))
+
+
+@pytest.mark.parametrize(
+    "ra, dec",
+    [
+        (np.array([10.0, 20.0]), np.array([30.0])),
+        (np.array([[10.0, 20.0]]), np.array([30.0, 40.0])),
+    ],
+)
+def test_get_dust_ebv_shape_mismatch_raises(ra, dec):
+    """Raise when RA/Dec input shapes are inconsistent."""
+    cat = object.__new__(RomanSourceCatalog)
+    map_paths = {
+        RomanSourceCatalog.north_galactic_pole_id: "north.fits",
+        RomanSourceCatalog.south_galactic_pole_id: "south.fits",
+    }
+    with pytest.raises(ValueError, match=r"ra\.shape must equal dec\.shape"):
+        cat._get_dust_ebv(ra, dec, map_paths)
+
+
+def test_dust_ebv_property_returns_nan_on_failure(monkeypatch):
+    """Return NaNs when CRDS lookup/interpolation fails."""
+
+    def fail_getreferences(*args, **kwargs):
+        raise RuntimeError()
+
+    monkeypatch.setattr(
+        "romancal.source_catalog._source_catalog.getreferences", fail_getreferences
+    )
+
+    cat = object.__new__(RomanSourceCatalog)
+    cat.ra = np.array([1.0, 2.0, 3.0], dtype=float)
+    cat.dec = np.array([4.0, 5.0, 6.0], dtype=float)
+    cat.n_sources = 3
+
+    result = cat.dust_ebv
+    assert result.dtype == np.float32
+    assert result.shape == (3,)
+    assert np.all(np.isnan(result))
 
 
 @pytest.mark.parametrize(
