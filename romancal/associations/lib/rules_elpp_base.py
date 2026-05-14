@@ -14,6 +14,7 @@ from stpipe.format_template import FormatTemplate
 from romancal.associations import libpath
 from romancal.associations._association import Association
 from romancal.associations._exceptions import AssociationNotValidError
+from romancal.associations._registry import RegistryMarker
 from romancal.associations.lib.acid import ACID
 from romancal.associations.lib.constraint import Constraint, SimpleConstraint
 from romancal.associations.lib.counter import Counter
@@ -34,7 +35,6 @@ from romancal.associations.lib.product_utils import (
     prune_duplicate_products,
 )
 from romancal.associations.lib.utilities import evaluate, is_iterable
-from romancal.associations._registry import RegistryMarker
 
 if TYPE_CHECKING:
     from typing import ClassVar

@@ -1,8 +1,8 @@
 """Association Rules: Basic"""
 
 from romancal.associations import Association
-from romancal.associations.lib.constraint import ConstraintTrue
 from romancal.associations._registry import RegistryMarker
+from romancal.associations.lib.constraint import ConstraintTrue
 
 
 @RegistryMarker.rule

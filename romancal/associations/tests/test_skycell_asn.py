@@ -3,7 +3,7 @@
 import pytest
 
 import romancal.associations.skycell_asn as skycell_asn
-from romancal.associations.skycell_asn import _cli, parse_visitID, _create_groups
+from romancal.associations.skycell_asn import _cli, _create_groups, parse_visitID
 
 
 @pytest.mark.parametrize(

@@ -1,4 +1,5 @@
 from . import _config as config
+
 """Main entry for the association generator"""
 
 import argparse
@@ -16,12 +17,13 @@ import numpy as np
 #    generate,
 # )
 from romancal.associations import __version__
-from ._config import *
-from ._generate import *
-from romancal.associations.lib.dms_base import DMSAttrConstraint
-from romancal.associations.lib.log_config import DMS_config, log_config
 from romancal.associations._pool import AssociationPool
 from romancal.associations._registry import AssociationRegistry
+from romancal.associations.lib.dms_base import DMSAttrConstraint
+from romancal.associations.lib.log_config import DMS_config, log_config
+
+from ._config import *
+from ._generate import *
 
 __all__ = ["Main"]
 
@@ -388,7 +390,7 @@ class Main:
         for asn in self.associations:
             try:
                 (fname, serialized) = asn.dump(format=self.parsed.format)
-            except AssociationError as exception:  # noqa: F821
+            except AssociationError as exception:
                 logger.warning("Cannot serialize association %s", asn)
                 logger.warning("Reason:", exc_info=exception)
                 continue

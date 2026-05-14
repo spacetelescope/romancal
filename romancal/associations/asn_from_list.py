@@ -4,8 +4,8 @@ import argparse
 import sys
 from collections import OrderedDict
 
-from .lib.rules_elpp_base import DMS_ELPP_Base
 from ._registry import AssociationRegistry
+from .lib.rules_elpp_base import DMS_ELPP_Base
 
 __all__ = ["asn_from_list"]
 

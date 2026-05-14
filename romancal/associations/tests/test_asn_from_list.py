@@ -3,8 +3,8 @@
 import pytest
 
 from romancal.associations import Association, AssociationRegistry, load_asn
-from romancal.associations.asn_from_list import _cli, asn_from_list
 from romancal.associations._exceptions import AssociationNotValidError
+from romancal.associations.asn_from_list import _cli, asn_from_list
 
 
 def test_base_association():
