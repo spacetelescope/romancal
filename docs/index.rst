@@ -12,9 +12,9 @@
 
 .. _roman-pipeline-doc-index:
 
-==============================================
-The Roman Space Telescope Calibration Pipeline
-==============================================
+==========================================
+Roman Space Telescope Calibration Pipeline
+==========================================
 
 **Version**: |release|
 
