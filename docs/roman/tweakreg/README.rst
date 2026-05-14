@@ -23,11 +23,41 @@ for ``.parquet`` files). The catalog must contain
 either ``'x'`` and ``'y'`` or ``'x_psf'`` and ``'y_psf'`` columns which
 indicate source *image* coordinates (in pixels). Pixel coordinates are
 0-indexed.
+
 Association files can also be used as ``tweakreg`` input for custom catalogs.
 When an association is provided, ``tweakreg`` reads the custom catalog
-information for each member from that member's
-``meta.source_catalog.tweakreg_catalog`` or
+information for each member from that member's ``tweakreg_catalog`` attribute
+and sets it as the value for that member's
 ``meta.source_catalog.tweakreg_catalog_name`` metadata.
+For example, the following association contains two members
+(``image1.asdf`` and ``image2.asdf``) with custom catalogs and one member
+(``image3.asdf``) without a custom catalog:
+
+  .. code-block:: json
+
+    {
+      "asn_type": "tweakreg",
+      "asn_id": "tweakreg_12345678",
+      "members": [
+        {
+          "expname": "image1.asdf",
+          "tweakreg_catalog": "/path/to/image1_catalog.parquet"
+        },
+        {
+          "expname": "image2.asdf",
+          "tweakreg_catalog": "/path/to/image2_catalog.parquet"
+        },
+        {
+          "expname": "image3.asdf",
+        }
+      ]
+    }
+
+In this case, ``tweakreg`` will read the custom catalogs for ``image1.asdf`` and
+``image2.asdf`` from the specified file paths and use them for alignment, while
+it will attempt to read the source catalog for ``image3.asdf`` from the file path
+specified in its ``meta.source_catalog.tweakreg_catalog_name`` metadata
+(which is expected to be set by a previous step such as `SourceCatalogStep`).
 
 .. note::
     ``tweakreg`` requires ``meta.source_catalog`` to be present.
