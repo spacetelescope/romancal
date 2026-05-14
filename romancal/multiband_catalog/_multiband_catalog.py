@@ -81,7 +81,7 @@ def process_detection_image(self, library, example_model, ee_spline, catalog_mod
     # TODO: sensible defaults
     # TODO: redefine in terms of intrinsic FWHM
     if self.kernel_fwhms is None:
-        self.kernel_fwhms = [2.0, 5.0]
+        self.kernel_fwhms = [2.0]
 
     detection_image = make_detection_image(library, self.kernel_fwhms)
 
