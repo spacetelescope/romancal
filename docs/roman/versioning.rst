@@ -26,7 +26,7 @@ Any API not officially documented (i.e., you only found it after some extensive
 code-diving) is also considered private.
 
 Additionally, code under the following modules:
-* ``romancal.association``
+* ``romancal.associations``
 * ``romancal.lib``
 * ``romancal.scripts``
 does not yet have a stable public API and will change in future releases.
