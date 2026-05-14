@@ -81,16 +81,6 @@ class OutlierDetectionStep(RomanStep):
 
             return library
 
-        # check that all inputs are WFI_IMAGE
-        def get_exptype(model, index):
-            return model.meta.exposure.type
-
-        exptypes = list(library.map_function(get_exptype, modify=False))
-        if any(exptype != "WFI_IMAGE" for exptype in exptypes):
-            raise ValueError(
-                f"outlier_detection only supports WFI_IMAGE exposure types: {set(exptypes)}"
-            )
-
         # Setup output path naming if associations are involved.
         asn_id = library.asn.get("asn_id", None)
         if asn_id is not None:

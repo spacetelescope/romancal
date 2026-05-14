@@ -109,64 +109,13 @@ class ExposurePipeline(RomanPipeline):
         )
         return_lib = input_type in ("ModelLibrary", "asn")
 
-        # Flag to track if any of the input models are fully saturated
-        any_saturated = False
-
         with lib:
             for model_index, model in enumerate(lib):
-                self.dq_init.suffix = "dq_init"
-                result = self.dq_init.run(model)
-
-                if model is not result:
-                    # dq_init converted this to a new model type so close the input
-                    model.close()
-                    del model
-
-                result = self.saturation.run(result)
-
-                if _is_fully_saturated(result):
-                    log.info("All pixels are saturated. Returning a zeroed-out image.")
-                    result = self.create_fully_saturated_zeroed_image(result)
-
-                    # Track that we've seen a fully saturated input
-                    any_saturated = True
-                    log.warning(
-                        "tweakreg will not be run due to a fully saturated input"
-                    )
-                else:
-                    result = self.refpix.run(result)
-                    result = self.dark_decay.run(result)
-                    result = self.wfi18_transient.run(result)
-                    result = self.linearity.run(result)
-                    result = self.rampfit.run(result)
-                    result = self.dark_current.run(result)
-                    result = self.assign_wcs.run(result)
-
-                    if result.meta.exposure.type == "WFI_IMAGE":
-                        result = self.flatfield.run(result)
-                        result = self.photom.run(result)
-                        result = self.source_catalog.run(result)
-                    else:
-                        log.info("Flat Field step is being SKIPPED")
-                        log.info("Photom step is being SKIPPED")
-                        log.info("Source Detection step is being SKIPPED")
-                        log.info("Tweakreg step is being SKIPPED")
-                        result.meta.cal_step.flat_field = "SKIPPED"
-                        result.meta.cal_step.photom = "SKIPPED"
-                        result.meta.cal_step.source_catalog = "SKIPPED"
-
-                if any_saturated:
-                    # the input association contains a fully saturated model
-                    # where source_catalog can't be run which means we
-                    # also can't run tweakreg.
-                    result.meta.cal_step.tweakreg = "SKIPPED"
+                result = self._process_model(model)
                 lib.shelve(result, model_index)
 
         # Now that all the exposures are collated, run tweakreg
-        # Note: this does not cover the case where the asn mixes imaging and spectral
-        #          observations. This should not occur on-prem
-        if not any_saturated:
-            self.tweakreg.run(lib)
+        self.tweakreg.run(lib)
 
         log.info("Roman exposure calibration pipeline ending...")
 
@@ -179,6 +128,48 @@ class ExposurePipeline(RomanPipeline):
             model = lib.borrow(0)
             lib.shelve(model, modify=False)
         return model
+
+    def _process_model(self, model):
+        """Run all per-model calibration steps and return the result."""
+        self.dq_init.suffix = "dq_init"
+        result = self.dq_init.run(model)
+        if model is not result:
+            # dq_init converted this to a new model type so close the input
+            model.close()
+            del model
+
+        result = self.saturation.run(result)
+
+        if _is_fully_saturated(result):
+            log.info("All pixels are saturated. Returning a zeroed-out image.")
+            return self.create_fully_saturated_zeroed_image(result)
+
+        result = self.refpix.run(result)
+        result = self.dark_decay.run(result)
+        result = self.wfi18_transient.run(result)
+        result = self.linearity.run(result)
+        result = self.rampfit.run(result)
+        result = self.dark_current.run(result)
+        result = self.assign_wcs.run(result)
+        result = self.photom.run(result)
+
+        # WFI_FLAT, WFI_SPECTRAL, WFI_IM_DARK, WFI_SP_DARK stop here
+        exp_type = result.meta.exposure.type
+        if exp_type not in ("WFI_IMAGE", "WFI_LOLO", "WFI_WFSC"):
+            result.meta.cal_step.flat_field = "SKIPPED"
+            result.meta.cal_step.source_catalog = "SKIPPED"
+            return result
+
+        result = self.flatfield.run(result)
+
+        # WFI_WFSC doesn't get a source catalog (and therefore also no tweakreg)
+        if exp_type == "WFI_WFSC":
+            result.meta.cal_step.source_catalog = "SKIPPED"
+            return result
+
+        # WFI_IMAGE and WFI_LOLO get source catalog
+        result = self.source_catalog.run(result)
+        return result
 
     def save_model(self, result, *args, **kwargs):
         if not isinstance(result, rdm.WfiWcsModel):

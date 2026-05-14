@@ -111,19 +111,14 @@ class TweakRegStep(RomanStep):
         imcats = []
         with images:
             for i, image_model in enumerate(images):
-                exposure_type = image_model.meta.exposure.type
-                if exposure_type != "WFI_IMAGE":
-                    log.info("Skipping TweakReg for spectral exposure.")
+                source_catalog = getattr(image_model.meta, "source_catalog", None)
+                if source_catalog is None:
+                    log.warning(
+                        f"Skipping TweakReg for {image_model.meta.filename}: "
+                        "no source catalog available."
+                    )
                     image_model.meta.cal_step.tweakreg = "SKIPPED"
                 else:
-                    source_catalog = getattr(image_model.meta, "source_catalog", None)
-                    if source_catalog is None:
-                        images.shelve(image_model, i, modify=False)
-                        raise AttributeError(
-                            "Attribute 'meta.source_catalog' is missing. "
-                            "Please either run SourceCatalogStep or provide a custom source catalog."
-                        )
-
                     try:
                         catalog = self.get_tweakreg_catalog(source_catalog, image_model)
                     except AttributeError as e:
