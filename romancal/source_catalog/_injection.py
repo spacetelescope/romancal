@@ -129,6 +129,9 @@ def make_cosmoslike_catalog(cen, ra, dec, exptimes, filters=None, seed=None, **k
         cen, radius=1.0, bandpasses=filters, cat_area=(np.pi), seed=seed, **kwargs
     )
 
+    # Drop entries with zero flux in the J-band
+    gal_cat = gal_cat[gal_cat["F129"] > 0]
+
     # Trim to the required number of objects
     gal_cat = gal_cat[:num_gals]
 

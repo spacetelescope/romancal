@@ -6,12 +6,13 @@ from collections import defaultdict
 import roman_datamodels as rdm
 from astropy.table import Table
 
-from . import set_telescope_pointing as stp
+from . import _transforms as tlib
+from . import _wcs as wlib
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
-__all__ = ["v1_calculate_from_models", "v1_calculate_over_time"]
+__all__ = []
 
 
 def v1_calculate_from_models(sources, **calc_wcs_from_time_kwargs):
@@ -44,9 +45,9 @@ def v1_calculate_from_models(sources, **calc_wcs_from_time_kwargs):
     # Calculate V1 for all sources.
     for source in sources:
         with rdm.open(source) as model:
-            t_pars = stp.TransformParameters(**calc_wcs_from_time_kwargs)
-            stp.t_pars_from_model(model, t_pars)
-            obstimes, _, vinfos = stp.calc_wcs_over_time(
+            t_pars = tlib.TransformParameters(**calc_wcs_from_time_kwargs)
+            tlib.t_pars_from_model(model, t_pars)
+            obstimes, _, vinfos = wlib.calc_wcs_over_time(
                 t_pars.obsstart, t_pars.obsend, t_pars
             )
 
@@ -87,12 +88,12 @@ def v1_calculate_over_time(obsstart, obsend, **calc_wcs_from_time_kwargs):
         Table of V1 pointing.
     """
     # Initialize structures.
-    t_pars = stp.TransformParameters(**calc_wcs_from_time_kwargs)
+    t_pars = tlib.TransformParameters(**calc_wcs_from_time_kwargs)
     if len(t_pars.aperture) == 0:
         t_pars.aperture = "WFI02_FULL"
 
     # Calculate V1 for all sources.
-    obstimes, _, vinfos = stp.calc_wcs_over_time(obsstart, obsend, t_pars)
+    obstimes, _, vinfos = wlib.calc_wcs_over_time(obsstart, obsend, t_pars)
     v1_dict = {}
     v1_dict["source"] = ["time range"] * len(obstimes)
     v1_dict["obstime"] = obstimes
