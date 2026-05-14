@@ -144,14 +144,6 @@ def make_catalog(metadata):
     return tabcat
 
 
-# Ignore this warning - it comes from stpsf,
-#   and they are aware of the need for an upgrade.
-@pytest.mark.filterwarnings(
-    "ignore:Python 3.14 will, by default,"
-    " filter extracted tar archives and"
-    " reject files or modify their metadata."
-    " Use the filter argument to control this behavior.:DeprecationWarning"
-)
 def test_inject_sources(image_model, mosaic_model):
     for si_model in (image_model, mosaic_model):
         """Test simple source injection"""
@@ -302,6 +294,39 @@ def test_create_cosmoscat():
             cat[cat["type"] == "SER"][bp] < 10.0 ** (-(gal_mag_limit - 4) / 2.5)
         )
         assert np.all(cat[cat["type"] == "SER"][bp] >= 0)
+
+
+def test_nonzero_jband_flux():
+    # Pointing
+    cen = SkyCoord(ra=RA * u.deg, dec=DEC * u.deg)
+
+    # WCS object for ra & dec conversion
+    wcsobj = mk_gwcs(
+        RA,
+        DEC,
+        ROLL,
+        bounding_box=((-0.5, SHAPE[0] - 0.5), (-0.5, SHAPE[1] - 0.5)),
+        shape=SHAPE,
+    )
+
+    # Set number of objects needed to test that 0 J-band flux objects are removed
+    obj_fact = 100
+
+    # Convert x,y to ra, dec (accurate locations don't matter for this test)
+    ra, dec = wcsobj.pixel_to_world_values(np.arange(obj_fact), np.arange(obj_fact))
+
+    # Exposure times (s)
+    exptimes = {}
+    for bp in FILTERS:
+        exptimes[bp] = 300
+
+    # Generate cosmos-like catalog
+    cat = make_cosmoslike_catalog(
+        cen, ra, dec, exptimes, filters=FILTERS, seed=RNG_SEED
+    )
+
+    # Test that the catalog contains no 0 flux J-Band objects
+    assert np.all(cat["F129"] > 0)
 
 
 def test_make_source_grid(image_model, mosaic_model):

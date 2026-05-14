@@ -408,10 +408,11 @@ class EngdbMast(EngdbABC):
     def _set_session(self):
         """Set up HTTP session."""
         headers = dict()
-        if self.rsdp_auth:
-            headers["x-asb-auth"] = self.token
-        else:
-            headers["Authorization"] = f"token {self.token}"
+        if self.token:
+            if self.rsdp_auth:
+                headers["x-asb-auth"] = self.token
+            else:
+                headers["Authorization"] = f"token {self.token}"
 
         self._datareq = requests.Request(
             method="GET",
