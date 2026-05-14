@@ -25,7 +25,13 @@ As per Python convention, any API name that starts with underscore
 Any API not officially documented (i.e., you only found it after some extensive
 code-diving) is also considered private.
 
-Additionally test code is considered private. This includes:
+Additionally, code under the following modules:
+* ``romancal.association``
+* ``romancal.lib``
+* ``romancal.scripts``
+does not yet have a stable public API and will change in future releases.
+
+Finally, test code is considered private. This includes:
 
 * all ``conftest.py`` files
 * modules that start with ``test_*`` or are named ``tests``
