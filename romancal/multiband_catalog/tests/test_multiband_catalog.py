@@ -229,7 +229,7 @@ def test_multiband_catalog(
     shared_tests(result, cat, library_model, save_results, function_jail)
 
 
-def test_multiband_catalog_populates_dust_ebv(library_model, tmp_path):
+def test_multiband_catalog_populates_dust_ebv(library_model, function_jail):
     """Ensure the joined multiband catalog contains the detection-level dust_ebv."""
     step = MultibandCatalogStep()
     result = step.call(
