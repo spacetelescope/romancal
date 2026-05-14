@@ -1,7 +1,7 @@
 <a href="https://stsci.edu">
   <img src="docs/_static/stsci_pri_combo_mark_horizonal_white_bkgd.png" alt="Space Telescope Science Institute" width="83%" style="margin-left: auto;"/>
 </a>
-<a href="https://science.nasa.gov/mission/webb/">
+<a href="https://science.nasa.gov/mission/roman-space-telescope/">
   <img src="docs/_static/A_Rst_1020_Logo_Box_Color_Seafoamondarkblue_Logo_Full_Color_RGB_850px@72ppi.png" alt="Roman Telescope Logo" width="15%" style="margin-right: auto;"/>
 </a>
 
