@@ -1,1 +1,0 @@
-Added check to ensure no entries with zero flux in the J-Band are used to create the source injection catalog.

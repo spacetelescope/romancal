@@ -1,1 +1,0 @@
-Update the pixel timing pattern in ``frame_read_times`` to account for gaps in the science pixel times due to reading out the guide window.

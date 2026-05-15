@@ -1,1 +1,0 @@
-Remove exposure-type gating from ``PhotomStep``; routing is now handled by ``ExposurePipeline``.
