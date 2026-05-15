@@ -37,7 +37,7 @@ dependencies = [
     "stcal @ git+https://github.com/mcara/stcal@move-corrector-to-pipelines-step1",
     "stpipe>=0.11.0,<2",
     "spherical-geometry>=1.4.0,<1.5",
-    "tweakwcs@git+https://github.com/mcara/tweakwcs.git@roman-gwcs",
+    "tweakwcs>=0.9.0",
 ]
 license-files = ["LICENSE"]
 dynamic = [
