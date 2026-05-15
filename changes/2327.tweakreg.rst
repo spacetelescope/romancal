@@ -1,0 +1,1 @@
+Remove exposure-type gating from ``TweakRegStep``; models without a source catalog are skipped individually rather than skipping the whole association.

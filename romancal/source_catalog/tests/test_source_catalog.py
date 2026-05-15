@@ -337,7 +337,7 @@ def test_background(mosaic_model, function_jail):
 
 
 @pytest.mark.parametrize("model_fixture", ("image_model", "mosaic_model"))
-def test_source_catalog_populates_dust_ebv(model_fixture, request):
+def test_source_catalog_populates_dust_ebv(model_fixture, request, function_jail):
     """Ensure prompt source catalogs include a per-source dust_ebv column."""
     model = request.getfixturevalue(model_fixture)
     step = SourceCatalogStep()
