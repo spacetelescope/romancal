@@ -102,9 +102,9 @@ def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths
         ("ramp_fit", "COMPLETE"),
         ("saturation", "COMPLETE"),
         ("refpix", "COMPLETE"),
+        ("photom", "COMPLETE"),
         # skipped
         ("flat_field", "SKIPPED"),
-        ("photom", "SKIPPED"),
         ("source_catalog", "SKIPPED"),
         ("tweakreg", "SKIPPED"),
     ),
