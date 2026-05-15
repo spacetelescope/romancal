@@ -1,1 +1,0 @@
-Centralize exposure-type routing in ``ExposurePipeline``; photom now runs for all types, flatfield and source_catalog are skipped for non-imaging types.

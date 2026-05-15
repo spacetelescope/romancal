@@ -1,1 +1,0 @@
-Fix PSF model selection to correctly identify L3 coadd vs. L2 image data models.
