@@ -335,10 +335,12 @@ def test_make_source_grid(image_model, mosaic_model):
         # Set parameters
         yxgrid = (10, 15)
         yxoffset = (7, 11)
+        subpixeloffset = (2, 2)
         yxmax = np.subtract(SHAPE, [50, 50])
 
-        x_pos, y_pos = make_source_grid(
-            si_model, yxmax=yxmax, yxoffset=yxoffset, yxgrid=yxgrid, seed=RNG_SEED
+        y_pos, x_pos = make_source_grid(
+            si_model, yxmax=yxmax, yxoffset=yxoffset, yxgrid=yxgrid,
+            subpixeloffset=subpixeloffset, seed=RNG_SEED
         )
 
         # Ensure expected number of grid points
@@ -346,23 +348,24 @@ def test_make_source_grid(image_model, mosaic_model):
         assert len(y_pos) == np.prod(yxgrid)
 
         # Ensure grid is regular
-        assert np.allclose(np.diff(np.diff(np.sort(list(set(y_pos))))), 0)
-        assert np.allclose(np.diff(np.diff(np.sort(list(set(x_pos))))), 0)
+        assert np.std(np.diff(np.sort(list(set(y_pos))))) < subpixeloffset[0]
+        assert np.std(np.diff(np.sort(list(set(x_pos))))) < subpixeloffset[1]
 
         # Create NaN point
-        si_model.data[45, 32] = np.nan
+        si_model.data[int(y_pos[3]), int(x_pos[3])] = np.nan
 
         y_nan_pos, x_nan_pos = make_source_grid(
-            si_model, yxmax=yxmax, yxoffset=yxoffset, yxgrid=yxgrid, seed=RNG_SEED
+            si_model, yxmax=yxmax, yxoffset=yxoffset, yxgrid=yxgrid,
+            subpixeloffset=subpixeloffset, seed=RNG_SEED
         )
 
         # Ensure expected number of grid points
         assert len(y_nan_pos) == len(y_pos) - 1
         assert len(x_nan_pos) == len(x_pos) - 1
 
-        # Ensure x,y (32, 45) not in the grid
+        # Ensure NaN point not in the grid
         assert (
-            len(np.intersect1d(np.where(y_nan_pos == 45), np.where(x_nan_pos == 32)))
+            len(np.intersect1d(np.where(y_nan_pos == int(y_pos[3])), np.where(x_nan_pos == int(x_pos[3]))))
             == 0
         )
 
@@ -373,6 +376,7 @@ def test_grid_injection(image_model, mosaic_model):
         # Set parameters
         yxgrid = (10, 15)
         yxoffset = (7, 11)
+        subpixeloffset = (2, 2)
         yxmax = np.subtract(SHAPE, [25, 25])
 
         # Pointing
@@ -391,7 +395,8 @@ def test_grid_injection(image_model, mosaic_model):
 
         # Create grid
         x_pos, y_pos = make_source_grid(
-            si_model, yxmax=yxmax, yxoffset=yxoffset, yxgrid=yxgrid, seed=RNG_SEED
+            si_model, yxmax=yxmax, yxoffset=yxoffset, yxgrid=yxgrid,
+            subpixeloffset=subpixeloffset, seed=RNG_SEED
         )
 
         # Convert x,y to ra, dec
@@ -411,12 +416,12 @@ def test_grid_injection(image_model, mosaic_model):
 
         # Ensure that sources were actually injected along the specified grid
         ngrt = 0
-        for x_val, y_val in zip(x_pos, y_pos, strict=False):
+        for x_val, y_val in zip(x_pos.astype(int) , y_pos.astype(int), strict=False):
             ngrt += np.sum(
-                si_model.data[y_val - 1 : y_val + 2, x_val - 1 : x_val + 2]
-                > data_orig.data[y_val - 1 : y_val + 2, x_val - 1 : x_val + 2]
+                si_model.data[y_val - 3 : y_val + 4, x_val - 3 : x_val + 4]
+                > data_orig.data[y_val - 3 : y_val + 4, x_val - 3 : x_val + 4]
             )
-        assert ngrt / (9 * len(x_pos)) > 0.5
+        assert ngrt / (49 * len(x_pos)) > 0.5
 
         # Test that pixels in the offset areas are close to the original image
         # Numpy isclose is needed to determine equality, due to float precision issues
