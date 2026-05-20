@@ -226,8 +226,13 @@ def make_cosmoslike_catalog(cen, ra, dec, exptimes, filters=None, seed=None, **k
 
 
 def make_source_grid(
-    model, yxmax=(5000, 5000), yxoffset=(50, 50), yxgrid=(20, 20), subpixeloffset=(4.0, 4.0),
-    seed=None, **kwargs
+    model,
+    yxmax=(5000, 5000),
+    yxoffset=(50, 50),
+    yxgrid=(20, 20),
+    subpixeloffset=(4.0, 4.0),
+    seed=None,
+    **kwargs,
 ):
     """
     Generate a grid of points to inject sources onto. The grid is set to the yxmax
@@ -276,11 +281,15 @@ def make_source_grid(
 
     ypts *= yspace
     ypts += y0
-    ypts += rng_numpy.uniform(low=-subpixeloffset[0], high=subpixeloffset[0], size=len(ypts))
+    ypts += rng_numpy.uniform(
+        low=-subpixeloffset[0], high=subpixeloffset[0], size=len(ypts)
+    )
 
     xpts *= xspace
     xpts += x0
-    xpts += rng_numpy.uniform(low=-subpixeloffset[1], high=subpixeloffset[1], size=len(xpts))
+    xpts += rng_numpy.uniform(
+        low=-subpixeloffset[1], high=subpixeloffset[1], size=len(xpts)
+    )
 
     # Discard off-image positions
     ypts = ypts[ypts < (model.data.shape[0] - int(yxoffset[0]))]

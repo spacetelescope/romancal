@@ -339,8 +339,12 @@ def test_make_source_grid(image_model, mosaic_model):
         yxmax = np.subtract(SHAPE, [50, 50])
 
         y_pos, x_pos = make_source_grid(
-            si_model, yxmax=yxmax, yxoffset=yxoffset, yxgrid=yxgrid,
-            subpixeloffset=subpixeloffset, seed=RNG_SEED
+            si_model,
+            yxmax=yxmax,
+            yxoffset=yxoffset,
+            yxgrid=yxgrid,
+            subpixeloffset=subpixeloffset,
+            seed=RNG_SEED,
         )
 
         # Ensure expected number of grid points
@@ -355,8 +359,12 @@ def test_make_source_grid(image_model, mosaic_model):
         si_model.data[int(y_pos[3]), int(x_pos[3])] = np.nan
 
         y_nan_pos, x_nan_pos = make_source_grid(
-            si_model, yxmax=yxmax, yxoffset=yxoffset, yxgrid=yxgrid,
-            subpixeloffset=subpixeloffset, seed=RNG_SEED
+            si_model,
+            yxmax=yxmax,
+            yxoffset=yxoffset,
+            yxgrid=yxgrid,
+            subpixeloffset=subpixeloffset,
+            seed=RNG_SEED,
         )
 
         # Ensure expected number of grid points
@@ -365,7 +373,12 @@ def test_make_source_grid(image_model, mosaic_model):
 
         # Ensure NaN point not in the grid
         assert (
-            len(np.intersect1d(np.where(y_nan_pos == int(y_pos[3])), np.where(x_nan_pos == int(x_pos[3]))))
+            len(
+                np.intersect1d(
+                    np.where(y_nan_pos == int(y_pos[3])),
+                    np.where(x_nan_pos == int(x_pos[3])),
+                )
+            )
             == 0
         )
 
@@ -395,8 +408,12 @@ def test_grid_injection(image_model, mosaic_model):
 
         # Create grid
         x_pos, y_pos = make_source_grid(
-            si_model, yxmax=yxmax, yxoffset=yxoffset, yxgrid=yxgrid,
-            subpixeloffset=subpixeloffset, seed=RNG_SEED
+            si_model,
+            yxmax=yxmax,
+            yxoffset=yxoffset,
+            yxgrid=yxgrid,
+            subpixeloffset=subpixeloffset,
+            seed=RNG_SEED,
         )
 
         # Convert x,y to ra, dec
@@ -416,7 +433,7 @@ def test_grid_injection(image_model, mosaic_model):
 
         # Ensure that sources were actually injected along the specified grid
         ngrt = 0
-        for x_val, y_val in zip(x_pos.astype(int) , y_pos.astype(int), strict=False):
+        for x_val, y_val in zip(x_pos.astype(int), y_pos.astype(int), strict=False):
             ngrt += np.sum(
                 si_model.data[y_val - 3 : y_val + 4, x_val - 3 : x_val + 4]
                 > data_orig.data[y_val - 3 : y_val + 4, x_val - 3 : x_val + 4]
