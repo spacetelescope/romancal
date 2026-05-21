@@ -1,7 +1,7 @@
 Description
 ============
 
-The ``wfi18_transient`` step corrects for an anomalous transient signal in the first
+The ``wfi18_transient`` step corrects for a transient signal in the first
 read of exposures taken with detector WFI18.  The transient signal is strongly temperature
 dependent with significant exposure-to-exposure variations so it must be fit and
 removed separately for each exposure.
@@ -36,7 +36,7 @@ To fit the transient signal, the ``wfi18_transient`` step implements the followi
 
 This algorithm requires a minimum of 5 resultants to be successful.  If fewer resultants
 are present, or if the fit fails for any reason, the step will fall back on simply
-masking the rows most affected by the transient anomaly.  In this case, the first
+masking the rows most affected by the transient signal.  In this case, the first
 1000 rows of the first resultant will be set to DO_NOT_USE in the GROUPDQ array.
 Optionally, the user may choose to apply the mask instead of attempting a fit as above,
 by setting the ``mask_rows`` parameter for this step to ``True``.
@@ -50,5 +50,5 @@ References
 ----------
 
 The WFI18 transient correction algorithm is based on work by T. Brandt,
-"Characterizing and Correcting the Anomalous First Read of Detector 18 on Roman-WFI",
+"Characterizing and Correcting the First Read Transient Signal of Detector 18 on Roman-WFI",
 STScI Technical Document, 2025 (in prep).
