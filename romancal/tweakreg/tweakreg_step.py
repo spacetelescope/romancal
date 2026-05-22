@@ -197,7 +197,9 @@ class TweakRegStep(RomanStep):
                 for imcat in imcats:
                     image_model = images.borrow(imcat.meta["model_index"])
                     fit_info = imcat.meta.get("fit_info")
-                    fit_status = "" if fit_info is None else str(fit_info.get("status", ""))
+                    fit_status = (
+                        "" if fit_info is None else str(fit_info.get("status", ""))
+                    )
                     fit_succeeded = (
                         not absolute_alignment_failed and "SUCCESS" in fit_status
                     )
@@ -559,9 +561,7 @@ def _serialize_wcs_fit_results(
     """
     fit_results = {}
     if fit_info is not None:
-        fit_results = {
-            k: _to_python_scalar_or_list(v) for k, v in fit_info.items()
-        }
+        fit_results = {k: _to_python_scalar_or_list(v) for k, v in fit_info.items()}
 
     # remove unwanted keys from WCS fit results
     for key in [
