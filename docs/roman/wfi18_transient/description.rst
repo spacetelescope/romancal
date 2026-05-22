@@ -50,5 +50,5 @@ References
 ----------
 
 The WFI18 transient correction algorithm is based on work by T. Brandt,
-"Characterizing and Correcting the First Read Transient Signal of Detector 18 on Roman-WFI",
+"Characterizing and Correcting a High Amplitude Transient in Detector 18 on Roman-WFI",
 STScI Technical Document, 2025 (in prep).
