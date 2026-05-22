@@ -1,7 +1,7 @@
 .. _wfi18_transient_step:
 
 ==================================
-WFI18 Transient Anomaly Correction
+WFI18 Transient Correction
 ==================================
 
 .. toctree::
