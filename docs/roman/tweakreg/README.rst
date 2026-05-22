@@ -69,6 +69,10 @@ gets cross-matched and fit to an astrometric reference catalog
 (set by ``TweakRegStep.abs_refcat``) and the results are stored in
 ``model.meta.wcs_fit_results``. The pipeline initially supports fitting to any
 Gaia Data Release (defaults to `GAIADR3`).
+For each model where ``tweakreg`` is attempted (that is, step status is not
+``SKIPPED``), ``model.meta.wcs_fit_results`` is always populated. For
+unsuccessful fits, ``status`` records the failure and some numeric fields may
+be ``NaN``.
 
 An example of the content of ``model.meta.wcs_fit_results`` is as follows:
 
@@ -90,7 +94,8 @@ An example of the content of ``model.meta.wcs_fit_results`` is as follows:
             "skew": 0.0,
             "rmse": 2.854152848489525e-10,
             "mae": 2.3250544963289652e-10,
-            "nmatches": 22
+            "nmatches": 22,
+            "n_detector": 18
           }
 
 Details about most of the parameters available in ``model.meta.wcs_fit_results`` can be
