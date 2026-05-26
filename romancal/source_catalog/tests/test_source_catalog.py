@@ -594,9 +594,7 @@ def test_l2_return_updated_model_uses_in_memory_catalog_when_not_saving(
     monkeypatch,
     function_jail,
 ):
-    monkeypatch.setattr(
-        SourceCatalogStep, "return_updated_model", True, raising=False
-    )
+    monkeypatch.setattr(SourceCatalogStep, "return_updated_model", True, raising=False)
 
     result = SourceCatalogStep.call(
         image_model,

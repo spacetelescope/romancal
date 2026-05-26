@@ -147,7 +147,9 @@ def save_all_results(
 
     # save the segmentation image only when results are requested
     if save_catalog_results:
-        save_segment_image(self, segment_img, cat_model, output_filename, save_debug_info)
+        save_segment_image(
+            self, segment_img, cat_model, output_filename, save_debug_info
+        )
 
     # Update the source catalog filename metadata
     self.output_ext = "parquet"
