@@ -580,7 +580,7 @@ def _serialize_wcs_fit_results(
         fit_results["status"] = "FAILED"
 
     if fit_results.get("nmatches") is None:
-        fit_results["nmatches"] = np.nan
+        fit_results["nmatches"] = 0
 
     fit_results["n_detector"] = n_detector
     return fit_results
