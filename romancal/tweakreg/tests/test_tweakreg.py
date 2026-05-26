@@ -350,7 +350,7 @@ def test_tweakreg_marks_failed_when_absolute_alignment_raises(
         assert model.meta.cal_step.tweakreg == "FAILED"
         assert hasattr(model.meta, "wcs_fit_results")
         assert model.meta.wcs_fit_results.status == "FAILED"
-        assert np.isnan(model.meta.wcs_fit_results.nmatches)
+        assert model.meta.wcs_fit_results.nmatches == 0
         assert model.meta.wcs_fit_results.n_detector == 1
         res.shelve(model, 0, modify=False)
 
