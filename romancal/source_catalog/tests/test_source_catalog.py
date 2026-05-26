@@ -515,10 +515,7 @@ def test_do_psf_photometry_column_names(function_jail, image_model, fit_psf):
             False,
             True,
             ImageModel,
-            {
-                "cat": ImageSourceCatalogModel,
-                "segm": SegmentationMapModel,
-            },
+            {},
         ),
         (
             20,
@@ -527,10 +524,7 @@ def test_do_psf_photometry_column_names(function_jail, image_model, fit_psf):
             False,
             False,
             ImageSourceCatalogModel,
-            {
-                "cat": ImageSourceCatalogModel,
-                "segm": SegmentationMapModel,
-            },
+            {},
         ),
     ),
 )
@@ -589,6 +583,37 @@ def test_l2_source_catalog_keywords(
             assert isinstance(tbl, pyarrow.Table)
         else:
             assert isinstance(rdm.open(filepath), expected_outputs.get(suffix))
+
+    basefilename = result.meta.filename.split("_")[0]
+    assert Path(function_jail / f"{basefilename}_cat.parquet").exists() == save_results
+    assert Path(function_jail / f"{basefilename}_segm.asdf").exists() == save_results
+
+
+def test_l2_return_updated_model_uses_in_memory_catalog_when_not_saving(
+    image_model,
+    monkeypatch,
+    function_jail,
+):
+    monkeypatch.setattr(
+        SourceCatalogStep, "return_updated_model", True, raising=False
+    )
+
+    result = SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=3,
+        npixels=10,
+        save_results=False,
+    )
+
+    assert isinstance(result, ImageModel)
+    assert "tweakreg_catalog" in result.meta.source_catalog
+    assert "tweakreg_catalog_name" not in result.meta.source_catalog
+
+    basefilename = result.meta.filename.split("_")[0]
+    assert not Path(function_jail / f"{basefilename}_cat.parquet").exists()
+    assert not Path(function_jail / f"{basefilename}_segm.asdf").exists()
 
 
 @pytest.mark.parametrize(
@@ -665,10 +690,7 @@ def test_dust_ebv_property_returns_nan_on_failure(monkeypatch):
             False,
             True,
             MosaicModel,
-            {
-                "cat": MosaicSourceCatalogModel,
-                "segm": MosaicSegmentationMapModel,
-            },
+            {},
         ),
         (
             20,
@@ -677,10 +699,7 @@ def test_dust_ebv_property_returns_nan_on_failure(monkeypatch):
             False,
             False,
             MosaicSourceCatalogModel,
-            {
-                "cat": MosaicSourceCatalogModel,
-                "segm": MosaicSegmentationMapModel,
-            },
+            {},
         ),
     ),
 )
@@ -735,6 +754,10 @@ def test_l3_source_catalog_keywords(
             assert isinstance(tbl, pyarrow.Table)
         else:
             assert isinstance(rdm.open(filepath), expected_outputs.get(suffix))
+
+    basefilename = result.meta.filename.split("_")[0]
+    assert Path(function_jail / f"{basefilename}_cat.parquet").exists() == save_results
+    assert Path(function_jail / f"{basefilename}_segm.asdf").exists() == save_results
 
 
 @pytest.mark.parametrize(

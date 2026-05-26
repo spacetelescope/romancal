@@ -99,9 +99,10 @@ def test_elp_save_results(function_jail, fake_science_raw, save_results, monkeyp
     assert set(p.name for p in function_jail.iterdir()) == {"output"}
 
     output_files = set(p.name for p in output_path.iterdir())
-    # TODO shouldn't this be empty?
-    expected = {"test_segm.asdf", "test_cat.parquet"}
+    expected = set()
     if save_results:
+        expected.add("test_segm.asdf")
+        expected.add("test_cat.parquet")
         expected.add("test_cal.asdf")
         expected.add("test_wcs.asdf")
     assert output_files == expected

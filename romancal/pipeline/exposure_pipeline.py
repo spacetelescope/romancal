@@ -88,6 +88,10 @@ class ExposurePipeline(RomanPipeline):
 
         # make sure source_catalog returns the updated datamodel
         self.source_catalog.return_updated_model = True
+        # keep source_catalog sidecar products aligned with pipeline save_results
+        # without writing the intermediate sourcecatalog datamodel file
+        self.source_catalog.save_results = False
+        self.source_catalog.save_catalog_results = self.save_results
         # make sure we update source catalog coordinates afer running TweakRegStep
         self.tweakreg.update_source_catalog_coordinates = True
         # make output filenames based on input filenames

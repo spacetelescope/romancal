@@ -102,7 +102,7 @@ def save_all_results(
     """
     Return and save the results of the source catalog step.
 
-    The segmentation image is always saved.
+    The segmentation image is saved only when ``save_results`` is True.
 
     If ``save_results`` is True, then either the input model with
     updated metadata or the source catalog model is saved/returned
@@ -143,20 +143,22 @@ def save_all_results(
     output_filename = (
         self.output_file if self.output_file is not None else cat_model.meta.filename
     )
+    save_catalog_results = getattr(self, "save_catalog_results", self.save_results)
 
-    # always save the segmentation image
-    save_segment_image(self, segment_img, cat_model, output_filename, save_debug_info)
+    # save the segmentation image only when results are requested
+    if save_catalog_results:
+        save_segment_image(self, segment_img, cat_model, output_filename, save_debug_info)
 
     # Update the source catalog filename metadata
     self.output_ext = "parquet"
     output_catalog_name = self.make_output_path(basepath=output_filename, suffix="cat")
     self.output_ext = "asdf"
 
-    # Always save the source catalog, but don't save it twice.
-    # If save_results=False or return_updated_model=True, we need to
-    # explicitly save it.
+    # Explicitly save the source catalog only when sidecar saving is enabled and
+    # return_updated_model=True. In this case the returned object is the
+    # input model, so we must write the catalog product here.
     return_updated_model = getattr(self, "return_updated_model", False)
-    if not self.save_results or return_updated_model:
+    if save_catalog_results and return_updated_model:
         self.output_ext = "parquet"
         self.save_model(
             cat_model,
@@ -177,11 +179,16 @@ def save_all_results(
         # overwriting the source catalog file with a datamodel
         self.suffix = "sourcecatalog"
 
-        # update the input datamodel with the tweakreg catalog name
+        # update the input datamodel with source-catalog info for tweakreg
         if isinstance(input_model, ImageModel):
-            input_model.meta.source_catalog = {
-                "tweakreg_catalog_name": output_catalog_name
-            }
+            if save_catalog_results:
+                input_model.meta.source_catalog = {
+                    "tweakreg_catalog_name": output_catalog_name
+                }
+            else:
+                input_model.meta.source_catalog = {
+                    "tweakreg_catalog": cat_model.source_catalog.as_array()
+                }
             input_model.meta.cal_step.source_catalog = "COMPLETE"
 
         result = input_model
