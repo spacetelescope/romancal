@@ -10,6 +10,7 @@ from astropy import units as u
 from astropy.modeling import models
 from astropy.table import Table
 from numpy.random import default_rng
+from stcal.tweakreg.tweakreg import TweakregError
 
 from romancal.datamodels import ModelLibrary
 from romancal.tweakreg.tweakreg_step import TweakRegStep, _validate_catalog_columns
@@ -146,6 +147,7 @@ def test_fit_results_in_meta(tmp_path, tweakreg_image):
         for i, model in enumerate(res):
             assert hasattr(model.meta, "wcs_fit_results")
             assert len(model.meta.wcs_fit_results) > 0
+            assert model.meta.wcs_fit_results.n_detector == 1
             res.shelve(model, i, modify=False)
 
 
@@ -290,10 +292,67 @@ def test_tweakreg_skips_models_without_source_catalog(tmp_path, tweakreg_image):
     with res:
         for i, m in enumerate(res):
             if i == 0:
-                assert m.meta.cal_step.tweakreg == "COMPLETE"
+                assert m.meta.cal_step.tweakreg == "FAILED"
+                assert m.meta.wcs_fit_results.n_detector == 1
             else:
                 assert m.meta.cal_step.tweakreg == "SKIPPED"
             res.shelve(m, modify=False)
+
+
+def test_tweakreg_marks_failed_when_fit_status_is_not_success(
+    monkeypatch, tweakreg_image
+):
+    """Test that attempted fits with non-success status are marked FAILED."""
+    img = tweakreg_image(shift_1=1000, shift_2=1000)
+
+    def _set_failed_fit_info(self, ref_image, imcats):
+        for imcat in imcats:
+            imcat.meta["fit_info"] = {
+                "status": "FAILED: no valid WCS correction",
+                "nmatches": 3,
+                "fitmask": np.array([True, False, False]),
+            }
+
+    monkeypatch.setattr(TweakRegStep, "do_absolute_alignment", _set_failed_fit_info)
+
+    res = TweakRegStep.call([img])
+
+    assert isinstance(res, ModelLibrary)
+    with res:
+        model = res.borrow(0)
+        assert model.meta.cal_step.tweakreg == "FAILED"
+        assert hasattr(model.meta, "wcs_fit_results")
+        assert model.meta.wcs_fit_results.status.startswith("FAILED")
+        assert model.meta.wcs_fit_results.nmatches == 3
+        assert model.meta.wcs_fit_results.n_detector == 1
+        assert "fitmask" not in model.meta.wcs_fit_results
+        res.shelve(model, 0, modify=False)
+
+
+def test_tweakreg_marks_failed_when_absolute_alignment_raises(
+    monkeypatch, tweakreg_image
+):
+    """Test that attempted fits are marked FAILED when absolute alignment raises."""
+    img = tweakreg_image(shift_1=1000, shift_2=1000)
+
+    def _raise_absolute_alignment(self, ref_image, imcats):
+        raise TweakregError("forced absolute alignment failure")
+
+    monkeypatch.setattr(
+        TweakRegStep, "do_absolute_alignment", _raise_absolute_alignment
+    )
+
+    res = TweakRegStep.call([img])
+
+    assert isinstance(res, ModelLibrary)
+    with res:
+        model = res.borrow(0)
+        assert model.meta.cal_step.tweakreg == "FAILED"
+        assert hasattr(model.meta, "wcs_fit_results")
+        assert model.meta.wcs_fit_results.status == "FAILED"
+        assert model.meta.wcs_fit_results.nmatches == 0
+        assert model.meta.wcs_fit_results.n_detector == 1
+        res.shelve(model, 0, modify=False)
 
 
 def test_tweakreg_updates_s_region(tmp_path, tweakreg_image):
@@ -477,7 +536,7 @@ def test_tweakreg_custom_catalog_via_asn_member_attribute(
     assert isinstance(res, ModelLibrary)
     with res:
         m = res.borrow(0)
-        assert m.meta.cal_step.tweakreg == "COMPLETE"
+        assert m.meta.cal_step.tweakreg == "FAILED"
         assert m.meta.source_catalog.tweakreg_catalog_name == custom_catalog_fn
         res.shelve(m, modify=False)
 

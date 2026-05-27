@@ -1,0 +1,7 @@
+Updated ``tweakreg`` step status handling so exposures that were attempted but
+did not produce a successful WCS solution are marked ``FAILED`` (instead of
+``COMPLETE``/implicit ``INCOMPLETE``).
+
+``meta.wcs_fit_results`` is now always populated for attempted ``tweakreg``
+runs, including failed fits, and includes a new ``n_detector`` field recording
+the number of detectors used in the solve.
