@@ -88,6 +88,32 @@ class SourceCatalogStep(RomanStep):
         forced_segmentation = string(default='')  # force the use of this segmentation map
     """
 
+    def save_model(self, model, **kwargs):
+        # depending on model set suffix and ext
+        if isinstance(
+            model,
+            (
+                datamodels.ForcedImageSourceCatalogModel,
+                datamodels.ImageSourceCatalogModel,
+                datamodels.ForcedMosaicSourceCatalogModel,
+                datamodels.MosaicSourceCatalogModel,
+            ),
+        ):
+            kwargs["ext"] = "parquet"
+            kwargs["suffix"] = kwargs.get("suffix", "cat")
+        elif isinstance(
+            model,
+            (datamodels.SegmentationMapModel, datamodels.MosaicSegmentationMapModel),
+        ):
+            kwargs["suffix"] = kwargs.get("suffix", "segm")
+
+        # TODO called from elp, what suffix?
+
+        # strip the index since these all have different extensions
+        kwargs.pop("idx")
+
+        return super().save_model(model, **kwargs)
+
     def process(self, dataset):
         input_model = open_dataset(dataset, update_version=self.update_version)
 
