@@ -17,7 +17,6 @@ from roman_datamodels.dqflags import pixel
 from romancal.datamodels.fileio import open_dataset
 from romancal.source_catalog._background import RomanBackground
 from romancal.source_catalog._detection import convolve_data, make_segmentation_image
-from romancal.source_catalog._save_utils import save_all_results, save_empty_results
 from romancal.source_catalog._source_catalog import RomanSourceCatalog
 from romancal.source_catalog._utils import copy_model_arrays, get_ee_spline
 from romancal.source_catalog.psf import add_jitter
@@ -130,11 +129,13 @@ class SourceCatalogStep(RomanStep):
                 cat_model_cls = datamodels.ForcedImageSourceCatalogModel
             else:
                 cat_model_cls = datamodels.ImageSourceCatalogModel
+            segmentation_model_cls = datamodels.SegmentationMapModel
         else:
             if self.forced_segmentation:
                 cat_model_cls = datamodels.ForcedMosaicSourceCatalogModel
             else:
                 cat_model_cls = datamodels.MosaicSourceCatalogModel
+            segmentation_model_cls = datamodels.MosaicSegmentationMapModel
         cat_model = cat_model_cls.create_minimal({"meta": model.meta})
         cat_model.meta["image"] = {
             "filename": model.meta.filename,
@@ -151,10 +152,22 @@ class SourceCatalogStep(RomanStep):
         # Return an empty segmentation image and catalog table if all
         # pixels are masked
         if np.all(mask):
-            msg = "Cannot create source catalog. All pixels are masked."
-            return save_empty_results(
-                self, model.data.shape, cat_model, input_model=input_model, msg=msg
+            log.error("Cannot create source catalog. All pixels are masked.")
+            cat_model.source_catalog = cat_model.create_empty_catalog()
+            segmentation_model = segmentation_model_cls.create_minimal(
+                {"meta": cat_model.meta}
             )
+
+            # carry over image_metas if it exists (since it's not required in the schemas)
+            if image_metas := cat_model.meta.get("image_metas"):
+                segmentation_model.meta.image_metas = image_metas
+
+            segmentation_model.data = np.zeros(model.data.shape, dtype=np.uint32)
+
+            # TODO set model names asdf, parquet, asdf (or hook save elsewhere)
+            # TODO set cal_step to...?
+            # TODO set suffix to...?
+            return input_model, cat_model, segmentation_model
 
         log.info("Calculating and subtracting background")
         bkg = RomanBackground(
@@ -198,10 +211,22 @@ class SourceCatalogStep(RomanStep):
         # Return an empty segmentation image and catalog table if no
         # sources are detected
         if segment_img is None:
-            msg = "Cannot create source catalog. No sources were detected."
-            return save_empty_results(
-                self, model.data.shape, cat_model, input_model=input_model, msg=msg
+            log.error("Cannot create source catalog. No sources were detected.")
+            cat_model.source_catalog = cat_model.create_empty_catalog()
+            segmentation_model = segmentation_model_cls.create_minimal(
+                {"meta": cat_model.meta}
             )
+
+            # carry over image_metas if it exists (since it's not required in the schemas)
+            if image_metas := cat_model.meta.get("image_metas"):
+                segmentation_model.meta.image_metas = image_metas
+
+            segmentation_model.data = np.zeros(model.data.shape, dtype=np.uint32)
+
+            # TODO set model names asdf, parquet, asdf (or hook save elsewhere)
+            # TODO set cal_step to...?
+            # TODO set suffix to...?
+            return input_model, cat_model, segmentation_model
 
         log.info("Creating ee_fractions model")
         apcorr_ref = self.get_reference_file(input_model, "apcorr")
@@ -270,4 +295,23 @@ class SourceCatalogStep(RomanStep):
         # Put the resulting catalog table in the catalog model
         cat_model.source_catalog = cat
 
-        return save_all_results(self, segment_img, cat_model, input_model=input_model)
+        log.error("Cannot create source catalog. No sources were detected.")
+        segmentation_model = segmentation_model_cls.create_minimal(
+            {"meta": cat_model.meta}
+        )
+
+        # carry over image_metas if it exists (since it's not required in the schemas)
+        if image_metas := cat_model.meta.get("image_metas"):
+            segmentation_model.meta.image_metas = image_metas
+
+        # Set the data and detection image
+        segmentation_model.data = segment_img.data.astype(np.uint32)
+        if hasattr(segment_img, "detection_image"):
+            # TODO does photutils use this detection_image attribute, if not, we
+            # likely don't need to attach it to segment_img above
+            segmentation_model["detection_image"] = segment_img.detection_image
+
+        # TODO set model names asdf, parquet, asdf (or hook save elsewhere)
+        # TODO set cal_step to...?
+        # TODO set suffix to...?
+        return input_model, cat_model, segmentation_model
