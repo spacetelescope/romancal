@@ -107,7 +107,7 @@ class SourceCatalogStep(RomanStep):
         ):
             kwargs["suffix"] = kwargs.get("suffix", "segm")
         else:
-            kwargs["suffix"] = kwargs.get("suffix", "sourcecatalog")
+            raise NotImplementedError(f"unsupported model: {type(model)}")
 
         # TODO called from elp, what suffix?
 
@@ -166,7 +166,7 @@ class SourceCatalogStep(RomanStep):
             # TODO set model names asdf, parquet, asdf (or hook save elsewhere)
             # TODO set cal_step to...?
             # TODO set suffix to...?
-            return input_model, cat_model, segmentation_model
+            return cat_model, segmentation_model
 
         log.info("Calculating and subtracting background")
         bkg = RomanBackground(
@@ -217,7 +217,7 @@ class SourceCatalogStep(RomanStep):
             # TODO set model names asdf, parquet, asdf (or hook save elsewhere)
             # TODO set cal_step to...?
             # TODO set suffix to...?
-            return input_model, cat_model, segmentation_model
+            return cat_model, segmentation_model
 
         log.info("Creating ee_fractions model")
         apcorr_ref = self.get_reference_file(input_model, "apcorr")
@@ -298,7 +298,7 @@ class SourceCatalogStep(RomanStep):
         # TODO set model names asdf, parquet, asdf (or hook save elsewhere)
         # TODO set cal_step to...?
         # TODO set suffix to...?
-        return input_model, cat_model, segmentation_model
+        return cat_model, segmentation_model
 
     def _make_catalog_and_segmentation_models(self, model):
         if isinstance(model, ImageModel):
