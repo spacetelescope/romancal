@@ -106,6 +106,8 @@ class SourceCatalogStep(RomanStep):
             (datamodels.SegmentationMapModel, datamodels.MosaicSegmentationMapModel),
         ):
             kwargs["suffix"] = kwargs.get("suffix", "segm")
+        else:
+            kwargs["suffix"] = kwargs.get("suffix", "sourcecatalog")
 
         # TODO called from elp, what suffix?
 
