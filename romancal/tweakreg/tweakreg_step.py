@@ -272,6 +272,28 @@ class TweakRegStep(RomanStep):
             save_wfiwcs(self, result, force=True)
         super().save_model(result, *args, **kwargs)
 
+    def _update_catalog_coordinates(self, catalog, tweaked_wcs):
+        # (x_col, y_col) -> (ra_col, dec_col)
+        updates = [
+            ("x_centroid", "y_centroid", "ra_centroid", "dec_centroid"),
+            ("x_centroid", "y_centroid", "ra", "dec"),
+            (
+                "x_centroid_win",
+                "y_centroid_win",
+                "ra_centroid_win",
+                "dec_centroid_win",
+            ),
+            ("x_psf", "y_psf", "ra_psf", "dec_psf"),
+        ]
+
+        for x_col, y_col, ra_col, dec_col in updates:
+            if any(c not in catalog.colnames for c in (x_col, y_col, ra_col, dec_col)):
+                # Only update existing columns to preserve the file schema.
+                continue
+            catalog[ra_col], catalog[dec_col] = tweaked_wcs.pixel_to_world_values(
+                catalog[x_col], catalog[y_col]
+            )
+
     def update_catalog_coordinates(self, tweakreg_catalog_name, tweaked_wcs):
         """
         Update the source catalog coordinates using the tweaked WCS while strictly preserving original file metadata.
