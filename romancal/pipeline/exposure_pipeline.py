@@ -201,10 +201,32 @@ class ExposurePipeline(RomanPipeline):
 
         return self.flatfield.run(result)
 
-    def save_model(self, result, *args, **kwargs):
-        if isinstance(result, rdm.ImageModel):
-            save_wfiwcs(self, result, force=True)
-        super().save_model(result, *args, **kwargs)
+    def save_model(self, model, **kwargs):
+        # depending on model set suffix and ext
+        if isinstance(
+            model,
+            (
+                rdm.ForcedImageSourceCatalogModel,
+                rdm.ImageSourceCatalogModel,
+                rdm.ForcedMosaicSourceCatalogModel,
+                rdm.MosaicSourceCatalogModel,
+            ),
+        ):
+            kwargs["ext"] = "parquet"
+            kwargs["suffix"] = kwargs.get("suffix", "cat")
+        elif isinstance(
+            model,
+            (rdm.SegmentationMapModel, rdm.MosaicSegmentationMapModel),
+        ):
+            kwargs["suffix"] = kwargs.get("suffix", "segm")
+        elif isinstance(model, rdm.ImageModel):
+            save_wfiwcs(self, model, force=True)
+            kwargs["suffix"] = kwargs.get("suffix", "cal")
+
+        # strip the index since these all have different extensions
+        kwargs.pop("idx", None)
+
+        return super().save_model(model, **kwargs)
 
     def create_fully_saturated_zeroed_image(self, input_model):
         """
