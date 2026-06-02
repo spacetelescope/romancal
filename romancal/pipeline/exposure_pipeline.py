@@ -13,6 +13,7 @@ from romancal.assign_wcs import AssignWcsStep
 from romancal.dark_current import DarkCurrentStep
 from romancal.dark_decay import DarkDecayStep
 from romancal.datamodels.fileio import open_dataset
+from romancal.datamodels.library import ModelLibrary
 from romancal.dq_init import dq_init_step
 from romancal.flatfield import FlatFieldStep
 from romancal.lib.save_wcs import save_wfiwcs
@@ -86,10 +87,6 @@ class ExposurePipeline(RomanPipeline):
     def process(self, dataset):
         """Process the Roman WFI data"""
 
-        # make sure source_catalog returns the updated datamodel
-        self.source_catalog.return_updated_model = True
-        # make sure we update source catalog coordinates afer running TweakRegStep
-        self.tweakreg.update_source_catalog_coordinates = True
         # make output filenames based on input filenames
         self.output_use_model = True
 
@@ -109,28 +106,71 @@ class ExposurePipeline(RomanPipeline):
         )
         return_lib = input_type in ("ModelLibrary", "asn")
 
+        catalogs = []
+        segmentations = []
+
         with lib:
             for model_index, model in enumerate(lib):
                 result = self._process_model(model)
+
+                # now handle source_catalog
+                if result.meta.exposure.type == "WFI_WFSC" or self.source_catalog.skip:
+                    # WFI_WFSC doesn't get a source catalog (and therefore also no tweakreg)
+                    result.meta.cal_step.source_catalog = "SKIPPED"
+                    catalog, segmentation = (
+                        self.source_catalog._make_catalog_and_segmentation_models(
+                            result
+                        )
+                    )
+                    catalog.source_catalog = catalog.create_empty_catalog()
+                    segmentation.data = np.zeros(model.data.shape, dtype=np.uint32)
+                else:
+                    # WFI_IMAGE and WFI_LOLO get source catalog
+                    catalog, segmentation = self.source_catalog.run(result)
+
+                if not self.tweakreg.skip:
+                    # attach the catalog to the model so tweakreg can see it
+                    if "source_catalog" not in model.meta:
+                        result.meta["source_catalog"] = {}
+                    result.meta.source_catalog.tweakreg_catalog = catalog.source_catalog
+
                 lib.shelve(result, model_index)
+                catalogs.append(catalog)
+                segmentations.append(segmentation)
 
         # Now that all the exposures are collated, run tweakreg
-        self.tweakreg.run(lib)
+        if not self.tweakreg.skip:
+            self.tweakreg.run(lib)
+
+            # tweakreg was run, update catalog positions
+            with lib:
+                for model_index, model in enumerate(lib):
+                    # TODO update catalog using new wcs
+                    # if "source_catalog" in model:
+                    #     if cat_model := catalogs[model_index]:
+                    #         cat_model.source_catalog = model.source_catalog.tweakreg_catalog
+
+                    #     # remove the catalog from the model so it's saved separately
+                    #     del model.source_catalog.tweakreg_catalog
+
+                    lib.shelve(model)
 
         log.info("Roman exposure calibration pipeline ending...")
 
         # return a ModelLibrary
         if return_lib:
-            return lib
+            return lib, ModelLibrary(catalogs), ModelLibrary(segmentations)
 
         # or a DataModel (for non-asn non-lib inputs)
         with lib:
             model = lib.borrow(0)
+            catalog = catalogs[0]
+            segmentation = segmentations[0]
             lib.shelve(model, modify=False)
-        return model
+        return model, catalog, segmentation
 
     def _process_model(self, model):
-        """Run all per-model calibration steps and return the result."""
+        """Run all per-model calibration steps that return models and return the result."""
         self.dq_init.suffix = "dq_init"
         result = self.dq_init.run(model)
         if model is not result:
@@ -154,25 +194,15 @@ class ExposurePipeline(RomanPipeline):
         result = self.photom.run(result)
 
         # WFI_FLAT, WFI_SPECTRAL, WFI_IM_DARK, WFI_SP_DARK stop here
-        exp_type = result.meta.exposure.type
-        if exp_type not in ("WFI_IMAGE", "WFI_LOLO", "WFI_WFSC"):
+        if result.meta.exposure.type not in ("WFI_IMAGE", "WFI_LOLO", "WFI_WFSC"):
             result.meta.cal_step.flat_field = "SKIPPED"
             result.meta.cal_step.source_catalog = "SKIPPED"
             return result
 
-        result = self.flatfield.run(result)
-
-        # WFI_WFSC doesn't get a source catalog (and therefore also no tweakreg)
-        if exp_type == "WFI_WFSC":
-            result.meta.cal_step.source_catalog = "SKIPPED"
-            return result
-
-        # WFI_IMAGE and WFI_LOLO get source catalog
-        result = self.source_catalog.run(result)
-        return result
+        return self.flatfield.run(result)
 
     def save_model(self, result, *args, **kwargs):
-        if not isinstance(result, rdm.WfiWcsModel):
+        if isinstance(result, rdm.ImageModel):
             save_wfiwcs(self, result, force=True)
         super().save_model(result, *args, **kwargs)
 

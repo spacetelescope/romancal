@@ -75,7 +75,7 @@ def test_input_to_output(function_jail, input_value, expected_output_type):
     pipeline.prefetch_references = False
     # skip all steps
     [setattr(getattr(pipeline, k), "skip", True) for k in pipeline.step_defs]
-    output_value = pipeline.run(input_value)
+    output_value, _, _ = pipeline.run(input_value)
     assert isinstance(output_value, expected_output_type)
 
 
@@ -99,12 +99,15 @@ def test_elp_save_results(function_jail, fake_science_raw, save_results, monkeyp
     assert set(p.name for p in function_jail.iterdir()) == {"output"}
 
     output_files = set(p.name for p in output_path.iterdir())
-    # TODO shouldn't this be empty?
-    expected = {"test_segm.asdf", "test_cat.parquet"}
     if save_results:
-        expected.add("test_cal.asdf")
-        expected.add("test_wcs.asdf")
-    assert output_files == expected
+        assert output_files == {
+            "test_cal.asdf",
+            "test_wcs.asdf",
+            "test_cat.parquet",
+            "test_segm.asdf",
+        }
+    else:
+        assert not output_files
 
 
 @pytest.mark.parametrize("on_disk", [True, False])
@@ -124,5 +127,5 @@ def test_on_disk(function_jail, fake_science_raw, on_disk):
     # skip all steps
     [setattr(getattr(pipeline, k), "skip", True) for k in pipeline.step_defs]
     pipeline.dq_init.skip = False  # unskip dqinit
-    output_value = pipeline.run(asn_filename)
+    output_value, _, _ = pipeline.run(asn_filename)
     assert output_value._on_disk == on_disk

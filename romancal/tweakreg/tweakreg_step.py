@@ -71,7 +71,6 @@ class TweakRegStep(RomanStep):
         abs_nclip = integer(min=0, default=3) # Number of clipping iterations in fit when performing absolute astrometry
         abs_sigma = float(min=0.0, default=3.0) # Clipping limit in sigma units when performing absolute astrometry
         output_use_model = boolean(default=True)  # When saving use `DataModel.meta.filename`
-        update_source_catalog_coordinates = boolean(default=False) # Update source catalog file with tweaked coordinates?
         vo_timeout = float(min=0, default=1200.) # VO catalog service timeout.
     """
 
@@ -248,19 +247,19 @@ class TweakRegStep(RomanStep):
                         # update S_REGION
                         add_s_region(image_model)
                         # update source catalog coordinates if requested
-                        if self.update_source_catalog_coordinates:
-                            try:
-                                self.update_catalog_coordinates(
-                                    image_model.meta.source_catalog[
-                                        "tweakreg_catalog_name"
-                                    ],
-                                    imcat.wcs,
-                                )
-                            except Exception as e:
-                                log.error(
-                                    f"Failed to update source catalog coordinates: {e}"
-                                )
-                                raise e
+                        # if self.update_source_catalog_coordinates:
+                        #     try:
+                        #         self.update_catalog_coordinates(
+                        #             image_model.meta.source_catalog[
+                        #                 "tweakreg_catalog_name"
+                        #             ],
+                        #             imcat.wcs,
+                        #         )
+                        #     except Exception as e:
+                        #         log.error(
+                        #             f"Failed to update source catalog coordinates: {e}"
+                        #         )
+                        #         raise e
                     else:
                         image_model.meta.cal_step.tweakreg = "FAILED"
 
