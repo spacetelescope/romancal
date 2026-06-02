@@ -109,8 +109,6 @@ class SourceCatalogStep(RomanStep):
         else:
             raise NotImplementedError(f"unsupported model: {type(model)}")
 
-        # TODO called from elp, what suffix?
-
         # strip the index since these all have different extensions
         kwargs.pop("idx")
 
@@ -162,10 +160,6 @@ class SourceCatalogStep(RomanStep):
             log.error("Cannot create source catalog. All pixels are masked.")
             cat_model.source_catalog = cat_model.create_empty_catalog()
             segmentation_model.data = np.zeros(model.data.shape, dtype=np.uint32)
-
-            # TODO set model names asdf, parquet, asdf (or hook save elsewhere)
-            # TODO set cal_step to...?
-            # TODO set suffix to...?
             return cat_model, segmentation_model
 
         log.info("Calculating and subtracting background")
@@ -213,10 +207,6 @@ class SourceCatalogStep(RomanStep):
             log.error("Cannot create source catalog. No sources were detected.")
             cat_model.source_catalog = cat_model.create_empty_catalog()
             segmentation_model.data = np.zeros(model.data.shape, dtype=np.uint32)
-
-            # TODO set model names asdf, parquet, asdf (or hook save elsewhere)
-            # TODO set cal_step to...?
-            # TODO set suffix to...?
             return cat_model, segmentation_model
 
         log.info("Creating ee_fractions model")
@@ -294,10 +284,6 @@ class SourceCatalogStep(RomanStep):
             # TODO does photutils use this detection_image attribute, if not, we
             # likely don't need to attach it to segment_img above
             segmentation_model["detection_image"] = segment_img.detection_image
-
-        # TODO set model names asdf, parquet, asdf (or hook save elsewhere)
-        # TODO set cal_step to...?
-        # TODO set suffix to...?
         return cat_model, segmentation_model
 
     def _make_catalog_and_segmentation_models(self, model):
