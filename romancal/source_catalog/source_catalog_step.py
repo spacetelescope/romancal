@@ -152,44 +152,15 @@ class SourceCatalogStep(RomanStep):
 
         # Initialize the source catalog model, copying the metadata
         # from the input model
-        if isinstance(model, ImageModel):
-            if self.forced_segmentation:
-                cat_model_cls = datamodels.ForcedImageSourceCatalogModel
-            else:
-                cat_model_cls = datamodels.ImageSourceCatalogModel
-            segmentation_model_cls = datamodels.SegmentationMapModel
-        else:
-            if self.forced_segmentation:
-                cat_model_cls = datamodels.ForcedMosaicSourceCatalogModel
-            else:
-                cat_model_cls = datamodels.MosaicSourceCatalogModel
-            segmentation_model_cls = datamodels.MosaicSegmentationMapModel
-        cat_model = cat_model_cls.create_minimal({"meta": model.meta})
-        cat_model.meta["image"] = {
-            "filename": model.meta.filename,
-            "file_date": model.meta.file_date,
-        }
-        # copy over the data release id since there is no association input
-        if "data_release_id" in model.meta:
-            cat_model.meta.data_release_id = model.meta.data_release_id
-
-        # make L3 metadata
-        if self.forced_segmentation:
-            cat_model.meta.image.forced_segmentation = self.forced_segmentation
+        cat_model, segmentation_model = self._make_catalog_and_segmentation_models(
+            model
+        )
 
         # Return an empty segmentation image and catalog table if all
         # pixels are masked
         if np.all(mask):
             log.error("Cannot create source catalog. All pixels are masked.")
             cat_model.source_catalog = cat_model.create_empty_catalog()
-            segmentation_model = segmentation_model_cls.create_minimal(
-                {"meta": cat_model.meta}
-            )
-
-            # carry over image_metas if it exists (since it's not required in the schemas)
-            if image_metas := cat_model.meta.get("image_metas"):
-                segmentation_model.meta.image_metas = image_metas
-
             segmentation_model.data = np.zeros(model.data.shape, dtype=np.uint32)
 
             # TODO set model names asdf, parquet, asdf (or hook save elsewhere)
@@ -241,14 +212,6 @@ class SourceCatalogStep(RomanStep):
         if segment_img is None:
             log.error("Cannot create source catalog. No sources were detected.")
             cat_model.source_catalog = cat_model.create_empty_catalog()
-            segmentation_model = segmentation_model_cls.create_minimal(
-                {"meta": cat_model.meta}
-            )
-
-            # carry over image_metas if it exists (since it's not required in the schemas)
-            if image_metas := cat_model.meta.get("image_metas"):
-                segmentation_model.meta.image_metas = image_metas
-
             segmentation_model.data = np.zeros(model.data.shape, dtype=np.uint32)
 
             # TODO set model names asdf, parquet, asdf (or hook save elsewhere)
@@ -324,13 +287,6 @@ class SourceCatalogStep(RomanStep):
         cat_model.source_catalog = cat
 
         log.error("Cannot create source catalog. No sources were detected.")
-        segmentation_model = segmentation_model_cls.create_minimal(
-            {"meta": cat_model.meta}
-        )
-
-        # carry over image_metas if it exists (since it's not required in the schemas)
-        if image_metas := cat_model.meta.get("image_metas"):
-            segmentation_model.meta.image_metas = image_metas
 
         # Set the data and detection image
         segmentation_model.data = segment_img.data.astype(np.uint32)
@@ -343,3 +299,40 @@ class SourceCatalogStep(RomanStep):
         # TODO set cal_step to...?
         # TODO set suffix to...?
         return input_model, cat_model, segmentation_model
+
+    def _make_catalog_and_segmentation_models(self, model):
+        if isinstance(model, ImageModel):
+            if self.forced_segmentation:
+                cat_model_cls = datamodels.ForcedImageSourceCatalogModel
+            else:
+                cat_model_cls = datamodels.ImageSourceCatalogModel
+            segmentation_model_cls = datamodels.SegmentationMapModel
+        else:
+            if self.forced_segmentation:
+                cat_model_cls = datamodels.ForcedMosaicSourceCatalogModel
+            else:
+                cat_model_cls = datamodels.MosaicSourceCatalogModel
+            segmentation_model_cls = datamodels.MosaicSegmentationMapModel
+
+        cat_model = cat_model_cls.create_minimal({"meta": model.meta})
+        cat_model.meta["image"] = {
+            "filename": model.meta.filename,
+            "file_date": model.meta.file_date,
+        }
+        # copy over the data release id since there is no association input
+        if "data_release_id" in model.meta:
+            cat_model.meta.data_release_id = model.meta.data_release_id
+
+        # make L3 metadata
+        if self.forced_segmentation:
+            cat_model.meta.image.forced_segmentation = self.forced_segmentation
+
+        segmentation_model = segmentation_model_cls.create_minimal(
+            {"meta": cat_model.meta}
+        )
+
+        # carry over image_metas if it exists (since it's not required in the schemas)
+        if image_metas := cat_model.meta.get("image_metas"):
+            segmentation_model.meta.image_metas = image_metas
+
+        return cat_model, segmentation_model
