@@ -207,16 +207,11 @@ class ExposurePipeline(RomanPipeline):
             (
                 rdm.ForcedImageSourceCatalogModel,
                 rdm.ImageSourceCatalogModel,
-                rdm.ForcedMosaicSourceCatalogModel,
-                rdm.MosaicSourceCatalogModel,
             ),
         ):
             kwargs["ext"] = "parquet"
             kwargs["suffix"] = kwargs.get("suffix", "cat")
-        elif isinstance(
-            model,
-            (rdm.SegmentationMapModel, rdm.MosaicSegmentationMapModel),
-        ):
+        elif isinstance(model, rdm.SegmentationMapModel):
             kwargs["suffix"] = kwargs.get("suffix", "segm")
         elif isinstance(model, rdm.ImageModel):
             save_wfiwcs(self, model, force=True)
