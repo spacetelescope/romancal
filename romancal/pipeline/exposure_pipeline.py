@@ -123,7 +123,7 @@ class ExposurePipeline(RomanPipeline):
                         )
                     )
                     catalog.source_catalog = catalog.create_empty_catalog()
-                    segmentation.data = np.zeros(model.data.shape, dtype=np.uint32)
+                    segmentation.data = np.zeros(model.data.shape[-2:], dtype=np.uint32)
                 else:
                     # WFI_IMAGE and WFI_LOLO get source catalog
                     catalog, segmentation = self.source_catalog.run(result)
