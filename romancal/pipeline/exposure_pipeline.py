@@ -142,18 +142,17 @@ class ExposurePipeline(RomanPipeline):
                 segmentations.append(segmentation)
 
         # Now that all the exposures are collated, run tweakreg
-        if not self.tweakreg.skip:
-            self.tweakreg.run(lib)
+        self.tweakreg.run(lib)
 
-            # tweakreg was run, update catalog positions
-            with lib:
-                for model_index, model in enumerate(lib):
-                    if model.meta.cal_step.tweakreg == "COMPLETE":
-                        catalog = catalogs[model_index]
-                        self.tweakreg._update_catalog_coordinates(
-                            catalog.source_catalog, model.meta.wcs
-                        )
-                    lib.shelve(model)
+        # tweakreg was run, update catalog positions
+        with lib:
+            for model_index, model in enumerate(lib):
+                if model.meta.cal_step.tweakreg == "COMPLETE":
+                    catalog = catalogs[model_index]
+                    self.tweakreg._update_catalog_coordinates(
+                        catalog.source_catalog, model.meta.wcs
+                    )
+                lib.shelve(model)
 
         log.info("Roman exposure calibration pipeline ending...")
 
