@@ -324,8 +324,4 @@ class SourceCatalogStep(RomanStep):
             {"meta": cat_model.meta}
         )
 
-        # carry over image_metas if it exists (since it's not required in the schemas)
-        if image_metas := cat_model.meta.get("image_metas"):
-            segmentation_model.meta.image_metas = image_metas
-
         return cat_model, segmentation_model
