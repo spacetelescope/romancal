@@ -148,10 +148,11 @@ class ExposurePipeline(RomanPipeline):
             # tweakreg was run, update catalog positions
             with lib:
                 for model_index, model in enumerate(lib):
-                    catalog = catalogs[model_index]
-                    self.tweakreg._update_catalog_coordinates(
-                        catalog.source_catalog, model.meta.wcs
-                    )
+                    if model.meta.cal_step.tweakreg == "COMPLETE":
+                        catalog = catalogs[model_index]
+                        self.tweakreg._update_catalog_coordinates(
+                            catalog.source_catalog, model.meta.wcs
+                        )
                     lib.shelve(model)
 
         log.info("Roman exposure calibration pipeline ending...")
