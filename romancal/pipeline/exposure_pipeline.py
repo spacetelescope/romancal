@@ -221,7 +221,7 @@ class ExposurePipeline(RomanPipeline):
             kwargs["suffix"] = kwargs.get("suffix", "segm")
         elif isinstance(model, rdm.ImageModel):
             save_wfiwcs(self, model, force=True)
-            kwargs["suffix"] = kwargs.get("suffix", "cal")
+            kwargs["suffix"] = kwargs.get("suffix", self.suffix)
 
         # strip the index since these all have different extensions
         kwargs.pop("idx", None)
