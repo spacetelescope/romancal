@@ -286,8 +286,13 @@ class SourceCatalogStep(RomanStep):
             segmentation_model["detection_image"] = segment_img.detection_image
 
         # we update the input_model here to note that source_catalog finished
-        input_model.cal_step.source_catalog = "COMPLETE"
-        self.finalize_result(input_model, self._reference_files_used)
+        # only for ImageModel as L3 doesn't have cal_step.source_catalog
+        # and was not previously recorded
+        if isinstance(input_model, datamodels.ImageModel):
+            self.finalize_result(input_model, self._reference_files_used)
+            if "cal_step" not in input_model:
+                input_model.cal_step = {}
+            input_model.cal_step.source_catalog = "COMPLETE"
         return cat_model, segmentation_model
 
     def _make_catalog_and_segmentation_models(self, model):
