@@ -131,7 +131,7 @@ class ExposurePipeline(RomanPipeline):
                     # WFI_IMAGE and WFI_LOLO get source catalog
                     catalog, segmentation = self.source_catalog.run(result)
 
-                if not self.tweakreg.skip:
+                if not self.tweakreg.skip and len(catalog.source_catalog):
                     # attach the catalog to the model so tweakreg can see it
                     if "source_catalog" not in model.meta:
                         result.meta["source_catalog"] = {}
