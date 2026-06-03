@@ -60,12 +60,13 @@ class MultibandCatalogStep(RomanStep):
         inject_seed = integer(default=None)   # RNG seed for injected sources
         save_debug_info = boolean(default=False)
                                    # Include image data and other data for testing
+        output_use_model = boolean(default=True)  # When saving use `DataModel.meta.filename`
     """
 
     def save_model(self, model, **kwargs):
         if isinstance(model, rdm.MultibandSourceCatalogModel):
             kwargs["ext"] = "parquet"
-            kwargs["suffix"] = kwargs.get("suffix", "cat")
+            kwargs["suffix"] = kwargs.get("suffix", self.suffix)
         elif isinstance(model, rdm.MultibandSegmentationMapModel):
             kwargs["suffix"] = kwargs.get("suffix", "segm")
 

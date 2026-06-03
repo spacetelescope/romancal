@@ -212,7 +212,7 @@ def test_multiband_catalog(
 ):
     step = MultibandCatalogStep()
 
-    result = step.call(
+    result, _ = step.call(
         library_model,
         bkg_boxsize=50,
         snr_threshold=snr_threshold,
@@ -232,7 +232,7 @@ def test_multiband_catalog(
 def test_multiband_catalog_populates_dust_ebv(library_model, function_jail):
     """Ensure the joined multiband catalog contains the detection-level dust_ebv."""
     step = MultibandCatalogStep()
-    result = step.call(
+    result, _ = step.call(
         library_model,
         bkg_boxsize=50,
         snr_threshold=3,
@@ -251,7 +251,7 @@ def test_multiband_catalog_populates_dust_ebv(library_model, function_jail):
 def test_multiband_catalog_no_detections(library_model, save_results, function_jail):
     step = MultibandCatalogStep()
 
-    result = step.call(
+    result, _ = step.call(
         library_model,
         bkg_boxsize=50,
         snr_threshold=1000,  # high threshold to ensure no detections
@@ -271,7 +271,7 @@ def test_multiband_catalog_invalid_inputs(
 ):
     step = MultibandCatalogStep()
 
-    result = step.call(
+    result, _ = step.call(
         library_model_all_nan,
         bkg_boxsize=50,
         snr_threshold=3,
@@ -299,7 +299,7 @@ def test_multiband_catalog_some_invalid_inputs(
 
     step = MultibandCatalogStep()
 
-    result = step.call(
+    result, _ = step.call(
         library_model,
         bkg_boxsize=50,
         snr_threshold=3,
@@ -404,7 +404,7 @@ def test_multiband_source_injection_catalog(
 ):
     step = MultibandCatalogStep()
 
-    result = step.call(
+    result, _ = step.call(
         library_model2,
         bkg_boxsize=50,
         snr_threshold=snr_threshold,
@@ -607,7 +607,7 @@ def test_multiband_catalog_reference_filter(
     if psf_match_reference_filter is not None:
         kwargs["psf_match_reference_filter"] = psf_match_reference_filter
 
-    result = step.call(library_model_three_filters, **kwargs)
+    result, _ = step.call(library_model_three_filters, **kwargs)
 
     cat = result.source_catalog
     assert isinstance(cat, Table)
@@ -632,7 +632,7 @@ def test_multiband_catalog_column_content(
     """
     step = MultibandCatalogStep()
 
-    result = step.call(
+    result, _ = step.call(
         library_model_f062_f129_f213,
         bkg_boxsize=50,
         snr_threshold=3,
