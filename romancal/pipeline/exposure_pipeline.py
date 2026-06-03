@@ -114,7 +114,10 @@ class ExposurePipeline(RomanPipeline):
                 result = self._process_model(model)
 
                 # now handle source_catalog
-                if result.meta.exposure.type == "WFI_WFSC" or self.source_catalog.skip:
+                if (
+                    result.meta.exposure.type not in ("WFI_IMAGE", "WFI_LOLO")
+                    or self.source_catalog.skip
+                ):
                     # WFI_WFSC doesn't get a source catalog (and therefore also no tweakreg)
                     result.meta.cal_step.source_catalog = "SKIPPED"
                     catalog, segmentation = (
