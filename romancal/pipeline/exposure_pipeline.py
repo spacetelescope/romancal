@@ -93,10 +93,6 @@ class ExposurePipeline(RomanPipeline):
         log.info("Starting Roman exposure calibration pipeline ...")
 
         # determine the input type
-        # Because we're processing raw files, let's open without any
-        # laziness; we need to propagate all of the bits into the ramps
-        # anyway.  It also avoids bugs like:
-        # https://github.com/spacetelescope/roman_datamodels/issues/631
         lib, input_type = open_dataset(
             dataset,
             update_version=self.update_version,
@@ -120,18 +116,12 @@ class ExposurePipeline(RomanPipeline):
                 ):
                     # WFI_WFSC doesn't get a source catalog (and therefore also no tweakreg)
                     result.meta.cal_step.source_catalog = "SKIPPED"
-                    catalog, segmentation = (
-                        self.source_catalog._make_catalog_and_segmentation_models(
-                            result
-                        )
-                    )
-                    catalog.source_catalog = catalog.create_empty_catalog()
-                    segmentation.data = np.zeros(model.data.shape[-2:], dtype=np.uint32)
+                    catalog, segmentation = None, None
                 else:
                     # WFI_IMAGE and WFI_LOLO get source catalog
                     catalog, segmentation = self.source_catalog.run(result)
 
-                if not self.tweakreg.skip and len(catalog.source_catalog):
+                if not self.tweakreg.skip and catalog is not None:
                     # attach the catalog to the model so tweakreg can see it
                     if "source_catalog" not in model.meta:
                         result.meta["source_catalog"] = {}
@@ -149,16 +139,21 @@ class ExposurePipeline(RomanPipeline):
             for model_index, model in enumerate(lib):
                 if model.meta.cal_step.tweakreg == "COMPLETE":
                     catalog = catalogs[model_index]
-                    self.tweakreg._update_catalog_coordinates(
-                        catalog.source_catalog, model.meta.wcs
-                    )
+                    if catalog is not None:
+                        self.tweakreg._update_catalog_coordinates(
+                            catalog.source_catalog, model.meta.wcs
+                        )
                 lib.shelve(model)
 
         log.info("Roman exposure calibration pipeline ending...")
 
         # return a ModelLibrary
         if return_lib:
-            return lib, ModelLibrary(catalogs), ModelLibrary(segmentations)
+            return (
+                lib,
+                ModelLibrary([c for c in catalogs if c is not None]),
+                ModelLibrary([s for s in segmentations if s is not None]),
+            )
 
         # or a DataModel (for non-asn non-lib inputs)
         with lib:

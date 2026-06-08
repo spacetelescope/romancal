@@ -99,6 +99,9 @@ class RomanStep(Step):
             List of reference files used.  The first element of each tuple
             is the reftype code, the second element is the filename.
         """
+        if model is None:
+            return
+
         if isinstance(model, ModelLibrary):
             # TODO we should maybe upstream this so stpipe handles lists of libraries
             with model:
