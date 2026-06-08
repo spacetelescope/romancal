@@ -75,3 +75,84 @@ def test_asn_data(example_library):
     Test that `asn` returns the association information
     """
     assert example_library.asn["products"][0]["name"] == _PRODUCT_NAME
+
+
+def test_assign_member_to_model_sets_attributes(example_library):
+    """
+    Test that _assign_member_to_model correctly maps ASN dictionary keys.
+    """
+    model = dm.ImageModel.create_fake_data(shape=(2, 2))
+    # Ensure source_catalog exists
+    model.meta["source_catalog"] = {}
+    member = {"tweakreg_catalog": "cat.parquet"}
+    example_library._asn = {"table_name": "table1", "asn_pool": "pool1"}
+
+    example_library._assign_member_to_model(model, member)
+
+    assert model.meta.source_catalog.tweakreg_catalog_name == "cat.parquet"
+    assert model.meta.asn.table_name == "table1"
+    assert model.meta.asn.pool_name == "pool1"
+
+
+def test_assign_member_to_model_no_catalog(example_library):
+    """
+    Ensure the method handles members without custom catalogs gracefully.
+    """
+    model = dm.ImageModel.create_fake_data(shape=(2, 2))
+    # Ensure source_catalog exists
+    model.meta["source_catalog"] = {}
+    member = {"expname": "test.asdf"}
+
+    example_library._assign_member_to_model(model, member)
+
+    assert getattr(model.meta.source_catalog, "tweakreg_catalog_name", None) is None
+
+
+def test_assign_member_to_model_creates_source_catalog(example_library):
+    """
+    Ensure the method creates meta.source_catalog if missing.
+    """
+    model = dm.ImageModel.create_fake_data(shape=(2, 2))
+    # Remove source_catalog if present
+    if hasattr(model.meta, "source_catalog"):
+        del model.meta["source_catalog"]
+    member = {"tweakreg_catalog": "cat.parquet"}
+    example_library._asn = {}
+
+    example_library._assign_member_to_model(model, member)
+
+    assert getattr(model.meta, "source_catalog", None) is not None
+    assert model.meta.source_catalog.tweakreg_catalog_name == "cat.parquet"
+
+
+def test_assign_member_to_model_creates_asn(example_library):
+    """
+    Test that _assign_member_to_model creates asn if missing and sets attributes.
+    """
+    model = dm.ImageModel.create_fake_data(shape=(2, 2))
+    model.meta["source_catalog"] = {}
+    member = {}
+    example_library._asn = {"table_name": "table1", "asn_pool": "pool1"}
+    if hasattr(model.meta, "asn"):
+        del model.meta["asn"]
+
+    example_library._assign_member_to_model(model, member)
+
+    assert model.meta.asn.table_name == "table1"
+    assert model.meta.asn.pool_name == "pool1"
+
+
+def test_assign_member_to_model_skips_asn_attrs(example_library):
+    """
+    Test that _assign_member_to_model skips asn attrs not present in self.asn.
+    """
+    model = dm.ImageModel.create_fake_data(shape=(2, 2))
+    model.meta["source_catalog"] = {}
+    member = {}
+    example_library._asn = {}
+    if hasattr(model.meta, "asn"):
+        del model.meta["asn"]
+
+    example_library._assign_member_to_model(model, member)
+
+    assert not hasattr(model.meta, "asn")

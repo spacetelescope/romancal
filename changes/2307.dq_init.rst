@@ -1,1 +1,0 @@
-Fix application of data encoding offset to also subtract from the amp33 array.

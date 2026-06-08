@@ -1,3 +1,221 @@
+1.0.0 (2026-05-15)
+==================
+
+``stpipe``
+----------
+
+- Add "CRDS" to list of loggers configured by pipeline runs. (`#2310
+  <https://github.com/spacetelescope/romancal/issues/2310>`_)
+
+
+``exposure_pipeline``
+---------------------
+
+- Improve support for associations and add ``on_disk`` option. (`#2243
+  <https://github.com/spacetelescope/romancal/issues/2243>`_)
+- Centralize exposure-type routing in ``ExposurePipeline``; photom now runs for
+  all types, flatfield and source_catalog are skipped for non-imaging types.
+  (`#2327 <https://github.com/spacetelescope/romancal/issues/2327>`_)
+
+
+``skycell``
+-----------
+
+- offload footprint construction to ``SphericalPolygon.from_wcs()`` (`#2195
+  <https://github.com/spacetelescope/romancal/issues/2195>`_)
+
+
+``dq_init`` (WFI-Image, WFI-Prism, WFI-Grism)
+---------------------------------------------
+
+- Added support for the data encoding offset with a unit test. (`#2250
+  <https://github.com/spacetelescope/romancal/issues/2250>`_)
+- Added migration support for HGA metadata. (`#2261
+  <https://github.com/spacetelescope/romancal/issues/2261>`_)
+- Apply hga_move migration to old L1 files and change migration to a warning.
+  (`#2274 <https://github.com/spacetelescope/romancal/issues/2274>`_)
+- Moved DQ init logic into dq_initialization.py and added expand_gw_flagging
+  step parameter. (`#2282
+  <https://github.com/spacetelescope/romancal/issues/2282>`_)
+- Fix application of data encoding offset to also subtract from the amp33
+  array. (`#2307 <https://github.com/spacetelescope/romancal/issues/2307>`_)
+
+
+``saturation`` (WFI-Image, WFI-Prism, WFI-Grism)
+------------------------------------------------
+
+- Added n_pix_grow_sat and backup parameters to flag_saturation and the
+  saturation step. (`#2286
+  <https://github.com/spacetelescope/romancal/issues/2286>`_)
+
+
+``refpix`` (WFI-Image, WFI-Prism, WFI-Grism)
+--------------------------------------------
+
+- Update refpix.py - bad reference pixel masking (`#2294
+  <https://github.com/spacetelescope/romancal/issues/2294>`_)
+- Rename ``data.py`` to ``_data.py`` to mark it as a private module. (`#2303
+  <https://github.com/spacetelescope/romancal/issues/2303>`_)
+
+
+``dark_current`` (WFI-Image, WFI-Prism, WFI-Grism)
+--------------------------------------------------
+
+- Moved dark current subtraction logic into standalone subtract_dark_current
+  function. (`#2286 <https://github.com/spacetelescope/romancal/issues/2286>`_)
+
+
+``orientation``
+---------------
+
+- Use quaternion and guide star position from header if engineering is
+  unavailable (`#2230
+  <https://github.com/spacetelescope/romancal/issues/2230>`_)
+- Remove errant transposition and better define default FGS matrix (`#2236
+  <https://github.com/spacetelescope/romancal/issues/2236>`_)
+- Allow the engineering database api interface to be user-specified and allow
+  usage of RSDP-specific authentication (`#2273
+  <https://github.com/spacetelescope/romancal/issues/2273>`_)
+- Refactor the orientation and engineering database code to make the public vs.
+  private interface clear. (`#2314
+  <https://github.com/spacetelescope/romancal/issues/2314>`_)
+
+
+``ramp_fitting`` (WFI-Image, WFI-Prism, WFI-Grism)
+--------------------------------------------------
+
+- Update documentation to make the Likelihood Fitting algorithm the primary
+  ramp fittting algorithm. Added new argument `rejections_threshold`. (`#2196
+  <https://github.com/spacetelescope/romancal/issues/2196>`_)
+- Fix pixmap_stepsize type from float to integer (`#2201
+  <https://github.com/spacetelescope/romancal/issues/2201>`_)
+- Move ``ols_cas22`` and ``likely`` from instance methods on ``RampFitStep`` to
+  module-level functions to reduce the public API. (`#2303
+  <https://github.com/spacetelescope/romancal/issues/2303>`_)
+
+
+``assign_wcs`` (WFI-Image, WFI-Prism, WFI-Grism)
+------------------------------------------------
+
+- Consolidated ``assign_wcs`` step internals into a new ``assign_wcs.py``
+  module;
+  functions previously spread across ``assign_wcs_step``, ``pointing``, and
+  ``utils`` are now in ``romancal.assign_wcs.assign_wcs``. ``wfi_distortion``,
+  ``dva_corr_model``, and ``create_footprint`` have been made private
+  (``_wfi_distortion``, ``_dva_corr_model``, ``_create_footprint``). (`#2308
+  <https://github.com/spacetelescope/romancal/issues/2308>`_)
+
+
+``flatfield`` (WFI-Image)
+-------------------------
+
+- Update exposure type so exclude WFI_SPECTRAL from the flat field correction
+  (`#2202 <https://github.com/spacetelescope/romancal/issues/2202>`_)
+- Remove the ``do_correction`` wrapper function and rename ``apply_flat_field``
+  to ``_apply_flat_field`` to reduce the public API. (`#2303
+  <https://github.com/spacetelescope/romancal/issues/2303>`_)
+- Remove exposure-type gating from ``FlatFieldStep``; routing is now handled by
+  ``ExposurePipeline``. (`#2327
+  <https://github.com/spacetelescope/romancal/issues/2327>`_)
+
+
+``photom`` (WFI-Image)
+----------------------
+
+- Rename ``photom_io`` and ``save_area_info`` to ``_photom_io`` and
+  ``_save_area_info`` to reduce the public API. (`#2303
+  <https://github.com/spacetelescope/romancal/issues/2303>`_)
+- Remove exposure-type gating from ``PhotomStep``; routing is now handled by
+  ``ExposurePipeline``. (`#2327
+  <https://github.com/spacetelescope/romancal/issues/2327>`_)
+
+
+``tweakreg`` (WFI-Image)
+------------------------
+
+- Change default fit geometry from `rshift` to `general`. (`#2260
+  <https://github.com/spacetelescope/romancal/issues/2260>`_)
+- Drop support for catfiles in TweakReg and remove use_custom_catalog spec
+  parameter. (`#2269
+  <https://github.com/spacetelescope/romancal/issues/2269>`_)
+- Updated default value for the numbers of matched gaia sources to determine if
+  a local detector solution is appropriate or not. (`#2302
+  <https://github.com/spacetelescope/romancal/issues/2302>`_)
+- Remove exposure-type gating from ``TweakRegStep``; models without a source
+  catalog are skipped individually rather than skipping the whole association.
+  (`#2327 <https://github.com/spacetelescope/romancal/issues/2327>`_)
+
+
+``outlier_detection``
+---------------------
+
+- Remove exposure-type gating from ``OutlierDetectionStep``. (`#2327
+  <https://github.com/spacetelescope/romancal/issues/2327>`_)
+
+
+``source_catalog``
+------------------
+
+- Adds support for seed numbers within the source injection workflow. (`#2192
+  <https://github.com/spacetelescope/romancal/issues/2192>`_)
+- Changed PSF fitting region from (15, 15) to (5, 5) and removed PSF local
+  background subtraction. (`#2281
+  <https://github.com/spacetelescope/romancal/issues/2281>`_)
+- Updated some romanisim includes to match changes in that package. (`#2289
+  <https://github.com/spacetelescope/romancal/issues/2289>`_)
+- Support pixel-convolved ePSF reference files. (`#2293
+  <https://github.com/spacetelescope/romancal/issues/2293>`_)
+- Loosen is_extended cut and fix enclosed energy fraction computation. (`#2317
+  <https://github.com/spacetelescope/romancal/issues/2317>`_)
+- Added check to ensure no entries with zero flux in the J-Band are used to
+  create the source injection catalog. (`#2318
+  <https://github.com/spacetelescope/romancal/issues/2318>`_)
+- Fix PSF model selection to correctly identify L3 coadd vs. L2 image data
+  models. (`#2321 <https://github.com/spacetelescope/romancal/issues/2321>`_)
+- Source catalog DQ masking now excludes only pixels with DO_NOT_USE set,
+  rather than any set DQ bit. (`#2325
+  <https://github.com/spacetelescope/romancal/issues/2325>`_)
+
+
+``multiband_catalog``
+---------------------
+
+- Added PSF-matched photometry for multiband catalogs. (`#2051
+  <https://github.com/spacetelescope/romancal/issues/2051>`_)
+- Updated psf_match_reference_filter metadata assignment to be uppercase and
+  added a default value. (`#2247
+  <https://github.com/spacetelescope/romancal/issues/2247>`_)
+- Changed default ``kernel_fwhms`` from ``[2.0, 5.0]`` to ``[2.0]``. (`#2323
+  <https://github.com/spacetelescope/romancal/issues/2323>`_)
+
+
+General
+-------
+
+- ensure ``wcsobj.array_shape`` is populated by inverse of
+  ``wcsobj.pixel_shape`` (`#2195
+  <https://github.com/spacetelescope/romancal/issues/2195>`_)
+- Add support for python 3.14. (`#2280
+  <https://github.com/spacetelescope/romancal/issues/2280>`_)
+- Remove ``NON_SCIENCE`` from the default ``good_bits``/``dqbits`` parameter in
+  the resample, skymatch, and outlier_detection steps. (`#2315
+  <https://github.com/spacetelescope/romancal/issues/2315>`_)
+- Update the pixel timing pattern in ``frame_read_times`` to account for gaps
+  in the science pixel times due to reading out the guide window. (`#2316
+  <https://github.com/spacetelescope/romancal/issues/2316>`_)
+
+
+Documentation
+-------------
+
+- improve documentation flow and add better explanations for external
+  collaborators (`#2229
+  <https://github.com/spacetelescope/romancal/issues/2229>`_)
+- Add versioning page to docs describing public vs private API and romancal
+  versioning scheme. (`#2322
+  <https://github.com/spacetelescope/romancal/issues/2322>`_)
+
+
 0.22.0 (2026-02-13)
 ===================
 

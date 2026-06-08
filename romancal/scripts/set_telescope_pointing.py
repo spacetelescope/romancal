@@ -12,14 +12,14 @@ for a list of exposures.
 
 import argparse
 import logging
-import warnings
 from pathlib import Path
 
+import romancal.orientation._lib as olib
 import romancal.orientation.set_telescope_pointing as stp
 from romancal.lib.engdb.engdb_tools import AVAILABLE_SERVICES
 
 
-def main():
+def _main():
     """Set the initial world coordinate system."""
     parser = argparse.ArgumentParser(
         description=(
@@ -155,7 +155,7 @@ def main():
     logger_format_debug = logging.Formatter(
         "%(levelname)s:%(filename)s::%(funcName)s: %(message)s"
     )
-    level = stp.LOGLEVELS[min(len(stp.LOGLEVELS) - 1, args.verbose)]
+    level = olib.LOGLEVELS[min(len(olib.LOGLEVELS) - 1, args.verbose)]
     logger.setLevel(level)
     if level <= logging.DEBUG:
         logger_handler.setFormatter(logger_format_debug)
@@ -207,16 +207,5 @@ def main():
             logger.debug("Full exception:", exc_info=exception)
 
 
-def deprecated_name():
-    """Raise warning if filename.* is no longer used, and provide correct one."""
-    filename = Path(__file__)
-    warnings.warn(
-        f"usage of `{filename.name}` is deprecated; use `{filename.stem}` instead",
-        stacklevel=2,
-    )
-
-    main()
-
-
 if __name__ == "__main__":
-    main()
+    _main()

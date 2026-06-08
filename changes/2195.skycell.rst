@@ -1,1 +1,0 @@
-offload footprint construction to ``SphericalPolygon.from_wcs()``

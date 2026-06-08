@@ -129,6 +129,9 @@ def make_cosmoslike_catalog(cen, ra, dec, exptimes, filters=None, seed=None, **k
         cen, radius=1.0, bandpasses=filters, cat_area=(np.pi), seed=seed, **kwargs
     )
 
+    # Drop entries with zero flux in the J-band
+    gal_cat = gal_cat[gal_cat["F129"] > 0]
+
     # Trim to the required number of objects
     gal_cat = gal_cat[:num_gals]
 
@@ -223,7 +226,13 @@ def make_cosmoslike_catalog(cen, ra, dec, exptimes, filters=None, seed=None, **k
 
 
 def make_source_grid(
-    model, yxmax=(5000, 5000), yxoffset=(50, 50), yxgrid=(20, 20), seed=None, **kwargs
+    model,
+    yxmax=(5000, 5000),
+    yxoffset=(50, 50),
+    yxgrid=(20, 20),
+    subpixeloffset=(4.0, 4.0),
+    seed=None,
+    **kwargs,
 ):
     """
     Generate a grid of points to inject sources onto. The grid is set to the yxmax
@@ -240,6 +249,8 @@ def make_source_grid(
         Edge Offset to place grid within
     yxgrid : tuple of two ints
         Grid point dimensions
+    subpixeloffset : tuple of two floats
+        Offset range for individual grid points
     seed : int
         Seed for random number generator
 
@@ -270,13 +281,15 @@ def make_source_grid(
 
     ypts *= yspace
     ypts += y0
-    # TODO: add sub-pixel shifts
-    # ypts += rng_numpy.uniform(low=-0.5, high=0.5, size=len(ypts))
+    ypts += rng_numpy.uniform(
+        low=-subpixeloffset[0], high=subpixeloffset[0], size=len(ypts)
+    )
 
     xpts *= xspace
     xpts += x0
-    # TODO: add sub-pixel shifts
-    # xpts += rng_numpy.uniform(low=-0.5, high=0.5, size=len(xpts))
+    xpts += rng_numpy.uniform(
+        low=-subpixeloffset[1], high=subpixeloffset[1], size=len(xpts)
+    )
 
     # Discard off-image positions
     ypts = ypts[ypts < (model.data.shape[0] - int(yxoffset[0]))]
@@ -290,6 +303,6 @@ def make_source_grid(
 
     # Discard positions in NA empty regions
     nanmask = np.isnan(model.data[y_pos_idx, x_pos_idx])
-    y_pos_idx, x_pos_idx = y_pos_idx[~nanmask], x_pos_idx[~nanmask]
+    y_pos, x_pos = y_pos[~nanmask], x_pos[~nanmask]
 
-    return y_pos_idx, x_pos_idx
+    return y_pos, x_pos

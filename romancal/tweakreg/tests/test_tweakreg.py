@@ -1,4 +1,5 @@
 import copy
+import json
 import os
 
 import numpy as np
@@ -9,6 +10,7 @@ from astropy import units as u
 from astropy.modeling import models
 from astropy.table import Table
 from numpy.random import default_rng
+from stcal.tweakreg.tweakreg import TweakregError
 
 from romancal.datamodels import ModelLibrary
 from romancal.tweakreg.tweakreg_step import TweakRegStep, _validate_catalog_columns
@@ -145,6 +147,7 @@ def test_fit_results_in_meta(tmp_path, tweakreg_image):
         for i, model in enumerate(res):
             assert hasattr(model.meta, "wcs_fit_results")
             assert len(model.meta.wcs_fit_results) > 0
+            assert model.meta.wcs_fit_results.n_detector == 1
             res.shelve(model, i, modify=False)
 
 
@@ -275,41 +278,81 @@ def test_tweakreg_flags_failed_step_on_invalid_catalog_columns(tweakreg_image):
         TweakRegStep.call([img])
 
 
-def test_tweakreg_handles_mixed_exposure_types(tmp_path, tweakreg_image):
-    """Test that TweakReg can handle mixed exposure types
-    (non-WFI_IMAGE data will be marked as SKIPPED only and won't be processed)."""
-    invalid_types = [
-        "WFI_SPECTRAL",
-        "WFI_IM_DARK",
-        "WFI_SP_DARK",
-        "WFI_FLAT",
-        "WFI_LOLO",
-        "WFI_WFSC",
-        "WFI_DARK",
-        "WFI_GRISM",
-        "WFI_PRISM",
-    ]
+def test_tweakreg_skips_models_without_source_catalog(tmp_path, tweakreg_image):
+    """Test that TweakReg skips models that have no source catalog and processes
+    those that do, regardless of exposure type."""
+    img_with_catalog = tweakreg_image(catalog_filename="img0")
 
-    # start with 1 valid type
-    img = tweakreg_image(catalog_filename="img0")
-    imgs = [img]
+    img_no_catalog = tweakreg_image(catalog_filename="img1")
+    del img_no_catalog.meta["source_catalog"]
 
-    # add one of each invalid type
-    for i, invalid_type in enumerate(invalid_types):
-        img = tweakreg_image(catalog_filename=f"img{i + 1}")
-        img.meta.exposure.type = invalid_type
-        imgs.append(img)
+    res = TweakRegStep.call([img_with_catalog, img_no_catalog])
 
-    res = TweakRegStep.call(imgs)
-
-    assert len(res) == len(imgs)
+    assert len(res) == 2
     with res:
         for i, m in enumerate(res):
             if i == 0:
-                assert m.meta.cal_step.tweakreg == "COMPLETE"
+                assert m.meta.cal_step.tweakreg == "FAILED"
+                assert m.meta.wcs_fit_results.n_detector == 1
             else:
                 assert m.meta.cal_step.tweakreg == "SKIPPED"
             res.shelve(m, modify=False)
+
+
+def test_tweakreg_marks_failed_when_fit_status_is_not_success(
+    monkeypatch, tweakreg_image
+):
+    """Test that attempted fits with non-success status are marked FAILED."""
+    img = tweakreg_image(shift_1=1000, shift_2=1000)
+
+    def _set_failed_fit_info(self, ref_image, imcats):
+        for imcat in imcats:
+            imcat.meta["fit_info"] = {
+                "status": "FAILED: no valid WCS correction",
+                "nmatches": 3,
+                "fitmask": np.array([True, False, False]),
+            }
+
+    monkeypatch.setattr(TweakRegStep, "do_absolute_alignment", _set_failed_fit_info)
+
+    res = TweakRegStep.call([img])
+
+    assert isinstance(res, ModelLibrary)
+    with res:
+        model = res.borrow(0)
+        assert model.meta.cal_step.tweakreg == "FAILED"
+        assert hasattr(model.meta, "wcs_fit_results")
+        assert model.meta.wcs_fit_results.status.startswith("FAILED")
+        assert model.meta.wcs_fit_results.nmatches == 3
+        assert model.meta.wcs_fit_results.n_detector == 1
+        assert "fitmask" not in model.meta.wcs_fit_results
+        res.shelve(model, 0, modify=False)
+
+
+def test_tweakreg_marks_failed_when_absolute_alignment_raises(
+    monkeypatch, tweakreg_image
+):
+    """Test that attempted fits are marked FAILED when absolute alignment raises."""
+    img = tweakreg_image(shift_1=1000, shift_2=1000)
+
+    def _raise_absolute_alignment(self, ref_image, imcats):
+        raise TweakregError("forced absolute alignment failure")
+
+    monkeypatch.setattr(
+        TweakRegStep, "do_absolute_alignment", _raise_absolute_alignment
+    )
+
+    res = TweakRegStep.call([img])
+
+    assert isinstance(res, ModelLibrary)
+    with res:
+        model = res.borrow(0)
+        assert model.meta.cal_step.tweakreg == "FAILED"
+        assert hasattr(model.meta, "wcs_fit_results")
+        assert model.meta.wcs_fit_results.status == "FAILED"
+        assert model.meta.wcs_fit_results.nmatches == 0
+        assert model.meta.wcs_fit_results.n_detector == 1
+        res.shelve(model, 0, modify=False)
 
 
 def test_tweakreg_updates_s_region(tmp_path, tweakreg_image):
@@ -445,6 +488,57 @@ def test_parquet_metadata_preserved_after_update(function_jail, tweakreg_image):
         # Check that units are readable (not None or empty when they should have units)
         if col in ["ra_centroid", "dec_centroid", "ra_psf", "dec_psf"]:
             assert updated_astropy[col].unit == u.deg
+
+
+def test_tweakreg_custom_catalog_via_asn_member_attribute(
+    tmp_path, tweakreg_image, gaia_coords
+):
+    """
+    Test that a custom catalog specified via ASN member attribute `tweakreg_catalog`
+    is mapped into meta.source_catalog.tweakreg_catalog_name and used by TweakRegStep.
+    """
+    # generate and save model
+    img = tweakreg_image()
+    img.meta.filename = "img.asdf"
+    img.save(tmp_path / img.meta.filename)
+
+    # generate and save custom catalog
+    catalog_data = np.array(
+        [img.meta.wcs.world_to_pixel_values(ra, dec) for ra, dec in gaia_coords]
+    )
+    custom_catalog_fn = str(tmp_path / "custom_catalog.ecsv")
+    Table(catalog_data, names=("x", "y")).write(custom_catalog_fn, format="ascii.ecsv")
+
+    # create ASN file with member tweakreg_catalog attribute
+    asn_filepath = str(tmp_path / "test_asn.json")
+    asn_dict = {
+        "asn_id": "a3001",
+        "products": [
+            {
+                "name": "test.asdf",
+                "members": [
+                    {
+                        "expname": img.meta.filename,
+                        "exptype": "science",
+                        "tweakreg_catalog": custom_catalog_fn,
+                    }
+                ],
+            }
+        ],
+    }
+    with open(asn_filepath, "w") as f:
+        json.dump(asn_dict, f)
+
+    res = TweakRegStep.call(
+        asn_filepath,
+    )
+
+    assert isinstance(res, ModelLibrary)
+    with res:
+        m = res.borrow(0)
+        assert m.meta.cal_step.tweakreg == "FAILED"
+        assert m.meta.source_catalog.tweakreg_catalog_name == custom_catalog_fn
+        res.shelve(m, modify=False)
 
 
 def test_tweakreg_logs_selected_catalog_file(tweakreg_image, caplog):

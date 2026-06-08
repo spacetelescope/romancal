@@ -1,1 +1,0 @@
-Change default fit geometry from `rshift` to `general`.

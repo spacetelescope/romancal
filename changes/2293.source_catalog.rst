@@ -1,1 +1,0 @@
-Support pixel-convolved ePSF reference files.

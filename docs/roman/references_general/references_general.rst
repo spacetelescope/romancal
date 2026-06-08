@@ -159,10 +159,11 @@ As each pipeline step is applied to a science data product, it will record a sta
 indicator in a cal_step attribute of the science data product. These statuses
 may be included in the primary header of reference files, in order to maintain
 a history of the data that went into creating the reference file.
-Allowed values for the status Attribute are  'INCOMPLETE', 'COMPLETE'
-and 'SKIPPED'. The default value is set to 'INCOMPLETE'. The pipeline modules
-will set the value to 'COMPLETE' or 'SKIPPED'. If the pipeline steps are run
-manually and you skip a step the cal_step will remain 'INCOMPLETE'.
+Allowed values for the status Attribute are 'INCOMPLETE', 'COMPLETE',
+'SKIPPED', and 'FAILED'. The default value is set to 'INCOMPLETE'. The pipeline
+modules will set the value to 'COMPLETE', 'SKIPPED', or 'FAILED'. If the
+pipeline steps are run manually and you skip a step the cal_step will remain
+'INCOMPLETE'.
 
 Data Quality Flags
 ==================

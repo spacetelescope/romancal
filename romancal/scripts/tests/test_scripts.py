@@ -4,6 +4,7 @@ import pytest
 
 SCRIPTS = [
     "roman_pointing_summary",
+    "roman_set_velocity_aberration",
     "roman_set_telescope_pointing",
     "roman_v1_calculate",
     "verify_install_requires",

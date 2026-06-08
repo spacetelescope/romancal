@@ -118,7 +118,7 @@ image.
     low QE and highly nonlinear, then any of the ways listed below will
     work to set ``good_bits``:
 
-    - ``good_bits = 'LOW_QE+NON_LINEAR'`` (concatenated DQ flag labels);
+    - ``good_bits = 'LOW_QE+NONLINEAR'`` (concatenated DQ flag labels);
     - ``good_bits = '8192+65536'`` (concatenated DQ flag bit values);
     - ``good_bits = '8192,65536'`` (comma-separated DQ flag bit values);
     - ``good_bits = '73728'`` (sum of DQ flag bit values).

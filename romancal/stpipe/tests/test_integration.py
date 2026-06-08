@@ -1,6 +1,3 @@
-from stpipe import entry_points
-from stpipe.utilities import import_class
-
 import romancal.pipeline
 import romancal.step
 from romancal.stpipe import RomanPipeline, RomanStep
@@ -15,15 +12,12 @@ def test_get_steps():
     )
 
     for class_name, class_alias, is_pipeline in tuples:
-        step_class = import_class(class_name)
+        # parse class path returning only class name
+        _, name = class_name.rsplit(".", maxsplit=1)
+        if is_pipeline:
+            step_class = getattr(romancal.pipeline, name)
+            assert issubclass(step_class, RomanPipeline)
+        else:
+            step_class = getattr(romancal.step, name)
         assert issubclass(step_class, RomanStep)
         assert step_class.class_alias == class_alias
-        if is_pipeline:
-            assert issubclass(step_class, RomanPipeline)
-
-
-def test_entry_point():
-    all_steps = entry_points.get_steps()
-    roman_steps = [s for s in all_steps if s.package_name == "romancal"]
-    tuples = {(s.class_name, s.class_alias, s.is_pipeline) for s in roman_steps}
-    assert tuples == set(get_steps())

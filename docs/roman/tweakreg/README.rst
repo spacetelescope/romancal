@@ -23,11 +23,41 @@ for ``.parquet`` files). The catalog must contain
 either ``'x'`` and ``'y'`` or ``'x_psf'`` and ``'y_psf'`` columns which
 indicate source *image* coordinates (in pixels). Pixel coordinates are
 0-indexed.
+
 Association files can also be used as ``tweakreg`` input for custom catalogs.
 When an association is provided, ``tweakreg`` reads the custom catalog
-information for each member from that member's
-``meta.source_catalog.tweakreg_catalog`` or
+information for each member from that member's ``tweakreg_catalog`` attribute
+and sets it as the value for that member's
 ``meta.source_catalog.tweakreg_catalog_name`` metadata.
+For example, the following association contains two members
+(``image1.asdf`` and ``image2.asdf``) with custom catalogs and one member
+(``image3.asdf``) without a custom catalog:
+
+  .. code-block:: json
+
+    {
+      "asn_type": "tweakreg",
+      "asn_id": "tweakreg_12345678",
+      "members": [
+        {
+          "expname": "image1.asdf",
+          "tweakreg_catalog": "/path/to/image1_catalog.parquet"
+        },
+        {
+          "expname": "image2.asdf",
+          "tweakreg_catalog": "/path/to/image2_catalog.parquet"
+        },
+        {
+          "expname": "image3.asdf",
+        }
+      ]
+    }
+
+In this case, ``tweakreg`` will read the custom catalogs for ``image1.asdf`` and
+``image2.asdf`` from the specified file paths and use them for alignment, while
+it will attempt to read the source catalog for ``image3.asdf`` from the file path
+specified in its ``meta.source_catalog.tweakreg_catalog_name`` metadata
+(which is expected to be set by a previous step such as `SourceCatalogStep`).
 
 .. note::
     ``tweakreg`` requires ``meta.source_catalog`` to be present.
@@ -39,6 +69,10 @@ gets cross-matched and fit to an astrometric reference catalog
 (set by ``TweakRegStep.abs_refcat``) and the results are stored in
 ``model.meta.wcs_fit_results``. The pipeline initially supports fitting to any
 Gaia Data Release (defaults to `GAIADR3`).
+For each model where ``tweakreg`` is attempted (that is, step status is not
+``SKIPPED``), ``model.meta.wcs_fit_results`` is always populated. For
+unsuccessful fits, ``status`` records the failure and some numeric fields may
+be ``NaN``.
 
 An example of the content of ``model.meta.wcs_fit_results`` is as follows:
 
@@ -60,7 +94,8 @@ An example of the content of ``model.meta.wcs_fit_results`` is as follows:
             "skew": 0.0,
             "rmse": 2.854152848489525e-10,
             "mae": 2.3250544963289652e-10,
-            "nmatches": 22
+            "nmatches": 22,
+            "n_detector": 18
           }
 
 Details about most of the parameters available in ``model.meta.wcs_fit_results`` can be

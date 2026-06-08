@@ -17,6 +17,7 @@ from roman_datamodels import datamodels as rdm
 from roman_datamodels import dqflags
 from stcal.tweakreg import tweakreg
 from stcal.tweakreg.tweakreg import TweakregError
+from tweakwcs import RomanWCSCorrector
 
 from romancal.assign_wcs.assign_wcs import add_s_region
 from romancal.datamodels.fileio import open_dataset
@@ -111,19 +112,14 @@ class TweakRegStep(RomanStep):
         imcats = []
         with images:
             for i, image_model in enumerate(images):
-                exposure_type = image_model.meta.exposure.type
-                if exposure_type != "WFI_IMAGE":
-                    log.info("Skipping TweakReg for spectral exposure.")
+                source_catalog = getattr(image_model.meta, "source_catalog", None)
+                if source_catalog is None:
+                    log.warning(
+                        f"Skipping TweakReg for {image_model.meta.filename}: "
+                        "no source catalog available."
+                    )
                     image_model.meta.cal_step.tweakreg = "SKIPPED"
                 else:
-                    source_catalog = getattr(image_model.meta, "source_catalog", None)
-                    if source_catalog is None:
-                        images.shelve(image_model, i, modify=False)
-                        raise AttributeError(
-                            "Attribute 'meta.source_catalog' is missing. "
-                            "Please either run SourceCatalogStep or provide a custom source catalog."
-                        )
-
                     try:
                         catalog = self.get_tweakreg_catalog(source_catalog, image_model)
                     except AttributeError as e:
@@ -170,18 +166,32 @@ class TweakRegStep(RomanStep):
                     catalog_table = Table(image_model.meta.tweakreg_catalog)
                     catalog_table.meta["name"] = catalog_name
 
-                    imcat = tweakreg.construct_wcs_corrector(
-                        wcs=image_model.meta.wcs,
-                        refang=image_model.meta.wcsinfo,
-                        catalog=catalog_table,
-                        group_id=images._model_to_group_id(image_model),
+                    catalog = tweakreg.filter_catalog_by_bounding_box(
+                        catalog_table, image_model.meta.wcs.bounding_box
                     )
-                    imcat.meta["model_index"] = i
-                    imcats.append(imcat)
+                    corrector = RomanWCSCorrector(
+                        wcs=image_model.meta.wcs,
+                        wcsinfo={
+                            "roll_ref": image_model.meta.wcsinfo.roll_ref,
+                            "v2_ref": image_model.meta.wcsinfo.v2_ref,
+                            "v3_ref": image_model.meta.wcsinfo.v3_ref,
+                        },
+                        # catalog and group_id are required meta
+                        meta={
+                            "catalog": catalog,
+                            "name": catalog.meta.get("name"),
+                            "group_id": images._model_to_group_id(image_model),
+                            "model_index": i,
+                        },
+                    )
+
+                    imcats.append(corrector)
                 images.shelve(image_model, i)
 
         # run alignment only if it was possible to build image catalogs
         if len(imcats):
+            absolute_alignment_failed = False
+
             # extract WCS correctors to use for image alignment
             if len(images.group_indices) > 1:
                 try:
@@ -193,18 +203,33 @@ class TweakRegStep(RomanStep):
                 self.do_absolute_alignment(ref_image, imcats)
             except TweakregError as e:
                 log.warning(str(e))
-                return images
+                absolute_alignment_failed = True
 
             # finalize step
             with images:
                 for imcat in imcats:
                     image_model = images.borrow(imcat.meta["model_index"])
-                    image_model.meta.cal_step.tweakreg = "COMPLETE"
+                    fit_info = imcat.meta.get("fit_info")
+                    fit_status = (
+                        "" if fit_info is None else str(fit_info.get("status", ""))
+                    )
+                    fit_succeeded = (
+                        not absolute_alignment_failed and "SUCCESS" in fit_status
+                    )
+
+                    image_model.meta["wcs_fit_results"] = _serialize_wcs_fit_results(
+                        fit_info=fit_info,
+                        n_detector=len(imcats),
+                        force_failed_status=absolute_alignment_failed,
+                    )
+
                     # remove source catalog
-                    del image_model.meta["tweakreg_catalog"]
+                    if "tweakreg_catalog" in image_model.meta:
+                        del image_model.meta["tweakreg_catalog"]
 
                     # retrieve fit status and update wcs if fit is successful:
-                    if "SUCCESS" in imcat.meta.get("fit_info")["status"]:
+                    if fit_succeeded:
+                        image_model.meta.cal_step.tweakreg = "COMPLETE"
                         # Update/create the WCS .name attribute with information
                         # on this astrometric fit as the only record that it was
                         # successful:
@@ -217,30 +242,6 @@ class TweakRegStep(RomanStep):
                         #       IF that is what gets recorded in the archive
                         #       for end-user searches.
                         imcat.wcs.name = f"FIT-LVL2-{self.abs_refcat}"
-
-                        # serialize object from tweakwcs
-                        # (typecasting numpy objects to python types so that it doesn't cause an
-                        # issue when saving datamodel to ASDF)
-                        wcs_fit_results = {
-                            k: (
-                                v.tolist()
-                                if isinstance(v, np.ndarray | np.bool_)
-                                else v
-                            )
-                            for k, v in imcat.meta["fit_info"].items()
-                        }
-                        # add fit results and new WCS to datamodel
-                        image_model.meta["wcs_fit_results"] = wcs_fit_results
-                        # remove unwanted keys from WCS fit results
-                        for k in [
-                            "eff_minobj",
-                            "matched_ref_idx",
-                            "matched_input_idx",
-                            "fit_RA",
-                            "fit_DEC",
-                            "fitmask",
-                        ]:
-                            del image_model.meta["wcs_fit_results"][k]
 
                         # update WCS
                         image_model.meta.wcs = imcat.wcs
@@ -260,6 +261,8 @@ class TweakRegStep(RomanStep):
                                     f"Failed to update source catalog coordinates: {e}"
                                 )
                                 raise e
+                    else:
+                        image_model.meta.cal_step.tweakreg = "FAILED"
 
                     images.shelve(image_model, imcat.meta["model_index"])
 
@@ -545,6 +548,66 @@ def _validate_catalog_columns(catalog) -> bool:
             else:
                 return False
     return True
+
+
+def _serialize_wcs_fit_results(
+    fit_info: dict | None,
+    n_detector: int,
+    force_failed_status: bool = False,
+):
+    """
+    Serialize tweakreg fit metadata for storage in datamodel metadata.
+
+    Parameters
+    ----------
+    fit_info : dict or None
+        ``fit_info`` payload from an image corrector.
+    n_detector : int
+        Number of detector images used in the tweakreg solve.
+    force_failed_status : bool
+        Force output status to ``FAILED``.
+
+    Returns
+    -------
+    dict
+        Serialized fit results.
+    """
+    fit_results = {}
+    if fit_info is not None:
+        fit_results = {k: _to_python_scalar_or_list(v) for k, v in fit_info.items()}
+
+    # remove unwanted keys from WCS fit results
+    for key in [
+        "eff_minobj",
+        "matched_ref_idx",
+        "matched_input_idx",
+        "fit_RA",
+        "fit_DEC",
+        "fitmask",
+    ]:
+        fit_results.pop(key, None)
+
+    if force_failed_status:
+        fit_results["status"] = "FAILED"
+    elif not fit_results.get("status"):
+        fit_results["status"] = "FAILED"
+
+    if fit_results.get("nmatches") is None:
+        fit_results["nmatches"] = 0
+
+    fit_results["n_detector"] = n_detector
+    return fit_results
+
+
+def _to_python_scalar_or_list(value):
+    """
+    Convert numpy values to Python-native scalars/lists for ASDF serialization.
+    """
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+    if isinstance(value, np.generic):
+        return value.item()
+    return value
 
 
 def _add_required_columns(catalog):
