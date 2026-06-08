@@ -143,6 +143,14 @@ class ExposurePipeline(RomanPipeline):
                         self.tweakreg._update_catalog_coordinates(
                             catalog.source_catalog, model.meta.wcs
                         )
+                        # record the name of the catalog if it is going to be saved
+                        if self.save_results:
+                            catalog_filename = self.make_output_path(
+                                catalog.meta.filename, suffix="cat", ext="parquet"
+                            )
+                            model.meta.source_catalog.tweakreg_catalog_name = (
+                                catalog_filename
+                            )
                 lib.shelve(model)
 
         log.info("Roman exposure calibration pipeline ending...")
