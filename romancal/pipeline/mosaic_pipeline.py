@@ -101,9 +101,7 @@ class MosaicPipeline(RomanPipeline):
         self.source_catalog.output_file = self.output_file
         catalog_and_segmentation = self.source_catalog.run(result)
         if self.source_catalog.skip:
-            catalog, segmentation = (
-                self.source_catalog._make_catalog_and_segmentation_models(result)
-            )
+            catalog, segmentation = None, None
         else:
             catalog, segmentation = catalog_and_segmentation
         return result, catalog, segmentation
