@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
-import pyarrow as pa
 import pyarrow.parquet as pq
 from astropy.table import Table
 from roman_datamodels import datamodels as rdm
@@ -320,66 +319,13 @@ class TweakRegStep(RomanStep):
         # Read the existing catalog using PyArrow
         pa_table = pq.read_table(tweakreg_catalog_name)
         original_metadata = pa_table.schema.metadata
-
-        # Determine which coordinate columns are present and update them from pixel-space
-        # coordinates using the tweaked WCS.
-        available_cols = set(pa_table.schema.names)
-
-        # (x_col, y_col) -> (ra_col, dec_col)
-        updates = [
-            ("x_centroid", "y_centroid", "ra_centroid", "dec_centroid"),
-            ("x_centroid", "y_centroid", "ra", "dec"),
-            (
-                "x_centroid_win",
-                "y_centroid_win",
-                "ra_centroid_win",
-                "dec_centroid_win",
-            ),
-            ("x_psf", "y_psf", "ra_psf", "dec_psf"),
-        ]
-
-        updated_columns: dict[str, pa.Array] = {}
-
-        for x_col, y_col, ra_col, dec_col in updates:
-            # Only update existing columns to preserve the file schema.
-            if (
-                x_col in available_cols
-                or y_col in available_cols
-                or ra_col in available_cols
-                or dec_col in available_cols
-            ):
-                x_values = pa_table[x_col].to_numpy()
-                y_values = pa_table[y_col].to_numpy()
-
-                new_ra, new_dec = tweaked_wcs(x_values, y_values)
-                new_ra = np.asarray(getattr(new_ra, "value", new_ra))
-                new_dec = np.asarray(getattr(new_dec, "value", new_dec))
-
-                # Preserve the original column types.
-                updated_columns[ra_col] = pa.array(
-                    new_ra, type=pa_table.schema.field(ra_col).type
-                )
-                updated_columns[dec_col] = pa.array(
-                    new_dec, type=pa_table.schema.field(dec_col).type
-                )
-
-        # Create new table with updated columns
-        # Keep all original columns, replacing only the updated ones
-        new_columns = []
-        new_names = []
-
-        for i, field in enumerate(pa_table.schema):
-            col_name = field.name
-            if col_name in updated_columns:
-                # Use updated column
-                new_columns.append(updated_columns[col_name])
-            else:
-                # Keep original column
-                new_columns.append(pa_table.column(i))
-            new_names.append(col_name)
+        astropy_table = Table(pa_table.to_pydict())
+        self._update_catalog_coordinates(astropy_table, tweaked_wcs)
 
         # Create new table with original schema metadata
-        final_table = pa.table(new_columns, names=new_names)
+        final_table = pa_table.from_pydict(
+            {colname: astropy_table[colname] for colname in astropy_table.colnames}
+        )
         final_table = final_table.replace_schema_metadata(original_metadata)
 
         # Write back to file
