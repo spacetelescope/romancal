@@ -64,7 +64,11 @@ def load_wcs(input_model, reference_files=None):
 
     # Transforms between frames
     distortion = _wfi_distortion(output_model, reference_files)
+    distortion.inputs = ("x", "y")
+    distortion.outputs = ("v2", "v3")
     tel2sky = v23tosky(output_model)
+    tel2sky.inputs = ("v2", "v3")
+    tel2sky.outputs = ("ra", "dec")
 
     # Compute differential velocity aberration (DVA) correction:
     va_corr = _dva_corr_model(
@@ -72,6 +76,8 @@ def load_wcs(input_model, reference_files=None):
         v2_ref=input_model.meta.wcsinfo.v2_ref,
         v3_ref=input_model.meta.wcsinfo.v3_ref,
     )
+    va_corr.inputs = ("v2", "v3")
+    va_corr.outputs = ("v2", "v3")
 
     pipeline = [
         Step(detector, distortion),
