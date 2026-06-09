@@ -2,7 +2,7 @@
 
 import pytest
 
-from romancal.associations.main import Main
+from romancal.associations._main import Main
 from romancal.associations.tests.helpers import (
     level2_rule_path,
     mkstemp_pool_file,

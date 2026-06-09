@@ -12,11 +12,12 @@ from typing import TYPE_CHECKING
 from stpipe.format_template import FormatTemplate
 
 from romancal.associations import libpath
-from romancal.associations.association import Association
-from romancal.associations.exceptions import AssociationNotValidError
+from romancal.associations._association import _Association
+from romancal.associations._exceptions import AssociationNotValidError
+from romancal.associations._registry import RegistryMarker
 from romancal.associations.lib.acid import ACID
 from romancal.associations.lib.constraint import Constraint, SimpleConstraint
-from romancal.associations.lib.counter import Counter
+from romancal.associations.lib._counter import Counter
 from romancal.associations.lib.dms_base import (
     _EMPTY,
     IMAGE2_NONSCIENCE_EXP_TYPES,
@@ -26,22 +27,20 @@ from romancal.associations.lib.dms_base import (
     DMSAttrConstraint,
     DMSBaseMixin,
 )
-from romancal.associations.lib.keyvalue_registry import KeyValueRegistryError
+from romancal.associations.lib._keyvalue_registry import KeyValueRegistryError
 from romancal.associations.lib.member import Member
-from romancal.associations.lib.process_list import ProcessList
+from romancal.associations.lib._process_list import ProcessList
 from romancal.associations.lib.product_utils import (
     prune_duplicate_associations,
     prune_duplicate_products,
 )
 from romancal.associations.lib.utilities import evaluate, is_iterable
-from romancal.associations.registry import RegistryMarker
 
 if TYPE_CHECKING:
     from typing import ClassVar
 
 __all__ = [
     "ASN_SCHEMA",
-    "AsnMixin_AuxData",
     "AsnMixin_Lv2FOV",
     "AsnMixin_Lv2GBTDSfull",
     "AsnMixin_Lv2GBTDSpass",
@@ -96,7 +95,7 @@ LEVEL2B_EXPTYPES.extend(SPEC2_SCIENCE_EXP_TYPES)
 INVALID_AC_TYPES = ["background"]
 
 
-class DMS_ELPP_Base(DMSBaseMixin, Association):
+class DMS_ELPP_Base(DMSBaseMixin, _Association):
     """Basic class for DMS Level associations."""
 
     # Set the validation schema
@@ -935,31 +934,6 @@ class Constraint_Target(DMSAttrConstraint):
 # -----------
 # Base Mixins
 # -----------
-class AsnMixin_AuxData:
-    """Process special and non-science exposures as science."""
-
-    def get_exposure_type(self, item, default="science"):
-        """Override to force exposure type to always be science
-        Parameters
-        ----------
-        item : dict
-            The pool entry for which the exposure type is determined
-        default : str or None
-            The default exposure type.
-            If None, routine will raise LookupError
-        Returns
-        -------
-        exposure_type : 'science'
-            Returns as science for most Exposures
-        exposure_type : 'target_acquisition'
-            Returns target_acquisition for mir_tacq
-        """
-        NEVER_CHANGE = ["target_acquisition"]
-        exp_type = super().get_exposure_type(item, default=default)
-        if exp_type in NEVER_CHANGE:
-            return exp_type
-        return "science"
-
 
 class AsnMixin_Science(DMS_ELPP_Base):
     """Basic science constraints"""

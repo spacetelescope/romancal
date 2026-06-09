@@ -3,7 +3,8 @@
 import pytest
 
 import romancal.associations.skycell_asn as skycell_asn
-from romancal.associations.skycell_asn import _cli
+import romancal.associations.asn_from_list as asn_from_list
+from romancal.associations.skycell_asn import _cli, _create_groups, parse_visitID
 
 
 @pytest.mark.parametrize(
@@ -23,7 +24,7 @@ def test_parse_visitID():
     filelist1 = [
         "r0000101002003004005_0001_wfi10_cal.asdf",
     ]
-    visitid_parts = skycell_asn.parse_visitID(filelist1[0][1:20])
+    visitid_parts = parse_visitID(filelist1[0][1:20])
     assert visitid_parts["Program"] == "00001"
     assert visitid_parts["Execution"] == "01"
     assert visitid_parts["Pass"] == "002"  # noqa: S105
@@ -51,7 +52,7 @@ def sample_filelist():
     ],
 )
 def test_create_groups_param(sample_filelist, product_type, expected_key_count):
-    groups = skycell_asn._create_groups(sample_filelist, product_type)
+    groups = _create_groups(sample_filelist, product_type)
     assert all(isinstance(v, list) for v in groups.values())
     if product_type in ("visit", "full", None):
         assert len(groups) == expected_key_count
@@ -125,7 +126,7 @@ def test_create_metadata(monkeypatch):
 
     dummy_asn_obj = DummyASN()
     monkeypatch.setattr(
-        skycell_asn.asn_from_list,
+        skycell_asn,
         "asn_from_list",
         lambda members, **kwargs: dummy_asn_obj,
     )

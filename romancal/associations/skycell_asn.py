@@ -12,7 +12,7 @@ from roman_datamodels import datamodels as rdm
 
 import romancal.skycell.match as sm
 import romancal.skycell.skymap as sc
-from romancal.associations import asn_from_list
+from romancal.associations.asn_from_list import asn_from_list
 from romancal.associations.lib.utilities import mk_level3_asn_name
 from romancal.lib.basic_utils import parse_visitID as parse_visitID
 
@@ -252,9 +252,7 @@ def _create_metadata(
     dict
         Metadata dictionary for the association, ready for serialization.
     """
-    prompt_product_asn = asn_from_list.asn_from_list(
-        member_list, product_name=asn_file_name
-    )
+    prompt_product_asn = asn_from_list(member_list, product_name=asn_file_name)
     prompt_product_asn["asn_type"] = "image"
     try:
         program_id = parse_visitID(visit_id_no_r).get("Program", "")
