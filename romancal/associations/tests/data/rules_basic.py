@@ -1,12 +1,12 @@
 """Association Rules: Basic"""
 
-from romancal.associations import Association
+from romancal.associations import _Association
+from romancal.associations._registry import RegistryMarker
 from romancal.associations.lib.constraint import ConstraintTrue
-from romancal.associations.registry import RegistryMarker
 
 
 @RegistryMarker.rule
-class Rule_1(Association):
+class Rule_1(_Association):
     """Basic rule"""
 
     def __init__(self, version_id=None):

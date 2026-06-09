@@ -2,16 +2,16 @@
 
 import pytest
 
-from romancal.associations import Association, AssociationRegistry, load_asn
+from romancal.associations import _Association, _AssociationRegistry, load_asn
+from romancal.associations._exceptions import AssociationNotValidError
 from romancal.associations.asn_from_list import _cli, asn_from_list
-from romancal.associations.exceptions import AssociationNotValidError
 
 
 def test_base_association():
     """Create the simplest of associations"""
     items = ["a", "b", "c"]
-    asn = asn_from_list(items, rule=Association)
-    assert asn["asn_rule"] == "Association"
+    asn = asn_from_list(items, rule=_Association)
+    assert asn["asn_rule"] == "_Association"
     assert asn["asn_type"] == "None"
     assert asn["members"] == items
 
@@ -19,7 +19,7 @@ def test_base_association():
 def test_base_roundtrip():
     """Write/read created base association"""
     items = ["a", "b", "c"]
-    asn = asn_from_list(items, rule=Association)
+    asn = asn_from_list(items, rule=_Association)
     _, serialized = asn.dump()
     reloaded = load_asn(serialized, registry=None)
     assert asn["asn_rule"] == reloaded["asn_rule"]
@@ -32,10 +32,10 @@ def test_association_target():
     items = ["a", "b", "c"]
     target_name = "270p65x48y69"
     product_name = "l3_target"
-    rule_name = "Association"
+    rule_name = "_Association"
     asn = asn_from_list(
         items,
-        rule=Association,
+        rule=_Association,
         product_name=product_name,
         target=target_name,
         version_id="c55",
@@ -152,7 +152,7 @@ def test_cmdline_change_rules(tmp_path):
     args = args + inlist
     _cli(args)
     with path.open() as fp:
-        asn = load_asn(fp, registry=AssociationRegistry(include_bases=True))
+        asn = load_asn(fp, registry=_AssociationRegistry(include_bases=True))
     # assert inlist == asn['members']
     assert inlist[0] == asn["products"][0]["members"][0]["expname"]
     assert inlist[1] == asn["products"][0]["members"][1]["expname"]
