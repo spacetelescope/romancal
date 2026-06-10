@@ -25,7 +25,7 @@ from ci_watson.artifactory_helpers import (
 from deepdiff.operator import BaseOperator
 from gwcs.wcstools import grid_from_bounding_box
 
-from romancal.associations.load_asn import load_asn
+from romancal.associations._load_asn import load_asn
 
 # from romancal.lib.suffix import replace_suffix
 
