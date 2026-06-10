@@ -132,7 +132,7 @@ def test_forced_catalog(image_model, function_jail, ignore_parquet_metadata_path
         save_results=True,
         output_file="source_cat.asdf",
     )
-    result_force, _ = SourceCatalogStep.call(
+    result_force, segmentation_map = SourceCatalogStep.call(
         image_model,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
@@ -143,8 +143,10 @@ def test_forced_catalog(image_model, function_jail, ignore_parquet_metadata_path
         forced_segmentation="source_segm.asdf",
     )
     assert isinstance(result_force, ForcedImageSourceCatalogModel)
+    assert isinstance(segmentation_map, SegmentationMapModel)
 
     assert Path(output_filename).exists()
+    assert Path("force_segm.asdf").exists()
     catalog = Table.read(output_filename)
     has_forced_fields = False
     for field in catalog.dtype.names:
