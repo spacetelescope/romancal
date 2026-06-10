@@ -580,6 +580,20 @@ def make_source_injected_library(library, seed=None):
                 si_cat["y_pos"] = si_y_pos
                 si_cat["label"] = np.arange(len(si_x_pos))
 
+            # Discard positions in NA empty regions
+            # nanmask = np.isnan(model.data[y_pos_idx, x_pos_idx])
+            # y_pos_idx, x_pos_idx = y_pos_idx[~nanmask], x_pos_idx[~nanmask]
+
+            # Adjust NA regions for injection
+            # https://stackoverflow.com/questions/68197762/fill-nan-with-nearest-neighbor-in-numpy-array
+            from scipy.interpolate import NearestNDInterpolator
+            # data = ... # shape (w, h)
+            # mask = np.where(~np.isnan(data))
+            nanmask = np.isnan(si_model.data[y_pos_idx, x_pos_idx])
+            interp = NearestNDInterpolator(np.transpose(nanmask), si_model.data[nanmask])
+            si_model.data = interp(*np.indices(si_model.data.shape))
+
+
             # Inject sources into the detection image
             si_model = inject_sources(
                 si_model,
