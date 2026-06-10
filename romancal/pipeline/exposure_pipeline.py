@@ -107,13 +107,10 @@ class ExposurePipeline(RomanPipeline):
 
         with lib:
             for model_index, model in enumerate(lib):
-                result = self._process_model(model)
+                result, run_source_catalog = self._process_model(model)
 
                 # now handle source_catalog
-                if (
-                    result.meta.exposure.type not in ("WFI_IMAGE", "WFI_LOLO")
-                    or self.source_catalog.skip
-                ):
+                if not run_source_catalog or self.source_catalog.skip:
                     # WFI_WFSC doesn't get a source catalog (and therefore also no tweakreg)
                     result.meta.cal_step.source_catalog = "SKIPPED"
                     catalog, segmentation = None, None
@@ -172,7 +169,11 @@ class ExposurePipeline(RomanPipeline):
         return model, catalog, segmentation
 
     def _process_model(self, model):
-        """Run all per-model calibration steps that return models and return the result."""
+        """
+        Run all per-model calibration steps.
+
+        Returns the model and a boolean indicating if source catalog should be run.
+        """
         self.dq_init.suffix = "dq_init"
         result = self.dq_init.run(model)
         if model is not result:
@@ -184,7 +185,7 @@ class ExposurePipeline(RomanPipeline):
 
         if _is_fully_saturated(result):
             log.info("All pixels are saturated. Returning a zeroed-out image.")
-            return self.create_fully_saturated_zeroed_image(result)
+            return self.create_fully_saturated_zeroed_image(result), False
 
         result = self.refpix.run(result)
         result = self.dark_decay.run(result)
@@ -199,9 +200,12 @@ class ExposurePipeline(RomanPipeline):
         if result.meta.exposure.type not in ("WFI_IMAGE", "WFI_LOLO", "WFI_WFSC"):
             result.meta.cal_step.flat_field = "SKIPPED"
             result.meta.cal_step.source_catalog = "SKIPPED"
-            return result
+            return result, False
 
-        return self.flatfield.run(result)
+        return self.flatfield.run(result), result.meta.exposure.type in (
+            "WFI_IMAGE",
+            "WFI_LOLO",
+        )
 
     def save_model(self, model, **kwargs):
         # depending on model set suffix and ext
