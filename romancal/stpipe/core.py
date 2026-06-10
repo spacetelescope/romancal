@@ -100,10 +100,13 @@ class RomanStep(Step):
             is the reftype code, the second element is the filename.
         """
         if model is None:
+            # None can be passed to this function if a step or pipeline returns
+            # None inside a tuple of results (for example SourceCatalogStep).
             return
 
         if isinstance(model, ModelLibrary):
-            # TODO we should maybe upstream this so stpipe handles lists of libraries
+            # This works around what is likely an issue in how stpipe handles
+            # tuples that contain ModelLibrary instances: https://github.com/spacetelescope/stpipe/issues/322
             with model:
                 for m in model:
                     self.finalize_result(m, reference_files_used)
