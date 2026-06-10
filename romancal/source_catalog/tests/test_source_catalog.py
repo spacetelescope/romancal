@@ -123,8 +123,7 @@ def image_model():
 
 def test_forced_catalog(image_model, function_jail, ignore_parquet_metadata_paths):
     output_filename = "force_cat.parquet"
-    step = SourceCatalogStep()
-    _ = step.call(
+    _ = SourceCatalogStep.call(
         image_model,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
@@ -133,7 +132,7 @@ def test_forced_catalog(image_model, function_jail, ignore_parquet_metadata_path
         save_results=True,
         output_file="source_cat.asdf",
     )
-    result_force, _ = step.call(
+    result_force, _ = SourceCatalogStep.call(
         image_model,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
