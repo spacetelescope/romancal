@@ -20,3 +20,11 @@ def singleton(cls):
     """Turn a class into a singleton, such that new objects
     in this class share the same instance"""
     instances = {}
+
+    @wraps(cls)
+    def getinstance():
+        if cls not in instances:
+            instances[cls] = cls()
+        return instances[cls]
+
+    return getinstance
