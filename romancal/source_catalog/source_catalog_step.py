@@ -185,8 +185,7 @@ class SourceCatalogStep(RomanStep):
                 deblend=self.deblend,
                 mask=mask,
             )
-            if segment_img is not None:
-                segment_img.detection_image = detection_image
+            segmentation_model["detection_image"] = detection_image
         else:
             forced_segmodel = datamodels.open(self.forced_segmentation)
             # forced_segmodel.data is asdf.tags.core.ndarray.NDArrayType
@@ -234,7 +233,8 @@ class SourceCatalogStep(RomanStep):
             # TODO: improve this so that the moment-based properties are
             # not recomputed from the forced_detection_image
             forced_detection_image = forced_segmodel.detection_image
-            segment_img.detection_image = forced_detection_image
+            # record detection image used
+            segmentation_model["detection_image"] = forced_detection_image
             forced_catobj = RomanSourceCatalog(
                 model,
                 cat_model,
@@ -276,14 +276,8 @@ class SourceCatalogStep(RomanStep):
         # Put the resulting catalog table in the catalog model
         cat_model.source_catalog = cat
 
-        log.error("Cannot create source catalog. No sources were detected.")
-
         # Set the data and detection image
         segmentation_model.data = segment_img.data.astype(np.uint32)
-        if hasattr(segment_img, "detection_image"):
-            # TODO does photutils use this detection_image attribute, if not, we
-            # likely don't need to attach it to segment_img above
-            segmentation_model["detection_image"] = segment_img.detection_image
 
         # we update the input_model here to note that source_catalog finished
         # only for ImageModel as L3 doesn't have cal_step.source_catalog
