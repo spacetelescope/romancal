@@ -5,7 +5,7 @@ import logging
 import warnings
 from collections import Counter, defaultdict
 
-from .._config import *
+from .._config import DEBUG
 from .diff import compare_product_membership
 
 logger = logging.getLogger(__name__)
