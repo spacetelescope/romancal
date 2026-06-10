@@ -15,9 +15,8 @@ import numpy as np
 #    generate,
 # )
 from romancal.associations import __version__
-from ._config import *
+from ._config import DEBUG
 from . import _config as config
-#from ._generate import *
 from ._generate import _generate
 from ._exceptions import AssociationError
 from romancal.associations.lib.dms_base import DMSAttrConstraint
