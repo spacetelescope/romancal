@@ -210,9 +210,7 @@ def shared_tests(
 def test_multiband_catalog(
     library_model, fit_psf, snr_threshold, npixels, save_results, function_jail
 ):
-    step = MultibandCatalogStep()
-
-    result, _ = step.call(
+    result, _ = MultibandCatalogStep.call(
         library_model,
         bkg_boxsize=50,
         snr_threshold=snr_threshold,
@@ -231,8 +229,7 @@ def test_multiband_catalog(
 
 def test_multiband_catalog_populates_dust_ebv(library_model, function_jail):
     """Ensure the joined multiband catalog contains the detection-level dust_ebv."""
-    step = MultibandCatalogStep()
-    result, _ = step.call(
+    result, _ = MultibandCatalogStep.call(
         library_model,
         bkg_boxsize=50,
         snr_threshold=3,
@@ -249,9 +246,7 @@ def test_multiband_catalog_populates_dust_ebv(library_model, function_jail):
 
 @pytest.mark.parametrize("save_results", (True, False))
 def test_multiband_catalog_no_detections(library_model, save_results, function_jail):
-    step = MultibandCatalogStep()
-
-    result, _ = step.call(
+    result, _ = MultibandCatalogStep.call(
         library_model,
         bkg_boxsize=50,
         snr_threshold=1000,  # high threshold to ensure no detections
@@ -269,9 +264,7 @@ def test_multiband_catalog_no_detections(library_model, save_results, function_j
 def test_multiband_catalog_invalid_inputs(
     library_model_all_nan, save_results, function_jail
 ):
-    step = MultibandCatalogStep()
-
-    result, _ = step.call(
+    result, _ = MultibandCatalogStep.call(
         library_model_all_nan,
         bkg_boxsize=50,
         snr_threshold=3,
@@ -297,9 +290,7 @@ def test_multiband_catalog_some_invalid_inputs(
         model.var_rnoise[:] = np.nan
         library_model.shelve(model, modify=True)
 
-    step = MultibandCatalogStep()
-
-    result, _ = step.call(
+    result, _ = MultibandCatalogStep.call(
         library_model,
         bkg_boxsize=50,
         snr_threshold=3,
@@ -402,9 +393,7 @@ def library_model2(mosaic_si_model):
 def test_multiband_source_injection_catalog(
     library_model2, fit_psf, snr_threshold, npixels, save_results, function_jail
 ):
-    step = MultibandCatalogStep()
-
-    result, _ = step.call(
+    result, _ = MultibandCatalogStep.call(
         library_model2,
         bkg_boxsize=50,
         snr_threshold=snr_threshold,
@@ -594,8 +583,6 @@ def test_multiband_catalog_reference_filter(
     should not.  ee_fractions should contain the three original filter keys
     only (no 'm' variants).
     """
-    step = MultibandCatalogStep()
-
     kwargs = dict(
         bkg_boxsize=50,
         snr_threshold=3,
@@ -607,7 +594,7 @@ def test_multiband_catalog_reference_filter(
     if psf_match_reference_filter is not None:
         kwargs["psf_match_reference_filter"] = psf_match_reference_filter
 
-    result, _ = step.call(library_model_three_filters, **kwargs)
+    result, _ = MultibandCatalogStep.call(library_model_three_filters, **kwargs)
 
     cat = result.source_catalog
     assert isinstance(cat, Table)
@@ -630,9 +617,7 @@ def test_multiband_catalog_column_content(
     - F213m: redder than reference, synthetic correction factors
     - F129 (reference): only original measurements, no matched columns.
     """
-    step = MultibandCatalogStep()
-
-    result, _ = step.call(
+    result, _ = MultibandCatalogStep.call(
         library_model_f062_f129_f213,
         bkg_boxsize=50,
         snr_threshold=3,
