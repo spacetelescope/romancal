@@ -329,8 +329,7 @@ def test_background(mosaic_model, function_jail):
     """
     Test background fallback when Background2D fails.
     """
-    step = SourceCatalogStep()
-    result_catalog, _ = step.call(
+    result_catalog, _ = SourceCatalogStep.call(
         mosaic_model,
         bkg_boxsize=1000,
         kernel_fwhm=2.0,
@@ -348,8 +347,7 @@ def test_background(mosaic_model, function_jail):
 def test_source_catalog_populates_dust_ebv(model_fixture, request, function_jail):
     """Ensure prompt source catalogs include a per-source dust_ebv column."""
     model = request.getfixturevalue(model_fixture)
-    step = SourceCatalogStep()
-    result_catalog, _ = step.call(
+    result_catalog, _ = SourceCatalogStep.call(
         model,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
@@ -371,8 +369,7 @@ def test_l2_input_model_unchanged(image_model, function_jail):
     original_data = image_model.data.copy()
     original_err = image_model.err.copy()
 
-    step = SourceCatalogStep()
-    step.call(
+    SourceCatalogStep.call(
         image_model,
         snr_threshold=0.5,
         npixels=5,
@@ -394,8 +391,7 @@ def test_l3_input_model_unchanged(mosaic_model, function_jail):
     original_data = mosaic_model.data.copy()
     original_err = mosaic_model.err.copy()
 
-    step = SourceCatalogStep()
-    step.call(
+    SourceCatalogStep.call(
         mosaic_model,
         snr_threshold=0.5,
         npixels=5,
@@ -413,8 +409,7 @@ def test_invalid_step_inputs(image_model, mosaic_model, function_jail):
     for input_model in (image_model, mosaic_model):
         model = input_model.copy()
         model.data = np.full(model.data.shape, np.nan)
-        step = SourceCatalogStep()
-        result_catalog, _ = step.call(model)
+        result_catalog, _ = SourceCatalogStep.call(model)
         cat = result_catalog.source_catalog
         assert isinstance(cat, Table)
         assert len(cat) == 0
@@ -429,8 +424,7 @@ def test_psf_photometry(function_jail, image_model):
     """
     Test PSF photometry.
     """
-    step = SourceCatalogStep()
-    result_catalog, _ = step.call(
+    result_catalog, _ = SourceCatalogStep.call(
         image_model,
         bkg_boxsize=20,
         kernel_fwhm=2.0,
@@ -463,8 +457,7 @@ def test_do_psf_photometry_column_names(function_jail, image_model, fit_psf):
     Test that fit_psf will determine whether the PSF
     photometry columns are added to the final catalog or not.
     """
-    step = SourceCatalogStep()
-    result_catalog, _ = step.call(
+    result_catalog, _ = SourceCatalogStep.call(
         image_model,
         bkg_boxsize=20,
         kernel_fwhm=2.0,
