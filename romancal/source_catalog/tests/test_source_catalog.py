@@ -11,7 +11,11 @@ from numpy.testing import assert_equal
 from roman_datamodels.datamodels import (
     ForcedImageSourceCatalogModel,
     ImageModel,
+    ImageSourceCatalogModel,
     MosaicModel,
+    MosaicSegmentationMapModel,
+    MosaicSourceCatalogModel,
+    SegmentationMapModel,
 )
 
 from romancal.source_catalog._source_catalog import RomanSourceCatalog
@@ -176,9 +180,10 @@ def test_l2_source_catalog(
     ignore_parquet_metadata_paths,
 ):
     image_model.meta.filename = "test_cal.asdf"
-    output_filename = "test_cat.parquet"
-    step = SourceCatalogStep()
-    result_catalog, _ = step.call(
+    catalog_filename = "test_cat.parquet"
+    segmentation_map_filename = "test_segm.asdf"
+
+    result_catalog, result_segmentation_map = SourceCatalogStep.call(
         image_model,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
@@ -187,17 +192,19 @@ def test_l2_source_catalog(
         save_results=save_results,
     )
 
+    assert isinstance(result_catalog, ImageSourceCatalogModel)
+    assert isinstance(result_segmentation_map, SegmentationMapModel)
+
     if save_results:
-        # TODO check for all expected files
-        assert Path(output_filename).exists()
+        assert Path(segmentation_map_filename).exists()
+        assert Path(catalog_filename).exists()
         compare_model_and_parquet_metadata(
-            image_model, output_filename, ignore_parquet_metadata_paths
+            image_model, catalog_filename, ignore_parquet_metadata_paths
         )
-        cat = Table.read(output_filename)
+        cat = Table.read(catalog_filename)
     else:
-        # TODO check that no output was produced
-        # FIXME: test output_filename doesn't exists but due to
-        # https://github.com/spacetelescope/romancal/issues/1960 it always will
+        assert not Path(segmentation_map_filename).exists()
+        assert not Path(catalog_filename).exists()
         cat = result_catalog.source_catalog
         assert isinstance(cat, Table)
     assert len(cat) == nsources
@@ -253,13 +260,13 @@ def test_l3_source_catalog(
     function_jail,
     ignore_parquet_metadata_paths,
 ):
-    step = SourceCatalogStep()
     mosaic_model.meta.filename = "test_coadd.asdf"
-    output_filename = "test_cat.parquet"
+    catalog_filename = "test_cat.parquet"
+    segmentation_map_filename = "test_segm.asdf"
 
     # Create model and set some crucial meta required to
     # create the L3 PSF for flux determination.
-    result_catalog, _ = step.call(
+    result_catalog, result_segmentation_map = SourceCatalogStep.call(
         mosaic_model,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
@@ -268,17 +275,19 @@ def test_l3_source_catalog(
         save_results=save_results,
     )
 
+    assert isinstance(result_catalog, MosaicSourceCatalogModel)
+    assert isinstance(result_segmentation_map, MosaicSegmentationMapModel)
+
     if save_results:
-        # TODO check all expected output
-        assert Path(output_filename).exists()
-        cat = Table.read(output_filename)
+        assert Path(segmentation_map_filename).exists()
+        assert Path(catalog_filename).exists()
+        cat = Table.read(catalog_filename)
         compare_model_and_parquet_metadata(
-            mosaic_model, output_filename, ignore_parquet_metadata_paths
+            mosaic_model, catalog_filename, ignore_parquet_metadata_paths
         )
     else:
-        # TODO check no output was produced
-        # FIXME: test output_filename doesn't exists but due to
-        # https://github.com/spacetelescope/romancal/issues/1960 it always will
+        assert not Path(segmentation_map_filename).exists()
+        assert not Path(catalog_filename).exists()
         cat = result_catalog.source_catalog
         assert isinstance(cat, Table)
     assert len(cat) == nsources
