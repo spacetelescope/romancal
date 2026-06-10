@@ -183,20 +183,26 @@ def shared_tests(
             if colname.endswith("_flux"):
                 assert f"{colname}_err" in cat.colnames
 
+    catalog_filepath = Path(function_jail / f"{result.meta.filename}_cat.parquet")
+    segmentation_map_filepath = Path(
+        function_jail / f"{result.meta.filename}_segm.asdf"
+    )
+
     if save_results:
-        filepath = Path(function_jail / f"{result.meta.filename}_cat.parquet")
-        assert filepath.exists()
-        tbl = pyarrow.parquet.read_table(filepath)
+        assert catalog_filepath.exists()
+        tbl = pyarrow.parquet.read_table(catalog_filepath)
         assert isinstance(tbl, pyarrow.Table)
 
-        filepath = Path(function_jail / f"{result.meta.filename}_segm.asdf")
-        assert filepath.exists()
-        segm_model = rdm.open(filepath)
+        assert segmentation_map_filepath.exists()
+        segm_model = rdm.open(segmentation_map_filepath)
         assert isinstance(segm_model, MultibandSegmentationMapModel)
         assert (
             segm_model.meta.get("psf_match_reference_filter")
             == cat.meta["psf_match_reference_filter"]
         )
+    else:
+        assert not catalog_filepath.exists()
+        assert not segmentation_map_filepath.exists()
 
 
 @pytest.mark.parametrize("fit_psf", (True, False))
