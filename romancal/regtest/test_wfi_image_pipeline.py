@@ -96,6 +96,16 @@ def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths
     assert diff.identical, diff.report()
 
 
+def test_catalog_produced(output_filename):
+    catalog_filename = output_filename.replace("_cal.asdf", "_cat.parquet")
+    assert Path(catalog_filename).exists()
+
+
+def test_segmentation_map_produced(output_filename):
+    segmentation_map_filename = output_filename.replace("_cal.asdf", "_segm.asdf")
+    assert Path(segmentation_map_filename).exists()
+
+
 @pytest.mark.soctests
 def test_output_is_image_model(output_model):
     # DMS280 result is an ImageModel
@@ -275,6 +285,12 @@ def run_all_saturated(rtdata_module):
 def all_saturated_model(run_all_saturated):
     with rdm.open(run_all_saturated.output) as model:
         yield model
+
+
+def test_all_staturated_outputs(run_all_saturated):
+    cal_filename = run_all_saturated.output
+    assert not Path.exists(cal_filename.replace("_cal.asdf", "_cat.parquet"))
+    assert not Path.exists(cal_filename.replace("_cal.asdf", "_segm.asdf"))
 
 
 def test_all_saturated_against_truth(run_all_saturated, ignore_asdf_paths):
