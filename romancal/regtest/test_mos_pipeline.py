@@ -138,10 +138,11 @@ def test_mos_save_results(rtdata, function_jail):
     """MosaicPipline.call with save_results=False should not generate files"""
     rtdata.get_asn("WFI/image/L3_regtest_asn.json")
 
+    initial_files = set(Path(function_jail).glob("*"))
     result = MosaicPipeline.call(rtdata.input, save_results=False)
 
     # no files should be produced
-    assert not list(Path(function_jail).glob("*"))
+    assert not set(Path(function_jail).glob("*")) - initial_files
 
     # check result contains coadd, catalog, segmentation
     assert len(result) == 3

@@ -383,10 +383,11 @@ def test_elp_save_results(rtdata, function_jail):
     input_data = "r0000101001001001001_0001_wfi01_f158_uncal.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
 
+    initial_files = set(Path(function_jail).glob("*"))
     result = ExposurePipeline.call(rtdata.input, save_results=False)
 
     # no files should be produced
-    assert not list(Path(function_jail).glob("*"))
+    assert not set(Path(function_jail).glob("*")) - initial_files
 
     # check result contains model, catalog, segmentation
     assert len(result) == 3
