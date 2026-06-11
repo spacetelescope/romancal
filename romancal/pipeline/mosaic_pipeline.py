@@ -89,6 +89,11 @@ class MosaicPipeline(RomanPipeline):
         self.outlier_detection.resample_on_skycell = self.resample_on_skycell
         self.resample.resample_on_skycell = self.resample_on_skycell
 
+        if self.save_results:
+            # only set if save_results is True since setting
+            # output_file will trigger results to be saved
+            self.output_file = library.asn["products"][0]["name"]
+
         self.flux.suffix = "flux"
         result = self.flux.run(library)
         self.skymatch.suffix = "skymatch"
@@ -96,9 +101,8 @@ class MosaicPipeline(RomanPipeline):
         self.outlier_detection.suffix = "outlier_detection"
         result = self.outlier_detection.run(result)
         self.resample.suffix = "coadd"
-        self.output_file = library.asn["products"][0]["name"]
+
         result = self.resample.run(result)
-        self.source_catalog.output_file = self.output_file
         catalog_and_segmentation = self.source_catalog.run(result)
         if self.source_catalog.skip:
             catalog, segmentation = None, None
