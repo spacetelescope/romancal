@@ -147,6 +147,6 @@ def test_mos_save_results(rtdata, function_jail):
     # check result contains coadd, catalog, segmentation
     assert len(result) == 3
     coadd, catalog, segmentation = result
-    assert isinstance(coadd, rdm.MosaicModel)
-    assert isinstance(catalog, rdm.MosaicSourceCatalogModel)
-    assert isinstance(segmentation, rdm.MosaicSegmentationMapModel)
+    assert isinstance(coadd, rdm.datamodels.MosaicModel)
+    assert isinstance(catalog, rdm.datamodels.MosaicSourceCatalogModel)
+    assert isinstance(segmentation, rdm.datamodels.MosaicSegmentationMapModel)

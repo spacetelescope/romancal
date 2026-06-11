@@ -393,5 +393,5 @@ def test_elp_save_results(rtdata, function_jail):
     assert len(result) == 3
     coadd, catalog, segmentation = result
     assert isinstance(coadd, rdm.datamodels.ImageModel)
-    assert isinstance(catalog, rdm.datamodels.SourceCatalogModel)
+    assert isinstance(catalog, rdm.datamodels.ImageSourceCatalogModel)
     assert isinstance(segmentation, rdm.datamodels.SegmentationMapModel)
