@@ -376,3 +376,21 @@ def test_pipeline_suffix(rtdata, ignore_asdf_paths):
         assert model.meta.cal_step.source_catalog == "COMPLETE"
         assert model.meta.cal_step.tweakreg == "SKIPPED"
         assert model.meta.filename == output
+
+
+def test_elp_save_results(rtdata, function_jail):
+    """ExposurePipline.call with save_results=False should not generate files"""
+    input_data = "r0000101001001001001_0001_wfi01_f158_uncal.asdf"
+    rtdata.get_data(f"WFI/image/{input_data}")
+
+    result = ExposurePipeline.call(rtdata.input, save_results=False)
+
+    # no files should be produced
+    assert not list(Path(function_jail).glob("*"))
+
+    # check result contains model, catalog, segmentation
+    assert len(result) == 3
+    coadd, catalog, segmentation = result
+    assert isinstance(coadd, rdm.ImageModel)
+    assert isinstance(catalog, rdm.SourceCatalogModel)
+    assert isinstance(segmentation, rdm.SegmentationMapModel)
