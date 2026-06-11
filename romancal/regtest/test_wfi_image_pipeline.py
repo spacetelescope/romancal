@@ -289,8 +289,8 @@ def all_saturated_model(run_all_saturated):
 
 def test_all_staturated_outputs(run_all_saturated):
     cal_filename = run_all_saturated.output
-    assert not Path.exists(cal_filename.replace("_cal.asdf", "_cat.parquet"))
-    assert not Path.exists(cal_filename.replace("_cal.asdf", "_segm.asdf"))
+    assert not Path(cal_filename.replace("_cal.asdf", "_cat.parquet")).exists()
+    assert not Path(cal_filename.replace("_cal.asdf", "_segm.asdf")).exists()
 
 
 def test_all_saturated_against_truth(run_all_saturated, ignore_asdf_paths):
