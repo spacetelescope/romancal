@@ -15,7 +15,6 @@ from .common import (
     model_from_resultants,
 )
 
-
 SIMPLE_EXPECTED_DEFAULT = {
     "data": np.array(
         [[0.54824126, 0.54824126], [0.21930373, 0.6579057]],
@@ -39,9 +38,7 @@ SIMPLE_EXPECTED_GAIN = {
     "data": np.array(
         [[0.54822373, 0.54822373], [0.21932559, 0.32894737]], dtype=np.float32
     ),
-    "err": np.array(
-        [[0.1097, 0.1097], [0.0694, 0.10406]], dtype=np.float16
-    ),
+    "err": np.array([[0.1097, 0.1097], [0.0694, 0.10406]], dtype=np.float16),
     "var_poisson": np.array(
         [[0.012024, 0.012024], [0.00481, 0.01082]], dtype=np.float16
     ),
@@ -56,12 +53,8 @@ SIMPLE_EXPECTED_RNOISE = {
         [[0.5263168, 0.5263168], [0.23026292, 0.72367984]], dtype=np.float32
     ),
     "err": np.array([[14.71, 14.71], [14.71, 14.71]], dtype=np.float16),
-    "var_poisson": np.array(
-        [[0.05887, 0.05887], [0.02576, 0.08093]], dtype=np.float16
-    ),
-    "var_rnoise": np.array(
-        [[216.4, 216.4], [216.4, 216.4]], dtype=np.float16
-    ),
+    "var_poisson": np.array([[0.05887, 0.05887], [0.02576, 0.08093]], dtype=np.float16),
+    "var_rnoise": np.array([[216.4, 216.4], [216.4, 216.4]], dtype=np.float16),
     "chisq": np.array([[2.0e-05, 1.2e-04], [3.0e-05, 1.8e-04]], dtype=np.float16),
 }
 
@@ -199,10 +192,13 @@ def test_uncertainty_matches_scatter(algorithm):
     cumulative = np.cumsum(per_read, axis=0)
     # Average all read values within each resultant group
     boundaries = np.concatenate([[0], np.cumsum(nreads)])
-    resultants = np.array([
-        np.mean(cumulative[boundaries[i]:boundaries[i + 1]], axis=0)
-        for i in range(n_resultants)
-    ], dtype=np.float32)
+    resultants = np.array(
+        [
+            np.mean(cumulative[boundaries[i] : boundaries[i + 1]], axis=0)
+            for i in range(n_resultants)
+        ],
+        dtype=np.float32,
+    )
     # Read noise averages down as sqrt(n) within each resultant
     resultants += (
         rng.normal(0, 1, size=(n_resultants, ntrial)).astype(np.float32)
