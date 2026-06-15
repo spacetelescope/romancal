@@ -83,8 +83,6 @@ romancal = "romancal.stpipe.integration:get_steps"
 
 [project.scripts]
 asn_from_list = "romancal.associations.asn_from_list:_cli"
-mk_skycell_asn_from_skycell_list= "romancal.associations.mk_skycell_asn_from_skycell_list:_cli"
-mk_skycell_list = "romancal.associations.mk_skycell_list:_cli"
 roman_pointing_summary = "romancal.scripts.pointing_summary:_main"
 roman_set_telescope_pointing = "romancal.scripts.set_telescope_pointing:_main"
 roman_set_velocity_aberration = "romancal.scripts.set_velocity_aberration:_main"
