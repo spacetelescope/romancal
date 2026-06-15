@@ -15,14 +15,14 @@ import numpy as np
 #    generate,
 # )
 from romancal.associations import __version__
-from ._config import DEBUG
-from . import _config as config
-from ._generate import _generate
-from ._exceptions import AssociationError
-from romancal.associations.lib.dms_base import DMSAttrConstraint
-from romancal.associations.lib.log_config import DMS_config, log_config
 from romancal.associations._pool import _AssociationPool
 from romancal.associations._registry import _AssociationRegistry
+from romancal.associations.lib.dms_base import DMSAttrConstraint
+from romancal.associations.lib.log_config import DMS_config, log_config
+
+from . import _config as config
+from ._exceptions import AssociationError
+from ._generate import _generate
 
 __all__ = ["Main"]
 

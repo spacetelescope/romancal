@@ -9,7 +9,7 @@ from . import libpath
 from ._exceptions import AssociationError, AssociationNotValidError
 from .lib._callback_registry import _CallbackRegistry
 
-__all__ = ["_AssociationRegistry", "RegistryMarker"]
+__all__ = ["RegistryMarker", "_AssociationRegistry"]
 
 # Configure logging
 logger = logging.getLogger(__name__)
