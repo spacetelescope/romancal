@@ -102,11 +102,13 @@ def add_sources(image_model, psf_model, x_true, y_true, flux_true, background=10
 
 @pytest.mark.parametrize(
     "dx, dy, true_flux",
-    zip(
-        rng.uniform(-1, 1, n_trials),
-        rng.uniform(-1, 1, n_trials),
-        np.geomspace(1_000, 100_000, n_trials),
-        strict=False,
+    list(
+        zip(
+            rng.uniform(-1, 1, n_trials),
+            rng.uniform(-1, 1, n_trials),
+            np.geomspace(1_000, 100_000, n_trials),
+            strict=False,
+        )
     ),
 )
 def test_psf_fit(setup_inputs, dx, dy, true_flux):
