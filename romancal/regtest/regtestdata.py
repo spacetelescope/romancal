@@ -14,6 +14,7 @@ import deepdiff
 import gwcs
 import numpy as np
 import requests
+import roman_datamodels as rdm
 from astropy.units import Quantity
 from ci_watson.artifactory_helpers import (
     BigdataError,
@@ -497,23 +498,33 @@ class DiffResult:
         return not self.diff
 
     @staticmethod
-    def _model_type(file):
-        import roman_datamodels as rdm
-
+    def _file_info(file):
         try:
-            with rdm.open(file) as mdl:
-                return mdl.__class__.__name__
+            with rdm.open(file) as model:
+                model_type = model.__class__.__name__
+                crds_context = (
+                    model.get("meta", {})
+                    .get("ref_file", {})
+                    .get("crds", {})
+                    .get("context", "Unknown context")
+                )
         except Exception:
-            return "Not a model"
+            model_type = "Not a model"
+            crds_context = "Unknown context"
+        return model_type, crds_context
 
     def report(self, **kwargs):
+        result_model_type, result_crds_context = self._file_info(self.result)
+        truth_model_type, truth_crds_context = self._file_info(self.truth)
         title = dedent(
             f"""
             Diff report for:
                 result file: {self.result}
-                    model type: {self._model_type(self.result)}
+                    model type: {result_model_type}
+                    crds_context: {result_crds_context}
                 truth file: {self.truth}
-                    model type: {self._model_type(self.result)}
+                    model type: {truth_model_type}
+                    crds_context: {truth_crds_context}
             """
         )
         report = pprint.pformat(self.diff)
