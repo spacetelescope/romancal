@@ -6,55 +6,56 @@ from roman_datamodels.dqflags import pixel
 
 from romancal.ramp_fitting import RampFitStep
 
-from .common import SIMPLE_RESULTANTS, create_linear_ramp, make_data
+from .common import (
+    ROMAN_READ_TIME,
+    SIMPLE_RESULTANTS,
+    create_linear_ramp,
+    generate_wfi_reffiles,
+    make_data,
+    model_from_resultants,
+)
 
 SIMPLE_EXPECTED_DEFAULT = {
     "data": np.array(
-        [[0.5482434, 0.5482434], [0.21930099, 0.6579002]],
+        [[0.54824126, 0.54824126], [0.21930373, 0.6579057]],
         dtype=np.float32,
     ),
     "err": np.array(
-        [[0.24518493, 0.24518453], [0.1550718, 0.26858887]],
+        [[0.2452, 0.2452], [0.155, 0.2686]],
         dtype=np.float16,
     ),
     "var_poisson": np.array(
-        [[0.06011445, 0.06011425], [0.02404606, 0.07213879]],
+        [[0.06012, 0.06012], [0.02405, 0.07214]],
         dtype=np.float16,
     ),
     "var_rnoise": np.array(
-        [[1.2022689e-06, 1.2022689e-06], [1.2022329e-06, 1.2022729e-06]],
+        [[2.4e-06, 2.4e-06], [2.4e-06, 2.4e-06]],
         dtype=np.float16,
     ),
-    "chisq": np.array([[0.4, 1.6], [1, 3]], dtype=np.float16),
+    "chisq": np.array([[0.4, 1.6], [0.9995, 3.0]], dtype=np.float16),
 }
 SIMPLE_EXPECTED_GAIN = {
     "data": np.array(
-        [[0.54823464, 0.54823464], [0.21931194, 0.32894737]], dtype=np.float32
+        [[0.54822373, 0.54822373], [0.21932559, 0.32894737]], dtype=np.float32
     ),
-    "err": np.array(
-        [[0.10965369, 0.10965278], [0.0693583, 0.1040483]], dtype=np.float16
-    ),
+    "err": np.array([[0.1097, 0.1097], [0.0694, 0.10406]], dtype=np.float16),
     "var_poisson": np.array(
-        [[0.01202273, 0.01202253], [0.00480937, 0.01082064]], dtype=np.float16
+        [[0.012024, 0.012024], [0.00481, 0.01082]], dtype=np.float16
     ),
     "var_rnoise": np.array(
-        [[1.2021728e-06, 1.2021728e-06], [1.2019930e-06, 5.4103184e-06]],
+        [[2.384e-06, 2.384e-06], [2.384e-06, 1.085e-05]],
         dtype=np.float16,
     ),
-    "chisq": np.array([[2, 8], [5, 0]], dtype=np.float16),
+    "chisq": np.array([[1.998, 7.996], [4.992, 0.0]], dtype=np.float16),
 }
 SIMPLE_EXPECTED_RNOISE = {
     "data": np.array(
-        [[0.5263179, 0.5263179], [0.2302627, 0.72367555]], dtype=np.float32
+        [[0.5263168, 0.5263168], [0.23026292, 0.72367984]], dtype=np.float32
     ),
-    "err": np.array([[10.405058, 10.405058], [10.403467, 10.406118]], dtype=np.float16),
-    "var_poisson": np.array(
-        [[0.05886434, 0.05886419], [0.025753, 0.0809375]], dtype=np.float16
-    ),
-    "var_rnoise": np.array(
-        [[108.20637, 108.20637], [108.20637, 108.20637]], dtype=np.float16
-    ),
-    "chisq": np.array([[4e-5, 2.4e-4], [6e-5, 3.6e-4]], dtype=np.float16),
+    "err": np.array([[14.71, 14.71], [14.71, 14.71]], dtype=np.float16),
+    "var_poisson": np.array([[0.05887, 0.05887], [0.02576, 0.08093]], dtype=np.float16),
+    "var_rnoise": np.array([[216.4, 216.4], [216.4, 216.4]], dtype=np.float16),
+    "chisq": np.array([[2.0e-05, 1.2e-04], [3.0e-05, 1.8e-04]], dtype=np.float16),
 }
 
 
@@ -173,6 +174,57 @@ def test_uniformweighting():
 
     with pytest.raises(AssertionError):
         np.testing.assert_allclose(out_model.dumo, 0, atol=1e-2)
+
+
+@pytest.mark.parametrize("algorithm", ["ols_cas22", "likely"])
+def test_uncertainty_matches_scatter(algorithm):
+    """Verify that uncertainties match the observed scatter in slopes."""
+    rng = np.random.default_rng(42)
+    ntrial, readnoise, flux = 2000, 20.0, 10.0
+    # Non-trivial read pattern
+    read_pattern = [[1, 2, 3, 4], [5], [6, 7, 8], [9, 10, 11, 12]]
+    nreads = np.array([len(g) for g in read_pattern])
+    n_resultants = len(read_pattern)
+
+    # Generate counts in each read
+    total_reads = sum(nreads)
+    per_read = rng.poisson(flux, size=(total_reads, ntrial)).astype(np.float32)
+    cumulative = np.cumsum(per_read, axis=0)
+    # Average all read values within each resultant group
+    boundaries = np.concatenate([[0], np.cumsum(nreads)])
+    resultants = np.array(
+        [
+            np.mean(cumulative[boundaries[i] : boundaries[i + 1]], axis=0)
+            for i in range(n_resultants)
+        ],
+        dtype=np.float32,
+    )
+    # Read noise averages down as sqrt(n) within each resultant
+    resultants += (
+        rng.normal(0, 1, size=(n_resultants, ntrial)).astype(np.float32)
+        * (readnoise / np.sqrt(nreads))[:, np.newaxis]
+    )
+
+    resultants_3d = resultants[:, np.newaxis, :]
+    ramp_model = model_from_resultants(resultants_3d, read_pattern=read_pattern)
+    gain_model, readnoise_model, _ = generate_wfi_reffiles(
+        ramp_model.shape[1:], ingain=1, rnoise=readnoise, randomize=False
+    )
+
+    out = RampFitStep.call(
+        ramp_model,
+        algorithm=algorithm,
+        override_gain=gain_model,
+        override_readnoise=readnoise_model,
+    )
+
+    # out.data shape is [1, ntrial]: one science row, ntrial columns
+    slopes = out.data[0]
+    true_rate = flux / ROMAN_READ_TIME  # simulation flux is electrons/frame
+    residuals = (slopes - true_rate) / out.err[0]
+    np.testing.assert_allclose(np.std(slopes), np.mean(out.err[0]), rtol=0.05)
+    np.testing.assert_allclose(np.mean(residuals), 0, atol=0.1)
+    np.testing.assert_allclose(np.std(residuals), 1.0, rtol=0.05)
 
 
 @pytest.mark.parametrize(
