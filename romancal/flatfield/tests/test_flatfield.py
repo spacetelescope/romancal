@@ -53,6 +53,12 @@ def test_flatfield_step_interface(instrument, exptype):
     assert result.var_flat.shape == shape
     assert result.meta.cal_step.flat_field == "COMPLETE"
 
+    # test that dumo is also divided by the flat
+    wfi_image_model.dumo = np.ones(shape, dtype=np.float16) * 4.0
+    flatref_model["data"] = np.ones(shape, dtype=np.float32) * 2.0
+    result = FlatFieldStep.call(wfi_image_model, override_flat=flatref_model)
+    np.testing.assert_allclose(result.dumo, 2.0, rtol=1e-2)
+
     # test that the step is skipped if the reference file is N/A
     result = FlatFieldStep.call(wfi_image_model, override_flat="N/A")
 

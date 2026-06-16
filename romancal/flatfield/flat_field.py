@@ -82,6 +82,8 @@ def _apply_flat_field(science, flat, include_var_flat=False):
     # Now let's apply the correction to science data and error arrays.  Rely
     # on array broadcasting to handle the cubes
     science.data = (science.data / flat_data).astype(science.data.dtype)
+    if hasattr(science, "dumo"):
+        science.dumo = (science.dumo / flat_data).astype(science.dumo.dtype)
 
     # Update the variances using BASELINE algorithm.  For guider data, it has
     # not gone through ramp fitting so there is no Poisson noise or readnoise

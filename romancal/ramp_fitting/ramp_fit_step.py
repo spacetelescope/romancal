@@ -268,8 +268,10 @@ def likely(
         jump_kw = dict()
     jump_data = _setup_jump_data(input_model, readnoise_model, gain_model, **jump_kw)
 
+    # stcal's likely_fit expects CDS read noise (sqrt(2) * per-read noise);
+    # the Roman readnoise reference stores per-read noise, so convert here.
     image_info, _, _ = likely_ramp_fit(
-        input_model, readnoise_model.data, gain_model.data, jump_data=jump_data
+        input_model, readnoise_model.data * SQRT2, gain_model.data, jump_data=jump_data
     )
 
     # Flag pixels that have only a single resultant.
