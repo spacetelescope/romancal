@@ -501,7 +501,7 @@ class DiffResult:
     def _file_info(file):
         try:
             with rdm.open(file) as model:
-                model_type = model.__class__.__name__
+                model_type = type(model).__name__
                 crds_context = (
                     model.get("meta", {})
                     .get("ref_file", {})
