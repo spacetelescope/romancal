@@ -10,6 +10,7 @@ from roman_datamodels.datamodels import ImageModel, MosaicModel
 from stpipe import Pipeline, Step, crds_client
 
 from romancal.datamodels.fileio import open_dataset
+from romancal.datamodels.library import ModelLibrary
 
 from ..lib.statistics import populate_statistics
 from ..lib.suffix import remove_suffix
@@ -98,6 +99,19 @@ class RomanStep(Step):
             List of reference files used.  The first element of each tuple
             is the reftype code, the second element is the filename.
         """
+        if model is None:
+            # None can be passed to this function if a step or pipeline returns
+            # None inside a tuple of results (for example SourceCatalogStep).
+            return
+
+        if isinstance(model, ModelLibrary):
+            # This works around what is likely an issue in how stpipe handles
+            # tuples that contain ModelLibrary instances: https://github.com/spacetelescope/stpipe/issues/322
+            with model:
+                for m in model:
+                    self.finalize_result(m, reference_files_used)
+                    model.shelve(m)
+            return model
 
         model.meta.calibration_software_version = importlib.metadata.version("romancal")
 

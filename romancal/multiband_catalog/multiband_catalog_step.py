@@ -8,6 +8,9 @@ import copy
 import logging
 from typing import TYPE_CHECKING
 
+import numpy as np
+from roman_datamodels import datamodels as rdm
+
 from romancal.datamodels.fileio import open_dataset
 from romancal.multiband_catalog._multiband_catalog import (
     initialize_catalog_model,
@@ -15,7 +18,6 @@ from romancal.multiband_catalog._multiband_catalog import (
     match_recovered_sources,
     multiband_catalog,
 )
-from romancal.source_catalog._save_utils import save_all_results, save_empty_results
 from romancal.source_catalog._utils import get_ee_spline
 from romancal.stpipe import RomanStep
 
@@ -58,7 +60,20 @@ class MultibandCatalogStep(RomanStep):
         inject_seed = integer(default=None)   # RNG seed for injected sources
         save_debug_info = boolean(default=False)
                                    # Include image data and other data for testing
+        output_use_model = boolean(default=True)  # When saving use `DataModel.meta.filename`
     """
+
+    def save_model(self, model, **kwargs):
+        if isinstance(model, rdm.MultibandSourceCatalogModel):
+            kwargs["ext"] = "parquet"
+            kwargs["suffix"] = kwargs.get("suffix", self.suffix)
+        elif isinstance(model, rdm.MultibandSegmentationMapModel):
+            kwargs["suffix"] = kwargs.get("suffix", "segm")
+
+        # strip the index since these all have different extensions
+        kwargs.pop("idx", None)
+
+        return super().save_model(model, **kwargs)
 
     def process(self, dataset):
         # All input MosaicImages in the ModelLibrary are assumed to have
@@ -80,6 +95,14 @@ class MultibandCatalogStep(RomanStep):
         # Initialize the source catalog model
         cat_model = initialize_catalog_model(library, example_model)
 
+        # Initialize the segmentation map model
+        segmentation_model = rdm.MultibandSegmentationMapModel.create_minimal(
+            {"meta": cat_model.meta}
+        )
+        # carry over image_metas if it exists (since it's not required in the schemas)
+        if image_metas := cat_model.meta.get("image_metas"):
+            segmentation_model.meta.image_metas = image_metas
+
         log.info("Creating ee_fractions model for first image")
         apcorr_ref = self.get_reference_file(example_model, "apcorr")
         ee_spline = get_ee_spline(example_model, apcorr_ref)
@@ -98,8 +121,21 @@ class MultibandCatalogStep(RomanStep):
         # Save empty results if there was an error
         if msg is None:
             segment_img, cat_model = results
+            segmentation_model.data = segment_img.data.astype(np.uint32)
+
+            # carry over psf_match_reference_filter
+            segmentation_model.meta["psf_match_reference_filter"] = (
+                cat_model.source_catalog.meta["psf_match_reference_filter"]
+            )
         else:
-            return save_empty_results(self, *results, msg=msg)
+            log.error(msg)
+            segment_image_shape, cat_model = results
+            cat_model.source_catalog = cat_model.create_empty_catalog()
+
+            # Set the data and detection image
+            segmentation_model.data = np.zeros(segment_image_shape, np.uint32)
+
+            return cat_model, segmentation_model
 
         # Source Injection
         if self.inject_sources:
@@ -123,13 +159,14 @@ class MultibandCatalogStep(RomanStep):
 
             # Put the source injected multiband catalog in the model
             cat_model.source_injection_catalog = si_cat_model.source_catalog
-            segment_img.injected_sources = si_cat
-            segment_img.recovered_sources = recovered_sources
+            segmentation_model["injected_sources"] = si_cat
+            segmentation_model["recovered_sources"] = recovered_sources
 
+            # Write data for tests
             if self.save_debug_info:
-                segment_img.si_segment_img = si_segment_img
-                segment_img.si_detection_image = si_segment_img.detection_image
+                segmentation_model["si_data"] = si_segment_img.data.astype(np.uint32)
+                segmentation_model["si_detection_image"] = (
+                    si_segment_img.detection_image
+                )
 
-        return save_all_results(
-            self, segment_img, cat_model, save_debug_info=self.save_debug_info
-        )
+        return cat_model, segmentation_model

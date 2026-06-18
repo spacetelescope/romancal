@@ -13,6 +13,7 @@ from romancal.assign_wcs import AssignWcsStep
 from romancal.dark_current import DarkCurrentStep
 from romancal.dark_decay import DarkDecayStep
 from romancal.datamodels.fileio import open_dataset
+from romancal.datamodels.library import ModelLibrary
 from romancal.dq_init import dq_init_step
 from romancal.flatfield import FlatFieldStep
 from romancal.lib.save_wcs import save_wfiwcs
@@ -86,20 +87,12 @@ class ExposurePipeline(RomanPipeline):
     def process(self, dataset):
         """Process the Roman WFI data"""
 
-        # make sure source_catalog returns the updated datamodel
-        self.source_catalog.return_updated_model = True
-        # make sure we update source catalog coordinates afer running TweakRegStep
-        self.tweakreg.update_source_catalog_coordinates = True
         # make output filenames based on input filenames
         self.output_use_model = True
 
         log.info("Starting Roman exposure calibration pipeline ...")
 
         # determine the input type
-        # Because we're processing raw files, let's open without any
-        # laziness; we need to propagate all of the bits into the ramps
-        # anyway.  It also avoids bugs like:
-        # https://github.com/spacetelescope/roman_datamodels/issues/631
         lib, input_type = open_dataset(
             dataset,
             update_version=self.update_version,
@@ -109,28 +102,78 @@ class ExposurePipeline(RomanPipeline):
         )
         return_lib = input_type in ("ModelLibrary", "asn")
 
+        catalogs = []
+        segmentations = []
+
         with lib:
             for model_index, model in enumerate(lib):
-                result = self._process_model(model)
+                result, run_source_catalog = self._process_model(model)
+
+                # now handle source_catalog
+                if not run_source_catalog or self.source_catalog.skip:
+                    # WFI_WFSC doesn't get a source catalog (and therefore also no tweakreg)
+                    result.meta.cal_step.source_catalog = "SKIPPED"
+                    catalog, segmentation = None, None
+                else:
+                    # WFI_IMAGE and WFI_LOLO get source catalog
+                    catalog, segmentation = self.source_catalog.run(result)
+
+                if not self.tweakreg.skip and catalog is not None:
+                    # attach the catalog to the model so tweakreg can see it
+                    if "source_catalog" not in model.meta:
+                        result.meta["source_catalog"] = {}
+                    result.meta.source_catalog.tweakreg_catalog = catalog.source_catalog
+
                 lib.shelve(result, model_index)
+                catalogs.append(catalog)
+                segmentations.append(segmentation)
 
         # Now that all the exposures are collated, run tweakreg
         self.tweakreg.run(lib)
+
+        # tweakreg was run, update catalog positions
+        with lib:
+            for model_index, model in enumerate(lib):
+                if model.meta.cal_step.tweakreg == "COMPLETE":
+                    catalog = catalogs[model_index]
+                    if catalog is not None:
+                        self.tweakreg._update_catalog_coordinates(
+                            catalog.source_catalog, model.meta.wcs
+                        )
+                        # record the name of the catalog if it is going to be saved
+                        if self.save_results:
+                            catalog_filename = self.make_output_path(
+                                catalog.meta.filename, suffix="cat", ext="parquet"
+                            )
+                            model.meta.source_catalog.tweakreg_catalog_name = (
+                                catalog_filename
+                            )
+                lib.shelve(model)
 
         log.info("Roman exposure calibration pipeline ending...")
 
         # return a ModelLibrary
         if return_lib:
-            return lib
+            return (
+                lib,
+                ModelLibrary([c for c in catalogs if c is not None]),
+                ModelLibrary([s for s in segmentations if s is not None]),
+            )
 
         # or a DataModel (for non-asn non-lib inputs)
         with lib:
             model = lib.borrow(0)
+            catalog = catalogs[0]
+            segmentation = segmentations[0]
             lib.shelve(model, modify=False)
-        return model
+        return model, catalog, segmentation
 
     def _process_model(self, model):
-        """Run all per-model calibration steps and return the result."""
+        """
+        Run all per-model calibration steps.
+
+        Returns the model and a boolean indicating if source catalog should be run.
+        """
         self.dq_init.suffix = "dq_init"
         result = self.dq_init.run(model)
         if model is not result:
@@ -142,7 +185,7 @@ class ExposurePipeline(RomanPipeline):
 
         if _is_fully_saturated(result):
             log.info("All pixels are saturated. Returning a zeroed-out image.")
-            return self.create_fully_saturated_zeroed_image(result)
+            return self.create_fully_saturated_zeroed_image(result), False
 
         result = self.refpix.run(result)
         result = self.dark_decay.run(result)
@@ -154,27 +197,37 @@ class ExposurePipeline(RomanPipeline):
         result = self.photom.run(result)
 
         # WFI_FLAT, WFI_SPECTRAL, WFI_IM_DARK, WFI_SP_DARK stop here
-        exp_type = result.meta.exposure.type
-        if exp_type not in ("WFI_IMAGE", "WFI_LOLO", "WFI_WFSC"):
+        if result.meta.exposure.type not in ("WFI_IMAGE", "WFI_LOLO", "WFI_WFSC"):
             result.meta.cal_step.flat_field = "SKIPPED"
             result.meta.cal_step.source_catalog = "SKIPPED"
-            return result
+            return result, False
 
-        result = self.flatfield.run(result)
+        return self.flatfield.run(result), result.meta.exposure.type in (
+            "WFI_IMAGE",
+            "WFI_LOLO",
+        )
 
-        # WFI_WFSC doesn't get a source catalog (and therefore also no tweakreg)
-        if exp_type == "WFI_WFSC":
-            result.meta.cal_step.source_catalog = "SKIPPED"
-            return result
+    def save_model(self, model, **kwargs):
+        # depending on model set suffix and ext
+        if isinstance(
+            model,
+            (
+                rdm.ForcedImageSourceCatalogModel,
+                rdm.ImageSourceCatalogModel,
+            ),
+        ):
+            kwargs["ext"] = "parquet"
+            kwargs["suffix"] = kwargs.get("suffix", "cat")
+        elif isinstance(model, rdm.SegmentationMapModel):
+            kwargs["suffix"] = kwargs.get("suffix", "segm")
+        elif isinstance(model, rdm.ImageModel):
+            save_wfiwcs(self, model, force=True)
+            kwargs["suffix"] = kwargs.get("suffix", self.suffix)
 
-        # WFI_IMAGE and WFI_LOLO get source catalog
-        result = self.source_catalog.run(result)
-        return result
+        # strip the index since these all have different extensions
+        kwargs.pop("idx", None)
 
-    def save_model(self, result, *args, **kwargs):
-        if not isinstance(result, rdm.WfiWcsModel):
-            save_wfiwcs(self, result, force=True)
-        super().save_model(result, *args, **kwargs)
+        return super().save_model(model, **kwargs)
 
     def create_fully_saturated_zeroed_image(self, input_model):
         """

@@ -1,0 +1,1 @@
+Fix issue where ``MultibandCatalogStep`` always saved results. Running ``MultibandCatalogStep.call`` now returns a catalog and segmentation map.

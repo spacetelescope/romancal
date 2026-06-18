@@ -92,6 +92,12 @@ def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths
     assert diff.identical, diff.report()
 
 
+def test_output_files_generated(output_filename):
+    """Test that GRISM observations don't produce catalogs or segmentation maps"""
+    assert not Path(output_filename.replace("_cal.asdf", "_cat.parquet")).exists()
+    assert not Path(output_filename.replace("_cal.asdf", "_segm.asdf")).exists()
+
+
 @pytest.mark.parametrize(
     "step_name, status",
     (

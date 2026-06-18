@@ -1,0 +1,1 @@
+Fix issue where ``MosaicPipeline`` always saved results. Running ``MosaicPipeline.call`` now returns a model, catalog and segmentation map.
