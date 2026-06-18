@@ -1,0 +1,1 @@
+Fix issue where ``SourceCatalogStep`` always saved results. Running ``SourceCatalogStep.call`` now returns a catalog and segmentation map.

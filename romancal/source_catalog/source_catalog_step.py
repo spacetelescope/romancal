@@ -17,7 +17,6 @@ from roman_datamodels.dqflags import pixel
 from romancal.datamodels.fileio import open_dataset
 from romancal.source_catalog._background import RomanBackground
 from romancal.source_catalog._detection import convolve_data, make_segmentation_image
-from romancal.source_catalog._save_utils import save_all_results, save_empty_results
 from romancal.source_catalog._source_catalog import RomanSourceCatalog
 from romancal.source_catalog._utils import copy_model_arrays, get_ee_spline
 from romancal.source_catalog.psf import add_jitter
@@ -89,6 +88,32 @@ class SourceCatalogStep(RomanStep):
         forced_segmentation = string(default='')  # force the use of this segmentation map
     """
 
+    def save_model(self, model, **kwargs):
+        # depending on model set suffix and ext
+        if isinstance(
+            model,
+            (
+                datamodels.ForcedImageSourceCatalogModel,
+                datamodels.ImageSourceCatalogModel,
+                datamodels.ForcedMosaicSourceCatalogModel,
+                datamodels.MosaicSourceCatalogModel,
+            ),
+        ):
+            kwargs["ext"] = "parquet"
+            kwargs["suffix"] = kwargs.get("suffix", "cat")
+        elif isinstance(
+            model,
+            (datamodels.SegmentationMapModel, datamodels.MosaicSegmentationMapModel),
+        ):
+            kwargs["suffix"] = kwargs.get("suffix", "segm")
+        else:
+            raise NotImplementedError(f"unsupported model: {type(model)}")
+
+        # strip the index since these all have different extensions
+        kwargs.pop("idx")
+
+        return super().save_model(model, **kwargs)
+
     def process(self, dataset):
         input_model = open_dataset(dataset, update_version=self.update_version)
 
@@ -125,36 +150,17 @@ class SourceCatalogStep(RomanStep):
 
         # Initialize the source catalog model, copying the metadata
         # from the input model
-        if isinstance(model, ImageModel):
-            if self.forced_segmentation:
-                cat_model_cls = datamodels.ForcedImageSourceCatalogModel
-            else:
-                cat_model_cls = datamodels.ImageSourceCatalogModel
-        else:
-            if self.forced_segmentation:
-                cat_model_cls = datamodels.ForcedMosaicSourceCatalogModel
-            else:
-                cat_model_cls = datamodels.MosaicSourceCatalogModel
-        cat_model = cat_model_cls.create_minimal({"meta": model.meta})
-        cat_model.meta["image"] = {
-            "filename": model.meta.filename,
-            "file_date": model.meta.file_date,
-        }
-        # copy over the data release id since there is no association input
-        if "data_release_id" in model.meta:
-            cat_model.meta.data_release_id = model.meta.data_release_id
-
-        # make L3 metadata
-        if self.forced_segmentation:
-            cat_model.meta.image.forced_segmentation = self.forced_segmentation
+        cat_model, segmentation_model = self._make_catalog_and_segmentation_models(
+            model
+        )
 
         # Return an empty segmentation image and catalog table if all
         # pixels are masked
         if np.all(mask):
-            msg = "Cannot create source catalog. All pixels are masked."
-            return save_empty_results(
-                self, model.data.shape, cat_model, input_model=input_model, msg=msg
-            )
+            log.error("Cannot create source catalog. All pixels are masked.")
+            cat_model.source_catalog = cat_model.create_empty_catalog()
+            segmentation_model.data = np.zeros(model.data.shape, dtype=np.uint32)
+            return cat_model, segmentation_model
 
         log.info("Calculating and subtracting background")
         bkg = RomanBackground(
@@ -179,8 +185,7 @@ class SourceCatalogStep(RomanStep):
                 deblend=self.deblend,
                 mask=mask,
             )
-            if segment_img is not None:
-                segment_img.detection_image = detection_image
+            segmentation_model["detection_image"] = detection_image
         else:
             forced_segmodel = datamodels.open(self.forced_segmentation)
             # forced_segmodel.data is asdf.tags.core.ndarray.NDArrayType
@@ -198,10 +203,10 @@ class SourceCatalogStep(RomanStep):
         # Return an empty segmentation image and catalog table if no
         # sources are detected
         if segment_img is None:
-            msg = "Cannot create source catalog. No sources were detected."
-            return save_empty_results(
-                self, model.data.shape, cat_model, input_model=input_model, msg=msg
-            )
+            log.error("Cannot create source catalog. No sources were detected.")
+            cat_model.source_catalog = cat_model.create_empty_catalog()
+            segmentation_model.data = np.zeros(model.data.shape, dtype=np.uint32)
+            return cat_model, segmentation_model
 
         log.info("Creating ee_fractions model")
         apcorr_ref = self.get_reference_file(input_model, "apcorr")
@@ -228,7 +233,8 @@ class SourceCatalogStep(RomanStep):
             # TODO: improve this so that the moment-based properties are
             # not recomputed from the forced_detection_image
             forced_detection_image = forced_segmodel.detection_image
-            segment_img.detection_image = forced_detection_image
+            # record detection image used
+            segmentation_model["detection_image"] = forced_detection_image
             forced_catobj = RomanSourceCatalog(
                 model,
                 cat_model,
@@ -270,4 +276,46 @@ class SourceCatalogStep(RomanStep):
         # Put the resulting catalog table in the catalog model
         cat_model.source_catalog = cat
 
-        return save_all_results(self, segment_img, cat_model, input_model=input_model)
+        # Set the data and detection image
+        segmentation_model.data = segment_img.data.astype(np.uint32)
+
+        # we update the input_model here to note that source_catalog finished
+        # only for ImageModel as L3 doesn't have cal_step.source_catalog
+        # and was not previously recorded
+        if isinstance(input_model, datamodels.ImageModel):
+            self.finalize_result(input_model, self._reference_files_used)
+            input_model.meta.cal_step.source_catalog = "COMPLETE"
+        return cat_model, segmentation_model
+
+    def _make_catalog_and_segmentation_models(self, model):
+        if isinstance(model, ImageModel):
+            if self.forced_segmentation:
+                cat_model_cls = datamodels.ForcedImageSourceCatalogModel
+            else:
+                cat_model_cls = datamodels.ImageSourceCatalogModel
+            segmentation_model_cls = datamodels.SegmentationMapModel
+        else:
+            if self.forced_segmentation:
+                cat_model_cls = datamodels.ForcedMosaicSourceCatalogModel
+            else:
+                cat_model_cls = datamodels.MosaicSourceCatalogModel
+            segmentation_model_cls = datamodels.MosaicSegmentationMapModel
+
+        cat_model = cat_model_cls.create_minimal({"meta": model.meta})
+        cat_model.meta["image"] = {
+            "filename": model.meta.filename,
+            "file_date": model.meta.file_date,
+        }
+        # copy over the data release id since there is no association input
+        if "data_release_id" in model.meta:
+            cat_model.meta.data_release_id = model.meta.data_release_id
+
+        # make L3 metadata
+        if self.forced_segmentation:
+            cat_model.meta.image.forced_segmentation = self.forced_segmentation
+
+        segmentation_model = segmentation_model_cls.create_minimal(
+            {"meta": cat_model.meta}
+        )
+
+        return cat_model, segmentation_model

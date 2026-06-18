@@ -1,6 +1,7 @@
 """Roman tests for the High Level Pipeline"""
 
 import os
+from pathlib import Path
 
 import pytest
 import roman_datamodels as rdm
@@ -131,3 +132,21 @@ def test_wcsinfo_wcs_roundtrip(output_model):
 
     ra_mad, dec_mad = util.comp_wcs_grids_arcs(output_model.meta.wcs, wcs_from_wcsinfo)
     assert (ra_mad + dec_mad) / 2.0 < 1.0e-5
+
+
+def test_mos_save_results(rtdata, function_jail):
+    """MosaicPipline.call with save_results=False should not generate files"""
+    rtdata.get_asn("WFI/image/L3_regtest_asn.json")
+
+    initial_files = {p.name for p in Path(function_jail).glob("*")}
+    result = MosaicPipeline.call(rtdata.input, save_results=False)
+
+    # no files should be produced
+    assert not {p.name for p in Path(function_jail).glob("*")} - initial_files
+
+    # check result contains coadd, catalog, segmentation
+    assert len(result) == 3
+    coadd, catalog, segmentation = result
+    assert isinstance(coadd, rdm.datamodels.MosaicModel)
+    assert isinstance(catalog, rdm.datamodels.MosaicSourceCatalogModel)
+    assert isinstance(segmentation, rdm.datamodels.MosaicSegmentationMapModel)

@@ -96,6 +96,16 @@ def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths
     assert diff.identical, diff.report()
 
 
+def test_catalog_produced(output_filename):
+    catalog_filename = output_filename.replace("_cal.asdf", "_cat.parquet")
+    assert Path(catalog_filename).exists()
+
+
+def test_segmentation_map_produced(output_filename):
+    segmentation_map_filename = output_filename.replace("_cal.asdf", "_segm.asdf")
+    assert Path(segmentation_map_filename).exists()
+
+
 @pytest.mark.soctests
 def test_output_is_image_model(output_model):
     # DMS280 result is an ImageModel
@@ -277,6 +287,12 @@ def all_saturated_model(run_all_saturated):
         yield model
 
 
+def test_all_staturated_outputs(run_all_saturated):
+    cal_filename = run_all_saturated.output
+    assert not Path(cal_filename.replace("_cal.asdf", "_cat.parquet")).exists()
+    assert not Path(cal_filename.replace("_cal.asdf", "_segm.asdf")).exists()
+
+
 def test_all_saturated_against_truth(run_all_saturated, ignore_asdf_paths):
     diff = compare_asdf(
         run_all_saturated.output, run_all_saturated.truth, **ignore_asdf_paths
@@ -360,3 +376,22 @@ def test_pipeline_suffix(rtdata, ignore_asdf_paths):
         assert model.meta.cal_step.source_catalog == "COMPLETE"
         assert model.meta.cal_step.tweakreg == "SKIPPED"
         assert model.meta.filename == output
+
+
+def test_elp_save_results(rtdata, function_jail):
+    """ExposurePipline.call with save_results=False should not generate files"""
+    input_data = "r0000101001001001001_0001_wfi01_f158_uncal.asdf"
+    rtdata.get_data(f"WFI/image/{input_data}")
+
+    initial_files = {p.name for p in Path(function_jail).glob("*")}
+    result = ExposurePipeline.call(rtdata.input, save_results=False)
+
+    # no files should be produced
+    assert not {p.name for p in Path(function_jail).glob("*")} - initial_files
+
+    # check result contains model, catalog, segmentation
+    assert len(result) == 3
+    coadd, catalog, segmentation = result
+    assert isinstance(coadd, rdm.datamodels.ImageModel)
+    assert isinstance(catalog, rdm.datamodels.ImageSourceCatalogModel)
+    assert isinstance(segmentation, rdm.datamodels.SegmentationMapModel)

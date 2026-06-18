@@ -105,8 +105,8 @@ Outputs
 :Data model: `~romancal.datamodels.ImageModel`
 :File suffix: _cal
 
-Catalog file (SourceCatalog)
-+++++++++++++++++++++++++++++++++++
+Catalog (SourceCatalog)
++++++++++++++++++++++++
 
 The catalog data is in
 
