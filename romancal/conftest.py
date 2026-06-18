@@ -280,6 +280,7 @@ def ignore_metadata_paths():
         "asdf_library",
         "history",
         "roman.meta.ref_file.crds.version",
+        "roman.meta.ref_file.crds.context",
         "roman.meta.calibration_software_version",
         "roman.cal_logs",
         "roman.meta.cal_logs",
