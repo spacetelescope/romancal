@@ -7,6 +7,7 @@ import logging
 import numpy as np
 from astropy import table
 from astropy import units as u
+from scipy.interpolate import griddata
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 
 log = logging.getLogger(__name__)
@@ -299,10 +300,60 @@ def make_source_grid(
     y_pos, x_pos = np.meshgrid(ypts, xpts)
     y_pos = np.ravel(y_pos)
     x_pos = np.ravel(x_pos)
-    y_pos_idx, x_pos_idx = y_pos.astype(int), x_pos.astype(int)
+    # y_pos_idx, x_pos_idx = np.round(y_pos).astype(int), np.round(x_pos).astype(int)
+    # y_pos_idx, x_pos_idx = y_pos.astype(int), x_pos.astype(int)
 
     # Discard positions in NA empty regions
-    nanmask = np.isnan(model.data[y_pos_idx, x_pos_idx])
-    y_pos, x_pos = y_pos[~nanmask], x_pos[~nanmask]
+    # nanmask = np.isnan(model.data[y_pos_idx, x_pos_idx])
+    # y_pos, x_pos = y_pos[~nanmask], x_pos[~nanmask]
+    # y_pos_idx, x_pos_idx = y_pos_idx[~nanmask], x_pos_idx[~nanmask]
+
+
+
+
+    # # Handle NA regions
+    # nanmask = np.isnan(model.data[y_pos_idx, x_pos_idx])
+
+    # if np.any(nanmask):
+    #     idx_bad = []
+    #     for nan_pos_idx in range(len(y_nan_pos[nanmask])):
+    #         # Create stamps around each gridpoint on a NaN value
+    #         # Stamps are set for a single NAN pixel, but can easily be expanded
+    #         # to regions / object sizes / a parameter
+    #         x_stamp = list(range(x_pos_idx[nanmask]-1, x_pos_idx[nanmask]+2))
+    #         y_stamp = list(range(y_pos_idx[nanmask]-1, y_pos_idx[nanmask]+2))
+    #         Y, X = np.meshgrid(y_stamp, x_stamp)
+    #         mask_stamp = ~np.isnan(nan_model.data[min(y_stamp):max(y_stamp)+1,
+    #                               min(x_stamp):max(x_stamp)+1])
+
+    #         # Skip NaN regions larger than the grid pixel
+    #         # (can be expanded to an area)
+    #         if np.sum(~mask_stamp) > 1:
+    #             idx_bad.append(nan_pos_idx)
+    #             continue
+
+    #         # Set coordinates and values for temporary interpolation
+    #         known_coords = np.column_stack((Y[mask_stamp], X[mask_stamp]))
+    #         known_values = nan_model.data[min(y_stamp):max(y_stamp)+1,
+    #                               min(x_stamp):max(x_stamp)+1][mask_stamp]
+    #         target_coords = np.column_stack((Y.ravel(), X.ravel()))
+
+    #         # Create temporary interpolation stamp
+    #         interpolated_flat = griddata(known_coords, known_values,
+    #                                      target_coords, method='cubic')
+    #         interpolated_matrix = interpolated_flat.reshape((len(y_stamp),
+    #                                                          len(x_stamp)))
+
+    #         # Set temporary interpolation value
+    #         model.data[min(y_stamp):max(y_stamp)+1,
+    #                    min(x_stamp):max(x_stamp)+1][
+    #                    ~mask_stamp] = interpolated_matrix[~mask_stamp]
+
+    #     # Remove grid points in extended NaN regions
+    #     if idx_bad:
+    #         y_pos = np.delete(y_nan_pos, idx_bad)
+    #         x_pos = np.delete(x_nan_pos, idx_bad)
+
+
 
     return y_pos, x_pos

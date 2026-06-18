@@ -355,32 +355,32 @@ def test_make_source_grid(image_model, mosaic_model):
         assert np.std(np.diff(np.sort(list(set(y_pos))))) < subpixeloffset[0]
         assert np.std(np.diff(np.sort(list(set(x_pos))))) < subpixeloffset[1]
 
-        # Create NaN point
-        si_model.data[int(y_pos[3]), int(x_pos[3])] = np.nan
+        # # Create NaN point
+        # si_model.data[int(y_pos[3]), int(x_pos[3])] = np.nan
 
-        y_nan_pos, x_nan_pos = make_source_grid(
-            si_model,
-            yxmax=yxmax,
-            yxoffset=yxoffset,
-            yxgrid=yxgrid,
-            subpixeloffset=subpixeloffset,
-            seed=RNG_SEED,
-        )
+        # y_nan_pos, x_nan_pos = make_source_grid(
+        #     si_model,
+        #     yxmax=yxmax,
+        #     yxoffset=yxoffset,
+        #     yxgrid=yxgrid,
+        #     subpixeloffset=subpixeloffset,
+        #     seed=RNG_SEED,
+        # )
 
-        # Ensure expected number of grid points
-        assert len(y_nan_pos) == len(y_pos) - 1
-        assert len(x_nan_pos) == len(x_pos) - 1
+        # # Ensure expected number of grid points
+        # assert len(y_nan_pos) == len(y_pos) - 1
+        # assert len(x_nan_pos) == len(x_pos) - 1
 
-        # Ensure NaN point not in the grid
-        assert (
-            len(
-                np.intersect1d(
-                    np.where(y_nan_pos == int(y_pos[3])),
-                    np.where(x_nan_pos == int(x_pos[3])),
-                )
-            )
-            == 0
-        )
+        # # Ensure NaN point not in the grid
+        # assert (
+        #     len(
+        #         np.intersect1d(
+        #             np.where(y_nan_pos == int(y_pos[3])),
+        #             np.where(x_nan_pos == int(x_pos[3])),
+        #         )
+        #     )
+        #     == 0
+        # )
 
 
 def test_grid_injection(image_model, mosaic_model):

@@ -466,6 +466,77 @@ def test_multiband_source_injection_catalog(
     )
 
 
+@pytest.fixture
+def library_model_si_nan(mosaic_si_model):
+    y_pos, x_pos = zip(*[
+        (68,66), (83,90), (105,104), (125,127), (146,142), (165,166),
+        (189,185), (206,204), (229,230), (244,245), (267,264),
+        (288,283), (308,303), (323,330), (344,346), (368,369),
+        (385,382), (406,407), (430,425), (450,445),
+    ])
+
+    # No NaNs
+    model1 = deepcopy(mosaic_si_model)
+
+    # NaN on grid diagonal only
+    model2 = deepcopy(mosaic_si_model)
+    model2.data[y_pos, x_pos] = np.nan
+    model2.meta.instrument.optical_element = "F158"
+
+    # NaN on grid diagonal and a a quadrant
+    model3 = deepcopy(model2)
+    model2.data[250:, 250:] = np.nan
+    model3.meta.instrument.optical_element = "F213"
+    return ModelLibrary([model1, model2, model3])
+
+
+def test_multiband_source_injection_nan_catalog(
+    library_model_si_nan, function_jail
+):
+    step = MultibandCatalogStep()
+
+    result = step.call(
+        library_model_si_nan,
+        bkg_boxsize=50,
+        snr_threshold=3,
+        npixels=10,
+        fit_psf=False,
+        deblend=True,
+        inject_sources=True,
+        inject_seed=50,
+        save_results=False,
+        save_debug_info=True,
+    )
+
+    # Original objects
+    cat = result.source_catalog
+    assert isinstance(cat, Table)
+    assert len(cat) == 175
+
+    # Ensure all original objects found in the proper location
+    cat["x_mod"] = np.mod(np.round(cat["x_centroid"]), 100)
+    cat["y_mod"] = np.mod(np.round(cat["y_centroid"]), 100)
+    gocj_locs = [
+        (11, 12),
+        (65, 18),
+        (41, 43),
+        (17, 53),
+        (65, 71),
+        (20, 80),
+        (85, 88),
+    ]
+    for modx, mody in cat[["x_mod", "y_mod"]]:
+        assert (modx, mody) in gocj_locs
+
+    # Source injected and original images
+    si_cat = result.source_injection_catalog
+    assert isinstance(si_cat, Table)
+    assert len(si_cat) >= len(cat)
+
+    with library_model_si_nan:
+        model_lst = [model for model in library_model_si_nan]
+
+
 def test_match_recovered_sources():
     # Create minimal source catalog data
     shape = (2000, 2000)
