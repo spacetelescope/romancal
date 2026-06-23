@@ -123,6 +123,9 @@ class TransformParameters:
     reduce_func: Callable | None = None
     #: Engineering database information
     service_kwargs: dict | None = None
+    #: Path to the SIAF folder containing the roman siaf xml definitions
+    #: None to use the pysiaf builtin definitions
+    siaf_path: str | None = None
     #: If no telemetry can be found during the observation,
     #: the time, in seconds, beyond the observation time to search for telemetry.
     tolerance: float = 60.0
