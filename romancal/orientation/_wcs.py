@@ -8,6 +8,7 @@ from stcal.alignment.util import compute_s_region_keyword
 
 from . import _lib as olib
 from . import _pointing as plib
+from . import _siaf as siaf_lib
 from . import _transforms as tlib
 
 __all__ = []
@@ -65,11 +66,9 @@ def wcsinfo_from_siaf(aperture, vinfo):
     wcsinfo : WCSRef
         The WCS for the aperture's reference point, as defined by its SIAF.
     """
-    from pysiaf import Siaf
     from pysiaf.utils.rotations import sky_posangle
 
-    siaf = Siaf("roman")
-    wfi = siaf[aperture.upper()]
+    wfi = siaf_lib.SIAF[aperture.upper()]
 
     # For transformations between the telescope frame and all other frames,
     # an attitude matrix is created using the V-frame WCS information.

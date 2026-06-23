@@ -6,6 +6,8 @@ from math import cos, sin
 
 import numpy as np
 
+from . import _siaf as siaf_lib
+
 __all__ = []
 
 # Setup logging
@@ -86,11 +88,9 @@ def attitude_from_v1(vinfo):
     attitude : np.array((3, 3), dtype=float)
         The attitude matrix.
     """
-    from pysiaf import Siaf
     from pysiaf.utils.rotations import attitude_matrix
 
-    siaf = Siaf("roman")
-    boresight = siaf["BORESIGHT"]
+    boresight = siaf_lib.SIAF["BORESIGHT"]
     v_refpoint = boresight.reference_point(to_frame="tel")
     attitude = attitude_matrix(*v_refpoint, vinfo.ra, vinfo.dec, vinfo.pa)
 
@@ -159,11 +159,8 @@ def hv_to_fgs(aperture_name, h, v):
     fgs_x, fgs_y : float, float
         The coordinates in the FGS reference frame in arcsec.
     """
-    from pysiaf import Siaf
-
-    siaf = Siaf("roman")
-    aper = siaf[aperture_name]
-    aper_wfi_cen = siaf["WFI_CEN"]
+    aper = siaf_lib.SIAF[aperture_name]
+    aper_wfi_cen = siaf_lib.SIAF["WFI_CEN"]
 
     # Location of GS. This is from Eqn. 7 of Roman-STScI-000416 (Roman SOC FGS Algorithms)
     x, y = h + aper.XSciRef, aper.YSciRef - v
@@ -217,10 +214,7 @@ def update_meta(model, t_pars, wcsinfo, vinfo, quality):
     wm = model.meta.wcsinfo
 
     # Setup SIAF info.
-    from pysiaf import Siaf
-
-    siaf = Siaf("roman")
-    aper = siaf[wm.aperture_name.upper()]
+    aper = siaf_lib.SIAF[wm.aperture_name.upper()]
 
     # Update pointing info
 
@@ -246,7 +240,7 @@ def update_meta(model, t_pars, wcsinfo, vinfo, quality):
 
     # Update target's sky location.
     attitude = attitude_from_v1(vinfo)
-    targ_app = siaf[model.meta.pointing.target_aperture]
+    targ_app = siaf_lib.SIAF[model.meta.pointing.target_aperture]
     targ_app.set_attitude_matrix(attitude)
     skycoord = targ_app.reference_point(to_frame="sky")
     pm.target_ra = skycoord[0]
