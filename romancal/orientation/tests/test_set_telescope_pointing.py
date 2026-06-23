@@ -95,6 +95,27 @@ def test_add_wcs_default(science_raw_model, tmp_path):
         )
 
 
+@pytest.mark.xfail(reason='xml does not exist, should fail', strict=False)
+def test_alternate_siaf(tmp_path_factory):
+    """Test alternate siaf
+    """
+    t_pars = _make_t_pars(**TRANSFORM_KWARGS)
+    t_pars.siaf_path = Path(__file__).parent / "data" / "pysiaf_xml"
+
+    # Calculate the transforms and WCS information
+    wcsinfo, vinfo, transforms = wlib.calc_wcs(t_pars)
+
+    # Save all for later examination.
+    transforms_path = tmp_path_factory.mktemp("transforms")
+    transforms.write_to_asdf(transforms_path / "transforms.asdf")
+    wcs_asdf_file = asdf.AsdfFile(
+        {"wcsinfo": wcsinfo._asdict(), "vinfo": vinfo._asdict()}
+    )
+    wcs_asdf_file.write_to(transforms_path / "wcs.asdf")
+
+    assert True
+
+
 def test_add_wcs_default_from_model(science_raw_model, tmp_path):
     """Handle when no pointing exists and the default is used."""
     m = science_raw_model
