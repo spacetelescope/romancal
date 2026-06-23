@@ -119,9 +119,9 @@ def update_wcs_from_telem(model, t_pars: tlib.TransformParameters):
 
     # Setup SIAF information.
     if t_pars.siaf_path is not None:
-        logger.info('Using pysiaf xml folder %s', t_pars.siaf_path)
+        logger.info("Using pysiaf xml folder %s", t_pars.siaf_path)
     else:
-        logger.info('Using build-in pysiaf xml')
+        logger.info("Using build-in pysiaf xml")
     siaf_lib.open_siaf(basepath=t_pars.siaf_path)
 
     # Get the pointing information

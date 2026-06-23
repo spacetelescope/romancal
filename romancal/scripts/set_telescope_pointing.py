@@ -70,11 +70,11 @@ def _main():
         help="Database service to use. Default: %(default)s",
     )
     parser.add_argument(
-        '--siaf',
-        dest='siaf_path',
+        "--siaf",
+        dest="siaf_path",
         type=str,
         default=None,
-        help="Folder for alternate pysiaf XML files"
+        help="Folder for alternate pysiaf XML files",
     )
     parser.add_argument(
         "--tolerance",
