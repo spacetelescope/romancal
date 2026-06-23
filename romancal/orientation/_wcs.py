@@ -117,6 +117,9 @@ def update_wcs_from_telem(model, t_pars: tlib.TransformParameters):
     transforms = None  # Assume no transforms are calculated.
     quality = None  # Unknown pointing quality.
 
+    # Setup SIAF information.
+    siaf_lib.open_siaf(basepath=t_pars.siaf_path)
+
     # Get the pointing information
     try:
         t_pars.update_from_engdb()
