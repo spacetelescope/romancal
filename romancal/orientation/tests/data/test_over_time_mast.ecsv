@@ -13,12 +13,12 @@
 # - {gscommanded: None}
 # - {obsend: None}
 # - {obsstart: None}
-# - {pointing: 'Pointing(fgs_q=None, obstime=<Time object: scale=''utc'' format=''unix'' value=1757680438.0280416>, q=array([-0.70264027,
-#     -0.09765787,  0.6867813 ,  0.1584015 ]))'}
-# - {reduce_func: <function pointing_from_average at 0x11ce4c0e0>}
+# - {pointing: 'Pointing(fgs_q=None, obstime=<Time object: scale=''utc'' format=''unix'' value=1757680438.0558205>, q=array([-0.70264026,
+#     -0.09765789,  0.68678125,  0.15840148]))'}
+# - {reduce_func: <function pointing_from_average at 0x11ea9f530>}
 # - {service_kwargs: None}
 # - {tolerance: '60.0'}
 # - {velocity: None}
 # schema: astropy-2.0
 source obstime ra dec pa_v3
-"time range" 2025-09-12T12:33:58.028 83.95259568012658 -69.09685668405073 91.04084191764971
+"time range" 2025-09-12T12:33:58.056 83.95260665369545 -69.09639276308974 91.04079423353859
