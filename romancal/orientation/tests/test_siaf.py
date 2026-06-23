@@ -6,7 +6,7 @@ import pytest
 # pysiaf is not a required dependency. If not present, ignore all this.
 pysiaf = pytest.importorskip("pysiaf")
 
-import romancal.orientation._siaf as siaf_lib
+import romancal.orientation._siaf as siaf_lib  # noqa: E402
 
 
 @pytest.mark.parametrize(
