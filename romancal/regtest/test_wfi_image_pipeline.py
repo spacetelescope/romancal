@@ -1,3 +1,5 @@
+import copy
+import os
 from pathlib import Path
 
 import numpy as np
@@ -12,7 +14,7 @@ from romancal.assign_wcs.assign_wcs_step import AssignWcsStep
 from romancal.lib.suffix import replace_suffix
 from romancal.pipeline.exposure_pipeline import ExposurePipeline
 
-from .regtestdata import compare_asdf
+from .regtestdata import compare_asdf, compare_parquet
 
 # mark all tests in this module
 pytestmark = pytest.mark.bigdata
@@ -104,6 +106,16 @@ def test_catalog_produced(output_filename):
 def test_segmentation_map_produced(output_filename):
     segmentation_map_filename = output_filename.replace("_cal.asdf", "_segm.asdf")
     assert Path(segmentation_map_filename).exists()
+
+
+@pytest.mark.soctests
+def test_catalog_matches_truth(run_elp, ignore_parquet_paths):
+    # copy RegtestData instance before modifying output and truth
+    rtdata = copy.copy(run_elp)
+    rtdata.output = rtdata.output.rsplit("_", 1)[0] + "_cat.parquet"
+    rtdata.get_truth(f"truth/WFI/image/{os.path.basename(rtdata.output)}")
+    diff = compare_parquet(rtdata.output, rtdata.truth, **ignore_parquet_paths)
+    assert diff.identical, diff.report()
 
 
 @pytest.mark.soctests
