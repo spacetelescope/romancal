@@ -80,7 +80,7 @@ class SourceCatalogStep(RomanStep):
     spec = """
         bkg_boxsize = integer(default=1000)   # background mesh box size in pixels
         kernel_fwhm = float(default=2.0)      # Gaussian kernel FWHM in pixels
-        snr_threshold = float(default=3.0)    # per-pixel SNR threshold above the bkg
+        snr_threshold = float(default=2.0)    # per-pixel SNR threshold above the bkg
         npixels = integer(default=25)         # min number of pixels in source
         deblend = boolean(default=False)      # deblend sources?
         suffix = string(default='cat')        # Default suffix for output files
