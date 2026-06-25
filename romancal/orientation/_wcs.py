@@ -50,7 +50,7 @@ def calc_wcs(t_pars: tlib.TransformParameters):
     return wcsinfo, vinfo, transforms
 
 
-def wcsinfo_from_siaf(aperture, vinfo):
+def wcsinfo_from_siaf(aperture, vinfo, siaf_path=None):
     """Calculate aperture reference point WCS from V-frame WCS and SIAF
 
     Parameters
@@ -61,6 +61,9 @@ def wcsinfo_from_siaf(aperture, vinfo):
     vinfo : WCSRef
         The V-frame WCS
 
+    siaf_path : str
+        The folder where the SIAF xml information resides.
+
     Returns
     -------
     wcsinfo : WCSRef
@@ -68,7 +71,8 @@ def wcsinfo_from_siaf(aperture, vinfo):
     """
     from pysiaf.utils.rotations import sky_posangle
 
-    wfi = siaf_lib.SIAF[aperture.upper()]
+    siaf = siaf_lib.open_siaf(basepath=siaf_path)
+    wfi = siaf[aperture.upper()]
 
     # For transformations between the telescope frame and all other frames,
     # an attitude matrix is created using the V-frame WCS information.
@@ -116,13 +120,6 @@ def update_wcs_from_telem(model, t_pars: tlib.TransformParameters):
     # Initialization. If provided, provide a default Pointing.
     transforms = None  # Assume no transforms are calculated.
     quality = None  # Unknown pointing quality.
-
-    # Setup SIAF information.
-    if t_pars.siaf_path is not None:
-        logger.info("Using pysiaf xml folder %s", t_pars.siaf_path)
-    else:
-        logger.info("Using build-in pysiaf xml")
-    siaf_lib.open_siaf(basepath=t_pars.siaf_path)
 
     # Get the pointing information
     try:

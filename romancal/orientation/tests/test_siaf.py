@@ -22,5 +22,5 @@ import romancal.orientation._siaf as siaf_lib  # noqa: E402
 )
 def test_open_siaf(basepath, n_apers):
     """Test opening siaf"""
-    siaf_lib.open_siaf(basepath=basepath)
-    assert len(siaf_lib.SIAF.apertures) == n_apers
+    siaf = siaf_lib.open_siaf(basepath=basepath)
+    assert len(siaf.apertures) == n_apers
