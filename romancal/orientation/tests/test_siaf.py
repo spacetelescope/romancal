@@ -16,11 +16,11 @@ import romancal.orientation._siaf as siaf_lib  # noqa: E402
         pytest.param(
             Path(__file__).parent / "data" / "siaf",
             5,
-            marks=pytest.mark.xfail(reason="xml does not exist, should fail"),
+            marks=pytest.mark.xfail(reason="released pysiaf does not support basepath feature"),
         ),
     ],
 )
 def test_open_siaf(basepath, n_apers):
     """Test opening siaf"""
-    siaf_lib.open_siaf()
+    siaf_lib.open_siaf(basepath=basepath)
     assert len(siaf_lib.SIAF.apertures) == n_apers

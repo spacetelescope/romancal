@@ -95,7 +95,7 @@ def test_add_wcs_default(science_raw_model, tmp_path):
         )
 
 
-@pytest.mark.xfail(reason="xml does not exist, should fail", strict=False)
+@pytest.mark.xfail(reason="released pysiaf does not support basepath feature")
 def test_alternate_siaf(tmp_path_factory):
     """Test alternate siaf"""
     t_pars = _make_t_pars(**TRANSFORM_KWARGS)
