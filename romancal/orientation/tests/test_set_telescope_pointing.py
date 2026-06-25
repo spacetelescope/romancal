@@ -95,11 +95,11 @@ def test_add_wcs_default(science_raw_model, tmp_path):
         )
 
 
-@pytest.mark.xfail(reason="released pysiaf does not support basepath feature")
+@pytest.mark.xfail(reason='released pysiaf does not support basepath feature')
 def test_alternate_siaf(tmp_path_factory):
     """Test alternate siaf"""
     t_pars = _make_t_pars(**TRANSFORM_KWARGS)
-    t_pars.siaf_path = Path(__file__).parent / "data" / "pysiaf_xml"
+    t_pars.siaf_path = Path(__file__).parent / "data" / "siaf"
 
     # Calculate the transforms and WCS information
     wcsinfo, vinfo, transforms = wlib.calc_wcs(t_pars)
