@@ -70,6 +70,13 @@ def _main():
         help="Database service to use. Default: %(default)s",
     )
     parser.add_argument(
+        "--siaf",
+        dest="siaf_path",
+        type=str,
+        default=None,
+        help="Folder for alternate pysiaf XML files",
+    )
+    parser.add_argument(
         "--tolerance",
         type=int,
         default=60,
@@ -200,6 +207,7 @@ def _main():
                 default_quaternion=args.default_quaternion,
                 gscommanded=args.gscommanded,
                 service_kwargs=service_kwargs,
+                siaf_path=args.siaf_path,
                 tolerance=args.tolerance,
             )
         except (TypeError, ValueError) as exception:

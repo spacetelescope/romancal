@@ -1,0 +1,3 @@
+Implement ability to choose local pysiaf xml folder
+
+Add the option `--siaf` to `roman_set_telescope_pointing` cli.
