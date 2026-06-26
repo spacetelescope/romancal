@@ -184,7 +184,7 @@ def update_wcs(
     # Configure transformation parameters.
     t_pars = tlib.TransformParameters(**transform_kwargs)
     tlib.t_pars_from_model(model, t_pars)
-    logger.log(DEBUG_FULL, 'TransformParameters: %s', t_pars)
+    logger.log(DEBUG_FULL, "TransformParameters: %s", t_pars)
 
     # Calculate WCS.
     transforms = wlib.update_wcs_from_telem(model, t_pars)

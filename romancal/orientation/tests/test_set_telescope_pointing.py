@@ -95,7 +95,7 @@ def test_add_wcs_default(science_raw_model, tmp_path):
         )
 
 
-@pytest.mark.xfail(reason='released pysiaf does not support basepath feature')
+@pytest.mark.xfail(reason="released pysiaf does not support basepath feature")
 def test_alternate_siaf(tmp_path_factory):
     """Test alternate siaf"""
     t_pars = _make_t_pars(**TRANSFORM_KWARGS)
@@ -116,7 +116,7 @@ def test_alternate_siaf(tmp_path_factory):
     wcs = {"wcsinfo": wcsinfo, "vinfo": vinfo}
     with asdf.open(DATA_PATH / "altsiaf_wcs.asdf") as af:
         expected = af.tree
-    for wcs_type in ['wcsinfo', 'vinfo']:
+    for wcs_type in ["wcsinfo", "vinfo"]:
         wcs_dict = wcs[wcs_type]._asdict()
         for key in wcs_dict:
             if key != "s_region":
@@ -128,7 +128,9 @@ def test_alternate_siaf(tmp_path_factory):
 
     # Test the transforms
     for matrix in dataclasses.fields(tlib.Transforms()):
-        _test_transforms(transforms, t_pars, matrix.name, expected_fname='altsiaf_transforms.asdf')
+        _test_transforms(
+            transforms, t_pars, matrix.name, expected_fname="altsiaf_transforms.asdf"
+        )
 
 
 def test_add_wcs_default_from_model(science_raw_model, tmp_path):
@@ -518,7 +520,7 @@ def _model_to_tmpfile(m, tmp_path, fname="file.asdf"):
     return file_path
 
 
-def _test_transforms(transforms, t_pars, matrix, expected_fname='transforms.asdf'):
+def _test_transforms(transforms, t_pars, matrix, expected_fname="transforms.asdf"):
     """Private function to ensure expected calculate of the specified matrix
 
     Parameters

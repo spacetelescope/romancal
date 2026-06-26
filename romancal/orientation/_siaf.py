@@ -30,7 +30,7 @@ def open_siaf(basepath=None, filename=None):
     """
     from pysiaf import Siaf
 
-    logger.debug('Using SIAF XML basepath: %s, filename: %s', basepath, filename)
+    logger.debug("Using SIAF XML basepath: %s, filename: %s", basepath, filename)
     siaf = Siaf("roman", basepath=basepath, filename=filename)
 
     return siaf

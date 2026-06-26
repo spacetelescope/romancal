@@ -16,7 +16,9 @@ import romancal.orientation._siaf as siaf_lib  # noqa: E402
         pytest.param(
             Path(__file__).parent / "data" / "siaf",
             5,
-            marks=pytest.mark.xfail(reason="released pysiaf does not support basepath feature"),
+            marks=pytest.mark.xfail(
+                reason="released pysiaf does not support basepath feature"
+            ),
         ),
     ],
 )
