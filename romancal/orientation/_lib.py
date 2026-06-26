@@ -251,7 +251,7 @@ def update_meta(model, t_pars, wcsinfo, vinfo, quality, siaf_path=None):
     pm.ra_v1 = vinfo.ra
 
     # Update target's sky location.
-    attitude = attitude_from_v1(vinfo)
+    attitude = attitude_from_v1(vinfo, siaf_path=siaf_path)
     targ_app = siaf[model.meta.pointing.target_aperture]
     targ_app.set_attitude_matrix(attitude)
     skycoord = targ_app.reference_point(to_frame="sky")

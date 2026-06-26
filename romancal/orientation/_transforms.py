@@ -431,7 +431,7 @@ def calc_transforms(t_pars: TransformParameters):
         hv = (0.0, 0.0)
     else:
         hv = t_pars.gscommanded
-    fgs_x, fgs_y = olib.hv_to_fgs(t_pars.aperture, *hv)
+    fgs_x, fgs_y = olib.hv_to_fgs(t_pars.aperture, *hv, siaf_path=t_pars.siaf_path)
     t.m_fgs2gsapp = calc_m_fgs2gsapp(fgs_x, fgs_y)
 
     # ECI to GS apparent

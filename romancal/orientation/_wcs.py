@@ -44,7 +44,7 @@ def calc_wcs(t_pars: tlib.TransformParameters):
     vinfo = tlib.calc_wcs_from_matrix(transforms.m_eci2v)
 
     # Calculate the Aperture WCS
-    wcsinfo = wcsinfo_from_siaf(t_pars.aperture, vinfo)
+    wcsinfo = wcsinfo_from_siaf(t_pars.aperture, vinfo, siaf_path=t_pars.siaf_path)
 
     # That's all folks
     return wcsinfo, vinfo, transforms
@@ -76,7 +76,7 @@ def wcsinfo_from_siaf(aperture, vinfo, siaf_path=None):
 
     # For transformations between the telescope frame and all other frames,
     # an attitude matrix is created using the V-frame WCS information.
-    attitude = olib.attitude_from_v1(vinfo)
+    attitude = olib.attitude_from_v1(vinfo, siaf_path=siaf_path)
     wfi.set_attitude_matrix(attitude)
     skycoord = wfi.reference_point(to_frame="sky")
     pa_v3 = sky_posangle(attitude, *skycoord)
@@ -159,7 +159,7 @@ def update_wcs_from_telem(model, t_pars: tlib.TransformParameters):
     # Update model meta.
     logger.info("Aperture WCS info: %s", wcsinfo)
     logger.info("V1 WCS info: %s", vinfo)
-    olib.update_meta(model, t_pars, wcsinfo, vinfo, quality)
+    olib.update_meta(model, t_pars, wcsinfo, vinfo, quality, siaf_path=t_pars.siaf_path)
 
     return transforms
 

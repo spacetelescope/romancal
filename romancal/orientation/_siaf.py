@@ -1,5 +1,11 @@
 # SIAF utilities
 
+import logging
+
+# Setup logging
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
+
 
 def open_siaf(basepath=None, filename=None):
     """Open the pysiaf object
@@ -22,6 +28,7 @@ def open_siaf(basepath=None, filename=None):
     """
     from pysiaf import Siaf
 
+    logger.debug('Using SIAF XML basepath: %s, filename: %s', basepath, filename)
     siaf = Siaf("roman", basepath=basepath, filename=filename)
 
     return siaf
