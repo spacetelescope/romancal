@@ -123,6 +123,9 @@ class TransformParameters:
     reduce_func: Callable | None = None
     #: Engineering database information
     service_kwargs: dict | None = None
+    #: Path to the SIAF folder containing the roman siaf xml definitions
+    #: None to use the pysiaf builtin definitions
+    siaf_path: str | None = None
     #: If no telemetry can be found during the observation,
     #: the time, in seconds, beyond the observation time to search for telemetry.
     tolerance: float = 60.0
@@ -428,7 +431,7 @@ def calc_transforms(t_pars: TransformParameters):
         hv = (0.0, 0.0)
     else:
         hv = t_pars.gscommanded
-    fgs_x, fgs_y = olib.hv_to_fgs(t_pars.aperture, *hv)
+    fgs_x, fgs_y = olib.hv_to_fgs(t_pars.aperture, *hv, siaf_path=t_pars.siaf_path)
     t.m_fgs2gsapp = calc_m_fgs2gsapp(fgs_x, fgs_y)
 
     # ECI to GS apparent

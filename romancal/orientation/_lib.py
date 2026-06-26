@@ -6,6 +6,8 @@ from math import cos, sin
 
 import numpy as np
 
+from . import _siaf as siaf_lib
+
 __all__ = []
 
 # Setup logging
@@ -70,7 +72,7 @@ def angle_to_vector(alpha, delta):
     return [v0, v1, v2]
 
 
-def attitude_from_v1(vinfo):
+def attitude_from_v1(vinfo, siaf_path=None):
     """Calculate observatory attitude matrix based on V1 pointing
 
     Return the attitude matrix used by `pysiaf.Aperture.set_attitude_matrix`
@@ -81,15 +83,17 @@ def attitude_from_v1(vinfo):
     vinfo : `WCSRef`
         The WCS information for V1, the boresight.
 
+    siaf_path : str
+        The folder where the SIAF xml information resides.
+
     Returns
     -------
     attitude : np.array((3, 3), dtype=float)
         The attitude matrix.
     """
-    from pysiaf import Siaf
     from pysiaf.utils.rotations import attitude_matrix
 
-    siaf = Siaf("roman")
+    siaf = siaf_lib.open_siaf(basepath=siaf_path)
     boresight = siaf["BORESIGHT"]
     v_refpoint = boresight.reference_point(to_frame="tel")
     attitude = attitude_matrix(*v_refpoint, vinfo.ra, vinfo.dec, vinfo.pa)
@@ -138,7 +142,7 @@ def calc_position_angle(point, ref):
     return point_pa
 
 
-def hv_to_fgs(aperture_name, h, v):
+def hv_to_fgs(aperture_name, h, v, siaf_path=None):
     """Convert HV frame to FGS frame
 
     Source document: Innerspace Confluence: "Quaternion Transforms for Coarse Pointing WCS"
@@ -154,14 +158,15 @@ def hv_to_fgs(aperture_name, h, v):
         The commanded coordinates in the HV frame.
         Units are in pixels.
 
+    siaf_path : str
+        The folder where the SIAF xml information resides.
+
     Returns
     -------
     fgs_x, fgs_y : float, float
         The coordinates in the FGS reference frame in arcsec.
     """
-    from pysiaf import Siaf
-
-    siaf = Siaf("roman")
+    siaf = siaf_lib.open_siaf(basepath=siaf_path)
     aper = siaf[aperture_name]
     aper_wfi_cen = siaf["WFI_CEN"]
 
@@ -177,7 +182,7 @@ def hv_to_fgs(aperture_name, h, v):
     return x_fgs, y_fgs
 
 
-def update_meta(model, t_pars, wcsinfo, vinfo, quality):
+def update_meta(model, t_pars, wcsinfo, vinfo, quality, siaf_path=None):
     """Update model's meta info with the given pointing.
 
     The following meta are update:
@@ -210,6 +215,9 @@ def update_meta(model, t_pars, wcsinfo, vinfo, quality):
 
     quality : str
         Indicator of the success of the pointing determination.
+
+    siaf_path : str
+        The folder where the SIAF xml information resides.
     """
     # Shortcuts to the meta blocks
     gs = model.meta.guide_star
@@ -217,9 +225,7 @@ def update_meta(model, t_pars, wcsinfo, vinfo, quality):
     wm = model.meta.wcsinfo
 
     # Setup SIAF info.
-    from pysiaf import Siaf
-
-    siaf = Siaf("roman")
+    siaf = siaf_lib.open_siaf(basepath=siaf_path)
     aper = siaf[wm.aperture_name.upper()]
 
     # Update pointing info
@@ -245,7 +251,7 @@ def update_meta(model, t_pars, wcsinfo, vinfo, quality):
     pm.ra_v1 = vinfo.ra
 
     # Update target's sky location.
-    attitude = attitude_from_v1(vinfo)
+    attitude = attitude_from_v1(vinfo, siaf_path=siaf_path)
     targ_app = siaf[model.meta.pointing.target_aperture]
     targ_app.set_attitude_matrix(attitude)
     skycoord = targ_app.reference_point(to_frame="sky")

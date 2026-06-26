@@ -8,6 +8,7 @@ from stcal.alignment.util import compute_s_region_keyword
 
 from . import _lib as olib
 from . import _pointing as plib
+from . import _siaf as siaf_lib
 from . import _transforms as tlib
 
 __all__ = []
@@ -43,13 +44,13 @@ def calc_wcs(t_pars: tlib.TransformParameters):
     vinfo = tlib.calc_wcs_from_matrix(transforms.m_eci2v)
 
     # Calculate the Aperture WCS
-    wcsinfo = wcsinfo_from_siaf(t_pars.aperture, vinfo)
+    wcsinfo = wcsinfo_from_siaf(t_pars.aperture, vinfo, siaf_path=t_pars.siaf_path)
 
     # That's all folks
     return wcsinfo, vinfo, transforms
 
 
-def wcsinfo_from_siaf(aperture, vinfo):
+def wcsinfo_from_siaf(aperture, vinfo, siaf_path=None):
     """Calculate aperture reference point WCS from V-frame WCS and SIAF
 
     Parameters
@@ -60,20 +61,22 @@ def wcsinfo_from_siaf(aperture, vinfo):
     vinfo : WCSRef
         The V-frame WCS
 
+    siaf_path : str
+        The folder where the SIAF xml information resides.
+
     Returns
     -------
     wcsinfo : WCSRef
         The WCS for the aperture's reference point, as defined by its SIAF.
     """
-    from pysiaf import Siaf
     from pysiaf.utils.rotations import sky_posangle
 
-    siaf = Siaf("roman")
+    siaf = siaf_lib.open_siaf(basepath=siaf_path)
     wfi = siaf[aperture.upper()]
 
     # For transformations between the telescope frame and all other frames,
     # an attitude matrix is created using the V-frame WCS information.
-    attitude = olib.attitude_from_v1(vinfo)
+    attitude = olib.attitude_from_v1(vinfo, siaf_path=siaf_path)
     wfi.set_attitude_matrix(attitude)
     skycoord = wfi.reference_point(to_frame="sky")
     pa_v3 = sky_posangle(attitude, *skycoord)
@@ -156,7 +159,7 @@ def update_wcs_from_telem(model, t_pars: tlib.TransformParameters):
     # Update model meta.
     logger.info("Aperture WCS info: %s", wcsinfo)
     logger.info("V1 WCS info: %s", vinfo)
-    olib.update_meta(model, t_pars, wcsinfo, vinfo, quality)
+    olib.update_meta(model, t_pars, wcsinfo, vinfo, quality, siaf_path=t_pars.siaf_path)
 
     return transforms
 
