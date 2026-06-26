@@ -106,13 +106,29 @@ def test_alternate_siaf(tmp_path_factory):
 
     # Save all for later examination.
     transforms_path = tmp_path_factory.mktemp("transforms")
-    transforms.write_to_asdf(transforms_path / "transforms.asdf")
+    transforms.write_to_asdf(transforms_path / "altsiaf_transforms.asdf")
     wcs_asdf_file = asdf.AsdfFile(
         {"wcsinfo": wcsinfo._asdict(), "vinfo": vinfo._asdict()}
     )
-    wcs_asdf_file.write_to(transforms_path / "wcs.asdf")
+    wcs_asdf_file.write_to(transforms_path / "altsiaf_wcs.asdf")
 
-    assert True
+    # Test the wcs results
+    wcs = {"wcsinfo": wcsinfo, "vinfo": vinfo}
+    with asdf.open(DATA_PATH / "altsiaf_wcs.asdf") as af:
+        expected = af.tree
+    for wcs_type in ['wcsinfo', 'vinfo']:
+        wcs_dict = wcs[wcs_type]._asdict()
+        for key in wcs_dict:
+            if key != "s_region":
+                assert np.isclose(expected[wcs_type][key], wcs_dict[key]), (
+                    f"wcs_type: {wcs_type} Key {key} differs expected {expected[wcs_type][key]} calculated {wcs_dict[key]}"
+                )
+            else:
+                assert expected[wcs_type][key] == wcs_dict[key]
+
+    # Test the transforms
+    for matrix in dataclasses.fields(tlib.Transforms()):
+        _test_transforms(transforms, t_pars, matrix.name, expected_fname='altsiaf_transforms.asdf')
 
 
 def test_add_wcs_default_from_model(science_raw_model, tmp_path):
@@ -502,7 +518,7 @@ def _model_to_tmpfile(m, tmp_path, fname="file.asdf"):
     return file_path
 
 
-def _test_transforms(transforms, t_pars, matrix):
+def _test_transforms(transforms, t_pars, matrix, expected_fname='transforms.asdf'):
     """Private function to ensure expected calculate of the specified matrix
 
     Parameters
@@ -513,7 +529,7 @@ def _test_transforms(transforms, t_pars, matrix):
     matrix : str
         The matrix to compare
     """
-    expected_tforms = tlib.Transforms.from_asdf(DATA_PATH / "transforms.asdf")
+    expected_tforms = tlib.Transforms.from_asdf(DATA_PATH / expected_fname)
     expected_value = getattr(expected_tforms, matrix)
 
     value = getattr(transforms, matrix)
