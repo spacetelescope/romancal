@@ -1,12 +1,14 @@
 # SIAF utilities
 
 import logging
+from functools import lru_cache
 
 # Setup logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
+@lru_cache
 def open_siaf(basepath=None, filename=None):
     """Open the pysiaf object
 
