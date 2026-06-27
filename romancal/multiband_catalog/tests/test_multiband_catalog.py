@@ -566,6 +566,23 @@ def test_multiband_source_injection_nan_catalog(
     # Generate model libraries
     libmods = libraries_si_nan()
 
+    # Ensure lirary models have NaNs in the proper locations
+    y_pos, x_pos = zip(*NANPOINTS)
+
+    with libmods['Grid']:
+        for si_model in libmods['Grid']:
+            nanmask = np.isnan(si_model.data)
+            libmods['Grid'].shelve(si_model, modify=False)
+            assert np.all(list(zip(y_pos,x_pos)) == \
+                          list(zip(np.where(nanmask)[0],np.where(nanmask)[1])))
+
+    with libmods['Block']:
+        for si_model in libmods['Block']:
+            nanmask = np.isnan(si_model.data)
+            libmods['Block'].shelve(si_model, modify=False)
+            assert np.isin(list(zip(y_pos,x_pos)),
+                           list(zip(np.where(nanmask)[0],np.where(nanmask)[1]))).all()
+
     results = {}
 
     for si_type in ['NoNan', 'Grid', 'Block']:
