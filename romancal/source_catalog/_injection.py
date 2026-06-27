@@ -7,7 +7,6 @@ import logging
 import numpy as np
 from astropy import table
 from astropy import units as u
-from scipy.interpolate import griddata
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 
 log = logging.getLogger(__name__)
