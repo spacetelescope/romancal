@@ -3,12 +3,14 @@ from pathlib import Path
 from re import match
 
 import astropy.units as u
-import numpy as np
-import pyarrow
-import pytest
 from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
 from astropy.time import Time
+from astropy.coordinates import SkyCoord
+import numpy as np
+import pyarrow
+import pytest
+
 from roman_datamodels import datamodels as rdm
 from roman_datamodels.datamodels import MosaicModel, MultibandSegmentationMapModel
 
@@ -17,6 +19,15 @@ from romancal.multiband_catalog import MultibandCatalogStep
 from romancal.multiband_catalog._multiband_catalog import match_recovered_sources
 from romancal.skycell.tests.test_skycell_match import mk_gwcs
 
+
+NANPOINTS = [
+        (68,66), (83,90), (105,104), (125,127), (146,142), (165,166),
+        (189,185), (206,204), (229,230), (244,245), (267,264),
+        (288,283), (308,303), (323,330), (344,346), (368,369),
+        (385,382), (406,407), (430,425), (450,445),
+    ]
+RNG_SEED = 42
+MEANFLUX = 0.2
 
 def make_test_image():
     g1 = Gaussian2D(121.0, 11.1, 12.2, 1.5, 1.5)
@@ -318,6 +329,62 @@ def test_multiband_catalog_some_invalid_inputs(
     assert np.all(np.isnan(cat["segment_f184_flux_err"]))
 
 
+def make_si_nan_test_image():
+    data = np.zeros(shape=(500,500))
+
+    g1 = Gaussian2D(60.5, 110, 60, 1.5, 1.5)
+    g2 = Gaussian2D(35, 60, 280, 9.2, 4.5)
+    g3 = Gaussian2D(55.5, 430, 110, 8.0, 3.0, theta=30 * u.deg)
+    g4 = Gaussian2D(40.5, 340, 400, 4, 2, theta=102 * u.deg)
+    yy, xx = np.mgrid[0:500, 0:500]
+    data = (
+        g1(xx, yy)
+        + g2(xx, yy)
+        + g3(xx, yy)
+        + g4(xx, yy)
+    ).value.astype("float32")
+
+    rng = np.random.default_rng(seed=RNG_SEED)
+    noise_scale = 0.01 * MEANFLUX
+    noise = rng.normal(loc=MEANFLUX, scale=noise_scale, size=data.shape)
+    data += noise
+    err = noise_scale * np.ones_like(data)
+
+    return data, err
+
+
+def mosaic_si_nan_model(shape=(500, 500)):
+    model = MosaicModel.create_fake_data(shape=shape)
+    data, err = make_si_nan_test_image()
+    model.data = data
+    model.err = err
+    model.var_rnoise = err**2
+    model.var_poisson = err**2
+    model.weight = 1.0 / err
+    model.meta.instrument.optical_element = "F184"
+    model.meta.coadd_info.time_first = Time("2027-01-01T00:00:00")
+    model.meta.wcsinfo.pixel_scale = 0.11 / 3600  # degrees
+
+    model.meta.wcsinfo.ra_ref = 270.0  # degrees
+    model.meta.wcsinfo.dec_ref = 66.0  # degrees
+    model.meta.wcsinfo.roll_ref = 0.0  # degrees
+    model.meta.coadd_info.exposure_time = 300  # seconds
+
+    model.meta.resample.pixfrac = 0.5
+    model.meta.data_release_id = "r1"
+
+    # Create WCS
+    model.meta.wcs = mk_gwcs(
+        model.meta.wcsinfo.ra_ref,
+        model.meta.wcsinfo.dec_ref,
+        model.meta.wcsinfo.roll_ref,
+        bounding_box=((-0.5, shape[0] - 0.5), (-0.5, shape[1] - 0.5)),
+        shape=shape,
+    )
+
+    return model
+
+
 def make_si_test_image():
     g1 = Gaussian2D(60.5, 11, 12, 1.5, 1.5)
     g2 = Gaussian2D(35, 65, 18, 9.2, 4.5)
@@ -466,75 +533,112 @@ def test_multiband_source_injection_catalog(
     )
 
 
-@pytest.fixture
-def library_model_si_nan(mosaic_si_model):
-    y_pos, x_pos = zip(*[
-        (68,66), (83,90), (105,104), (125,127), (146,142), (165,166),
-        (189,185), (206,204), (229,230), (244,245), (267,264),
-        (288,283), (308,303), (323,330), (344,346), (368,369),
-        (385,382), (406,407), (430,425), (450,445),
-    ])
+def libraries_si_nan():
+    libs = {}
 
-    # No NaNs
-    model1 = deepcopy(mosaic_si_model)
+    for si_type in ['NoNan', 'Grid', 'Block']:
+        model1 = mosaic_si_nan_model()
+        model1.meta.instrument.optical_element = "F158"
 
-    # NaN on grid diagonal only
-    model2 = deepcopy(mosaic_si_model)
-    model2.data[y_pos, x_pos] = np.nan
-    model2.meta.instrument.optical_element = "F158"
+        # NaN on grid diagonal
+        if si_type != 'NoNan':
+            y_pos, x_pos = zip(*NANPOINTS)
+            model1.data[y_pos, x_pos] = np.nan
 
-    # NaN on grid diagonal and a a quadrant
-    model3 = deepcopy(model2)
-    model2.data[250:, 250:] = np.nan
-    model3.meta.instrument.optical_element = "F213"
-    return ModelLibrary([model1, model2, model3])
+        # NaN in a quadrant
+        if si_type == 'Block':
+            model1.data[250:, 250:] = np.nan
+
+        # Second model
+        model2 = deepcopy(model1)
+        model2.meta.instrument.optical_element = "F184"
+
+        libs[si_type] = ModelLibrary([model1, model2])
+
+    return libs
 
 
 def test_multiband_source_injection_nan_catalog(
-    library_model_si_nan, function_jail
+    function_jail
 ):
     step = MultibandCatalogStep()
 
-    result = step.call(
-        library_model_si_nan,
-        bkg_boxsize=50,
-        snr_threshold=3,
-        npixels=10,
-        fit_psf=False,
-        deblend=True,
-        inject_sources=True,
-        inject_seed=50,
-        save_results=False,
-        save_debug_info=True,
-    )
+    # Generate model libraries
+    libmods = libraries_si_nan()
 
-    # Original objects
-    cat = result.source_catalog
-    assert isinstance(cat, Table)
-    assert len(cat) == 175
+    results = {}
 
-    # Ensure all original objects found in the proper location
-    cat["x_mod"] = np.mod(np.round(cat["x_centroid"]), 100)
-    cat["y_mod"] = np.mod(np.round(cat["y_centroid"]), 100)
-    gocj_locs = [
-        (11, 12),
-        (65, 18),
-        (41, 43),
-        (17, 53),
-        (65, 71),
-        (20, 80),
-        (85, 88),
-    ]
-    for modx, mody in cat[["x_mod", "y_mod"]]:
-        assert (modx, mody) in gocj_locs
+    for si_type in ['NoNan', 'Grid', 'Block']:
+        results[si_type] = step.call(
+            libmods[si_type],
+            bkg_boxsize=30,
+            snr_threshold=5,
+            npixels=10,
+            fit_psf=False,
+            deblend=True,
+            inject_sources=True,
+            inject_seed=RNG_SEED,
+            save_results=False,
+            save_debug_info=True,
+        )
 
-    # Source injected and original images
-    si_cat = result.source_injection_catalog
-    assert isinstance(si_cat, Table)
-    assert len(si_cat) >= len(cat)
+    # Test that Grid and Orig Source Injected catalogs have the same number of objects
+    assert len(results['Grid'].source_injection_catalog) == len(results['NoNan'].source_injection_catalog)
 
-    with library_model_si_nan:
-        model_lst = [model for model in library_model_si_nan]
+    # Coordinates for Nan Grid and NoNan Source Injected catalogs
+    coords_grid = SkyCoord(results['Grid'].source_injection_catalog['ra'],
+                    results['Grid'].source_injection_catalog["dec"])
+    coords_si_g = SkyCoord(results['NoNan'].source_injection_catalog['ra'],
+                    results['NoNan'].source_injection_catalog["dec"])
+
+    # Find indices in GridSI that best match NoNanSI
+    idx, d2d, d3d = coords_si_g.match_to_catalog_sky(coords_grid)
+
+    # Ensure one to one fit
+    assert len(idx)==len(set(idx))
+
+    # Filter by a maximum match radius (one pixel)
+    match_mask = d2d < 0.1 * u.arcsec
+
+    matched_si_g = results['NoNan'].source_injection_catalog[match_mask]
+    matched_grid = results['Grid'].source_injection_catalog[idx[match_mask]]
+
+    # Ensure all objects matched
+    assert len(matched_grid) == len(results['NoNan'].source_injection_catalog)
+
+    # Test that all matched objects have similar magnitudes
+    assert np.allclose(matched_grid["kron_f158_abmag"],
+                    matched_si_g["kron_f158_abmag"],
+                    rtol=1.0e-3)
+    assert np.allclose(matched_grid["kron_f184_abmag"],
+                    matched_si_g["kron_f184_abmag"],
+                    rtol=1.0e-3)
+
+    # Coordinates for Nan Block and Original Source Injected catalogs
+    coords_block = SkyCoord(results['Block'].source_injection_catalog['ra'],
+                    results['Block'].source_injection_catalog["dec"])
+    coords_si_bl = SkyCoord(results['NoNan'].source_injection_catalog['ra'],
+                    results['NoNan'].source_injection_catalog["dec"])
+
+    # Find indices in GridSI that best match OrigSI
+    idx, d2d, d3d = coords_si_bl.match_to_catalog_sky(coords_block)
+
+    # Filter by a maximum match radius (one pixel)
+    match_mask = d2d < 0.1 * u.arcsec
+
+    matched_si_bl = results['NoNan'].source_injection_catalog[match_mask]
+    matched_block = results['Block'].source_injection_catalog[idx[match_mask]]
+
+    # Expect around 75% of NoNans objects
+    assert np.isclose(len(matched_block),(0.75 * len(results['NoNan'].source_injection_catalog)), rtol=0.05)
+
+    # Test that all matched objects have similar magnitudes
+    assert np.allclose(matched_block["kron_f158_abmag"],
+                    matched_si_bl["kron_f158_abmag"],
+                    rtol=3e-2)
+    assert np.allclose(matched_block["kron_f184_abmag"],
+                    matched_si_bl["kron_f184_abmag"],
+                    rtol=3e-2)
 
 
 def test_match_recovered_sources():

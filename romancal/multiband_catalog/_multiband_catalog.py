@@ -581,51 +581,34 @@ def make_source_injected_library(library, seed=None):
                 si_cat["y_pos"] = si_y_pos
                 si_cat["label"] = np.arange(len(si_x_pos))
 
-            # # Discard positions in NA empty regions
-            # #nanmask = np.isnan(model.data[y_pos_idx, x_pos_idx])
-            # #y_pos_idx, x_pos_idx = y_pos_idx[~nanmask], x_pos_idx[~nanmask]
-
-            # # Adjust NA regions for injection
-            # # https://stackoverflow.com/questions/68197762/fill-nan-with-nearest-neighbor-in-numpy-array
-            # from scipy.interpolate import NearestNDInterpolator
-            # # data = ... # shape (w, h)
-            # # mask = np.where(~np.isnan(data))
-            # nanmask = np.isnan(si_model.data[y_pos_idx, x_pos_idx])
-            # interp = NearestNDInterpolator(np.transpose(nanmask), si_model.data[nanmask])
-            # si_model.data = interp(*np.indices(si_model.data.shape))
-
-
-
-
-
-            # Handle NA regions
+            # Handle NaN regions
             y_pos_idx, x_pos_idx = np.round(si_y_pos).astype(int), np.round(si_x_pos).astype(int)
-            si_nan_y_pos, si_nan_x_pos = si_y_pos, si_x_pos
             nanmask = np.isnan(si_model.data[y_pos_idx, x_pos_idx])
             si_nan_cat = si_cat.copy()
 
             if np.any(nanmask):
                 idx_bad = []
-                for nan_pos_idx in range(len(si_nan_y_pos[nanmask])):
+                for nan_pos_idx in range(0,len(si_y_pos[nanmask])):
                     # Create stamps around each gridpoint on a NaN value
                     # Stamps are set for a single NAN pixel, but can easily be expanded
                     # to regions / object sizes / a parameter
-                    y_stamp = list(range(y_pos_idx[nan_pos_idx]-1, y_pos_idx[nan_pos_idx]+2))
-                    x_stamp = list(range(x_pos_idx[nan_pos_idx]-1, x_pos_idx[nan_pos_idx]+2))
-                    Y, X = np.meshgrid(y_stamp, x_stamp)
-                    mask_stamp = ~np.isnan(si_model.data[min(y_stamp):max(y_stamp)+1,
-                                            min(x_stamp):max(x_stamp)+1])
+                    y_stamp = list(range(y_pos_idx[nanmask][nan_pos_idx]-1, y_pos_idx[nanmask][nan_pos_idx]+2))
+                    x_stamp = list(range(x_pos_idx[nanmask][nan_pos_idx]-1, x_pos_idx[nanmask][nan_pos_idx]+2))
+                    mask_stamp = np.isnan(si_model.data[y_stamp[0]:y_stamp[-1]+1,
+                                            x_stamp[0]:x_stamp[-1]+1])
 
                     # Skip NaN regions larger than the grid pixel
                     # (can be expanded to an area)
-                    if np.sum(~mask_stamp) > 1:
+                    if np.sum(mask_stamp) != 1:
                         idx_bad.append(nan_pos_idx)
                         continue
 
+                    Y, X = np.meshgrid(y_stamp, x_stamp)
+
                     # Set coordinates and values for temporary interpolation
-                    known_coords = np.column_stack((Y[mask_stamp], X[mask_stamp]))
+                    known_coords = np.column_stack((Y[~mask_stamp], X[~mask_stamp]))
                     known_values = si_model.data[min(y_stamp):max(y_stamp)+1,
-                                            min(x_stamp):max(x_stamp)+1][mask_stamp]
+                                            min(x_stamp):max(x_stamp)+1][~mask_stamp]
                     target_coords = np.column_stack((Y.ravel(), X.ravel()))
 
                     # Create temporary interpolation stamp
@@ -637,17 +620,12 @@ def make_source_injected_library(library, seed=None):
                     # Set temporary interpolation value
                     si_model.data[min(y_stamp):max(y_stamp)+1,
                                 min(x_stamp):max(x_stamp)+1][
-                                ~mask_stamp] = interpolated_matrix[~mask_stamp]
+                                mask_stamp] = interpolated_matrix[mask_stamp]
 
                 # Remove grid points in extended NaN regions
                 if idx_bad:
-                    # si_nan_y_pos = np.delete(si_nan_y_pos, idx_bad)
-                    # si_nan_x_pos = np.delete(si_nan_x_pos, idx_bad)
-                    si_nan_cat.remove_rows(idx_bad)
-                    # nanmask = np.delete(nanmask, idx_bad)
                     nanmask[idx_bad] = False
-
-
+                    si_nan_cat.remove_rows(nanmask)
 
             # Inject sources into the detection image
             si_model = inject_sources(
@@ -659,14 +637,6 @@ def make_source_injected_library(library, seed=None):
             # Reinstate NaNs after injections
             if np.any(nanmask):
                 si_model.data[y_pos_idx[nanmask], x_pos_idx[nanmask]] = np.nan
-
-            print(f"\nXXXX Y: {y_pos_idx}")
-            print(f"XXXX X: {x_pos_idx}")
-            print(f"XXXX y,x diag:")
-            blah_idx = 0
-            while blah_idx < len(y_pos_idx):
-                print(f"XXXX ({y_pos_idx[blah_idx]},{x_pos_idx[blah_idx]})")
-                blah_idx += 21
 
             # Add model to list for new library
             si_model_lst.append(si_model)
