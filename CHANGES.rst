@@ -1,3 +1,31 @@
+1.0.1 (2026-06-29)
+==================
+
+``orientation``
+---------------
+
+- Implement ability to choose local pysiaf xml folder
+
+  Add the option `--siaf` to `roman_set_telescope_pointing` cli. (`#2367
+  <https://github.com/spacetelescope/romancal/issues/2367>`_)
+
+
+``ramp_fitting`` (WFI-Image, WFI-Prism, WFI-Grism)
+--------------------------------------------------
+
+- Fix read noise factor of sqrt(2) in likely ramp fitting: the Roman readnoise
+  reference stores per-read noise, but stcal's likely algorithm expects CDS
+  read noise (sqrt(2) times larger). (`#2360
+  <https://github.com/spacetelescope/romancal/issues/2360>`_)
+
+
+``flatfield`` (WFI-Image)
+-------------------------
+
+- Apply flat field correction to the ``dumo`` (uniform minus optimal slope)
+  field. (`#2360 <https://github.com/spacetelescope/romancal/issues/2360>`_)
+
+
 1.0.0 (2026-05-15)
 ==================
 

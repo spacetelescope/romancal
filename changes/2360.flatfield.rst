@@ -1,1 +1,0 @@
-Apply flat field correction to the ``dumo`` (uniform minus optimal slope) field.
