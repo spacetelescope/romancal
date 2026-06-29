@@ -1,1 +1,0 @@
-Fix read noise factor of sqrt(2) in likely ramp fitting: the Roman readnoise reference stores per-read noise, but stcal's likely algorithm expects CDS read noise (sqrt(2) times larger).
