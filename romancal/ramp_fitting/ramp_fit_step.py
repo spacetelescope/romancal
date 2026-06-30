@@ -259,8 +259,6 @@ def likely(
     input_model["flags_saturated"] = pixel.SATURATED
     input_model["rejection_threshold"] = rejection_threshold
     input_model["flags_jump_det"] = pixel.JUMP_DET
-    # Ask stcal to propagate resultant-level jump flags back into groupdq.
-    input_model["update_groupdq"] = record_jumps
     # Add an axis to match the JWST data cube
     input_model.data = input_model.data[np.newaxis, :, :, :]
     input_model.groupdq = input_model.groupdq[np.newaxis, :, :, :]
