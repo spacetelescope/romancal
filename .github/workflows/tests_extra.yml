@@ -1,22 +1,24 @@
 name: extra tests
 
 on:
+  pull_request:
+    branches:
+      - main
+      - 'release/*.x'
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - labeled
   push:
     branches:
       - main
-      - '*x'
+      - 'release/*.x'
     tags:
       - '*'
-  pull_request:
-    types:
-      - opened
-      - reopened
-      - labeled
-      - unlabeled
-      - synchronize
   schedule:
-    # Weekly Monday 9AM build
-    - cron: "0 9 * * 1"
+    - cron: "0 0 * * 1" # every Monday at 6a
   workflow_dispatch:
     inputs:
       crds_context:
@@ -31,42 +33,53 @@ on:
         default: https://roman-crds.stsci.edu
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.crds_context }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ inputs.crds_context }}
   cancel-in-progress: true
 
+permissions: {}
+
+env:
+  CRDS_PATH: /tmp/data/crds_cache
+  CRDS_OBSERVATORY: roman
+  CRDS_SERVER_URL: ${{ inputs.crds_server || 'https://roman-crds.stsci.edu' }}
+  CRDS_CLIENT_RETRY_COUNT: 3
+  CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
+
 jobs:
-  latest_crds_contexts:
-    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run extra tests')))
-    uses: spacetelescope/crds/.github/workflows/contexts.yml@main
-    with:
-      observatory: roman
-  crds_context:
-    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run extra tests')))
-    needs: [ latest_crds_contexts ]
+  crds:
+    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run extra tests')))
     runs-on: ubuntu-latest
     steps:
-      - id: context
-        run: echo context=${{ github.event_name == 'workflow_dispatch' && (inputs.crds_context != '' && inputs.crds_context || needs.latest_crds_contexts.outputs.roman) || needs.latest_crds_contexts.outputs.roman }} >> $GITHUB_OUTPUT
+      - if: inputs.crds_context
+        id: latest-context
+        run: >
+          echo latest-context=$(
+            curl -s -X POST -d '{"jsonrpc": "1.0", "method": "get_default_context", "params": ["${{ env.CRDS_OBSERVATORY }}", "latest"], "id": 1}' ${{ env.CRDS_SERVER_URL }}/json/ --retry 8 --connect-timeout 10 |
+            python -c "import sys, json; print(json.load(sys.stdin)['result'])"
+          ) >> $GITHUB_OUTPUT
     outputs:
-      context: ${{ steps.context.outputs.context }}
+      path: ${{ env.CRDS_PATH }}
+      server-url: ${{ env.CRDS_SERVER_URL }}
+      context: ${{ inputs.crds_context || steps.latest-context.outputs.latest-context }}
+      client-retry-count: ${{ env.CRDS_CLIENT_RETRY_COUNT }}
+      client-retry-delay-seconds: ${{ env.CRDS_CLIENT_RETRY_DELAY_SECONDS }}
   test:
-    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run extra tests')))
-    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@v2
-    needs: [ crds_context ]
+    if: (github.repository == 'spacetelescope/romancal' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run extra tests')))
+    needs:
+      - crds
+    uses: OpenAstronomy/github-actions-workflows/.github/workflows/tox.yml@e5af21e4ae37af089a73bb032e10b78b0e746174 # v3.0.1
     with:
       setenv: |
-        CRDS_PATH: /tmp/data/crds_cache/
-        CRDS_SERVER_URL: ${{ github.event_name == 'workflow_dispatch' && inputs.crds_server || 'https://roman-crds.stsci.edu' }}
-        CRDS_CONTEXT: ${{ needs.crds_context.outputs.context }}
-        CRDS_CLIENT_RETRY_COUNT: 3
-        CRDS_CLIENT_RETRY_DELAY_SECONDS: 20
-      cache-path: /tmp/data/
-      cache-key: data-${{ needs.crds_context.outputs.context }}
+        CRDS_PATH: ${{ needs.crds.outputs.path }}
+        CRDS_SERVER_URL: ${{ needs.crds.outputs.server-url }}
+        CRDS_CONTEXT: ${{ needs.crds.outputs.context }}
+        CRDS_CLIENT_RETRY_COUNT: ${{ needs.crds.outputs.client-retry-count }}
+        CRDS_CLIENT_RETRY_DELAY_SECONDS: ${{ needs.crds.outputs.client-retry-delay-seconds}}
+      cache-path: ${{ needs.crds.outputs.path }}
+      cache-key: crds-${{ needs.crds.outputs.context }}
       envs: |
-        - macos: py311
-        - macos: py312
-        - macos: py313
-        - linux: py314-devdeps
-          pytest-results-summary: true
-        - macos: py314-devdeps
-          pytest-results-summary: true
+        - macos: py*-xdist
+        - linux: py3-devdeps-xdist
+        - macos: py3-devdeps-xdist
+      artifact-path: |
+        results.xml
