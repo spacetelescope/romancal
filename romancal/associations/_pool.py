@@ -7,13 +7,13 @@ from collections import UserDict
 from astropy.io.ascii import convert_numpy
 from astropy.table import Table
 
-__all__ = ["AssociationPool"]
+__all__ = ["_AssociationPool"]
 
 DEFAULT_DELIMITER = "|"
 DEFAULT_FORMAT = "ascii"
 
 
-class AssociationPool(Table):
+class _AssociationPool(Table):
     """Association Pool
 
     An ``AssociationPool`` is essentially an astropy Table with the

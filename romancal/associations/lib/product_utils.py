@@ -5,7 +5,7 @@ import logging
 import warnings
 from collections import Counter, defaultdict
 
-from .. import config
+from .._config import DEBUG
 from .diff import compare_product_membership
 
 logger = logging.getLogger(__name__)
@@ -120,7 +120,7 @@ def prune_duplicate_products(asns):
         return asns
 
     warnings.warn(f"Duplicate associations exist: {dups}", RuntimeWarning, stacklevel=2)
-    if config.DEBUG:
+    if DEBUG:
         warnings.warn(
             'Duplicate associations will have "dupXXX" prepended to their names, where'
             ' "XXX" is a 3-digit sequence.',
@@ -144,7 +144,7 @@ def prune_duplicate_products(asns):
     for asns_to_prune in to_prune.values():
         asns_to_prune = sort_by_candidate(asns_to_prune)
         for asn in asns_to_prune[1:]:
-            if config.DEBUG:
+            if DEBUG:
                 dup_count += 1
                 asn.asn_name = f"dup{dup_count:03d}_{asn.asn_name}"
             else:

@@ -2,10 +2,10 @@
 
 from romancal.lib.signal_slot import Signal
 
-__all__ = ["CallbackRegistry"]
+__all__ = ["_CallbackRegistry"]
 
 
-class CallbackRegistry:
+class _CallbackRegistry:
     """Callback registry"""
 
     def __init__(self):

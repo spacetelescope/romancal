@@ -8,8 +8,8 @@ import logging
 import numpy as np
 import yaml as yaml_lib
 
-from .association import Association
-from .exceptions import AssociationNotValidError
+from ._association import _Association
+from ._exceptions import AssociationNotValidError
 from .lib.member import Member
 
 # Configure logging
@@ -29,7 +29,7 @@ class AssociationEncoder(json_lib.JSONEncoder):
             return obj.data
 
 
-@Association.ioregistry
+@_Association.ioregistry
 class json:
     """Load and store associations as JSON"""
 
@@ -99,7 +99,7 @@ class json:
         )
 
 
-@Association.ioregistry
+@_Association.ioregistry
 class yaml:
     """Load and store associations as YAML"""
 
@@ -163,17 +163,17 @@ class yaml:
 
 
 # Register YAML representers
-def np_str_representer(dumper, data):
+def _np_str_representer(dumper, data):
     """Convert numpy.str_ into standard YAML string"""
     return dumper.represent_scalar("tag:yaml.org,2002:str", str(data))
 
 
-yaml_lib.add_representer(np.str_, np_str_representer)
+yaml_lib.add_representer(np.str_, _np_str_representer)
 
 
-def member_representer(dumper, member):
+def _member_representer(dumper, member):
     """Convert a Member to its basic dict representation"""
     return dumper.represent_dict(member.data)
 
 
-yaml_lib.add_representer(Member, member_representer)
+yaml_lib.add_representer(Member, _member_representer)

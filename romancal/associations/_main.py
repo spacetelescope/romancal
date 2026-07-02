@@ -7,18 +7,22 @@ import sys
 
 import numpy as np
 
-# from romancal.associations.main import  *
+# from romancal.associations._main import  *
 # from romancal.associations import (
 #    __version__,
 #    AssociationPool,
 #    AssociationRegistry,
 #    generate,
 # )
-from romancal.associations import __version__, config, generate
+from romancal.associations import __version__
+from romancal.associations._pool import _AssociationPool
+from romancal.associations._registry import _AssociationRegistry
 from romancal.associations.lib.dms_base import DMSAttrConstraint
 from romancal.associations.lib.log_config import DMS_config, log_config
-from romancal.associations.pool import AssociationPool
-from romancal.associations.registry import AssociationRegistry
+
+from . import _config as config
+from ._exceptions import AssociationError
+from ._generate import _generate
 
 __all__ = ["Main"]
 
@@ -90,7 +94,7 @@ class Main:
             A fully executed association generator.
         """
         generator_cli = cls(args=args, pool=pool)
-        generator_cli.generate()
+        generator_cli._generate()
         generator_cli.save()
         return generator_cli
 
@@ -142,7 +146,7 @@ class Main:
 
         if pool is None:
             logger.info(f"Reading pool {parsed.pool}")
-            pool = AssociationPool.read(
+            pool = _AssociationPool.read(
                 parsed.pool,
                 delimiter=parsed.delimiter,
                 format=parsed.pool_format,
@@ -174,7 +178,7 @@ class Main:
         elif parsed.asn_candidate_ids is not None:
             global_constraints = constrain_on_candidates(parsed.asn_candidate_ids)
 
-        self.rules = AssociationRegistry(
+        self.rules = _AssociationRegistry(
             parsed.rules,
             include_default=not parsed.ignore_default,
             global_constraints=global_constraints,
@@ -182,18 +186,18 @@ class Main:
         )
         if parsed.discover:
             self.rules.update(
-                AssociationRegistry(
+                _AssociationRegistry(
                     parsed.rules,
                     include_default=not parsed.ignore_default,
                     name=DISCOVER_RULESET,
                 )
             )
 
-    def generate(self):
+    def _generate(self):
         """Generate the associations"""
         logger.info("Generating associations.")
         parsed = self.parsed
-        self.associations = generate(
+        self.associations = _generate(
             self.pool,
             self.rules,
             version_id=parsed.version_id,
@@ -385,7 +389,7 @@ class Main:
         for asn in self.associations:
             try:
                 (fname, serialized) = asn.dump(format=self.parsed.format)
-            except AssociationError as exception:  # noqa: F821
+            except AssociationError as exception:
                 logger.warning("Cannot serialize association %s", asn)
                 logger.warning("Reason:", exc_info=exception)
                 continue
