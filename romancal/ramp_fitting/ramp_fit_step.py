@@ -307,12 +307,12 @@ def likely(
     return out_model
 
 
-def _jump_indices(jump_cube):
+def _jump_indices(groupdq):
     """Reduce a resultant-level jump DQ cube to sparse science-frame indices.
 
     Parameters
     ----------
-    jump_cube : np.ndarray
+    groupdq : np.ndarray
         Group DQ cube (nresultants, nrows, ncols) including the 4-pixel
         reference border, with JUMP_DET set where jumps were flagged.
 
@@ -322,11 +322,12 @@ def _jump_indices(jump_cube):
         Array of shape (N, 3) with columns (resultant, y, x), where y and x are
         in the border-trimmed science frame matching ``out_model.data``.
     """
-    res, y, x = np.nonzero(jump_cube & group.JUMP_DET)
-    nrows, ncols = jump_cube.shape[1:]
+    res, y, x = np.nonzero(groupdq & group.JUMP_DET)
+    nrows, ncols = groupdq.shape[1:]
     # Drop jumps in the reference border and shift to trimmed coordinates.
     keep = (y >= 4) & (y < nrows - 4) & (x >= 4) & (x < ncols - 4)
-    return np.stack([res[keep], y[keep] - 4, x[keep] - 4], axis=1).astype(np.int32)
+    # max row/col = 4088 and max resultant = 511 both fit comfortably in int16.
+    return np.stack([res[keep], y[keep] - 4, x[keep] - 4], axis=1).astype(np.int16)
 
 
 def _setup_jump_data(

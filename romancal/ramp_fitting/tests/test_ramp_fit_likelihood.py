@@ -2,9 +2,10 @@
 
 import numpy as np
 import pytest
-from roman_datamodels.dqflags import pixel
+from roman_datamodels.dqflags import group, pixel
 
 from romancal.ramp_fitting import RampFitStep
+from romancal.ramp_fitting.ramp_fit_step import _jump_indices
 
 from .common import (
     ROMAN_READ_TIME,
@@ -137,33 +138,27 @@ def test_flag_large_events_withsnowball():
 
     assert n_jump_original == 112 and n_jump_expanded > 300 and n_jump_expanded < 600
 
-
-def test_record_jumps():
-    """jump_indices records which resultant each jump was flagged in."""
-    resultants = create_linear_ramp(n_resultants=20, nrows=20, ncols=20)
-    model, m_gain, m_rnoise, m_dark = make_data(resultants, 6, 0.01, False)
-
-    # Inject a clear jump at resultant 10 in a single science pixel.
-    jump_group, row, col = 10, 8, 12
-    model.data[jump_group:, row, col] += 300
-
-    m_image = RampFitStep.call(
-        model,
-        algorithm="likely",
-        override_gain=m_gain,
-        override_readnoise=m_rnoise,
-        record_jumps=True,
-    )
-
-    # The pixel is flagged JUMP_DET in the trimmed 2D dq.
-    assert m_image.dq[row - 4, col - 4] & pixel.JUMP_DET
-
+    # jump_indices records those same jumps, all at the injected resultant 10.
     jidx = m_image.jump_indices
-    assert jidx.ndim == 2 and jidx.shape[1] == 3
-    # The injected jump is recorded at the trimmed-frame pixel and resultant 10.
-    match = (jidx[:, 1] == row - 4) & (jidx[:, 2] == col - 4)
-    assert match.any()
-    assert jump_group in jidx[match, 0]
+    assert jidx.shape == (n_jump_original, 3)
+    assert np.all(jidx[:, 0] == 10)
+
+
+def test_jump_indices():
+    """_jump_indices reduces a groupdq cube to trimmed (resultant, y, x) rows."""
+    nres, nrows, ncols = 12, 16, 16
+    groupdq = np.zeros((nres, nrows, ncols), dtype=np.uint8)
+    # Two science-frame jumps and one inside the 4-pixel reference border.
+    groupdq[3, 7, 9] |= group.JUMP_DET
+    groupdq[5, 10, 4] |= group.JUMP_DET
+    groupdq[5, 1, 1] |= group.JUMP_DET  # in the border -> must be dropped
+
+    jidx = _jump_indices(groupdq)
+
+    assert jidx.dtype == np.int16
+    # Border jump dropped; survivors shifted into trimmed coordinates.
+    expected = {(3, 3, 5), (5, 6, 0)}
+    assert {tuple(int(v) for v in row) for row in jidx} == expected
 
 
 def test_record_jumps_disabled():
