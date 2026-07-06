@@ -309,8 +309,8 @@ class ResampleData(Resample):
             level = model.meta.background.level
             subtracted = model.meta.background.subtracted
         else:
-            level = 0
-            subtracted = True
+            level = None
+            subtracted = False
         return {
             "data": model.data,
             "dq": model.dq,
