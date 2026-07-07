@@ -2,7 +2,7 @@
 
 from romancal.associations import _Association
 from romancal.associations._registry import RegistryMarker
-from romancal.associations.lib.constraint import ConstraintTrue
+from romancal.associations.lib._constraint import ConstraintTrue
 
 
 @RegistryMarker.rule

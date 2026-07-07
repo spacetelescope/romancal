@@ -13,7 +13,7 @@ from astropy.table import Table, vstack
 
 from romancal.associations import _AssociationPool, _AssociationRegistry, _generate
 from romancal.associations.lib._counter import Counter
-from romancal.associations.lib.utilities import is_iterable
+from romancal.associations.lib._utilities import is_iterable
 
 
 # Define how to setup initial conditions with pools.
@@ -295,7 +295,7 @@ def get_rule_names(rules):
 
 def level2_rule_path():
     """Return the path to the level 2 rules"""
-    return t_path("../lib/rules_level2.py")
+    return t_path("../lib/_rules_level2.py")
 
 
 def registry_level2_only(global_constraints=None):

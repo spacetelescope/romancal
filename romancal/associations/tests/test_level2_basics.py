@@ -42,7 +42,7 @@ def cmd_from_pool(pool_path, args):
         "--dry-run",
         "-D",
         "-r",
-        t_path("../lib/rules_level2.py"),
+        t_path("../lib/_rules_level2.py"),
         "--ignore-default",
     ]
     full_args.extend(args)

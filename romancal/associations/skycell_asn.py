@@ -13,7 +13,7 @@ from roman_datamodels import datamodels as rdm
 import romancal.skycell.match as sm
 import romancal.skycell.skymap as sc
 from romancal.associations.asn_from_list import asn_from_list
-from romancal.associations.lib.utilities import mk_level3_asn_name
+from romancal.associations.lib._utilities import mk_level3_asn_name
 from romancal.lib.basic_utils import parse_visitID as parse_visitID
 
 __all__ = ["skycell_asn"]

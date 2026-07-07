@@ -9,7 +9,7 @@ from itertools import chain
 
 from .._pool import PoolRow
 from ._process_list import ListCategory, ProcessList
-from .utilities import evaluate, getattr_from_list, is_iterable
+from ._utilities import evaluate, getattr_from_list, is_iterable
 
 __all__ = [
     "AttrConstraint",

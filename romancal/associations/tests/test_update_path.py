@@ -1,8 +1,8 @@
 """Test utility update_path"""
 
 from romancal.associations.asn_from_list import asn_from_list
-from romancal.associations.lib.rules_elpp_base import DMS_ELPP_Base
-from romancal.associations.lib.update_path import update_path
+from romancal.associations.lib._rules_elpp_base import DMS_ELPP_Base
+from romancal.associations.lib._update_path import update_path
 
 
 def test_update_path_level2():

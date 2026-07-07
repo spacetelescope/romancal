@@ -10,7 +10,7 @@ import yaml as yaml_lib
 
 from ._association import _Association
 from ._exceptions import AssociationNotValidError
-from .lib.member import Member
+from .lib._member import Member
 
 # Configure logging
 logger = logging.getLogger(__name__)

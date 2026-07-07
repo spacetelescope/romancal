@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 # Library files
-_ASN_RULE = "association_rules.py"
+_ASN_RULE = "_association_rules.py"
 
 
 class _AssociationRegistry(dict):

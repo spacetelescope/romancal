@@ -19,8 +19,8 @@ from ._config import DEBUG
 from . import _config as config
 from ._generate import _generate
 from ._exceptions import AssociationError
-from romancal.associations.lib.dms_base import DMSAttrConstraint
-from romancal.associations.lib.log_config import DMS_config, log_config
+from romancal.associations.lib._dms_base import DMSAttrConstraint
+from romancal.associations.lib._log_config import DMS_config, log_config
 from romancal.associations._pool import _AssociationPool
 from romancal.associations._registry import _AssociationRegistry
 

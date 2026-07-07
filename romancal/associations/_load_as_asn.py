@@ -5,8 +5,8 @@ from os import path as os_path
 
 from ..associations import _Association, _AssociationRegistry, libpath, load_asn
 from ..associations.asn_from_list import asn_from_list
-from ..associations.lib.rules_elpp_base import DMS_ELPP_Base
-from ..associations.lib.rules_level2 import Asn_Lv2Image
+from ..associations.lib._rules_elpp_base import DMS_ELPP_Base
+from ..associations.lib._rules_level2 import Asn_Lv2Image
 
 __all__ = [
     "LoadAsAssociation",
@@ -153,7 +153,7 @@ class LoadAsLevel2Asn(LoadAsAssociation):
         asn = super().load(
             obj,
             registry=_AssociationRegistry(
-                definition_files=[libpath("rules_level2.py")], include_default=False
+                definition_files=[libpath("_rules_level2.py")], include_default=False
             ),
             rule=Asn_Lv2Image,
             product_name_func=product_name_func,
