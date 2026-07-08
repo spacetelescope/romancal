@@ -7,7 +7,6 @@ from os.path import basename, expanduser, expandvars
 
 from . import libpath
 from ._exceptions import AssociationError, AssociationNotValidError
-from .lib._callback_registry import _CallbackRegistry
 
 __all__ = ["RegistryMarker", "_AssociationRegistry"]
 
@@ -72,9 +71,6 @@ class _AssociationRegistry(dict):
         # Generate a UUID for this instance. Used to modify rule
         # names.
         self.name = name
-
-        # Callback registry
-        self.callback = _CallbackRegistry()
 
         # Precache the set of rules
         self._rule_set = set()
@@ -250,12 +246,6 @@ class _AssociationRegistry(dict):
                         f"Could not add object {obj} as a rule due to TypeError"
                     )
                 continue
-
-            # Add callbacks
-            if obj._asnreg_role == "callback":
-                for event in obj._asnreg_events:
-                    self.callback.add(event, obj)
-                    continue
 
             # Add schema
             if obj._asnreg_role == "schema":
