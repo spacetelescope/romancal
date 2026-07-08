@@ -8,8 +8,6 @@ from romancal.associations.tests.helpers import (
     t_path,
 )
 
-# REGEX_LEVEL2 = r'(?P<path>.+)(?P<type>_rate(ints)?)(?P<extension>\..+)'
-# REGEX_LEVEL2 = r'(?P<path>.+)(.*\_.*\_.*\_.*\_.*)'
 REGEX_LEVEL2 = r"(?P<path>.+)(?P<type>_cal?)(?P<extension>\..+)"
 
 
@@ -63,8 +61,3 @@ def test_level2_productname():
                 assert len(science) == 2
             if asn["asn_rule"] == "Asn_Lv2FOV":
                 assert len(science) == 18
-
-
-#            match = re.match(REGEX_LEVEL2, science[0]['expname'])
-#            pdb.set_trace()
-#            assert match.groupdict()['path'] == product['name']
