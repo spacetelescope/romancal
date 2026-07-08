@@ -2,23 +2,23 @@ import logging
 from timeit import default_timer as timer
 
 from ..lib.progress import Bar
-from .association import make_timestamp
-from .lib.process_list import (
+from ._association import make_timestamp
+from ._pool import PoolRow
+from .lib._process_list import (
     ListCategory,
     ProcessList,
     ProcessQueueSorted,
     workover_filter,
 )
-from .pool import PoolRow
 
 # Configure logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
-__all__ = ["generate"]
+__all__ = ["_generate"]
 
 
-def generate(pool, rules, version_id=None, finalize=True):
+def _generate(pool, rules, version_id=None, finalize=True):
     """Generate associations in the pool according to the rules.
 
     Parameters

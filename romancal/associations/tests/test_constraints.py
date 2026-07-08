@@ -2,7 +2,7 @@
 
 import pytest
 
-from romancal.associations.lib.constraint import (
+from romancal.associations.lib._constraint import (
     Constraint,
     SimpleConstraint,
     SimpleConstraintABC,

@@ -11,11 +11,11 @@ import jsonschema
 from stpipe.format_template import FormatTemplate
 
 from . import __version__
-from .exceptions import AssociationNotValidError
-from .lib.constraint import Constraint, meets_conditions
-from .lib.ioregistry import IORegistry
+from ._exceptions import AssociationNotValidError
+from .lib._constraint import Constraint, meets_conditions
+from .lib._ioregistry import IORegistry
 
-__all__ = ["Association"]
+__all__ = ["_Association"]
 
 
 # Configure logging
@@ -26,7 +26,7 @@ logger.addHandler(logging.NullHandler())
 _TIMESTAMP_TEMPLATE = "%Y%m%dt%H%M%S"
 
 
-class Association(MutableMapping):
+class _Association(MutableMapping):
     """Association Base Class
 
     Parameters
@@ -528,7 +528,7 @@ def finalize(asns):
 
     .. code-block:: python
 
-       from romancal.associations.association import finalize as generic_finalize
+    from romancal.associations._association import finalize as generic_finalize
        RegistryMarker.callback('finalize')(generic_finalize)
     """
     finalized_asns = list(

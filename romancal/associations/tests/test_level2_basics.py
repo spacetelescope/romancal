@@ -1,7 +1,7 @@
 """Test basic usage of Level2 associations"""
 
-from romancal.associations import generate, load_asn
-from romancal.associations.main import Main
+from romancal.associations import _generate, load_asn
+from romancal.associations._main import Main
 from romancal.associations.tests.helpers import (
     combine_pools,
     registry_level2_only,
@@ -23,7 +23,7 @@ def generate_from_pool(pool_path):
     """Generate associations from pools"""
     rules = registry_level2_only()
     pool = combine_pools(t_path(pool_path))
-    asns = generate(pool, rules)
+    asns = _generate(pool, rules)
     return asns
 
 
@@ -42,7 +42,7 @@ def cmd_from_pool(pool_path, args):
         "--dry-run",
         "-D",
         "-r",
-        t_path("../lib/rules_level2.py"),
+        t_path("../lib/_rules_level2.py"),
         "--ignore-default",
     ]
     full_args.extend(args)
