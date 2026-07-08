@@ -3,7 +3,6 @@
 import pytest
 
 import romancal.associations.skycell_asn as skycell_asn
-import romancal.associations.asn_from_list as asn_from_list
 from romancal.associations.skycell_asn import _cli, _create_groups, parse_visitID
 
 

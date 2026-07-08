@@ -8,7 +8,7 @@ For more, see the :ref:`documentation overview <asn-overview>`.
 
 """
 
-# flake8: noqa: F401, F403
+# flake8: noqa: F401
 
 # Take version from the upstream package
 from .. import __version__
@@ -28,4 +28,3 @@ from ._generate import _generate
 from ._load_asn import load_asn
 from ._pool import _AssociationPool
 from ._registry import _AssociationRegistry
-
