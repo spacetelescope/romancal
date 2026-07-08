@@ -14,7 +14,6 @@ from ._utilities import evaluate, getattr_from_list, is_iterable
 __all__ = [
     "AttrConstraint",
     "Constraint",
-    "ConstraintTrue",
     "SimpleConstraint",
 ]
 
@@ -144,13 +143,6 @@ class SimpleConstraintABC(abc.ABC):
     def __str__(self):
         attrs = {str_attr: getattr(self, str_attr) for str_attr in self._str_attrs}
         return f"{self.__class__.__name__}({attrs})"
-
-
-class ConstraintTrue(SimpleConstraintABC):
-    """Always return True"""
-
-    def check_and_set(self, item):
-        return super().check_and_set(item)
 
 
 class SimpleConstraint(SimpleConstraintABC):
