@@ -9,8 +9,6 @@ from collections import defaultdict
 from os.path import basename, split, splitext
 from typing import TYPE_CHECKING
 
-from stpipe.format_template import FormatTemplate
-
 from romancal.associations import libpath
 from romancal.associations._association import _Association
 from romancal.associations._exceptions import AssociationNotValidError
@@ -588,74 +586,6 @@ class Utility:
 
         # Merge lists and return
         return finalized_asns + lv3_asns
-
-
-# ---------
-# Utilities
-# ---------
-# Define default product name filling
-format_product = FormatTemplate(
-    key_formats={"source_id": ["s{:05d}", "s{:s}"], "expspcin": ["{:0>2s}"]}
-)
-
-
-def dms_product_name_noopt(asn):
-    """Define product name without any optical elements.
-
-    Parameters
-    ---------
-    asn : Association
-        The association for which the product
-        name is to be created.
-
-    Returns
-    -------
-    product_name : str
-        The product name
-    """
-    target = asn._get_target()
-
-    instrument = asn._get_instrument()
-
-    product_name = "r{}-{}_{}_{}".format(
-        #        asn.data['program'],
-        asn.data["visi_id"],
-        asn.acid.id,
-        target,
-        instrument,
-    )
-    return product_name.lower()
-
-
-def dms_product_name_sources(asn):
-    """Produce source-based product names
-
-    Parameters
-    ---------
-    asn : Association
-        The association for which the product
-        name is to be created.
-
-    Returns
-    -------
-    product_name : str
-        The product name
-    """
-    instrument = asn._get_instrument()
-
-    opt_elem = asn._get_opt_element()
-
-    product_name_format = "r{program}-{acid}_{source_id}_{instrument}_{opt_elem}"
-    product_name = format_product(
-        product_name_format,
-        #        program=asn.data['program'],
-        program=asn.data["visit_id"],
-        acid=asn.acid.id,
-        instrument=instrument,
-        opt_elem=opt_elem,
-    )
-
-    return product_name.lower()
 
 
 # -----------------

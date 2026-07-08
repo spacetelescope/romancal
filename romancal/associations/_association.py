@@ -8,7 +8,6 @@ from copy import deepcopy
 from datetime import datetime
 
 import jsonschema
-from stpipe.format_template import FormatTemplate
 
 from . import __version__
 from ._exceptions import AssociationNotValidError
@@ -541,7 +540,3 @@ def make_timestamp():
     """Generate a timestamp based on runtime"""
     timestamp = datetime.utcnow().strftime(_TIMESTAMP_TEMPLATE)
     return timestamp
-
-
-# Define default product name filling
-format_product = FormatTemplate()
