@@ -16,39 +16,6 @@ from romancal.associations.lib._counter import Counter
 from romancal.associations.lib._utilities import is_iterable
 
 
-def make_megapool():
-    """Combine the individual test pools into one
-
-    Notes
-    -----
-    This is meant to be run in the source tree in
-    the folder the test pools reside in. The package
-    does need to have been installed.
-    `python -c 'import romancal.associations.tests.helpers as helpers; helpers.make_megapool()'` # noqa: E501
-    """
-    pool_files = glob("pool_*.csv")
-    pool_files.sort()
-    pool = combine_pools(pool_files)
-    pool.write("mega_pool.csv", format="ascii", delimiter="|", overwrite=True)
-
-
-# Basic utilities.
-def check_in_list(element, alist):
-    assert element in alist
-
-
-def check_not_in_list(element, alist):
-    assert element not in alist
-
-
-def check_equal(left, right):
-    assert left == right
-
-
-def not_none(value):
-    assert value is not None
-
-
 def t_path(partial_path):
     """Construction the full path for test files"""
     test_dir = os.path.dirname(__file__)
@@ -119,71 +86,6 @@ def parse_value(v, global_env=None, local_env=None):
     return result
 
 
-def fmt_cand(candidate_list):
-    """Format the candidate field
-
-    Parameters
-    ----------
-    candidate_list: iterator
-        An iterator with each element a 2-tuple of:
-            cid: int
-                Candidate ID
-            ctype: str
-                Candidate type
-
-    Returns
-    -------
-    candidate_list_field: str
-        A string of the list of candidates, with any evaluation
-        performed.
-    """
-    evaled_list = []
-    for cid, ctype in candidate_list:
-        if isinstance(cid, int):
-            if ctype == "observation" and cid < 1000:
-                cid_format = "o{:0>3d}"
-            elif cid >= 1000 and cid < 3000:
-                cid_format = "c{:0>4d}"
-            else:
-                cid_format = "r{:0>4d}"
-        else:
-            cid_format = cid
-
-        cid_str = cid_format.format(cid)
-        evaled_list.append((cid_str, ctype))
-
-    return str(evaled_list)
-
-
-def fmt_fname(expnum):
-    """Format the filename"""
-    return f"jw_{expnum:0>5d}_uncal.fits"
-
-
-def generate_params(request):
-    """Simple param reflection for pytest.fixtures"""
-    return request.param
-
-
-def func_fixture(f, **kwargs):
-    """Create a true decorator for pytest.fixture
-
-    Parameters
-    ----------
-    f: func
-        The function.
-
-    kwargs: dict
-        Keyword arguments to pass to pytest.fixture
-    """
-
-    @pytest.fixture(**kwargs)
-    def duped(request, *duped_args, **duped_kwargs):
-        return f(request, *duped_args, **duped_kwargs)
-
-    return duped
-
-
 @contextmanager
 def mkstemp_pool_file(pools, **pool_kwargs):
     """Make an actual pool file"""
@@ -196,29 +98,6 @@ def mkstemp_pool_file(pools, **pool_kwargs):
             delimiter="|",
         )
         yield pool_path
-
-
-def generate_pool_paths(request):
-    """Fixture to create temporary files for pools"""
-    pool_file = t_path(request.param)
-    with mkstemp_pool_file(pool_file) as pool_path:
-        yield pool_path
-
-
-def get_rule_names(rules):
-    """Return rules names found in a registry
-
-    Parameters
-    ----------
-    rules: AssociationRegistry
-        The registry to look through
-
-    Returns
-    -------
-    rule_names: list
-        The list of rule names
-    """
-    return [rule._asn_rule() for rule_name, rule in rules.items()]
 
 
 def level2_rule_path():
