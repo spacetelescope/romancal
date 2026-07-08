@@ -5,7 +5,6 @@ import logging
 import re
 from collections.abc import MutableMapping
 from copy import deepcopy
-from datetime import datetime
 
 import jsonschema
 
@@ -20,9 +19,6 @@ __all__ = ["_Association"]
 # Configure logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
-
-# Timestamp template
-_TIMESTAMP_TEMPLATE = "%Y%m%dt%H%M%S"
 
 
 class _Association(MutableMapping):
@@ -512,12 +508,3 @@ class _Association(MutableMapping):
 
     def values(self):
         return self.data.values()
-
-
-# #########
-# Utilities
-# #########
-def make_timestamp():
-    """Generate a timestamp based on runtime"""
-    timestamp = datetime.utcnow().strftime(_TIMESTAMP_TEMPLATE)
-    return timestamp
