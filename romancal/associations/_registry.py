@@ -6,20 +6,20 @@ from inspect import getmembers, isclass, isfunction, ismethod, ismodule
 from os.path import basename, expanduser, expandvars
 
 from . import libpath
-from .exceptions import AssociationError, AssociationNotValidError
-from .lib.callback_registry import CallbackRegistry
+from ._exceptions import AssociationError, AssociationNotValidError
+from .lib._callback_registry import _CallbackRegistry
 
-__all__ = ["AssociationRegistry", "RegistryMarker"]
+__all__ = ["RegistryMarker", "_AssociationRegistry"]
 
 # Configure logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 # Library files
-_ASN_RULE = "association_rules.py"
+_ASN_RULE = "_association_rules.py"
 
 
-class AssociationRegistry(dict):
+class _AssociationRegistry(dict):
     """The available associations
 
     Parameters
@@ -45,8 +45,8 @@ class AssociationRegistry(dict):
     The general workflow is as follows:
 
         * Create the registry
-            >>> from romancal.associations.registry import AssociationRegistry
-            >>> registry = AssociationRegistry()
+            >>> from romancal.associations._registry import _AssociationRegistry
+            >>> registry = _AssociationRegistry()
 
         * Create associations from an item
             >>> associations, reprocess = registry.match(item) # doctest: +SKIP
@@ -74,7 +74,7 @@ class AssociationRegistry(dict):
         self.name = name
 
         # Callback registry
-        self.callback = CallbackRegistry()
+        self.callback = _CallbackRegistry()
 
         # Precache the set of rules
         self._rule_set = set()

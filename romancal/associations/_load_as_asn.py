@@ -3,10 +3,10 @@
 from functools import partial
 from os import path as os_path
 
-from ..associations import Association, AssociationRegistry, libpath, load_asn
+from ..associations import _Association, _AssociationRegistry, libpath, load_asn
 from ..associations.asn_from_list import asn_from_list
-from ..associations.lib.rules_elpp_base import DMS_ELPP_Base
-from ..associations.lib.rules_level2 import Asn_Lv2Image
+from ..associations.lib._rules_elpp_base import DMS_ELPP_Base
+from ..associations.lib._rules_level2 import Asn_Lv2Image
 
 __all__ = [
     "LoadAsAssociation",
@@ -44,8 +44,8 @@ class LoadAsAssociation(dict):
         cls,
         obj,
         meta=DEFAULT_ASN_META,
-        registry=AssociationRegistry,
-        rule=Association,
+        registry=_AssociationRegistry,
+        rule=_Association,
         product_name_func=None,
     ):
         """Load object and return an association of it
@@ -152,8 +152,8 @@ class LoadAsLevel2Asn(LoadAsAssociation):
 
         asn = super().load(
             obj,
-            registry=AssociationRegistry(
-                definition_files=[libpath("rules_level2.py")], include_default=False
+            registry=_AssociationRegistry(
+                definition_files=[libpath("_rules_level2.py")], include_default=False
             ),
             rule=Asn_Lv2Image,
             product_name_func=product_name_func,

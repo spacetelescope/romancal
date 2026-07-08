@@ -11,9 +11,9 @@ from tempfile import TemporaryDirectory
 import pytest
 from astropy.table import Table, vstack
 
-from romancal.associations import AssociationPool, AssociationRegistry, generate
-from romancal.associations.lib.counter import Counter
-from romancal.associations.lib.utilities import is_iterable
+from romancal.associations import _AssociationPool, _AssociationRegistry, _generate
+from romancal.associations.lib._counter import Counter
+from romancal.associations.lib._utilities import is_iterable
 
 
 # Define how to setup initial conditions with pools.
@@ -151,7 +151,7 @@ def combine_pools(pools, **pool_kwargs):
     just_pools = []
     for pool in pools:
         if not isinstance(pool, Table):
-            pool = AssociationPool.read(pool, **pool_kwargs)
+            pool = _AssociationPool.read(pool, **pool_kwargs)
         just_pools.append(pool)
     if len(just_pools) > 1:
         mega_pool = vstack(just_pools, metadata_conflicts="silent")
@@ -295,12 +295,12 @@ def get_rule_names(rules):
 
 def level2_rule_path():
     """Return the path to the level 2 rules"""
-    return t_path("../lib/rules_level2.py")
+    return t_path("../lib/_rules_level2.py")
 
 
 def registry_level2_only(global_constraints=None):
     """Get registry with only Level2 rules"""
-    return AssociationRegistry(
+    return _AssociationRegistry(
         definition_files=[level2_rule_path()],
         include_default=False,
         global_constraints=global_constraints,

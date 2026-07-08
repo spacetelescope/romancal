@@ -2,8 +2,8 @@
 
 from inspect import isclass
 
-from .association import Association
-from .registry import AssociationRegistry
+from ._association import _Association
+from ._registry import _AssociationRegistry
 
 
 def load_asn(
@@ -11,7 +11,7 @@ def load_asn(
     format=None,
     first=True,
     validate=True,
-    registry=AssociationRegistry,
+    registry=_AssociationRegistry,
     **kwargs,
 ):
     """Load an Association from a file or object
@@ -60,7 +60,7 @@ def load_asn(
     method is used.
     """
     if registry is None:
-        return Association.load(serialized, format=format, validate=validate)
+        return _Association.load(serialized, format=format, validate=validate)
 
     if isclass(registry):
         registry = registry()
