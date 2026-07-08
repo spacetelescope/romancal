@@ -1,15 +1,10 @@
 """Reprocessing List"""
 
-from collections import deque
 from enum import Enum
-from functools import reduce
 
 __all__ = [
     "ListCategory",
-    "ProcessItem",
     "ProcessList",
-    "ProcessQueue",
-    "ProcessQueueSorted",
 ]
 
 
@@ -20,51 +15,6 @@ class ListCategory(Enum):
     BOTH = 1
     EXISTING = 2
     NONSCIENCE = 3
-
-
-class ProcessItem:
-    """Items to be processed
-
-    Parameters
-    ----------
-    obj : object
-        The object to make a `ProcessItem`.
-        Objects must be equatable.
-    """
-
-    def __init__(self, obj):
-        self.obj = obj
-
-    @classmethod
-    def to_process_items(cls, iterable):
-        """Iterable to convert a list to ProcessItem's
-
-        Parameters
-        ----------
-        iterable : iterable
-            A source of objects to convert
-
-        Returns
-        -------
-        An iterable where the object has been
-        converted to a `ProcessItem`
-        """
-        for obj in iterable:
-            yield cls(obj)
-
-    def __hash__(self):
-        try:
-            hash_value = self.obj.__hash__()
-        except (AttributeError, TypeError):
-            hash_value = hash(repr(self))
-        return hash_value
-
-    def __eq__(self, other):
-        try:
-            equality = self.obj == other.obj
-        except AttributeError:
-            equality = self.__hash__() == other.__hash__()
-        return equality
 
 
 class ProcessList:
@@ -156,146 +106,3 @@ class ProcessList:
     def __str__(self):
         result = f"{self.__class__.__name__}(n_items: {len(self.items)}, { ({str_attr: getattr(self, str_attr) for str_attr in self._str_attrs}) })"
         return result
-
-
-class ProcessQueue(deque):
-    """Make a deque iterable and mutable"""
-
-    def __iter__(self):
-        while True:
-            try:
-                yield self.popleft()
-            except (IndexError, StopIteration):
-                break
-
-
-class ProcessListQueue:
-    """First-In-First-Out queue of ProcessLists
-
-    Parameters
-    ----------
-    init : [ProcessList[,...]] or None
-        List of ProcessLists to put on the queue.
-    """
-
-    def __init__(self, init=None):
-        self._queue = {}
-        if init is not None:
-            self.extend(init)
-
-    def append(self, process_list):
-        """Add ProcessList to queue"""
-        plhash = process_list.hash
-        if plhash not in self._queue:
-            self._queue[plhash] = process_list
-        else:
-            self._queue[plhash].update(process_list)
-
-    def extend(self, iterable):
-        """Add objects if not already in the queue"""
-        for process_list in iterable:
-            self.append(process_list)
-
-    def items(self):
-        """Return list generator of all items"""
-        for plhash in self._queue:
-            yield from self._queue[plhash].items
-
-    def popleft(self):
-        """Pop the first-in object"""
-        plhash = next(iter(self._queue))
-        process_list = self._queue[plhash]
-        del self._queue[plhash]
-        return process_list
-
-    def __len__(self):
-        return len(self._queue)
-
-    def __iter__(self):
-        while True:
-            try:
-                yield self.popleft()
-            except (IndexError, StopIteration):
-                break
-
-    def __str__(self):
-        result = (
-            f"{self.__class__.__name__}: rulesets {len(self)} items"
-            f" {len(list(self.items()))}"
-        )
-        return result
-
-
-class ProcessQueueSorted:
-    """Sort ProcessItem based on work_over
-
-    `ProcessList`s are handled in order of `RULES`, `BOTH`,
-    `EXISTING`, and `NONSCIENCE`.
-
-    Parameters
-    ----------
-    init : [ProcessList[,...]]
-        List of `ProcessList` to start the queue with.
-    """
-
-    def __init__(self, init=None):
-        self.queues = {
-            list_category: ProcessListQueue() for list_category in ListCategory
-        }
-
-        if init is not None:
-            self.extend(init)
-
-    def extend(self, process_lists):
-        """Add the list of process items to their appropriate queues"""
-        for process_list in process_lists:
-            self.queues[process_list.work_over].append(process_list)
-
-    def __iter__(self):
-        """Return the queues in order"""
-        while len(self) > 0:
-            for category in ListCategory:
-                for process_list in self.queues[category]:
-                    yield process_list
-                    break
-                else:
-                    continue
-                break
-
-    def __len__(self):
-        return reduce(lambda x, y: x + len(y), self.queues.values(), 0)
-
-    def __str__(self):
-        result = f"{self.__class__.__name__}:"
-        for queue in self.queues:
-            result += f"\n\tQueue {queue}: {self.queues[queue]}"
-        return result
-
-
-def workover_filter(process_list, work_over):
-    """Determine and modify workover of input process list
-
-    Parameters
-    ---------
-    process_list : ProcessList
-        The process list under consideration
-
-    work_over : ListCategory
-        The ListCategory to compare against.
-
-    Returns
-    -------
-    process_list : ProcessList or None
-        The input process_list with work_over modified.
-        None if the process list should not be continued.
-    """
-    result = process_list
-    if process_list.work_over in [ListCategory.RULES, ListCategory.BOTH]:
-        if work_over in [ListCategory.RULES, ListCategory.BOTH]:
-            result.work_over = ListCategory.BOTH
-        else:
-            result.work_over = work_over
-    else:
-        if work_over not in [ListCategory.RULES, ListCategory.BOTH]:
-            result = None
-    return result
