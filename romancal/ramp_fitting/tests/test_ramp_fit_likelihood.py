@@ -2,9 +2,10 @@
 
 import numpy as np
 import pytest
-from roman_datamodels.dqflags import pixel
+from roman_datamodels.dqflags import group, pixel
 
 from romancal.ramp_fitting import RampFitStep
+from romancal.ramp_fitting.ramp_fit_step import _jump_indices
 
 from .common import (
     ROMAN_READ_TIME,
@@ -136,6 +137,44 @@ def test_flag_large_events_withsnowball():
     assert np.abs(meanerr_jumppixels_orig - meanerr_jumppixels_new) < 1e-5
 
     assert n_jump_original == 112 and n_jump_expanded > 300 and n_jump_expanded < 600
+
+    # jump_indices records those same jumps, all at the injected resultant 10.
+    jidx = m_image.jump_indices
+    assert jidx.shape == (n_jump_original, 3)
+    assert np.all(jidx[:, 0] == 10)
+
+
+def test_jump_indices():
+    """_jump_indices reduces a groupdq cube to trimmed (resultant, y, x) rows."""
+    nres, nrows, ncols = 12, 16, 16
+    groupdq = np.zeros((nres, nrows, ncols), dtype=np.uint8)
+    # Two science-frame jumps and one inside the 4-pixel reference border.
+    groupdq[3, 7, 9] |= group.JUMP_DET
+    groupdq[5, 10, 4] |= group.JUMP_DET
+    groupdq[5, 1, 1] |= group.JUMP_DET  # in the border -> must be dropped
+
+    jidx = _jump_indices(groupdq)
+
+    assert jidx.dtype == np.int16
+    # Border jump dropped; survivors shifted into trimmed coordinates.
+    expected = {(3, 3, 5), (5, 6, 0)}
+    assert {tuple(int(v) for v in row) for row in jidx} == expected
+
+
+def test_record_jumps_disabled():
+    """record_jumps=False omits the jump_indices extension."""
+    resultants = create_linear_ramp(n_resultants=20, nrows=20, ncols=20)
+    model, m_gain, m_rnoise, m_dark = make_data(resultants, 6, 0.01, False)
+
+    m_image = RampFitStep.call(
+        model,
+        algorithm="likely",
+        override_gain=m_gain,
+        override_readnoise=m_rnoise,
+        record_jumps=False,
+    )
+
+    assert "jump_indices" not in m_image
 
 
 def test_uniformweighting():

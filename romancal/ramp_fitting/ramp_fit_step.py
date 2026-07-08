@@ -45,6 +45,7 @@ class RampFitStep(RomanStep):
         threshold_intercept = float(default=None) # Override the intercept parameter for the threshold function in the jump detection algorithm.
         threshold_constant = float(default=None) # Override the constant parameter for the threshold function in the jump detection algorithm.
         include_var_rnoise = boolean(default=False) # include var_rnoise in output (can be reconstructed from err and other variances)
+        record_jumps = boolean(default=True) # record which resultant each jump was flagged in as a jump_indices extension (likely algorithm only)
         maximum_cores = string(default='1') # cores for multiprocessing. Can be an integer, 'half', 'quarter', or 'all'
         expand_large_events = boolean(default=False) # Turns on Snowball detection
         min_sat_area = float(default=1.0) # minimum required area for the central saturation of snowballs
@@ -101,6 +102,7 @@ class RampFitStep(RomanStep):
                 readnoise_model,
                 gain_model,
                 include_var_rnoise=self.include_var_rnoise,
+                record_jumps=self.record_jumps,
                 jump_kw=jump_kw,
             )
         else:
@@ -218,6 +220,7 @@ def likely(
     gain_model,
     rejection_threshold=4.5,
     include_var_rnoise=False,
+    record_jumps=True,
     jump_kw=None,
 ):
     """Perform Maximum Likelihood Algorithm
@@ -238,6 +241,10 @@ def likely(
 
     include_var_rnoise : bool
         if True, include var_rnoise estimates in the output data model
+
+    record_jumps : bool
+        if True, record which resultant each jump was flagged in as a
+        ``jump_indices`` extension on the output model.
 
     jump_kw : dict
         Additional keywords to control jump detection; see _setup_jump_data.
@@ -289,9 +296,38 @@ def likely(
         input_model, image_info, include_var_rnoise=include_var_rnoise
     )
 
+    # Record which resultant each jump was flagged in.  stcal wrote the
+    # resultant-level JUMP_DET flags back into groupdq; reduce them to a sparse
+    # list of indices in the trimmed science frame.
+    if record_jumps:
+        out_model["jump_indices"] = _jump_indices(input_model.groupdq[0])
+
     out_model.meta.cal_step.ramp_fit = "COMPLETE"
 
     return out_model
+
+
+def _jump_indices(groupdq):
+    """Reduce a resultant-level jump DQ cube to sparse science-frame indices.
+
+    Parameters
+    ----------
+    groupdq : np.ndarray
+        Group DQ cube (nresultants, nrows, ncols) including the 4-pixel
+        reference border, with JUMP_DET set where jumps were flagged.
+
+    Returns
+    -------
+    jump_indices : np.ndarray
+        Array of shape (N, 3) with columns (resultant, y, x), where y and x are
+        in the border-trimmed science frame matching ``out_model.data``.
+    """
+    res, y, x = np.nonzero(groupdq & group.JUMP_DET)
+    nrows, ncols = groupdq.shape[1:]
+    # Drop jumps in the reference border and shift to trimmed coordinates.
+    keep = (y >= 4) & (y < nrows - 4) & (x >= 4) & (x < ncols - 4)
+    # max row/col = 4088 and max resultant = 511 both fit comfortably in int16.
+    return np.stack([res[keep], y[keep] - 4, x[keep] - 4], axis=1).astype(np.int16)
 
 
 def _setup_jump_data(

@@ -1,0 +1,3 @@
+Record which resultant each jump was flagged in during likelihood ramp
+fitting as a ``jump_indices`` extension on the output image, controlled by the
+new ``record_jumps`` step option.
