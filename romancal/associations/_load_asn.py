@@ -19,7 +19,8 @@ def load_asn(
 
     Returns
     -------
-    The Association object
+    dict
+    The association data
 
     Raises
     ------

@@ -167,7 +167,7 @@ class _Association(MutableMapping):
 
         Returns
         -------
-        association : Association
+        association : dict
             The association.
 
         Raises
