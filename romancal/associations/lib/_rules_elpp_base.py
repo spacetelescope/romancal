@@ -111,30 +111,6 @@ class DMS_ELPP_Base(DMSBaseMixin, _Association):
     def current_product(self):
         return self.data["products"][-1]
 
-    def members_by_type(self, member_type):
-        """Get list of members by their exposure type"""
-        member_type = member_type.lower()
-        try:
-            members = self.current_product["members"]
-        except KeyError:
-            result = []
-        else:
-            result = [
-                member for member in members if member_type == member["exptype"].lower()
-            ]
-
-        return result
-
-    def has_science(self):
-        """Does association have a science member
-
-        -------
-        bool
-            True if it does.
-        """
-        limit_reached = len(self.members_by_type("science")) >= 1
-        return limit_reached
-
     def __eq__(self, other):
         """Compare equality of two associations"""
         if isinstance(other, DMS_ELPP_Base):
