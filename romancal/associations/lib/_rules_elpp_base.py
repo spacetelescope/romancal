@@ -356,19 +356,6 @@ class DMS_ELPP_Base(DMSBaseMixin, _Association):
 
             return None
 
-    def _init_hook(self, item):
-        """Post-check and pre-add initialization"""
-        super()._init_hook(item)
-
-        # Set which sequence counter should be used.
-        self._sequence = self._sequences[self.data["asn_type"]]
-
-        # Create the product.
-        self.new_product()
-
-        # Update meta data
-        self.update_asn(item=item)
-
     def _add(self, item):
         """Add item to this association."""
         member = self.make_member(item)
@@ -842,12 +829,6 @@ class AsnMixin_Science(DMS_ELPP_Base):
 class AsnMixin_Spectrum(AsnMixin_Science):
     """All things that are spectrum"""
 
-    def _init_hook(self, item):
-        """Post-check and pre-add initialization"""
-
-        self.data["asn_type"] = "spec3"
-        super()._init_hook(item)
-
 
 # ---------------------------------------------
 # Mixins to define the broad category of rules.
@@ -855,55 +836,14 @@ class AsnMixin_Spectrum(AsnMixin_Science):
 class AsnMixin_Lv2FOV:
     """Level 2 Image association base"""
 
-    def _init_hook(self, item):
-        """Post-check and pre-add initialization"""
-
-        super()._init_hook(item)
-        self.data["asn_type"] = "FOV"
-
-    def finalize(self):
-        """Finalize association
-
-
-        Returns
-        -------
-        associations: [association[, ...]] or None
-            List of fully-qualified associations that this association
-            represents.
-            `None` if a complete association cannot be produced.
-
-        """
-        if self.is_valid:
-            return self.make_fov_asn()
-
-        return None
-
 
 class AsnMixin_Lv2Image:
     """Level 2 Image association base"""
-
-    def _init_hook(self, item):
-        """Post-check and pre-add initialization"""
-
-        super()._init_hook(item)
-        self.data["asn_type"] = "image"
 
 
 class AsnMixin_Lv2GBTDSpass:
     """Level 2 GBTDS association base"""
 
-    def _init_hook(self, item):
-        """Post-check and pre-add initialization"""
-
-        super()._init_hook(item)
-        self.data["asn_type"] = "pass"
-
 
 class AsnMixin_Lv2GBTDSfull:
     """Level 2 GBTDS association base"""
-
-    def _init_hook(self, item):
-        """Post-check and pre-add initialization"""
-
-        super()._init_hook(item)
-        self.data["asn_type"] = "full"

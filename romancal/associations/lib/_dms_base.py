@@ -306,21 +306,6 @@ class DMSBaseMixin(ACIDMixin):
                 return True
         return False
 
-    def is_item_member(self, item):
-        """Check if item is already a member of this association
-
-        Parameters
-        ----------
-        item : dict
-            The item to check for.
-
-        Returns
-        -------
-        is_item_member : bool
-            True if item is a member.
-        """
-        return item in self.from_items
-
     def item_getattr(self, item, attributes):
         """Return value from any of a list of attributes
 

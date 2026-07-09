@@ -2,15 +2,13 @@
 
 import json
 import logging
-import re
 from collections.abc import MutableMapping
-from copy import deepcopy
 
 import jsonschema
 
 from . import __version__
 from ._exceptions import AssociationNotValidError
-from .lib._constraint import Constraint, meets_conditions
+from .lib._constraint import Constraint
 from .lib._ioregistry import IORegistry
 
 __all__ = ["_Association"]
@@ -85,7 +83,6 @@ class _Association(MutableMapping):
         target=None,
     ):
         self.data = {}
-        self.run_init_hook = True
         self.meta = {}
 
         self.version_id = version_id
@@ -297,162 +294,6 @@ class _Association(MutableMapping):
         except AssociationNotValidError:
             return False
         return True
-
-    def add(self, item, check_constraints=True):
-        """Add the item to the association
-
-        Parameters
-        ----------
-        item : dict
-            The item to add.
-
-        check_constraints : bool
-            If True, see if the item should belong to this association.
-            If False, just add it.
-
-        Returns
-        -------
-        (match, reprocess_list)
-            2-tuple consisting of:
-                - bool : True if match
-                - [ProcessList[, ...]]: List of items to process again.
-        """
-        if self.is_item_member(item):
-            return True, []
-
-        match = not check_constraints
-        if check_constraints:
-            match, reprocess = self.check_and_set_constraints(item)
-
-        if match:
-            if self.run_init_hook:
-                self._init_hook(item)
-                self.run_init_hook = False
-            self._add(item)
-
-        # If a constraint `force_match` exists, set the `match`
-        # result to the value of the constraint.
-        try:
-            force_match = self.constraints["force_match"].value
-        except (KeyError, TypeError):
-            pass
-        else:
-            if force_match is not None:
-                match = force_match
-
-        return match, reprocess
-
-    def check_and_set_constraints(self, item):
-        """Check whether the given dictionaries match parameters for
-        for this association
-
-        Parameters
-        ----------
-        item : dict
-            The parameters to check/set for this association.
-            This can be a list of dictionaries.
-
-        Returns
-        -------
-        (match, reprocess)
-            2-tuple consisting of:
-                - bool : Did constraint match?
-                - [ProcessItem[, ...]]: List of items to process again.
-
-        """
-        cached_constraints = deepcopy(self.constraints)
-        match, reprocess = cached_constraints.check_and_set(item)
-        if match:
-            self.constraints = cached_constraints
-
-        # Set the association type for all reprocessed items.
-        for process_list in reprocess:
-            if process_list.rules is None:
-                process_list.rules = [type(self)]
-
-        return match, reprocess
-
-    def match_constraint(self, item, constraint, conditions):
-        """Generic constraint checking
-
-        Parameters
-        ----------
-        item : dict
-            The item to retrieve the values from
-
-        constraint : str
-            The name of the constraint
-
-        conditions : dict
-            The conditions structure
-
-        Returns
-        -------
-        (matches, reprocess_list)
-            2-tuple consisting of:
-                - bool : True if the all constraints are satisfied
-                - [ProcessList[, ...]]: List of items to process again.
-        """
-        reprocess = []
-        evaled_str = conditions["inputs"](item)
-        if conditions["value"] is not None:
-            if not meets_conditions(evaled_str, conditions["value"]):
-                return False, reprocess
-
-        # At this point, the constraint has passed.
-        # Fix the conditions.
-        escaped_value = re.escape(evaled_str)
-        conditions["found_values"].add(escaped_value)
-        if conditions["value"] is None or conditions.get(
-            "force_unique", self.DEFAULT_FORCE_UNIQUE
-        ):
-            conditions["value"] = escaped_value
-            conditions["force_unique"] = False
-
-        # That's all folks
-        return True, reprocess
-
-    def finalize(self):
-        """Finalize association
-
-        Finalize or close-off this association. Perform validations,
-        modifications, etc. to ensure that the association is
-        complete.
-
-        Returns
-        -------
-        associations : [association[, ...]] or None
-            List of fully-qualified associations that this association
-            represents.
-            `None` if a complete association cannot be produced.
-
-        """
-        if self.is_valid:
-            return [self]
-
-        return None
-
-    def is_item_member(self, item):
-        """Check if item is already a member of this association
-
-        Parameters
-        ----------
-        item : dict
-            The item to add.
-
-        Returns
-        -------
-        is_item_member : bool
-            True if item is a member.
-        """
-        raise NotImplementedError(
-            "Association.is_item_member must be implemented by a specific association"
-            " rule."
-        )
-
-    def _init_hook(self, item):
-        """Post-check and pre-item-adding initialization."""
-        pass
 
     def _add(self, item):
         """Add a item, association-specific"""
