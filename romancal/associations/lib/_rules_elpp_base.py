@@ -19,7 +19,6 @@ from romancal.associations.lib._dms_base import (
     DMSBaseMixin,
 )
 from romancal.associations.lib._keyvalue_registry import KeyValueRegistryError
-from romancal.associations.lib._member import Member
 from romancal.associations.lib._process_list import ProcessList
 
 if TYPE_CHECKING:
@@ -164,7 +163,7 @@ class DMS_ELPP_Base(DMSBaseMixin, _Association):
             exptype = "science"
             if with_exptype:
                 item, exptype = item
-            member = Member({"expname": item, "exptype": exptype}, item=item)
+            member = {"expname": item, "exptype": exptype}
             members.append(member)
 
     def __repr__(self):

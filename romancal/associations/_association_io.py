@@ -7,23 +7,12 @@ import logging
 
 from ._association import _Association
 from ._exceptions import AssociationNotValidError
-from .lib._member import Member
 
 # Configure logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 __all__ = []
-
-
-# Define JSON encoder to convert `Member` to `dict`
-class AssociationEncoder(json_lib.JSONEncoder):
-    """Encode to handle Associations"""
-
-    def default(self, obj):
-        # Convert Member to a simple dict
-        if isinstance(obj, Member):
-            return obj.data
 
 
 @_Association.ioregistry
@@ -90,7 +79,5 @@ class json:
             asn_filename = asn_filename + ".json"
         return (
             asn_filename,
-            json_lib.dumps(
-                asn.data, cls=AssociationEncoder, indent=4, separators=(",", ": ")
-            ),
+            json_lib.dumps(asn.data, indent=4, separators=(",", ": ")),
         )
