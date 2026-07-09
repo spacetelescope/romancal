@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import re
 from collections import defaultdict
 from typing import TYPE_CHECKING
 
@@ -58,7 +57,6 @@ __all__ = [
     "DMS_ELPP_Base",
     "ProcessList",
     "SimpleConstraint",
-    "Utility",
 ]
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -231,64 +229,6 @@ class DMS_ELPP_Base(DMSBaseMixin, _Association):
             )
         result = "\n".join(result_list)
         return result
-
-
-@RegistryMarker.utility
-class Utility:
-    """Utility functions that understand DMS Level 3 associations"""
-
-    @staticmethod
-    def rename_to_level2(level1b_name, exp_type=None, member_exptype="science"):
-        """Rename a Level 1b Exposure to a Level2 name.
-
-        The basic transform is changing the suffix `uncal` to
-        `cal`, `calints`, or `rate`.
-
-        Parameters
-        ----------
-        level1b_name : str
-            The Level 1b exposure name.
-
-        exp_type:
-            JWST exposure type. If not specified,
-            it will be presumed that the name
-            should get a Level2b name
-
-        is_tso : boolean
-            Use 'calints' instead of 'cal' as
-            the suffix.
-
-        member_exptype: str
-            The association member exposure type, such as "science".
-
-        Returns
-        -------
-        str
-            The Level 2b name
-        """
-        match = re.match(_LEVEL1B_REGEX, level1b_name)
-        if match is None or match.group("type") != "_uncal":
-            logger.warning(
-                f'Item FILENAME="{level1b_name}" is not a Level 1b name. Cannot transform to'
-                " Level 2b."
-            )
-            return level1b_name
-
-        if member_exptype == "background":
-            suffix = "x1d"
-        else:
-            if exp_type in LEVEL2B_EXPTYPES:
-                suffix = "cal"
-            else:
-                suffix = "rate"
-
-        # if is_tso:
-        #    suffix += 'ints'
-
-        level2_name = "".join(
-            [match.group("path"), "_", suffix, match.group("extension")]
-        )
-        return level2_name
 
 
 # -----------------
