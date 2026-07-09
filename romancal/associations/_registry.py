@@ -88,54 +88,6 @@ class _AssociationRegistry(dict):
                 include_bases=include_bases,
             )
 
-    @property
-    def rule_set(self):
-        """Rules within the Registry"""
-        return self._rule_set
-
-    def match(self, item, version_id=None, allow=None, ignore=None):
-        """See if item belongs to any of the associations defined.
-
-        Parameters
-        ----------
-        item : dict
-            An item, like from a Pool, to find associations for.
-
-        version_id : str
-            If specified, a string appended to association names.
-            If None, nothing is used.
-
-        allow : [type(Association), ...]
-            List of rules to allow to be matched. If None, all
-            available rules will be used.
-
-        ignore : list
-            A list of associations to ignore when looking for a match.
-            Intended to ensure that already created associations
-            are not re-created.
-
-        Returns
-        -------
-        (associations, reprocess_list): 2-tuple
-            associations : [association,...]
-                List of associations item belongs to. Empty if none match
-            reprocess_list : [AssociationReprocess, ...]
-                List of reprocess events.
-        """
-        if allow is None:
-            allow = self.rule_set
-        if ignore is None:
-            ignore = []
-        associations = []
-        process_list = []
-        for rule in self.values():
-            if rule not in ignore and rule in allow:
-                asn, reprocess = rule.create(item, version_id)
-                process_list.extend(reprocess)
-                if asn is not None:
-                    associations.append(asn)
-        return associations, process_list
-
     def validate(self, association):
         """Validate a given association
 
