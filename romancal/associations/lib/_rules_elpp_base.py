@@ -13,7 +13,6 @@ from romancal.associations import libpath
 from romancal.associations._association import _Association
 from romancal.associations._exceptions import AssociationNotValidError
 from romancal.associations._registry import RegistryMarker
-from romancal.associations.lib._acid import ACID
 from romancal.associations.lib._constraint import Constraint, SimpleConstraint
 from romancal.associations.lib._counter import Counter
 from romancal.associations.lib._dms_base import (
@@ -28,11 +27,6 @@ from romancal.associations.lib._dms_base import (
 from romancal.associations.lib._keyvalue_registry import KeyValueRegistryError
 from romancal.associations.lib._member import Member
 from romancal.associations.lib._process_list import ProcessList
-from romancal.associations.lib._product_utils import (
-    prune_duplicate_associations,
-    prune_duplicate_products,
-)
-from romancal.associations.lib._utilities import evaluate, is_iterable
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -530,62 +524,6 @@ class Utility:
             [match.group("path"), "_", suffix, match.group("extension")]
         )
         return level2_name
-
-    @staticmethod
-    def get_candidate_list(value):
-        """Parse the candidate list from a item value
-
-        Parameters
-        ----------
-        value : str
-            The value from the item to parse. Usually
-            item['ASN_CANDIDATE']
-
-        Returns
-        -------
-        [ACID, ...]
-            The list of parsed candidates.
-        """
-
-        result = []
-        evaled = evaluate(value)
-        if is_iterable(evaled):
-            result = [ACID(v) for v in evaled]
-        return result
-
-    @staticmethod
-    @RegistryMarker.callback("finalize")
-    def finalize(associations):
-        """Check validity and duplications in an association list
-
-        Parameters
-        ----------
-        associations:[association[, ...]]
-            List of associations
-
-        Returns
-        -------
-        finalized_associations : [association[, ...]]
-            The validated list of associations
-        """
-        finalized_asns = []
-        lv3_asns = []
-        for asn in associations:
-            if isinstance(asn, DMS_ELPP_Base):
-                finalized = asn.finalize()
-                if finalized is not None:
-                    lv3_asns.extend(finalized)
-            else:
-                finalized_asns.append(asn)
-
-        lv3_asns = prune_duplicate_associations(lv3_asns)
-        lv3_asns = prune_duplicate_products(lv3_asns)
-
-        # Ensure sequencing is correct.
-        Utility.resequence(lv3_asns)
-
-        # Merge lists and return
-        return finalized_asns + lv3_asns
 
 
 # -----------------

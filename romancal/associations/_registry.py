@@ -50,9 +50,6 @@ class _AssociationRegistry(dict):
         * Create associations from an item
             >>> associations, reprocess = registry.match(item) # doctest: +SKIP
 
-        * Finalize the associations
-            >>> final_asns = registry.callback.reduce('finalize', associations) # doctest: +SKIP
-
     In practice, this is one step in a larger loop over all items to
     be associated. This does not account for adding items to already
     existing associations. See :py:func:`~romancal.associations.generate` for more information.
@@ -228,7 +225,7 @@ class _AssociationRegistry(dict):
             return results
 
     def populate(self, module, global_constraints=None, include_bases=None):
-        """Parse out all rules and callbacks in a module and add them to the registry
+        """Parse out all rules in a module and add them to the registry
 
         Parameters
         ----------
@@ -282,7 +279,7 @@ class _AssociationRegistry(dict):
 
 
 class RegistryMarker:
-    """Mark rules, callbacks, and modules for inclusion into a registry"""
+    """Mark rules, and modules for inclusion into a registry"""
 
     class Schema:
         def __init__(self, obj):
@@ -352,49 +349,6 @@ class RegistryMarker:
         obj._asnreg_role = "rule"
         RegistryMarker.mark(obj)
         return obj
-
-    @staticmethod
-    def callback(event):
-        """Mark object as a callback for an event
-
-        Parameters
-        ----------
-        event : str
-            Event this is a callback for.
-
-        obj : func
-            Function, or any callable, to be called
-            when the corresponding event is triggered.
-
-        Returns
-        -------
-        func
-            Function to use as a decorator for the object to be marked.
-
-        Notes
-        -----
-        The following attributes are added to the object:
-
-        - _asnreg_role : 'callback'
-              The role the object as been assigned.
-        - _asnreg_events : [event[, ...]]
-              The events this callable object is a callback for.
-        - _asnreg_mark : True
-              Indicated that the object has been marked.
-        """
-
-        def decorator(func):
-            try:
-                events = func._asnreg_events
-            except AttributeError:
-                events = list()
-            events.append(event)
-            RegistryMarker.mark(func)
-            func._asnreg_role = "callback"
-            func._asnreg_events = events
-            return func
-
-        return decorator
 
     @staticmethod
     def schema(filename):
