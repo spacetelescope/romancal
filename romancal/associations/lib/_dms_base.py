@@ -1,7 +1,5 @@
 """Association attributes common to DMS-based Rules"""
 
-from romancal.associations.lib._utilities import getattr_from_list
-
 __all__ = ["DMSBaseMixin"]
 
 # Default product name
@@ -172,37 +170,6 @@ class DMSBaseMixin:
         }
         return member_ids
 
-    def get_exposure_type(self, item, default="science"):
-        """Determine the exposure type of a pool item
-
-        Parameters
-        ----------
-        item : dict
-            The pool entry to determine the exposure type of
-
-        default : str or None
-            The default exposure type.
-            If None, routine will raise LookupError
-
-        Returns
-        -------
-        exposure_type : str
-            Exposure type. Can be one of
-
-                - 'science': Item contains science data
-                - 'target_acquisition': Item contains target acquisition data.
-                - 'autoflat': NIRSpec AUTOFLAT
-                - 'autowave': NIRSpec AUTOWAVE
-                - 'psf': PSF
-                - 'imprint': MSA/IFU Imprint/Leakcal
-
-        Raises
-        ------
-        LookupError
-            When `default` is None and an exposure type cannot be determined
-        """
-        return get_exposure_type(item, default=default, association=self)
-
     def new_product(self, product_name=PRODUCT_NAME_DEFAULT):
         """Start a new product"""
         product = {"name": product_name, "members": []}
@@ -210,120 +177,3 @@ class DMSBaseMixin:
             self.data["products"].append(product)
         except (AttributeError, KeyError):
             self.data["products"] = [product]
-
-
-# #########
-# Utilities
-# #########
-def get_exposure_type(item, default="science", association=None):
-    """Determine the exposure type of a pool item
-
-    Parameters
-    ----------
-    item : dict
-        The pool entry to determine the exposure type of
-
-    default : str or None
-        The default exposure type.
-        If None, routine will raise LookupError
-
-
-
-    Returns
-    -------
-    exposure_type : str
-        Exposure type. Can be one of
-
-        - 'science': Item contains science data
-        - 'target_acquisition': Item contains target acquisition data.
-        - 'autoflat': NIRSpec AUTOFLAT
-        - 'autowave': NIRSpec AUTOWAVE
-        - 'psf': PSF
-        - 'imprint': MSA/IFU Imprint/Leakcal
-
-    Raises
-    ------
-    LookupError
-        When `default` is None and an exposure type cannot be determined
-    """
-
-    # Specify how attributes of the item are retrieved.
-    def _item_attr(item, sources):
-        """Get attribute value of an item
-
-        This simplifies the call to `item_getattr`
-        """
-        source, value = item_getattr(item, sources, association=association)
-        return value
-
-    # Define default type.
-    result = default
-
-    # Retrieve pointing type. This decides the basic exposure type.
-    # If the pointing is not science, we're done.
-    try:
-        result = _item_attr(item, ["pntgtype"])
-    except KeyError:
-        pass
-    else:
-        if result != "science":
-            return result
-
-    # We have a science exposure. Refine further.
-    #
-    # Base type off of exposure type.
-    try:
-        exp_type = _item_attr(item, ["exp_type"])
-    except KeyError as err:
-        raise LookupError("Exposure type cannot be determined") from err
-
-    result = EXPTYPE_MAP.get(exp_type, default)
-
-    if result is None:
-        raise LookupError("Cannot determine exposure type")
-
-    # If result is not science, we're done.
-    if result != "science":
-        return result
-
-    # For `science` data, compare against special modifiers
-    # to further refine the type.
-    for special, source in SPECIAL_EXPOSURE_MODIFIERS.items():
-        try:
-            _item_attr(item, source)
-        except KeyError:
-            pass
-        else:
-            result = special
-            break
-
-    return result
-
-
-def item_getattr(item, attributes, association=None):
-    """Return value from any of a list of attributes
-
-    Parameters
-    ----------
-    item : dict
-        item to retrieve from
-
-    attributes : list
-        List of attributes
-
-    Returns
-    -------
-    (attribute, value)
-        Returns the value and the attribute from
-        which the value was taken.
-
-    Raises
-    ------
-    KeyError
-        None of the attributes are found in the dict.
-    """
-    if association is None:
-        invalid_values = _EMPTY
-    else:
-        invalid_values = association.INVALID_VALUES
-    return getattr_from_list(item, attributes, invalid_values=invalid_values)

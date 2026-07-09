@@ -71,8 +71,3 @@ class Asn_Lv2GBTDSFull(AsnMixin_Lv2GBTDSfull, DMS_ELPP_Base):
         - Collect all exposures in a season
         - Non-TSO
     """
-
-    def get_exposure_type(self, item, default=None):
-        """overrides super method to return `item["exp_type"]`"""
-
-        return item["exp_type"]

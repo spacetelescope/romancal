@@ -16,7 +16,6 @@ from romancal.associations.lib._dms_base import (
     SPEC2_SCIENCE_EXP_TYPES,
     DMSBaseMixin,
 )
-from romancal.associations.lib._process_list import ProcessList
 
 if TYPE_CHECKING:
     pass
@@ -30,7 +29,6 @@ __all__ = [
     "AsnMixin_Science",
     "AsnMixin_Spectrum",
     "DMS_ELPP_Base",
-    "ProcessList",
 ]
 # Configure logging
 logger = logging.getLogger(__name__)
