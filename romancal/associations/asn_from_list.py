@@ -164,6 +164,7 @@ def _cli(args=None):
         default="o999",
         help='The association candidate id to use. Default: "%(default)s"',
         dest="acid",
+        deprecated=True,
     )
     parser.add_argument(
         "-t",
