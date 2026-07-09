@@ -18,7 +18,6 @@ from romancal.associations.lib._dms_base import (
     DMSAttrConstraint,
     DMSBaseMixin,
 )
-from romancal.associations.lib._keyvalue_registry import KeyValueRegistryError
 from romancal.associations.lib._process_list import ProcessList
 
 if TYPE_CHECKING:
@@ -165,28 +164,6 @@ class DMS_ELPP_Base(DMSBaseMixin, _Association):
                 item, exptype = item
             member = {"expname": item, "exptype": exptype}
             members.append(member)
-
-    def __repr__(self):
-        try:
-            _, json_repr = self.dump(self)
-        except KeyValueRegistryError:
-            return str(self.__class__)
-        return json_repr
-
-    def __str__(self):
-        result_list = []
-        result_list.append(
-            f"{self.asn_name} with {len(self.data['products'])} products"
-        )
-        result_list.append(f"Rule={self.data['asn_rule']}")
-        result_list.append(self.data["constraints"])
-        result_list.append("Products:")
-        for product in self.data["products"]:
-            result_list.append(
-                f"\t{product['name']} with {len(product['members'])} members"
-            )
-        result = "\n".join(result_list)
-        return result
 
 
 # -----------------
