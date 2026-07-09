@@ -16,7 +16,6 @@ Roman Associations
    :maxdepth: 2
 
    roman_conventions.rst
-   technote_sdp_workflow.rst
 
 Design
 ======
