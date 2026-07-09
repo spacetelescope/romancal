@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-import copy
 import logging
 import re
 from collections import defaultdict
-from os.path import split, splitext
 from typing import TYPE_CHECKING
 
 from romancal.associations import libpath
@@ -20,7 +18,6 @@ from romancal.associations.lib._dms_base import (
     IMAGE2_NONSCIENCE_EXP_TYPES,
     IMAGE2_SCIENCE_EXP_TYPES,
     SPEC2_SCIENCE_EXP_TYPES,
-    WFI_DETECTORS,
     DMSAttrConstraint,
     DMSBaseMixin,
 )
@@ -170,143 +167,6 @@ class DMS_ELPP_Base(DMSBaseMixin, _Association):
         if result is not NotImplemented:
             result = not result
         return result
-
-    @property
-    def dms_product_name(self):
-        """Define product name.
-
-        Returns
-        -------
-        product_name : str
-            The product name
-        """
-        return self._dms_product_name(self)
-
-    @staticmethod
-    def _dms_product_name(association):
-        """Define product name.
-
-        Parameters
-        ----------
-        association : `Association`
-            Association to get the name from.
-
-        Returns
-        -------
-        product_name : str
-            The product name
-        """
-        target = association._get_target()
-
-        instrument = association._get_instrument()
-
-        opt_elem = association._get_opt_element()
-
-        exposure = association._get_exposure()
-        if exposure:
-            exposure = "-" + exposure
-
-        subarray = association._get_subarray()
-        if subarray:
-            subarray = "-" + subarray
-
-        product_name = "r{program}-{acid}_{target}_{instrument}_{opt_elem}{subarray}"
-        if "Full" in association.data["asn_rule"]:
-            subarray = "Full"
-
-        if "Pass" in association.data["asn_rule"]:
-            subarray = "Pass"
-
-        product_name = product_name.format(
-            program=association.data["visit_id"],
-            acid=association.acid.id,
-            target=target,
-            instrument=instrument,
-            opt_elem=opt_elem,
-            subarray=subarray,
-            exposure=exposure,
-        )
-
-        return product_name.lower()
-
-    def make_member(self, item):
-        """Create a member from the item
-
-        Parameters
-        ----------
-        item : dict
-            The item to create member from.
-
-        Returns
-        -------
-        member : Member
-            The member
-        """
-        try:
-            exposerr = item["exposerr"]
-        except KeyError:
-            exposerr = None
-
-        # Get exposure type
-        exptype = self.get_exposure_type(item)
-
-        # Determine expected member name
-        expname = Utility.rename_to_level2(
-            item["filename"], exp_type=item["exp_type"], member_exptype=exptype
-        )
-
-        member = Member(
-            {
-                "expname": expname,
-                "exptype": exptype,
-                "asn_candidate": item["asn_candidate"],
-                "exposerr": exposerr,
-            },
-            item=item,
-        )
-        return member
-
-    def make_fov_asn(self):
-        """Take the association with an single exposure with _WFI_ in the name
-              and expand that to include all 18 detectors.
-
-        Returns
-        -------
-        associations : [association[, ...]]
-            List of new members to be used in place of
-            the current one.
-        """
-        results = []
-
-        # expand the products from _wfi_ to _wfi{det}_
-        for product in self["products"]:
-            for member in product["members"]:
-                asn = copy.deepcopy(self)
-                asn.data["products"] = None
-                product_name = (
-                    splitext(
-                        split(self.data["products"][0]["members"][0]["expname"])[1]
-                    )[0].rsplit("_", 1)[0]
-                    + "_drzl"
-                )
-                asn.new_product(product_name)
-                new_members = asn.current_product["members"]
-                if "_wfi_" in member["expname"]:
-                    # Make and add a member for each detector
-                    for det in WFI_DETECTORS:
-                        new_member = copy.deepcopy(member)
-                        new_member["expname"] = member["expname"].replace("wfi", det)
-                        new_members.append(new_member)
-            if asn.is_valid:
-                results.append(asn)
-                return results
-
-            return None
-
-    def update_target(self, target):
-        """Update association target field"""
-        if self.data["target"] is None:
-            self.data["target"] = target
 
     def _add_items(self, items, product_name=None, with_exptype=False, **kwargs):
         """Force adding items to the association
