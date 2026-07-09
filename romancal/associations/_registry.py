@@ -6,7 +6,7 @@ from inspect import getmembers, isclass, isfunction, ismethod, ismodule
 from os.path import basename, expanduser, expandvars
 
 from . import libpath
-from ._exceptions import AssociationError, AssociationNotValidError
+from ._exceptions import AssociationError
 
 __all__ = ["RegistryMarker", "_AssociationRegistry"]
 
@@ -87,45 +87,6 @@ class _AssociationRegistry(dict):
                 global_constraints=global_constraints,
                 include_bases=include_bases,
             )
-
-    def validate(self, association):
-        """Validate a given association
-
-        Parameters
-        ----------
-        association : association-like
-            The data to validate
-
-        Returns
-        -------
-        rules : list
-            List of rules that validated
-
-        Raises
-        ------
-        AssociationNotValidError
-            Association did not validate
-        """
-
-        # Change rule validation from an exception
-        # to a boolean
-        def is_valid(rule, association):
-            try:
-                rule.validate(association)
-            except AssociationNotValidError:
-                return False
-            else:
-                return True
-
-        results = [
-            rule for rule_name, rule in self.items() if is_valid(rule, association)
-        ]
-
-        if len(results) == 0:
-            raise AssociationNotValidError(
-                f'Structure did not validate: "{association}"'
-            )
-        return results
 
     def load(self, serialized, format=None, validate=True, first=True, **kwargs):
         """Load a previously serialized association
