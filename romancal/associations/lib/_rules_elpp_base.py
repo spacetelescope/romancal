@@ -466,13 +466,6 @@ class Utility:
     """Utility functions that understand DMS Level 3 associations"""
 
     @staticmethod
-    def resequence(associations):
-        """Resequence the numbering for the ELPP association types"""
-        counters = defaultdict(lambda: defaultdict(Counter))
-        for asn in associations:
-            asn.sequence = next(counters[asn.data["asn_id"]][asn.data["asn_type"]])
-
-    @staticmethod
     def rename_to_level2(level1b_name, exp_type=None, member_exptype="science"):
         """Rename a Level 1b Exposure to a Level2 name.
 
