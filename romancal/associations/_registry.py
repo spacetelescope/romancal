@@ -80,7 +80,6 @@ class _AssociationRegistry(dict):
             raise AssociationError("No rule definition files specified.")
 
         self.schemas = []
-        self.Utility = type("Utility", (object,), {})
         for fname in definition_files:
             module = import_from_file(fname)
             self.populate(
@@ -249,10 +248,6 @@ class _AssociationRegistry(dict):
                 self.schemas.append(obj._asnreg_schema)
                 continue
 
-            # Add utility classes
-            if obj._asnreg_role == "utility":
-                self.Utility = type("Utility", (obj, self.Utility), {})
-
     def add_rule(self, name, obj, global_constraints=None):
         """Add object as rule to registry
 
@@ -355,13 +350,6 @@ class RegistryMarker:
         """Mark a file as a schema source"""
         schema = RegistryMarker.Schema(filename)
         return schema
-
-    @staticmethod
-    def utility(class_obj):
-        """Mark the class as a Utility class"""
-        class_obj._asnreg_role = "utility"
-        RegistryMarker.mark(class_obj)
-        return class_obj
 
     @staticmethod
     def is_marked(obj):
