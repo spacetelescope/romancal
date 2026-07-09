@@ -6,7 +6,7 @@ import copy
 import logging
 import re
 from collections import defaultdict
-from os.path import basename, split, splitext
+from os.path import split, splitext
 from typing import TYPE_CHECKING
 
 from romancal.associations import libpath
@@ -228,59 +228,6 @@ class DMS_ELPP_Base(DMSBaseMixin, _Association):
         )
 
         return product_name.lower()
-
-    def update_asn(self, item=None, member=None):
-        """Update association meta information
-
-        Parameters
-        ----------
-        item : dict or None
-            Item to use as a source. If not given, item-specific
-            information will be left unchanged.
-
-        member : Member or None
-            An association member to use as source.
-            If not given, member-specific information will be update
-            from current association/product membership.
-
-        Notes
-        -----
-        If both `item` and `member` are given,
-        information in `member` will take precedence.
-        """
-        super().update_asn(item=item, member=member)
-
-        # Constraints
-        self.data["constraints"] = str(self.constraints)
-
-        # ID
-        self.data["asn_id"] = self.acid.id
-
-        # Target
-        self.data["target"] = self._get_target()
-
-        # Item-based information
-        if item is not None:
-            # Program
-            if self.data["program"] == "noprogram":
-                self.data["program"] = f"{item['program']:0>5s}"
-
-            # Pool
-            if self.data["asn_pool"] == "none":
-                self.data["asn_pool"] = basename(item.meta["pool_file"])
-                parsed_name = re.search(
-                    _DMS_POOLNAME_REGEX, self.data["asn_pool"].split(".")[0]
-                )
-                if parsed_name is not None:
-                    pool_meta = {
-                        "program_id": parsed_name.group(1),
-                        "version": parsed_name.group(2),
-                    }
-                    self.meta["pool_meta"] = pool_meta
-
-        # Product-based updates
-        product = self.current_product
-        product["name"] = self.dms_product_name
 
     def make_member(self, item):
         """Create a member from the item

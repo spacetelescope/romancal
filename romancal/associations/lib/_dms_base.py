@@ -338,28 +338,6 @@ class DMSBaseMixin(ACIDMixin):
         except (AttributeError, KeyError):
             self.data["products"] = [product]
 
-    def update_asn(self, item=None, member=None):
-        """Update association meta information
-
-        Parameters
-        ----------
-        item : dict or None
-            Item to use as a source. If not given, item-specific
-            information will be left unchanged.
-
-        member : Member or None
-            An association member to use as source.
-            If not given, member-specific information will be update
-            from current association/product membership.
-
-        Notes
-        -----
-        If both `item` and `member` are given,
-        information in `member` will take precedence.
-        """
-        self.update_degraded_status()
-        self.set_visit_id(item)
-
     def set_visit_id(self, item):
         """Set the visit id in the association"""
 
