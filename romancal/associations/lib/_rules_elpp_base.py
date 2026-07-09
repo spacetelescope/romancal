@@ -7,7 +7,6 @@ import logging
 from romancal.associations import libpath
 from romancal.associations._association import _Association
 from romancal.associations._exceptions import AssociationNotValidError
-from romancal.associations.lib._dms_base import DMSBaseMixin
 
 __all__ = [
     "DMS_ELPP_Base",
@@ -20,7 +19,7 @@ logger.addHandler(logging.NullHandler())
 ASN_SCHEMA = libpath("asn_schema_jw_level3.json")
 
 
-class DMS_ELPP_Base(DMSBaseMixin, _Association):
+class DMS_ELPP_Base(_Association):
     """Basic class for DMS Level associations."""
 
     # Set the validation schema
@@ -46,6 +45,16 @@ class DMS_ELPP_Base(DMSBaseMixin, _Association):
     @property
     def current_product(self):
         return self.data["products"][-1]
+
+    @property
+    def member_ids(self):
+        """Set of all member ids in all products of this association"""
+        member_ids = {
+            member["expname"]
+            for product in self["products"]
+            for member in product["members"]
+        }
+        return member_ids
 
     def __eq__(self, other):
         """Compare equality of two associations"""
