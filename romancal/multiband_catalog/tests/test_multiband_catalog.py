@@ -491,7 +491,7 @@ def test_multiband_source_injection_catalog(
 def libraries_si_nan(mosaic_si_model):
     libs = {}
 
-    for si_type in ['NoNan', 'Grid', 'Block']:
+    for si_type in ["NoNan", "Grid", "Block"]:
         model1 = deepcopy(mosaic_si_model)
         model1.meta.instrument.optical_element = "F158"
 
@@ -513,9 +513,7 @@ def libraries_si_nan(mosaic_si_model):
     return libs
 
 
-def test_multiband_source_injection_nan_catalog(
-    libraries_si_nan, function_jail
-):
+def test_multiband_source_injection_nan_catalog(libraries_si_nan, function_jail):
     step = MultibandCatalogStep()
 
     # Generate model libraries
@@ -539,13 +537,13 @@ def test_multiband_source_injection_nan_catalog(
             libmods["Block"].shelve(si_model, modify=False)
             assert np.isin(
                 list(zip(y_pos, x_pos, strict=True)),
-                list(zip(np.where(nanmask)[0], np.where(nanmask)[1], strict=True))
+                list(zip(np.where(nanmask)[0], np.where(nanmask)[1], strict=True)),
             ).all()
 
     res_cat = {}
     res_segm = {}
 
-    for si_type in ['NoNan', 'Grid', 'Block']:
+    for si_type in ["NoNan", "Grid", "Block"]:
         res_cat[si_type], res_segm[si_type] = step.call(
             libmods[si_type],
             bkg_boxsize=30,
@@ -560,13 +558,19 @@ def test_multiband_source_injection_nan_catalog(
         )
 
     # Test that Grid and Orig Source Injected catalogs have the same number of objects
-    assert len(res_cat['Grid'].source_injection_catalog) == len(res_cat['NoNan'].source_injection_catalog)
+    assert len(res_cat["Grid"].source_injection_catalog) == len(
+        res_cat["NoNan"].source_injection_catalog
+    )
 
     # Coordinates for Nan Grid and NoNan Source Injected catalogs
-    coords_grid = SkyCoord(res_cat['Grid'].source_injection_catalog['ra'],
-                    res_cat['Grid'].source_injection_catalog["dec"])
-    coords_si_g = SkyCoord(res_cat['NoNan'].source_injection_catalog['ra'],
-                    res_cat['NoNan'].source_injection_catalog["dec"])
+    coords_grid = SkyCoord(
+        res_cat["Grid"].source_injection_catalog["ra"],
+        res_cat["Grid"].source_injection_catalog["dec"],
+    )
+    coords_si_g = SkyCoord(
+        res_cat["NoNan"].source_injection_catalog["ra"],
+        res_cat["NoNan"].source_injection_catalog["dec"],
+    )
 
     # Find indices in GridSI that best match NoNanSI
     idx, d2d, d3d = coords_si_g.match_to_catalog_sky(coords_grid)
@@ -577,25 +581,29 @@ def test_multiband_source_injection_nan_catalog(
     # Filter by a maximum match radius (one pixel)
     match_mask = d2d < 0.1 * u.arcsec
 
-    matched_si_g = res_cat['NoNan'].source_injection_catalog[match_mask]
-    matched_grid = res_cat['Grid'].source_injection_catalog[idx[match_mask]]
+    matched_si_g = res_cat["NoNan"].source_injection_catalog[match_mask]
+    matched_grid = res_cat["Grid"].source_injection_catalog[idx[match_mask]]
 
     # Ensure all objects matched
-    assert len(matched_grid) == len(res_cat['NoNan'].source_injection_catalog)
+    assert len(matched_grid) == len(res_cat["NoNan"].source_injection_catalog)
 
     # Test that all matched objects have similar magnitudes
-    assert np.allclose(matched_grid["kron_f158_abmag"],
-                    matched_si_g["kron_f158_abmag"],
-                    rtol=2.0e-3)
-    assert np.allclose(matched_grid["kron_f184_abmag"],
-                    matched_si_g["kron_f184_abmag"],
-                    rtol=2.0e-3)
+    assert np.allclose(
+        matched_grid["kron_f158_abmag"], matched_si_g["kron_f158_abmag"], rtol=2.0e-3
+    )
+    assert np.allclose(
+        matched_grid["kron_f184_abmag"], matched_si_g["kron_f184_abmag"], rtol=2.0e-3
+    )
 
     # Coordinates for Nan Block and Original Source Injected catalogs
-    coords_block = SkyCoord(res_cat['Block'].source_injection_catalog['ra'],
-                    res_cat['Block'].source_injection_catalog["dec"])
-    coords_si_bl = SkyCoord(res_cat['NoNan'].source_injection_catalog['ra'],
-                    res_cat['NoNan'].source_injection_catalog["dec"])
+    coords_block = SkyCoord(
+        res_cat["Block"].source_injection_catalog["ra"],
+        res_cat["Block"].source_injection_catalog["dec"],
+    )
+    coords_si_bl = SkyCoord(
+        res_cat["NoNan"].source_injection_catalog["ra"],
+        res_cat["NoNan"].source_injection_catalog["dec"],
+    )
 
     # Find indices in GridSI that best match OrigSI
     idx, d2d, d3d = coords_si_bl.match_to_catalog_sky(coords_block)
@@ -603,8 +611,8 @@ def test_multiband_source_injection_nan_catalog(
     # Filter by a maximum match radius (one pixel)
     match_mask = d2d < 0.1 * u.arcsec
 
-    matched_si_bl = res_cat['NoNan'].source_injection_catalog[match_mask]
-    matched_block = res_cat['Block'].source_injection_catalog[idx[match_mask]]
+    matched_si_bl = res_cat["NoNan"].source_injection_catalog[match_mask]
+    matched_block = res_cat["Block"].source_injection_catalog[idx[match_mask]]
 
     # Test that all matched objects have similar magnitudes
     assert np.allclose(
