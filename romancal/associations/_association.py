@@ -295,12 +295,6 @@ class _Association(MutableMapping):
             return False
         return True
 
-    def _add(self, item):
-        """Add a item, association-specific"""
-        raise NotImplementedError(
-            "Association._add must be implemented by a specific association rule."
-        )
-
     def _add_items(self, items, **kwargs):
         """Force adding items to the association
 

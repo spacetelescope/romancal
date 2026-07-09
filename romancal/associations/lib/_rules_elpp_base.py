@@ -356,28 +356,6 @@ class DMS_ELPP_Base(DMSBaseMixin, _Association):
 
             return None
 
-    def _add(self, item):
-        """Add item to this association."""
-        member = self.make_member(item)
-        if self.is_member(member):
-            # logger.debug(
-            #     'Member is already part of the association:'
-            #     '\n\tassociation: {}'
-            #     '\n]tmember: {}'.format(self, member)
-            # )
-            return
-
-        self.update_validity(member)
-        members = self.current_product["members"]
-        members.append(member)
-        if member["exposerr"] not in _EMPTY:
-            logger.warning(
-                f'Member {item["filename"]} has exposure error "{member["exposerr"]}"'
-            )
-
-        # Update meta info
-        self.update_asn(item=item, member=member)
-
     def update_target(self, target):
         """Update association target field"""
         if self.data["target"] is None:
