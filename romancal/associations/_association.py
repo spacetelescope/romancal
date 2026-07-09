@@ -53,9 +53,6 @@ class _Association(MutableMapping):
     registry = None
     """Registry this rule has been placed in."""
 
-    GLOBAL_CONSTRAINT = None
-    """Global constraints"""
-
     INVALID_VALUES = None
     """Attribute values that indicate the
     attribute is not specified.

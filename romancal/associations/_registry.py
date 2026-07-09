@@ -29,9 +29,6 @@ class _AssociationRegistry(dict):
     include_default : bool
         True to include the default definitions.
 
-    global_constraints : Constraint
-        Constraints to be added to each rule.
-
     name : str
         An identifying string, used to prefix rule names.
 
@@ -59,7 +56,6 @@ class _AssociationRegistry(dict):
         self,
         definition_files=None,
         include_default=True,
-        global_constraints=None,
         name=None,
         include_bases=False,
     ):
@@ -84,7 +80,6 @@ class _AssociationRegistry(dict):
             module = import_from_file(fname)
             self.populate(
                 module,
-                global_constraints=global_constraints,
                 include_bases=include_bases,
             )
 
@@ -136,7 +131,7 @@ class _AssociationRegistry(dict):
         else:
             return results
 
-    def populate(self, module, global_constraints=None, include_bases=None):
+    def populate(self, module, include_bases=None):
         """Parse out all rules in a module and add them to the registry
 
         Parameters
@@ -149,7 +144,7 @@ class _AssociationRegistry(dict):
             # Add rules.
             if (include_bases and isclass(obj)) or obj._asnreg_role == "rule":
                 try:
-                    self.add_rule(name, obj, global_constraints=global_constraints)
+                    self.add_rule(name, obj)
                 except TypeError:
                     logger.debug(
                         f"Could not add object {obj} as a rule due to TypeError"
@@ -161,7 +156,7 @@ class _AssociationRegistry(dict):
                 self.schemas.append(obj._asnreg_schema)
                 continue
 
-    def add_rule(self, name, obj, global_constraints=None):
+    def add_rule(self, name, obj):
         """Add object as rule to registry
 
         Parameters
@@ -171,16 +166,12 @@ class _AssociationRegistry(dict):
 
         obj : object
             The object to be considered a rule
-
-        global_constraints : dict
-            The global constraints to attach to the rule.
         """
         try:
             rule_name = "_".join([self.name, name])
         except TypeError:
             rule_name = name
         rule = type(rule_name, (obj,), {})
-        rule.GLOBAL_CONSTRAINT = global_constraints
         rule.registry = self
         self.__setitem__(rule_name, rule)
         self._rule_set.add(rule)
