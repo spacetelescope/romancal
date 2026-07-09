@@ -4,6 +4,7 @@ import argparse
 import logging
 import os
 import sys
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -500,7 +501,6 @@ def _cli(args=None):
         type=str,
         default="json",
         help='Format of the association files. Default: "%(default)s"',
-        deprecated=True,
     )
 
     parser.add_argument(
@@ -523,7 +523,6 @@ def _cli(args=None):
         type=str,
         default="DMS_ELPP_Base",
         help=('The rule to base the association structure on. Default: "%(default)s"'),
-        deprecated=True,
     )
     parser.add_argument(
         "-i",
@@ -532,7 +531,6 @@ def _cli(args=None):
         default="o999",
         help='The association candidate id to use. Default: "%(default)s"',
         dest="acid",
-        deprecated=True,
     )
 
     parser.add_argument(
@@ -544,6 +542,18 @@ def _cli(args=None):
 
     parsed = parser.parse_args(args=args)
     logger.info("Command-line arguments: %s", parsed)
+
+    if parsed.format != "json":
+        msg = "format was never supported and is deprecated."
+        warnings.warn(msg, UserWarning, stacklevel=2)
+
+    if parsed.rule != "DMS_ELPP_Base":
+        msg = f"Use of a different rule ({parsed.rule}) was never supported and is deprecated."
+        warnings.warn(msg, UserWarning, stacklevel=2)
+
+    if parsed.acid != "o999":
+        msg = "associate candidate id was never supported and is deprecated."
+        warnings.warn(msg, UserWarning, stacklevel=2)
 
     skycell_asn(
         parsed.filelist,

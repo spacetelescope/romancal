@@ -151,7 +151,6 @@ def _cli(args=None):
         type=str,
         default="DMS_ELPP_Base",
         help=('The rule to base the association structure on. Default: "%(default)s"'),
-        deprecated=True,
     )
     parser.add_argument(
         "--ruledefs",
@@ -160,7 +159,6 @@ def _cli(args=None):
             "Association rules definition file(s) If not specified, the default"
             " rules will be searched."
         ),
-        deprecated=True,
     )
     parser.add_argument(
         "-i",
@@ -169,7 +167,6 @@ def _cli(args=None):
         default="o999",
         help='The association candidate id to use. Default: "%(default)s"',
         dest="acid",
-        deprecated=True,
     )
     parser.add_argument(
         "-t",
@@ -199,7 +196,15 @@ def _cli(args=None):
     print("Parsed args:", parsed)
 
     if parsed.rule != "DMS_ELPP_Base":
-        msg = f"Use of a different rule ({parsed.rule}) was never supported."
+        msg = f"Use of a different rule ({parsed.rule}) was never supported and is deprecated."
+        warnings.warn(msg, UserWarning, stacklevel=2)
+
+    if parsed.ruledefs:
+        msg = "ruledefs was never supported and is deprecated."
+        warnings.warn(msg, UserWarning, stacklevel=2)
+
+    if parsed.acid != "o999":
+        msg = "associate candidate id was never supported and is deprecated."
         warnings.warn(msg, UserWarning, stacklevel=2)
 
     with open(parsed.output_file, "w") as outfile:
