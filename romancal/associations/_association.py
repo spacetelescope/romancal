@@ -107,34 +107,6 @@ class _Association(MutableMapping):
             constraints.append(self.GLOBAL_CONSTRAINT.copy())
         self.constraints = constraints
 
-    @classmethod
-    def create(cls, item, version_id=None):
-        """Create association if item belongs
-
-        Parameters
-        ----------
-        item : dict
-            The item to initialize the association with.
-
-        version_id : str or None
-            Version ID to use in the name of this association.
-            If None, nothing is added.
-
-        Returns
-        -------
-        (association, reprocess_list)
-            2-tuple consisting of:
-                - association or None: The association or, if the item does not
-                  match this rule, None
-                - [ProcessList[, ...]]: List of items to process again.
-        """
-        asn = cls(version_id=version_id)
-
-        matches, reprocess = asn.add(item)
-        if not matches:
-            return None, reprocess
-        return asn, reprocess
-
     @property
     def asn_name(self):
         """Suggest filename for the association"""

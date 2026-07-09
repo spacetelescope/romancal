@@ -135,34 +135,6 @@ class DMSBaseMixin(ACIDMixin):
         if "program" not in self.data:
             self.data["program"] = "noprogram"
 
-    @classmethod
-    def create(cls, item, version_id=None):
-        """Create association if item belongs
-
-        Parameters
-        ----------
-        item : dict
-            The item to initialize the association with.
-
-        version_id : str or None
-            Version_Id to use in the name of this association.
-            If None, nothing is added.
-
-        Returns
-        -------
-        (association, reprocess_list)
-            2-tuple consisting of:
-
-                - association : The association or, if the item does not
-                  match this rule, None
-                - [ProcessList[, ...]]: List of items to process again.
-        """
-        asn, reprocess = super().create(item, version_id)
-        if not asn:
-            return None, reprocess
-        asn.sequence = next(asn._sequence)
-        return asn, reprocess
-
     @property
     def acid(self):
         """Association ID"""
