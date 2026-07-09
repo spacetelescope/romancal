@@ -1,8 +1,7 @@
-"""Association Generator
+"""Association Generation code
 
-The Association Generator takes a list of items, an Association Pool, and
-creates sub-lists of those items depending on each item's attributes. How the
-sub-lists are created is defined by Association Rules.
+Code for generating associations, lists of association members and
+relevant metadata describing a collection of exposures.
 
 For more, see the :ref:`documentation overview <asn-overview>`.
 
