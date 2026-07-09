@@ -12,16 +12,6 @@ For more, see the :ref:`documentation overview <asn-overview>`.
 
 # Take version from the upstream package
 from .. import __version__
-
-
-# Utility
-def libpath(filepath):
-    """Return the full path to the module library."""
-    from os.path import abspath, dirname, join
-
-    return join(dirname(abspath(__file__)), "lib", filepath)
-
-
 from ._association import _Association
 from ._exceptions import AssociationNotValidError
 from ._load_asn import load_asn

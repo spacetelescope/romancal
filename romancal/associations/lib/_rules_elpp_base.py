@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import importlib.resources
 import logging
 
-from romancal.associations import libpath
+import romancal.associations.lib
 from romancal.associations._association import _Association
 from romancal.associations._exceptions import AssociationNotValidError
 
@@ -16,7 +17,9 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 # The schema that these associations must adhere to.
-ASN_SCHEMA = libpath("asn_schema_jw_level3.json")
+ASN_SCHEMA = (
+    importlib.resources.files(romancal.associations.lib) / "asn_schema_jw_level3.json"
+)
 
 
 class DMS_ELPP_Base(_Association):
