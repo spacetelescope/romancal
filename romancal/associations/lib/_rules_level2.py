@@ -3,7 +3,6 @@
 import logging
 
 from romancal.associations._registry import RegistryMarker
-from romancal.associations.lib._constraint import Constraint
 from romancal.associations.lib._rules_elpp_base import *
 
 __all__ = [
@@ -35,19 +34,6 @@ class Asn_Lv2FOV(AsnMixin_Lv2FOV, DMS_ELPP_Base):
         - Science exposures for all 18 detectors
     """
 
-    def __init__(self, *args, **kwargs):
-        # Setup constraints
-        self.constraints = Constraint(
-            [
-                Constraint_Base(),
-                Constraint_Target(),
-                Constraint_Filename(),
-            ]
-        )
-
-        # Now check and continue initialization.
-        super().__init__(*args, **kwargs)
-
 
 @RegistryMarker.rule
 class Asn_Lv2Image(AsnMixin_Lv2Image, DMS_ELPP_Base):
@@ -59,28 +45,6 @@ class Asn_Lv2Image(AsnMixin_Lv2Image, DMS_ELPP_Base):
         - Image-based science exposures
         - Single science exposure
     """
-
-    def __init__(self, *args, **kwargs):
-        # Setup constraints
-        self.constraints = Constraint(
-            [
-                Constraint_Base(),
-                Constraint_Target(),
-                Constraint(
-                    [
-                        Constraint_Expos(),
-                    ],
-                    reduce=Constraint.any,
-                ),
-                Constraint_Optical_Path(),
-                Constraint_Sequence(),
-                Constraint_Pass(),
-                Constraint_Tile(),
-            ]
-        )
-
-        # Now check and continue initialization.
-        super().__init__(*args, **kwargs)
 
 
 @RegistryMarker.rule
@@ -95,22 +59,6 @@ class Asn_Lv2GBTDSPass(AsnMixin_Lv2GBTDSpass, DMS_ELPP_Base):
         - Non-TSO
     """
 
-    def __init__(self, *args, **kwargs):
-        # Setup constraints
-        self.constraints = Constraint(
-            [
-                Constraint_Base(),
-                Constraint_Target(),
-                Constraint_Category(),
-                Constraint_Pass(),
-                Constraint_Optical_Path(),
-                Constraint_SubCategory(),
-            ]
-        )
-
-        # Now check and continue initialization.
-        super().__init__(*args, **kwargs)
-
 
 @RegistryMarker.rule
 class Asn_Lv2GBTDSFull(AsnMixin_Lv2GBTDSfull, DMS_ELPP_Base):
@@ -123,21 +71,6 @@ class Asn_Lv2GBTDSFull(AsnMixin_Lv2GBTDSfull, DMS_ELPP_Base):
         - Collect all exposures in a season
         - Non-TSO
     """
-
-    def __init__(self, *args, **kwargs):
-        # Setup constraints
-        self.constraints = Constraint(
-            [
-                Constraint_Base(),
-                Constraint_Target(),
-                Constraint_Category(),
-                Constraint_Optical_Path(),
-                Constraint_SubCategory(),
-            ]
-        )
-
-        # Now check and continue initialization.
-        super().__init__(*args, **kwargs)
 
     def get_exposure_type(self, item, default=None):
         """overrides super method to return `item["exp_type"]`"""

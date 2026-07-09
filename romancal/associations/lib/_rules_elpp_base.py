@@ -447,44 +447,6 @@ class Constraint_Target(DMSAttrConstraint):
 class AsnMixin_Science(DMS_ELPP_Base):
     """Basic science constraints"""
 
-    def __init__(self, *args, **kwargs):
-        # Setup target acquisition inclusion
-        constraint_acqs = Constraint(
-            [
-                DMSAttrConstraint(
-                    name="acq_obsnum",
-                    sources=["obs_num"],
-                    value=lambda: (
-                        "(" + "|".join(self.constraints["obs_num"].found_values) + ")"
-                    ),
-                    force_unique=False,
-                )
-            ],
-            name="acq_constraint",
-            work_over=ProcessList.EXISTING,
-        )
-
-        # Put all constraints together.
-        self.constraints = Constraint(
-            [
-                Constraint_Base(),
-                DMSAttrConstraint(sources=["is_imprt"], force_undefined=True),
-                Constraint(
-                    [
-                        Constraint(
-                            [self.constraints, Constraint_Obsnum()], name="rule"
-                        ),
-                        constraint_acqs,
-                    ],
-                    name="acq_check",
-                    reduce=Constraint.any,
-                ),
-            ],
-            name="dmsbase_top",
-        )
-
-        super().__init__(*args, **kwargs)
-
 
 class AsnMixin_Spectrum(AsnMixin_Science):
     """All things that are spectrum"""

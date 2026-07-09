@@ -8,7 +8,6 @@ import jsonschema
 
 from . import __version__
 from ._exceptions import AssociationNotValidError
-from .lib._constraint import Constraint
 
 __all__ = ["_Association"]
 
@@ -54,17 +53,6 @@ class _Association(MutableMapping):
     registry = None
     """Registry this rule has been placed in."""
 
-    DEFAULT_FORCE_UNIQUE = False
-    """Default whether to force constraints to use unique values."""
-
-    DEFAULT_REQUIRE_CONSTRAINT = True
-    """Default require that the constraint exists or otherwise
-    can be explicitly checked.
-    """
-
-    DEFAULT_EVALUATE = False
-    """Default do not evaluate input values"""
-
     GLOBAL_CONSTRAINT = None
     """Global constraints"""
 
@@ -92,16 +80,6 @@ class _Association(MutableMapping):
                 "target": self.target,
             }
         )
-
-        # Setup constraints
-        # These may be predefined by a rule.
-        try:
-            constraints = self.constraints
-        except AttributeError:
-            constraints = Constraint()
-        if self.GLOBAL_CONSTRAINT is not None:
-            constraints.append(self.GLOBAL_CONSTRAINT.copy())
-        self.constraints = constraints
 
     @property
     def asn_name(self):
