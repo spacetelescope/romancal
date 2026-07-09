@@ -53,11 +53,6 @@ class _Association(MutableMapping):
     registry = None
     """Registry this rule has been placed in."""
 
-    INVALID_VALUES = None
-    """Attribute values that indicate the
-    attribute is not specified.
-    """
-
     def __init__(
         self,
         version_id=None,

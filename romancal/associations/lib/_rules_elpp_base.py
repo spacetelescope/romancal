@@ -3,22 +3,12 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
 
 from romancal.associations import libpath
 from romancal.associations._association import _Association
 from romancal.associations._exceptions import AssociationNotValidError
 from romancal.associations._registry import RegistryMarker
-from romancal.associations.lib._dms_base import (
-    _EMPTY,
-    IMAGE2_NONSCIENCE_EXP_TYPES,
-    IMAGE2_SCIENCE_EXP_TYPES,
-    SPEC2_SCIENCE_EXP_TYPES,
-    DMSBaseMixin,
-)
-
-if TYPE_CHECKING:
-    pass
+from romancal.associations.lib._dms_base import DMSBaseMixin
 
 __all__ = [
     "ASN_SCHEMA",
@@ -31,32 +21,12 @@ logger.addHandler(logging.NullHandler())
 # The schema that these associations must adhere to.
 ASN_SCHEMA = RegistryMarker.schema(libpath("asn_schema_jw_level3.json"))
 
-# DMS file name templates
-_LEVEL1B_REGEX = r"(?P<path>.+)(?P<type>_uncal)(?P<extension>\..+)"
-_DMS_POOLNAME_REGEX = r"jw(\d{5})_(\d{8}[Tt]\d{6})_pool"
-
-# Product name regex's
-_REGEX_ACID_VALUE = r"(o\d{3}|(c|a)\d{4})"
-
-# Exposures that should have received Level2b processing
-LEVEL2B_EXPTYPES = []
-LEVEL2B_EXPTYPES.extend(IMAGE2_SCIENCE_EXP_TYPES)
-LEVEL2B_EXPTYPES.extend(IMAGE2_NONSCIENCE_EXP_TYPES)
-LEVEL2B_EXPTYPES.extend(SPEC2_SCIENCE_EXP_TYPES)
-
-# Association Candidates that should never make Level3 associations
-INVALID_AC_TYPES = ["background"]
-
 
 class DMS_ELPP_Base(DMSBaseMixin, _Association):
     """Basic class for DMS Level associations."""
 
     # Set the validation schema
     schema_file = ASN_SCHEMA.schema
-
-    # Attribute values that are indicate the
-    # attribute is not specified.
-    INVALID_VALUES = _EMPTY
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
