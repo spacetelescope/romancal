@@ -500,6 +500,7 @@ def _cli(args=None):
         type=str,
         default="json",
         help='Format of the association files. Default: "%(default)s"',
+        deprecated=True,
     )
 
     parser.add_argument(
@@ -531,6 +532,7 @@ def _cli(args=None):
         default="o999",
         help='The association candidate id to use. Default: "%(default)s"',
         dest="acid",
+        deprecated=True,
     )
 
     parser.add_argument(
