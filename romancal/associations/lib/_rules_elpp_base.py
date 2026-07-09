@@ -7,11 +7,9 @@ import logging
 from romancal.associations import libpath
 from romancal.associations._association import _Association
 from romancal.associations._exceptions import AssociationNotValidError
-from romancal.associations._registry import RegistryMarker
 from romancal.associations.lib._dms_base import DMSBaseMixin
 
 __all__ = [
-    "ASN_SCHEMA",
     "DMS_ELPP_Base",
 ]
 # Configure logging
@@ -19,14 +17,14 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 # The schema that these associations must adhere to.
-ASN_SCHEMA = RegistryMarker.schema(libpath("asn_schema_jw_level3.json"))
+ASN_SCHEMA = libpath("asn_schema_jw_level3.json")
 
 
 class DMS_ELPP_Base(DMSBaseMixin, _Association):
     """Basic class for DMS Level associations."""
 
     # Set the validation schema
-    schema_file = ASN_SCHEMA.schema
+    schema_file = ASN_SCHEMA
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
