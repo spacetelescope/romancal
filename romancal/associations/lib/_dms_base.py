@@ -186,24 +186,6 @@ class DMSBaseMixin(ACIDMixin):
         self._asn_name = name
 
     @property
-    def current_product(self):
-        """Return currnet products"""
-        return self.data["products"][-1]
-
-    @property
-    def from_items(self):
-        """The list of items that contributed to the association."""
-        try:
-            items = [
-                member.item
-                for product in self["products"]
-                for member in product["members"]
-            ]
-        except KeyError:
-            items = []
-        return items
-
-    @property
     def member_ids(self):
         """Set of all member ids in all products of this association"""
         member_ids = {
@@ -244,48 +226,6 @@ class DMSBaseMixin(ACIDMixin):
         """
         return get_exposure_type(item, default=default, association=self)
 
-    def is_member(self, new_member):
-        """Check if member is already a member
-
-        Parameters
-        ----------
-        new_member : Member
-            The member to check for
-        """
-        try:
-            current_members = self.current_product["members"]
-        except KeyError:
-            return False
-
-        for member in current_members:
-            if member == new_member:
-                return True
-        return False
-
-    def item_getattr(self, item, attributes):
-        """Return value from any of a list of attributes
-
-        Parameters
-        ----------
-        item : dict
-            item to retrieve from
-
-        attributes : list
-            List of attributes
-
-        Returns
-        -------
-        (attribute, value)
-            Returns the value and the attribute from
-            which the value was taken.
-
-        Raises
-        ------
-        KeyError
-            None of the attributes are found in the dict.
-        """
-        return item_getattr(item, attributes, self)
-
     def new_product(self, product_name=PRODUCT_NAME_DEFAULT):
         """Start a new product"""
         product = {"name": product_name, "members": []}
@@ -293,11 +233,6 @@ class DMSBaseMixin(ACIDMixin):
             self.data["products"].append(product)
         except (AttributeError, KeyError):
             self.data["products"] = [product]
-
-    @classmethod
-    def reset_sequence(cls):
-        """Reset the sequence counter to 1"""
-        cls._sequence = Counter(start=1)
 
 
 # -----------------
@@ -360,11 +295,6 @@ class Constraint_WFSC(Constraint):
 # #########
 # Utilities
 # #########
-def format_list(alist):
-    """Format a list according to DMS naming specs"""
-    return "-".join(alist)
-
-
 def get_exposure_type(item, default="science", association=None):
     """Determine the exposure type of a pool item
 
