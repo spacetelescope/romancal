@@ -131,6 +131,7 @@ def _cli(args=None):
         "--product-name",
         type=str,
         help="The product name when creating a Level 3 association",
+        required=True,
     )
 
     parser.add_argument(
