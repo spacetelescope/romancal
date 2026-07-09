@@ -17,13 +17,6 @@ Roman Associations
 
    roman_conventions.rst
 
-Design
-======
-.. toctree::
-   :maxdepth: 2
-
-   design.rst
-
 Reference
 =========
 .. toctree::
