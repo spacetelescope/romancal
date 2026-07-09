@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from collections import defaultdict
 from typing import TYPE_CHECKING
 
 from romancal.associations import libpath
@@ -11,7 +10,6 @@ from romancal.associations._association import _Association
 from romancal.associations._exceptions import AssociationNotValidError
 from romancal.associations._registry import RegistryMarker
 from romancal.associations.lib._constraint import Constraint, SimpleConstraint
-from romancal.associations.lib._counter import Counter
 from romancal.associations.lib._dms_base import (
     _EMPTY,
     IMAGE2_NONSCIENCE_EXP_TYPES,
@@ -25,7 +23,7 @@ from romancal.associations.lib._member import Member
 from romancal.associations.lib._process_list import ProcessList
 
 if TYPE_CHECKING:
-    from typing import ClassVar
+    pass
 
 __all__ = [
     "ASN_SCHEMA",
@@ -91,9 +89,6 @@ class DMS_ELPP_Base(DMSBaseMixin, _Association):
     # Attribute values that are indicate the
     # attribute is not specified.
     INVALID_VALUES = _EMPTY
-
-    # Make sequences type-dependent
-    _sequences: ClassVar = defaultdict(Counter)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -195,7 +190,6 @@ class DMS_ELPP_Base(DMSBaseMixin, _Association):
                 item, exptype = item
             member = Member({"expname": item, "exptype": exptype}, item=item)
             members.append(member)
-        self.sequence = next(self._sequence)
 
     def __repr__(self):
         try:

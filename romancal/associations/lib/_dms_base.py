@@ -6,7 +6,6 @@ from romancal.associations.lib._constraint import (
     Constraint,
     SimpleConstraint,
 )
-from romancal.associations.lib._counter import Counter
 from romancal.associations.lib._utilities import getattr_from_list
 
 __all__ = ["Constraint_TargetAcq", "Constraint_WFSC", "DMSBaseMixin"]
@@ -112,23 +111,13 @@ _DEGRADED_STATUS_NOTOK = (
 
 
 class DMSBaseMixin(ACIDMixin):
-    """Association attributes common to DMS-based Rules
-
-    Attributes
-    ----------
-    sequence : int
-        The sequence number of the current association
-    """
-
-    # Associations of the same type are sequenced.
-    _sequence = Counter(start=1)
+    """Association attributes common to DMS-based Rules"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self._acid = None
         self._asn_name = None
-        self.sequence = None
         if "degraded_status" not in self.data:
             self.data["degraded_status"] = _DEGRADED_STATUS_OK
         if "program" not in self.data:
@@ -158,7 +147,8 @@ class DMSBaseMixin(ACIDMixin):
         program = self.data["program"]
         version_id = self.version_id
         asn_type = self.data["asn_type"]
-        sequence = self.sequence
+        # sequence was a class attribute incremented several times based on test order
+        sequence = 1
         target = self.target
 
         if version_id:
