@@ -9,7 +9,6 @@ import jsonschema
 from . import __version__
 from ._exceptions import AssociationNotValidError
 from .lib._constraint import Constraint
-from .lib._ioregistry import IORegistry
 
 __all__ = ["_Association"]
 
@@ -73,9 +72,6 @@ class _Association(MutableMapping):
     """Attribute values that indicate the
     attribute is not specified.
     """
-
-    ioregistry = IORegistry()
-    """The association IO registry"""
 
     def __init__(
         self,
@@ -166,17 +162,13 @@ class _Association(MutableMapping):
             raise AssociationNotValidError("Validation failed") from err
         return True
 
-    def dump(self, format="json", **kwargs):
+    def dump(self, format="json"):
         """Serialize the association
 
         Parameters
         ----------
         format : str
             The format to use to dump the association into.
-
-        kwargs : dict
-            List of arguments to pass to the registered
-            routines for the current association type.
 
         Returns
         -------
@@ -194,12 +186,17 @@ class _Association(MutableMapping):
             If the given association does not validate.
         """
         if self.is_valid:
-            return self.ioregistry[format].dump(self, **kwargs)
-
+            asn_filename = self.asn_name
+            if not asn_filename.endswith(".json"):
+                asn_filename = asn_filename + ".json"
+            return (
+                asn_filename,
+                json.dumps(self.data, indent=4, separators=(",", ": ")),
+            )
         raise AssociationNotValidError(f"Association {self} is not valid")
 
     @classmethod
-    def load(cls, serialized, format=None, validate=True, **kwargs):
+    def load(cls, serialized, format=None, validate=True):
         """Marshall a previously serialized association
 
         Parameters
@@ -213,9 +210,6 @@ class _Association(MutableMapping):
         validate : bool
             Validate against the class' defined schema, if any.
 
-        kwargs : dict
-            Other arguments to pass to the `load` method
-
         Returns
         -------
         association : Association
@@ -228,29 +222,22 @@ class _Association(MutableMapping):
 
         Notes
         -----
-        The `serialized` object can be in any format
-        supported by the registered I/O routines. For example, for
-        `json` and `yaml` formats, the input can be either a string or
+        The `serialized` object can be either a string or
         a file object containing the string.
         """
-        if format is None:
-            formats = [
-                format_func for format_name, format_func in cls.ioregistry.items()
-            ]
-        else:
-            formats = [cls.ioregistry[format]]
-
-        for format_func in formats:
-            try:
-                asn = format_func.load(cls, serialized, **kwargs)
-            except AssociationNotValidError:
-                continue
+        try:
+            if isinstance(serialized, str):
+                loader = json.loads
             else:
-                break
-        else:
+                # Presume a file object
+                serialized.seek(0)
+                loader = json.load
+            asn = loader(serialized)
+        except Exception as err:
+            logger.debug(f'Error unserializing: "{err}"')
             raise AssociationNotValidError(
-                f'Cannot translate "{serialized}" to an association'
-            )
+                f'Container is not JSON: "{serialized}"'
+            ) from err
 
         # Validate
         if validate:

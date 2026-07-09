@@ -23,6 +23,6 @@ def libpath(filepath):
 
 
 from ._association import _Association
-from ._association_io import AssociationNotValidError, json
+from ._exceptions import AssociationNotValidError
 from ._load_asn import load_asn
 from ._registry import _AssociationRegistry

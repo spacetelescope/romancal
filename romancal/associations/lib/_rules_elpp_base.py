@@ -168,7 +168,7 @@ class DMS_ELPP_Base(DMSBaseMixin, _Association):
 
     def __repr__(self):
         try:
-            _, json_repr = self.ioregistry["json"].dump(self)
+            _, json_repr = self.dump(self)
         except KeyValueRegistryError:
             return str(self.__class__)
         return json_repr
