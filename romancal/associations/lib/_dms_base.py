@@ -1,6 +1,5 @@
 """Association attributes common to DMS-based Rules"""
 
-from romancal.associations.lib._acid import ACIDMixin
 from romancal.associations.lib._constraint import (
     AttrConstraint,
     Constraint,
@@ -110,26 +109,17 @@ _DEGRADED_STATUS_NOTOK = (
 )
 
 
-class DMSBaseMixin(ACIDMixin):
+class DMSBaseMixin:
     """Association attributes common to DMS-based Rules"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._acid = None
         self._asn_name = None
         if "degraded_status" not in self.data:
             self.data["degraded_status"] = _DEGRADED_STATUS_OK
         if "program" not in self.data:
             self.data["program"] = "noprogram"
-
-    @property
-    def acid(self):
-        """Association ID"""
-        acid = self._acid
-        if self._acid is None:
-            acid = self.acid_from_constraints()
-        return acid
 
     @property
     def asn_name(self):
@@ -149,12 +139,14 @@ class DMSBaseMixin(ACIDMixin):
         asn_type = self.data["asn_type"]
         # sequence was a class attribute incremented several times based on test order
         sequence = 1
+        # acidid was always a3001
+        acidid = "a3001"
         target = self.target
 
         if version_id:
             name = _ASN_NAME_TEMPLATE_STAMP.format(
                 program=program,
-                acid=self.acid.id,
+                acid=acidid,
                 stamp=version_id,
                 type=asn_type,
                 sequence=sequence,
@@ -163,7 +155,7 @@ class DMSBaseMixin(ACIDMixin):
         else:
             name = _ASN_NAME_TEMPLATE.format(
                 program=program,
-                acid=self.acid.id,
+                acid=acidid,
                 type=asn_type,
                 sequence=sequence,
                 target=target,
