@@ -150,7 +150,8 @@ def test_cmdline_change_rules(tmp_path):
         "test",
     ]
     args = args + inlist
-    _cli(args)
+    with pytest.warns(UserWarning, match="never supported"):
+        _cli(args)
     with path.open() as fp:
         asn = load_asn(fp)
     # assert inlist == asn['members']
