@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import importlib.resources
-import logging
 
 import romancal.associations.lib
 from romancal.associations._association import _Association
@@ -12,9 +11,6 @@ from romancal.associations._exceptions import AssociationNotValidError
 __all__ = [
     "DMS_ELPP_Base",
 ]
-# Configure logging
-logger = logging.getLogger(__name__)
-logger.addHandler(logging.NullHandler())
 
 # The schema that these associations must adhere to.
 ASN_SCHEMA = (
