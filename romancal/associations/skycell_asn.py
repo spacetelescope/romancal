@@ -522,6 +522,7 @@ def _cli(args=None):
         type=str,
         default="DMS_ELPP_Base",
         help=('The rule to base the association structure on. Default: "%(default)s"'),
+        deprecated=True,
     )
     parser.add_argument(
         "-i",
