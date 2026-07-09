@@ -199,5 +199,5 @@ def _cli(args=None):
             data_release_id=parsed.data_release_id,
             psf_match_reference_filter=parsed.psf_match_reference_filter,
         )
-        _, serialized = asn.dump(format="json")
+        _, serialized = asn.dump()
         outfile.write(serialized)

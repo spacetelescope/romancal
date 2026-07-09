@@ -50,28 +50,21 @@ class _Association(MutableMapping):
         must adhere to.
     """
 
-    registry = None
-    """Registry this rule has been placed in."""
-
     def __init__(
         self,
         version_id=None,
         target=None,
     ):
-        self.data = {}
-        self.meta = {}
-
         self.version_id = version_id
         self.target = target
-        self.data.update(
-            {
-                "asn_type": "None",
-                "asn_rule": self.asn_rule,
-                "version_id": self.version_id,
-                "code_version": __version__,
-                "target": self.target,
-            }
-        )
+        self.data = {
+            "asn_type": "None",
+            "asn_rule": self.asn_rule,
+            "version_id": self.version_id,
+            "code_version": __version__,
+            "target": self.target,
+        }
+        self.meta = {}
 
     @property
     def asn_name(self):
@@ -132,13 +125,8 @@ class _Association(MutableMapping):
             raise AssociationNotValidError("Validation failed") from err
         return True
 
-    def dump(self, format="json"):
+    def dump(self):
         """Serialize the association
-
-        Parameters
-        ----------
-        format : str
-            The format to use to dump the association into.
 
         Returns
         -------
@@ -166,16 +154,13 @@ class _Association(MutableMapping):
         raise AssociationNotValidError(f"Association {self} is not valid")
 
     @classmethod
-    def load(cls, serialized, format=None, validate=True):
+    def load(cls, serialized, validate=True):
         """Marshall a previously serialized association
 
         Parameters
         ----------
         serialized : object
             The serialized form of the association.
-
-        format : str or None
-            The format to force. If None, try all available.
 
         validate : bool
             Validate against the class' defined schema, if any.

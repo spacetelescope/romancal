@@ -217,7 +217,7 @@ def _process_groups(
                 )
 
                 # Serialize and save the association
-                _, serialized = prompt_product_asn.dump(format="json")
+                _, serialized = prompt_product_asn.dump()
                 _save_association(asn_file_name, serialized)
 
 
