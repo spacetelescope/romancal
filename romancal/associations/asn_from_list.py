@@ -19,6 +19,7 @@ def asn_from_list(items, rule=DMS_ELPP_Base, **kwargs):
         List of items to add.
 
     rule: `Association` rule
+        Deprecated
         The association rule to use.
 
     kwargs: dict
@@ -36,6 +37,9 @@ def asn_from_list(items, rule=DMS_ELPP_Base, **kwargs):
     an association. As such, the association created may not be valid.
     It is presume the user knows what they are doing.
     """
+    if rule != DMS_ELPP_Base:
+        msg = "Only the DMS_ELPP_Base rule is supported. The rule argument is deprecated and will be removed"
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
     asn = rule()
     asn._add_items(items, **kwargs)
 
