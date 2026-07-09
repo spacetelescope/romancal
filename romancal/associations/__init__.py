@@ -10,8 +10,6 @@ For more, see the :ref:`documentation overview <asn-overview>`.
 
 # flake8: noqa: F401
 
-# Take version from the upstream package
-from .. import __version__
 from ._association import _Association
 from ._exceptions import AssociationNotValidError
 from ._load_asn import load_asn

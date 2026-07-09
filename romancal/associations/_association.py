@@ -6,7 +6,8 @@ from collections.abc import MutableMapping
 
 import jsonschema
 
-from . import __version__
+from romancal import __version__
+
 from ._exceptions import AssociationNotValidError
 
 __all__ = ["_Association"]
