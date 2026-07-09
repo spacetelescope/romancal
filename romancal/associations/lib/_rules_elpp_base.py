@@ -98,16 +98,6 @@ class DMS_ELPP_Base(DMSBaseMixin, _Association):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Initialize validity checks
-        self.validity.update(
-            {
-                "has_science": {
-                    "validated": True,
-                    "check": lambda member: member["exptype"] == "science",
-                },
-            }
-        )
-
         # Other presumptions on the association
         if "constraints" not in self.data:
             self.data["constraints"] = "No constraints"
@@ -204,7 +194,6 @@ class DMS_ELPP_Base(DMSBaseMixin, _Association):
             if with_exptype:
                 item, exptype = item
             member = Member({"expname": item, "exptype": exptype}, item=item)
-            self.update_validity(member)
             members.append(member)
         self.sequence = next(self._sequence)
 

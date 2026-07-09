@@ -1,6 +1,5 @@
 """Association attributes common to DMS-based Rules"""
 
-from romancal.associations._exceptions import AssociationNotValidError
 from romancal.associations.lib._acid import ACIDMixin
 from romancal.associations.lib._constraint import (
     AttrConstraint,
@@ -214,21 +213,6 @@ class DMSBaseMixin(ACIDMixin):
         }
         return member_ids
 
-    @property
-    def validity(self):
-        """Keeper of the validity tests"""
-        try:
-            validity = self._validity
-        except AttributeError:
-            self._validity = {}
-            validity = self._validity
-        return validity
-
-    @validity.setter
-    def validity(self, item):
-        """Set validity dict"""
-        self._validity = item
-
     def get_exposure_type(self, item, default="science"):
         """Determine the exposure type of a pool item
 
@@ -310,31 +294,10 @@ class DMSBaseMixin(ACIDMixin):
         except (AttributeError, KeyError):
             self.data["products"] = [product]
 
-    def update_validity(self, entry):
-        """Check/Update the validity of the association"""
-        for test in self.validity.values():
-            if not test["validated"]:
-                test["validated"] = test["check"](entry)
-
     @classmethod
     def reset_sequence(cls):
         """Reset the sequence counter to 1"""
         cls._sequence = Counter(start=1)
-
-    @classmethod
-    def validate(cls, asn):
-        """Validate the association generated"""
-        super().validate(asn)
-
-        if isinstance(asn, DMSBaseMixin):
-            result = False
-            try:
-                result = all(test["validated"] for test in asn.validity.values())
-            except (AttributeError, KeyError) as err:
-                raise AssociationNotValidError("Validation failed") from err
-            if not result:
-                raise AssociationNotValidError("Validation failed validity tests.")
-        return True
 
 
 # -----------------
