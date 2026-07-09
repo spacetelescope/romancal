@@ -44,7 +44,7 @@ def input_value(request, tmp_path):
             model.meta.filename = "foo.asdf"
             model.save(tmp_path / model.meta.filename)
             asn = asn_from_list([model.meta.filename], product_name="foo_out")
-            base_fn, contents = asn.dump(format="json")
+            base_fn, contents = asn.dump()
             asn_filename = tmp_path / base_fn
             with open(asn_filename, "w") as f:
                 f.write(contents)
@@ -115,7 +115,7 @@ def test_on_disk(function_jail, fake_science_raw, on_disk):
     fake_science_raw.meta.filename = "foo.asdf"
     fake_science_raw.save(fake_science_raw.meta.filename)
     asn = asn_from_list([fake_science_raw.meta.filename], product_name="foo_out")
-    base_fn, contents = asn.dump(format="json")
+    base_fn, contents = asn.dump()
     asn_filename = base_fn
     with open(asn_filename, "w") as f:
         f.write(contents)
