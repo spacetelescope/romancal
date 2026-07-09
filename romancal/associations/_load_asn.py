@@ -1,6 +1,6 @@
 """Load an Association from a file or object"""
 
-from ._association import _Association
+from romancal.associations._association import _Association
 
 
 def load_asn(
