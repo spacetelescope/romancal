@@ -497,7 +497,7 @@ def libraries_si_nan(mosaic_si_model):
 
         # NaN on grid diagonal
         if si_type != "NoNan":
-            y_pos, x_pos = zip(*NANPOINTS)
+            y_pos, x_pos = zip(*NANPOINTS, strict=True)
             model1.data[y_pos, x_pos] = np.nan
 
         # NaN in a quadrant
@@ -522,15 +522,15 @@ def test_multiband_source_injection_nan_catalog(
     libmods = libraries_si_nan
 
     # Ensure lirary models have NaNs in the proper locations
-    y_pos, x_pos = zip(*NANPOINTS)
+    y_pos, x_pos = zip(*NANPOINTS, strict=True)
 
     with libmods["Grid"]:
         for si_model in libmods["Grid"]:
             nanmask = np.isnan(si_model.data)
             libmods["Grid"].shelve(si_model, modify=False)
             assert np.all(
-                list(zip(y_pos, x_pos))
-                == list(zip(np.where(nanmask)[0], np.where(nanmask)[1]))
+                list(zip(y_pos, x_pos, strict=True))
+                == list(zip(np.where(nanmask)[0], np.where(nanmask)[1], strict=True))
             )
 
     with libmods["Block"]:
@@ -538,8 +538,8 @@ def test_multiband_source_injection_nan_catalog(
             nanmask = np.isnan(si_model.data)
             libmods["Block"].shelve(si_model, modify=False)
             assert np.isin(
-                list(zip(y_pos, x_pos)),
-                list(zip(np.where(nanmask)[0], np.where(nanmask)[1])),
+                list(zip(y_pos, x_pos, strict=True)),
+                list(zip(np.where(nanmask)[0], np.where(nanmask)[1], strict=True))
             ).all()
 
     res_cat = {}
