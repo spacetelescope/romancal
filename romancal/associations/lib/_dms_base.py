@@ -1,13 +1,8 @@
 """Association attributes common to DMS-based Rules"""
 
-from romancal.associations.lib._constraint import (
-    AttrConstraint,
-    Constraint,
-    SimpleConstraint,
-)
 from romancal.associations.lib._utilities import getattr_from_list
 
-__all__ = ["Constraint_TargetAcq", "Constraint_WFSC", "DMSBaseMixin"]
+__all__ = ["DMSBaseMixin"]
 
 # Default product name
 PRODUCT_NAME_DEFAULT = "undefined"
@@ -215,63 +210,6 @@ class DMSBaseMixin:
             self.data["products"].append(product)
         except (AttributeError, KeyError):
             self.data["products"] = [product]
-
-
-# -----------------
-# Basic constraints
-# -----------------
-class DMSAttrConstraint(AttrConstraint):
-    """DMS-focused attribute constraint
-
-    Forces definition of invalid values
-    """
-
-    def __init__(self, **kwargs):
-        if kwargs.get("invalid_values", None) is None:
-            kwargs["invalid_values"] = _EMPTY
-
-        super().__init__(**kwargs)
-
-
-class Constraint_TargetAcq(SimpleConstraint):
-    """Select on target acquisition exposures
-
-    Parameters
-    ----------
-    association:  ~romancal.associations.Association
-        If specified, use the `get_exposure_type` method
-        of the association rather than the utility version.
-    """
-
-    def __init__(self, association=None):
-        if association is None:
-            _get_exposure_type = get_exposure_type
-        else:
-            _get_exposure_type = association.get_exposure_type
-
-        super().__init__(
-            name="target_acq", value="target_acquisition", sources=_get_exposure_type
-        )
-
-
-class Constraint_WFSC(Constraint):
-    """Match on Wave Front Sensing and Control Observations"""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(
-            [
-                Constraint(
-                    [
-                        DMSAttrConstraint(
-                            name="wfsc",
-                            sources=["visitype"],
-                            value=".+wfsc.+",
-                            force_unique=True,
-                        )
-                    ]
-                )
-            ]
-        )
 
 
 # #########
