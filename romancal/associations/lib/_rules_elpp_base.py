@@ -22,12 +22,6 @@ if TYPE_CHECKING:
 
 __all__ = [
     "ASN_SCHEMA",
-    "AsnMixin_Lv2FOV",
-    "AsnMixin_Lv2GBTDSfull",
-    "AsnMixin_Lv2GBTDSpass",
-    "AsnMixin_Lv2Image",
-    "AsnMixin_Science",
-    "AsnMixin_Spectrum",
     "DMS_ELPP_Base",
 ]
 # Configure logging
@@ -140,35 +134,3 @@ class DMS_ELPP_Base(DMSBaseMixin, _Association):
                 item, exptype = item
             member = {"expname": item, "exptype": exptype}
             members.append(member)
-
-
-# -----------
-# Base Mixins
-# -----------
-
-
-class AsnMixin_Science(DMS_ELPP_Base):
-    """Basic science constraints"""
-
-
-class AsnMixin_Spectrum(AsnMixin_Science):
-    """All things that are spectrum"""
-
-
-# ---------------------------------------------
-# Mixins to define the broad category of rules.
-# ---------------------------------------------
-class AsnMixin_Lv2FOV:
-    """Level 2 Image association base"""
-
-
-class AsnMixin_Lv2Image:
-    """Level 2 Image association base"""
-
-
-class AsnMixin_Lv2GBTDSpass:
-    """Level 2 GBTDS association base"""
-
-
-class AsnMixin_Lv2GBTDSfull:
-    """Level 2 GBTDS association base"""
