@@ -208,6 +208,7 @@ class ExposurePipeline(RomanPipeline):
         )
 
     def save_model(self, model, **kwargs):
+        suffix = kwargs.get("suffix", None)
         # depending on model set suffix and ext
         if isinstance(
             model,
@@ -217,12 +218,18 @@ class ExposurePipeline(RomanPipeline):
             ),
         ):
             kwargs["ext"] = "parquet"
-            kwargs["suffix"] = kwargs.get("suffix", "cat")
+            if suffix is None:
+                suffix = "cat"
         elif isinstance(model, rdm.SegmentationMapModel):
+            if suffix is None:
+                suffix = "segm"
             kwargs["suffix"] = kwargs.get("suffix", "segm")
         elif isinstance(model, rdm.ImageModel):
             save_wfiwcs(self, model, force=True)
-            kwargs["suffix"] = kwargs.get("suffix", self.suffix)
+            if suffix is None:
+                suffix = self.suffix
+
+        kwargs["suffix"] = suffix
 
         # strip the index since these all have different extensions
         kwargs.pop("idx", None)

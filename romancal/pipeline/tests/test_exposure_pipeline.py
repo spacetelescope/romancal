@@ -28,29 +28,27 @@ def fake_science_raw():
 
 
 @pytest.fixture(scope="function")
-def input_value(request, tmp_path):
-    model = rdm.RampModel.create_fake_data(shape=(2, 20, 20))
-    model.meta.exposure.start_time = Time(
-        "2024-01-03T00:00:00.0", format="isot", scale="utc"
-    )
+def input_value(request, tmp_path, fake_science_raw):
     match request.param:
         case "datamodel_fn":
-            fn = tmp_path / "model.asdf"
-            model.save(fn)
+            fn = tmp_path / "test_uncal.asdf"
+            fake_science_raw.save(fn)
             return fn
         case "datamodel":
-            return model
+            return fake_science_raw
         case "asn_fn":
-            model.meta.filename = "foo.asdf"
-            model.save(tmp_path / model.meta.filename)
-            asn = asn_from_list([model.meta.filename], product_name="foo_out")
+            fake_science_raw.meta.filename = "test_uncal.asdf"
+            fake_science_raw.save(tmp_path / fake_science_raw.meta.filename)
+            asn = asn_from_list(
+                [fake_science_raw.meta.filename], product_name="foo_out"
+            )
             base_fn, contents = asn.dump()
             asn_filename = tmp_path / base_fn
             with open(asn_filename, "w") as f:
                 f.write(contents)
             return asn_filename
         case "library":
-            return ModelLibrary([model])
+            return ModelLibrary([fake_science_raw])
         case value:
             raise Exception(f"Invalid parametrization: {value}")
 
@@ -73,14 +71,21 @@ def test_input_to_output(function_jail, input_value, expected_output_type):
     pipeline = ExposurePipeline()
     # don't fetch references
     pipeline.prefetch_references = False
-    # skip all steps
-    [setattr(getattr(pipeline, k), "skip", True) for k in pipeline.step_defs]
+    # skip all steps except dq_init to allow the input ScienceRawModel to be converted to a RampModel
+    [
+        setattr(getattr(pipeline, k), "skip", True)
+        for k in pipeline.step_defs
+        if k != "dq_init"
+    ]
     output_value, _, _ = pipeline.run(input_value)
     assert isinstance(output_value, expected_output_type)
 
 
+@pytest.mark.parametrize(
+    "input_value", ["datamodel", "datamodel_fn", "asn_fn", "library"], indirect=True
+)
 @pytest.mark.parametrize("save_results", [True, False])
-def test_elp_save_results(function_jail, fake_science_raw, save_results, monkeypatch):
+def test_elp_save_results(function_jail, input_value, save_results, monkeypatch):
     """
     Test that the elp respects save_results.
     """
@@ -93,10 +98,11 @@ def test_elp_save_results(function_jail, fake_science_raw, save_results, monkeyp
 
     # don't try to actually run tweakreg as it will fail for an empty model
     monkeypatch.setattr(pipeline.tweakreg, "run", lambda init: init)
+    allowed_files = set(p.name for p in function_jail.iterdir())
 
-    pipeline.run(fake_science_raw)
+    pipeline.run(input_value)
     # check that the current directory doesn't contain extra files
-    assert set(p.name for p in function_jail.iterdir()) == {"output"}
+    assert len(set(p.name for p in function_jail.iterdir()) - allowed_files) == 0
 
     output_files = set(p.name for p in output_path.iterdir())
     if save_results:
