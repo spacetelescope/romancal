@@ -8,11 +8,11 @@ from astropy.time import Time
 from gwcs import WCS
 from gwcs import coordinate_frames as cf
 from roman_datamodels import datamodels
+from stcal.alignment.util import sregion_to_footprint
 from stcal.resample.utils import compute_mean_pixel_area
 
 from romancal.assign_wcs.assign_wcs import add_s_region
 from romancal.datamodels import ModelLibrary
-from romancal.lib.tests.helpers import word_precision_check
 from romancal.resample import ResampleStep
 from romancal.resample.resample import make_output_wcs
 
@@ -608,9 +608,11 @@ def test_l3_wcsinfo(multiple_exposures):
     output_model = ResampleStep().run(input_models)
 
     assert output_model.meta.wcsinfo.projection == expected["projection"]
-    assert word_precision_check(
-        output_model.meta.wcsinfo.s_region, expected["s_region"]
-    )
+    output_s_region_str = output_model.meta.wcsinfo.s_region
+    assert output_s_region_str.startswith("POLYGON ICRS")
+    output_footprint = sregion_to_footprint(output_s_region_str)
+    expected_footprint = sregion_to_footprint(expected["s_region"])
+    assert np.allclose(output_footprint, expected_footprint, 0.001)
     assert output_model.meta.data_release_id == expected["data_release_id"]
     for key in expected.keys():
         if key not in ["projection", "s_region", "data_release_id"]:
