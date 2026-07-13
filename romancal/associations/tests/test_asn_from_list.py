@@ -2,7 +2,7 @@
 
 import pytest
 
-from romancal.associations import _Association, _AssociationRegistry, load_asn
+from romancal.associations import _Association, load_asn
 from romancal.associations._exceptions import AssociationNotValidError
 from romancal.associations.asn_from_list import _cli, asn_from_list
 
@@ -10,7 +10,8 @@ from romancal.associations.asn_from_list import _cli, asn_from_list
 def test_base_association():
     """Create the simplest of associations"""
     items = ["a", "b", "c"]
-    asn = asn_from_list(items, rule=_Association)
+    with pytest.warns(DeprecationWarning, match="rule argument is deprecated"):
+        asn = asn_from_list(items, rule=_Association)
     assert asn["asn_rule"] == "_Association"
     assert asn["asn_type"] == "None"
     assert asn["members"] == items
@@ -19,9 +20,10 @@ def test_base_association():
 def test_base_roundtrip():
     """Write/read created base association"""
     items = ["a", "b", "c"]
-    asn = asn_from_list(items, rule=_Association)
+    with pytest.warns(DeprecationWarning, match="rule argument is deprecated"):
+        asn = asn_from_list(items, rule=_Association)
     _, serialized = asn.dump()
-    reloaded = load_asn(serialized, registry=None)
+    reloaded = load_asn(serialized)
     assert asn["asn_rule"] == reloaded["asn_rule"]
     assert asn["asn_type"] == reloaded["asn_type"]
     assert asn["members"] == reloaded["members"]
@@ -33,13 +35,14 @@ def test_association_target():
     target_name = "270p65x48y69"
     product_name = "l3_target"
     rule_name = "_Association"
-    asn = asn_from_list(
-        items,
-        rule=_Association,
-        product_name=product_name,
-        target=target_name,
-        version_id="c55",
-    )
+    with pytest.warns(DeprecationWarning, match="rule argument is deprecated"):
+        asn = asn_from_list(
+            items,
+            rule=_Association,
+            product_name=product_name,
+            target=target_name,
+            version_id="c55",
+        )
     assert asn["asn_rule"] == rule_name
     assert asn["asn_type"] == "None"
     assert asn["members"] == items
@@ -127,7 +130,7 @@ def test_cmdline_success(tmp_path):
     args = args + inlist
     return_code = _cli(args)
     with path.open() as fp:
-        asn = load_asn(fp, format="json")
+        asn = load_asn(fp)
     assert len(asn["products"]) == 1
     assert asn["products"][0]["name"] == product_name
     members = asn["products"][0]["members"]
@@ -150,9 +153,10 @@ def test_cmdline_change_rules(tmp_path):
         "test",
     ]
     args = args + inlist
-    _cli(args)
+    with pytest.warns(UserWarning, match="never supported"):
+        _cli(args)
     with path.open() as fp:
-        asn = load_asn(fp, registry=_AssociationRegistry(include_bases=True))
+        asn = load_asn(fp)
     # assert inlist == asn['members']
     assert inlist[0] == asn["products"][0]["members"][0]["expname"]
     assert inlist[1] == asn["products"][0]["members"][1]["expname"]

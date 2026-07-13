@@ -10,7 +10,8 @@ from romancal.associations.asn_from_list import asn_from_list
 def test_base_association():
     """Create the simplest of associations"""
     items = ["a", "b", "c"]
-    asn = asn_from_list(items, rule=_Association)
+    with pytest.warns(DeprecationWarning, match="rule argument is deprecated"):
+        asn = asn_from_list(items, rule=_Association)
     assert asn["asn_rule"] == "_Association"
     assert asn["asn_type"] == "None"
     assert asn["members"] == items
@@ -19,9 +20,10 @@ def test_base_association():
 def test_base_roundtrip():
     """Write/read created base association"""
     items = ["a", "b", "c"]
-    asn = asn_from_list(items, rule=_Association)
+    with pytest.warns(DeprecationWarning, match="rule argument is deprecated"):
+        asn = asn_from_list(items, rule=_Association)
     _, serialized = asn.dump()
-    reloaded = load_asn(serialized, registry=None)
+    reloaded = load_asn(serialized)
     assert asn["asn_rule"] == reloaded["asn_rule"]
     assert asn["asn_type"] == reloaded["asn_type"]
     assert asn["members"] == reloaded["members"]

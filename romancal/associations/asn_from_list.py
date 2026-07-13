@@ -2,10 +2,10 @@
 
 import argparse
 import sys
+import warnings
 from collections import OrderedDict
 
-from ._registry import _AssociationRegistry
-from .lib._rules_elpp_base import DMS_ELPP_Base
+from romancal.associations.lib._rules_elpp_base import DMS_ELPP_Base
 
 __all__ = ["asn_from_list"]
 
@@ -19,6 +19,7 @@ def asn_from_list(items, rule=DMS_ELPP_Base, **kwargs):
         List of items to add.
 
     rule: `Association` rule
+        Deprecated
         The association rule to use.
 
     kwargs: dict
@@ -36,6 +37,9 @@ def asn_from_list(items, rule=DMS_ELPP_Base, **kwargs):
     an association. As such, the association created may not be valid.
     It is presume the user knows what they are doing.
     """
+    if rule != DMS_ELPP_Base:
+        msg = "Only the DMS_ELPP_Base rule is supported. The rule argument is deprecated and will be removed"
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
     asn = rule()
     asn._add_items(items, **kwargs)
 
@@ -131,6 +135,7 @@ def _cli(args=None):
         "--product-name",
         type=str,
         help="The product name when creating a Level 3 association",
+        required=True,
     )
 
     parser.add_argument(
@@ -190,18 +195,26 @@ def _cli(args=None):
     parsed = parser.parse_args(args=args)
     print("Parsed args:", parsed)
 
-    # Get the rule
-    rule = _AssociationRegistry(parsed.ruledefs, include_bases=True)[parsed.rule]
+    if parsed.rule != "DMS_ELPP_Base":
+        msg = f"Use of a different rule ({parsed.rule}) was never supported and is deprecated."
+        warnings.warn(msg, UserWarning, stacklevel=2)
+
+    if parsed.ruledefs:
+        msg = "ruledefs was never supported and is deprecated."
+        warnings.warn(msg, UserWarning, stacklevel=2)
+
+    if parsed.acid != "o999":
+        msg = "associate candidate id was never supported and is deprecated."
+        warnings.warn(msg, UserWarning, stacklevel=2)
 
     with open(parsed.output_file, "w") as outfile:
         asn = asn_from_list(
             parsed.filelist,
-            rule=rule,
             product_name=parsed.product_name,
             acid=parsed.acid,
             target=parsed.target,
             data_release_id=parsed.data_release_id,
             psf_match_reference_filter=parsed.psf_match_reference_filter,
         )
-        _, serialized = asn.dump(format="json")
+        _, serialized = asn.dump()
         outfile.write(serialized)
