@@ -65,7 +65,7 @@ body:
       value: |
         - [ ] set the corresponding build milestone for this issue (create it if it doesn't exist)
         - [ ] add a comment pinging @stscijgbot-rstdms to track this as an RCAL ticket on Jira
-        
+
         #### freeze and tag code
         - [ ] Release new versions of STScI-developed dependencies (`stcal`, `stpipe`, etc.) if they introduce new bugfixes or features required by the pipeline.
         - [ ] Ensure pipeline dependencies in `pyproject.toml` are **NOT** floating on `main` (e.g. `stcal@git+https://github.com/spacetelescope/stcal.git@main`), and instead use PyPI releases (e.g. `stcal>=1.19,<2`) instead (or, at the very least, point to a specific commit hash). The lower pin does **not necessarily need to be the latest release**, but rather is based on features / fixes **required by the pipeline code**.
