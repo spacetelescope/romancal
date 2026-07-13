@@ -70,6 +70,13 @@ body:
         - [ ] Release new versions of STScI-developed dependencies (`stcal`, `stpipe`, etc.) if they introduce new bugfixes or features required by the pipeline.
         - [ ] Ensure pipeline dependencies in `pyproject.toml` are **NOT** floating on `main` (e.g. `stcal@git+https://github.com/spacetelescope/stcal.git@main`), and instead use PyPI releases (e.g. `stcal>=1.19,<2`) instead (or, at the very least, point to a specific commit hash). The lower pin does **not necessarily need to be the latest release**, but rather is based on features / fixes **required by the pipeline code**.
         - [ ] add a new line to [the `DMS Operational Build Versions` table in `README.md`](https://github.com/spacetelescope/romancal#dms-operational-build-versions)
+        - [ ] generate new MOC and `roman-data-workshop` files:
+            - run https://github.com/spacetelescope/RegressionTests/actions/workflows/romancal_regtest_gen.yml with:
+              - `artifactory_truth_directory` set to `<BUILDNAME>`
+              - `romanisim_script` set to `romancal_make_l1_data_files.sh`
+              - `romancal_script` set to `make_moc_rdw_files.sh`
+        - [ ] notify MOC of new files
+        - [ ] update https://github.com/spacetelescope/roman-data-workshop to point to newly-generated `roman-data-workshop` files
         - [ ] Determine the new `<VERSION>`:
             - if breaking changes are present (`changes/*.breaking.rst`) increment the major version (`1.1.3` -> `2.0.0`),
             - else if new features are present increment the minor version (`1.1.3` -> `1.2.0`),
