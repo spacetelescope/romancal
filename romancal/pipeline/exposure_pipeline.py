@@ -120,7 +120,7 @@ class ExposurePipeline(RomanPipeline):
 
                 if not self.tweakreg.skip and catalog is not None:
                     # attach the catalog to the model so tweakreg can see it
-                    if "source_catalog" not in model.meta:
+                    if "source_catalog" not in result.meta:
                         result.meta["source_catalog"] = {}
                     result.meta.source_catalog.tweakreg_catalog = catalog.source_catalog
 
