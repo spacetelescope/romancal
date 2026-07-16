@@ -387,8 +387,8 @@ showcontent = true
 # other changes
 
 [[tool.towncrier.type]]
-directory = "general"
-name = "General"
+directory = "other"
+name = "Other Changes"
 showcontent = true
 
 [[tool.towncrier.type]]
