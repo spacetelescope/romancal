@@ -361,6 +361,35 @@ def test_source_catalog_populates_dust_ebv(model_fixture, request, function_jail
     assert cat["dust_ebv"].dtype == np.float32
 
 
+def test_nested_metadata_propagated_to_catalog_and_segmentation(
+    image_model, function_jail
+):
+    """
+    Nested (list-of-list) metadata such as ``meta.exposure.read_pattern``
+    should be propagated to both the source catalog and segmentation map
+    models.  Regression test for the value being silently emptied while the
+    scalar metadata around it copied fine.
+    """
+    read_pattern = [[1], [2, 3], [4, 5, 6], [7, 8, 9, 10]]
+    image_model.meta.exposure.read_pattern = read_pattern
+
+    result_catalog, result_segmentation_map = SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=5,
+        npixels=10,
+        save_results=False,
+        fit_psf=False,
+    )
+
+    assert isinstance(result_catalog, ImageSourceCatalogModel)
+    assert isinstance(result_segmentation_map, SegmentationMapModel)
+
+    for result in (result_catalog, result_segmentation_map):
+        assert [list(r) for r in result.meta.exposure.read_pattern] == read_pattern
+
+
 def test_l2_input_model_unchanged(image_model, function_jail):
     """
     Test that the input model data and error arrays are unchanged after
