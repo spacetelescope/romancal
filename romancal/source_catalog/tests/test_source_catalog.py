@@ -367,8 +367,7 @@ def test_nested_metadata_propagated_to_catalog_and_segmentation(
     """
     Nested (list-of-list) metadata such as ``meta.exposure.read_pattern``
     should be propagated to both the source catalog and segmentation map
-    models.  Regression test for the value being silently emptied while the
-    scalar metadata around it copied fine.
+    models.
     """
     read_pattern = [[1], [2, 3], [4, 5, 6], [7, 8, 9, 10]]
     image_model.meta.exposure.read_pattern = read_pattern
