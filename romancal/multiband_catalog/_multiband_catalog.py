@@ -547,7 +547,7 @@ def make_source_injected_library(library, seed=None):
             # This only needs to be done once per library
             if si_cen is None:
                 # Create source grid points
-                si_x_pos, si_y_pos = make_source_grid(
+                si_y_pos, si_x_pos = make_source_grid(
                     si_model,
                     yxmax=si_model.data.shape,
                     yxoffset=(50, 50),
@@ -587,9 +587,9 @@ def make_source_injected_library(library, seed=None):
             )
             nanmask = np.isnan(si_model.data[y_pos_idx, x_pos_idx])
 
-            # Temporarily set NaNs to zero for injections
-            si_model.data[y_pos_idx[nanmask], x_pos_idx[nanmask]] = 0
-            si_model.var_poisson[y_pos_idx[nanmask], x_pos_idx[nanmask]] = 0
+            # Temporarily set NaNs to medians for injections
+            si_model.data[y_pos_idx[nanmask], x_pos_idx[nanmask]] = np.nanmedian(si_model.data)
+            si_model.var_poisson[y_pos_idx[nanmask], x_pos_idx[nanmask]] = np.nanmedian(si_model.var_poisson)
 
             # Inject sources into the detection image
             si_model = inject_sources(
@@ -599,7 +599,7 @@ def make_source_injected_library(library, seed=None):
             )
 
             # Reinstate NaNs after injections
-            # Intentionally leave var_poisson at zero for NaN data
+            # Intentionally leave var_poisson at median for NaN data
             si_model.data[y_pos_idx[nanmask], x_pos_idx[nanmask]] = np.nan
 
             # Add model to list for new library
