@@ -30,7 +30,7 @@ def run_source_catalog(rtdata_module, request, resource_tracker):
 
     rtdata.get_data(f"WFI/image/{inputfn}")
     rtdata.input = inputfn
-    rtdata.get_truth(f"truth/WFI/image/{outputfn}")
+    rtdata.get_truth(f"truth/test_source_catalog/{outputfn}")
 
     args = [
         "romancal.step.SourceCatalogStep",
