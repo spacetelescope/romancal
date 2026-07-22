@@ -14,8 +14,20 @@ from roman_datamodels.datamodels import MosaicModel, MultibandSegmentationMapMod
 
 from romancal.datamodels import ModelLibrary
 from romancal.multiband_catalog import MultibandCatalogStep
-from romancal.multiband_catalog._multiband_catalog import match_recovered_sources
+from romancal.multiband_catalog._multiband_catalog import (
+    make_source_grid,
+    match_recovered_sources,
+)
 from romancal.skycell.tests.test_skycell_match import mk_gwcs
+
+SI_SCALE = 5 / 4
+RNG_SEED = 42
+EXPTIME = 300
+MEANFLUX = 0.2
+RA_REF = 270.0 * u.deg
+DEC_REF = 66.0 * u.deg
+ROLL_REF = 0.0 * u.deg
+SHAPE = (500, 500)
 
 
 def make_test_image():
@@ -47,6 +59,51 @@ def make_test_image():
     return data, err
 
 
+def make_si_test_image():
+    flux_scale = MEANFLUX
+    scale = SI_SCALE
+
+    g1 = Gaussian2D(flux_scale * 121.0, scale * 11, scale * 12, 1.5, 1.5)
+    g2 = Gaussian2D(flux_scale * 70, scale * 65, scale * 18, 9.2, 4.5)
+    g3 = Gaussian2D(
+        flux_scale * 111.0, scale * 41, scale * 43, 8.0, 3.0, theta=30 * u.deg
+    )
+    g4 = Gaussian2D(flux_scale * 81.0, scale * 17, scale * 53, 4, 2, theta=102 * u.deg)
+    g5 = Gaussian2D(
+        flux_scale * 107.0, scale * 65, scale * 71, 12, 2, theta=142 * u.deg
+    )
+    g6 = Gaussian2D(flux_scale * 50, scale * 20, scale * 80, 2.1, 2.1)
+    g7 = Gaussian2D(flux_scale * 97.0, scale * 85, scale * 88, 4, 2, theta=-30 * u.deg)
+
+    yy, xx = np.mgrid[0:125, 0:125]
+    smalldata = np.zeros(shape=(len(yy), len(xx)))
+    smalldata = (
+        g1(xx, yy)
+        + g2(xx, yy)
+        + g3(xx, yy)
+        + g4(xx, yy)
+        + g5(xx, yy)
+        + g6(xx, yy)
+        + g7(xx, yy)
+    ).value.astype("float32")
+
+    # Rotate pattern to make the test image a little less regular
+    data = np.tile(smalldata, (4, 1))
+    data = np.append(data, np.tile(np.rot90(smalldata), (4, 1)), axis=1)
+    data = np.append(data, np.tile(np.rot90(smalldata, k=2), (4, 1)), axis=1)
+    data = np.append(data, np.tile(np.rot90(smalldata, k=-1), (4, 1)), axis=1)
+
+    assert data.shape == (500, 500)
+
+    rng = np.random.default_rng(seed=RNG_SEED)
+    noise_scale = MEANFLUX / EXPTIME
+    noise = rng.normal(loc=MEANFLUX, scale=noise_scale, size=data.shape)
+    data += noise
+    err = np.sqrt(np.ones_like(data))
+
+    return data, err
+
+
 @pytest.fixture
 def mosaic_model(shape=(101, 101)):
     model = MosaicModel.create_fake_data(shape=shape)
@@ -62,7 +119,7 @@ def mosaic_model(shape=(101, 101)):
     model.meta.wcsinfo.ra_ref = 270.0  # degrees
     model.meta.wcsinfo.dec_ref = 66.0  # degrees
     model.meta.wcsinfo.roll_ref = 0.0  # degrees
-    model.meta.coadd_info.exposure_time = 300  # seconds
+    model.meta.coadd_info.exposure_time = EXPTIME  # seconds
 
     model.meta.resample.pixfrac = 0.5
     model.meta.data_release_id = "r1"
@@ -315,41 +372,7 @@ def test_multiband_catalog_some_invalid_inputs(
     assert np.all(np.isnan(cat["segment_f184_flux_err"]))
 
 
-def make_si_test_image():
-    g1 = Gaussian2D(60.5, 11, 12, 1.5, 1.5)
-    g2 = Gaussian2D(35, 65, 18, 9.2, 4.5)
-    g3 = Gaussian2D(55.5, 41, 43, 8.0, 3.0, theta=30 * u.deg)
-    g4 = Gaussian2D(40.5, 17, 53, 4, 2, theta=102 * u.deg)
-    g5 = Gaussian2D(53.5, 65, 71, 12, 2, theta=142 * u.deg)
-    g6 = Gaussian2D(25, 20, 80, 2.1, 2.1)
-    g7 = Gaussian2D(48.5, 85, 88, 4, 2, theta=-30 * u.deg)
-
-    yy, xx = np.mgrid[0:100, 0:100]
-    smalldata = np.zeros(shape=(len(yy), len(xx)))
-    smalldata = (
-        g1(xx, yy)
-        + g2(xx, yy)
-        + g3(xx, yy)
-        + g4(xx, yy)
-        + g5(xx, yy)
-        + g6(xx, yy)
-        + g7(xx, yy)
-    ).value.astype("float32")
-
-    data = np.zeros(shape=(500, 500))
-    data = np.tile(smalldata, (5, 5))
-
-    rng = np.random.default_rng(seed=42)
-    noise_scale = 0.01 * 0.2
-    noise = rng.normal(0, noise_scale, size=data.shape)
-    data += noise
-    err = np.zeros_like(data) + noise_scale
-
-    return data, err
-
-
-@pytest.fixture
-def mosaic_si_model(shape=(500, 500)):
+def mosaic_si_nan_model(shape=(500, 500)):
     model = MosaicModel.create_fake_data(shape=shape)
     data, err = make_si_test_image()
     model.data = data
@@ -364,7 +387,7 @@ def mosaic_si_model(shape=(500, 500)):
     model.meta.wcsinfo.ra_ref = 270.0  # degrees
     model.meta.wcsinfo.dec_ref = 66.0  # degrees
     model.meta.wcsinfo.roll_ref = 0.0  # degrees
-    model.meta.coadd_info.exposure_time = 1  # seconds
+    model.meta.coadd_info.exposure_time = EXPTIME  # seconds
 
     model.meta.resample.pixfrac = 0.5
     model.meta.data_release_id = "r1"
@@ -382,18 +405,65 @@ def mosaic_si_model(shape=(500, 500)):
 
 
 @pytest.fixture
-def library_model2(mosaic_si_model):
-    si_model2 = deepcopy(mosaic_si_model)
+def library_model2():
+    si_model1 = mosaic_si_nan_model()
+    si_model2 = deepcopy(si_model1)
     si_model2.meta.instrument.optical_element = "F158"
-    return ModelLibrary([mosaic_si_model, si_model2])
+    return ModelLibrary([si_model1, si_model2])
+
+
+@pytest.fixture
+def libraries_si_nan():
+    libs = {}
+    nan_y_pos = nan_x_pos = None
+
+    model_base = mosaic_si_nan_model()
+
+    for si_type in ["NoNan", "Grid", "Block"]:
+        model1 = deepcopy(model_base)
+        model1.meta.instrument.optical_element = "F158"
+
+        if nan_y_pos is None:
+            nan_y_pos, nan_x_pos = make_source_grid(
+                model1,
+                yxmax=model1.data.shape,
+                yxoffset=(50, 50),
+                yxgrid=(20, 20),
+                seed=RNG_SEED,
+            )
+            nan_y_pos, nan_x_pos = (
+                np.round(nan_y_pos).astype(int),
+                np.round(nan_x_pos).astype(int),
+            )
+
+        # NaN in a quadrant
+        if si_type == "Block":
+            model1.data[250:, 250:] = np.nan
+
+        # NaN on grid diagonal
+        if si_type != "NoNan":
+            model1.data[nan_y_pos[0::21], nan_x_pos[0::21]] = np.nan
+            nanmask = np.isnan(model1.data)
+
+        nanmask = np.isnan(model1.data)
+
+        # Second model
+        model2 = deepcopy(model1)
+        model2.meta.instrument.optical_element = "F184"
+
+        nanmask = np.isnan(model2.data)
+
+        libs[si_type] = ModelLibrary([model1, model2])
+
+    return libs
 
 
 @pytest.mark.parametrize("fit_psf", (True, False))
 @pytest.mark.parametrize(
     "snr_threshold, npixels, save_results",
     (
-        (3, 10, False),
-        (2, 4, True),
+        (7, 5, False),
+        (15, 4, True),
     ),
 )
 def test_multiband_source_injection_catalog(
@@ -401,7 +471,7 @@ def test_multiband_source_injection_catalog(
 ):
     result, _ = MultibandCatalogStep.call(
         library_model2,
-        bkg_boxsize=50,
+        bkg_boxsize=30,
         snr_threshold=snr_threshold,
         npixels=npixels,
         fit_psf=fit_psf,
@@ -415,22 +485,7 @@ def test_multiband_source_injection_catalog(
     # Original objects
     cat = result.source_catalog
     assert isinstance(cat, Table)
-    assert len(cat) == 175
-
-    # Ensure all original objects found in the proper location
-    cat["x_mod"] = np.mod(np.round(cat["x_centroid"]), 100)
-    cat["y_mod"] = np.mod(np.round(cat["y_centroid"]), 100)
-    gocj_locs = [
-        (11, 12),
-        (65, 18),
-        (41, 43),
-        (17, 53),
-        (65, 71),
-        (20, 80),
-        (85, 88),
-    ]
-    for modx, mody in cat[["x_mod", "y_mod"]]:
-        assert (modx, mody) in gocj_locs
+    assert len(cat) == 112
 
     # Source injected and original images
     si_cat = result.source_injection_catalog
@@ -458,6 +513,215 @@ def test_multiband_source_injection_catalog(
         save_results,
         function_jail,
         shape=(5000, 5000),
+    )
+
+
+def test_multiband_source_injection_nan_catalog(libraries_si_nan, function_jail):
+    step = MultibandCatalogStep()
+
+    # Dictionaries to hold step output
+    res_cat = {}
+    results = {}
+
+    # Create three sets of libraries with two copies of the same mosaic:
+    # NoNan - original mosaics
+    # Grid - NoNan mosaics with the center locations of injected
+    #     sources on a diagonal set to NaN
+    # Block - Grid mosaics with a quadrant also set to NaN
+    libmods = libraries_si_nan
+
+    # Obtain source injection locations
+    with libmods["NoNan"]:
+        for si_model in libmods["NoNan"]:
+            si_y_pos, si_x_pos = make_source_grid(
+                si_model,
+                yxmax=si_model.data.shape,
+                yxoffset=(50, 50),
+                yxgrid=(20, 20),
+                seed=RNG_SEED,
+            )
+            y_pos_idx, x_pos_idx = (
+                np.round(si_y_pos).astype(int),
+                np.round(si_x_pos).astype(int),
+            )
+
+            libmods["NoNan"].shelve(si_model, modify=False)
+
+    # Specify the Grid SI locations that should have NaN pixels
+    # From above: yxgrid=(20, 20), so every 21st entry is a diagonal
+    y_nan_idx, x_nan_idx = y_pos_idx[0::21], x_pos_idx[0::21]
+
+    # Run the MultibandCatalogStep on all three libraries
+    for si_type in ["NoNan", "Grid", "Block"]:
+        res_cat[si_type], results[si_type] = step.call(
+            libmods[si_type],
+            bkg_boxsize=30,
+            snr_threshold=15,
+            npixels=4,
+            fit_psf=False,
+            deblend=True,
+            inject_sources=True,
+            inject_seed=RNG_SEED,
+            save_results=False,
+            save_debug_info=True,
+        )
+
+    # Create masks for data comparisons across mosaics
+
+    # Grid Nan mask
+    grid_nan_stamp_mask = np.zeros_like(results["Grid"].si_detection_image, dtype=bool)
+    for x, y in zip(y_nan_idx, x_nan_idx):
+        grid_nan_stamp_mask[y - 10 : y + 11, x - 10 : x + 11] = True
+
+    # Block Nan mask
+    block_nan_stamp_mask = deepcopy(grid_nan_stamp_mask)
+    block_nan_stamp_mask[240:, 240:] = True
+
+    # Compare data
+
+    # Grid vs NoNan
+    # All pixels far from the NaN injected sources should be close
+    assert np.allclose(
+        results["NoNan"].si_detection_image[~grid_nan_stamp_mask],
+        results["Grid"].si_detection_image[~grid_nan_stamp_mask],
+        atol=MEANFLUX * EXPTIME,
+    )
+
+    # Block vs NoNan
+    # All pixels far from the NaN injected sources and outside of
+    # the large NaN region should be close
+    assert np.allclose(
+        results["NoNan"].si_detection_image[~block_nan_stamp_mask],
+        results["Block"].si_detection_image[~block_nan_stamp_mask],
+        atol=MEANFLUX * EXPTIME,
+    )
+
+    # Catalog tests to ensure that the sources injected at
+    # NaN pixel center locations are reasonably close
+
+    # Create catalogs of "best" selected recovered sources (only one source per injection)
+    nonan_rs_no_dlbs = results["NoNan"].recovered_sources[
+        results["NoNan"].recovered_sources["best_injected_index"] != -1
+    ]
+    grid_rs_no_dlbs = results["Grid"].recovered_sources[
+        results["Grid"].recovered_sources["best_injected_index"] != -1
+    ]
+    block_rs_no_dlbs = results["Block"].recovered_sources[
+        results["Block"].recovered_sources["best_injected_index"] != -1
+    ]
+
+    # Create intermediate lists of NaN pixel indices on each mosaic group
+    nan_idx = [i * 21 for i in range(0, 20)]
+    nonan_ce = list(
+        set(nan_idx) & set(nonan_rs_no_dlbs["best_injected_index"].tolist())
+    )
+    grid_ce = list(set(nan_idx) & set(grid_rs_no_dlbs["best_injected_index"].tolist()))
+    block_ce = list(
+        set(nan_idx) & set(block_rs_no_dlbs["best_injected_index"].tolist())
+    )
+
+    # Create matched lists of NaN pixel indices between
+    # NoNan & Grid and NoNan & Block
+    grid_inter_ce = list(set(nonan_ce) & set(grid_ce))
+    block_inter_ce = list(set(nonan_ce) & set(block_ce))
+
+    # Create numpy indices for each matched catalog object
+    ngce_idx = np.array(
+        [
+            np.where(nonan_rs_no_dlbs["best_injected_index"] == ce)[0][0]
+            for ce in grid_inter_ce
+        ]
+    )
+    gce_idx = np.array(
+        [
+            np.where(grid_rs_no_dlbs["best_injected_index"] == ce)[0][0]
+            for ce in grid_inter_ce
+        ]
+    )
+    nbce_idx = np.array(
+        [
+            np.where(nonan_rs_no_dlbs["best_injected_index"] == ce)[0][0]
+            for ce in block_inter_ce
+        ]
+    )
+    bce_idx = np.array(
+        [
+            np.where(block_rs_no_dlbs["best_injected_index"] == ce)[0][0]
+            for ce in block_inter_ce
+        ]
+    )
+
+    # Remove obvious object mismatch
+    # (SI can have multiple matches for one object, and it chooses the closest.
+    #  NaNs can cause a mismatch.)
+    bad_idx_mask = np.isclose(
+        grid_rs_no_dlbs["ellipticity"][gce_idx],
+        nonan_rs_no_dlbs["ellipticity"][ngce_idx],
+        atol=0.3,
+    )
+    ngce_idx = ngce_idx[bad_idx_mask]
+    gce_idx = gce_idx[bad_idx_mask]
+
+    # Grid catalog tests
+
+    # Ensure Grid has NaN flux within a 0.4" aperture of NaN pixels
+    assert np.all(np.isnan(grid_rs_no_dlbs["aper04_f158_flux"][gce_idx]))
+
+    # Ensure Grid Nan pixel objects have similar locations to matched NoNan object locations
+    assert np.allclose(
+        grid_rs_no_dlbs["x_centroid"][gce_idx],
+        nonan_rs_no_dlbs["x_centroid"][ngce_idx],
+        atol=2,
+    )
+    assert np.allclose(
+        grid_rs_no_dlbs["y_centroid"][gce_idx],
+        nonan_rs_no_dlbs["y_centroid"][ngce_idx],
+        atol=2,
+    )
+
+    # Ensure Grid Nan pixel objects have similar size to matched NoNan object size
+    assert np.allclose(
+        grid_rs_no_dlbs["fluxfrac_radius_50_f184"][gce_idx],
+        nonan_rs_no_dlbs["fluxfrac_radius_50_f184"][ngce_idx],
+        rtol=0.4,
+    )
+
+    # Ensure Grid Nan pixel objects have similar kron AB Mags to matched NoNan object kron AB Mags
+    assert np.allclose(
+        grid_rs_no_dlbs["kron_f184_abmag"][gce_idx],
+        nonan_rs_no_dlbs["kron_f184_abmag"][ngce_idx],
+        rtol=0.2,
+    )
+
+    # Block catalog tests
+
+    # Ensure Block has NaN flux within a 0.4" aperture of NaN pixels
+    assert np.all(np.isnan(block_rs_no_dlbs["aper04_f158_flux"][bce_idx]))
+
+    # Ensure Block Nan pixel objects have similar locations to matched NoNan object locations
+    assert np.allclose(
+        block_rs_no_dlbs["x_centroid"][bce_idx],
+        nonan_rs_no_dlbs["x_centroid"][nbce_idx],
+        atol=2,
+    )
+    assert np.allclose(
+        block_rs_no_dlbs["y_centroid"][bce_idx],
+        nonan_rs_no_dlbs["y_centroid"][nbce_idx],
+        atol=2,
+    )
+
+    # Ensure Block Nan pixel objects have similar size to matched NoNan object size
+    assert np.allclose(
+        block_rs_no_dlbs["fluxfrac_radius_50_f184"][bce_idx],
+        nonan_rs_no_dlbs["fluxfrac_radius_50_f184"][nbce_idx],
+        rtol=0.4,
+    )
+
+    # Ensure Block Nan pixel objects have similar kron AB Mags to matched NoNan object kron AB Mags
+    assert np.allclose(
+        block_rs_no_dlbs["kron_f184_abmag"][bce_idx],
+        nonan_rs_no_dlbs["kron_f184_abmag"][nbce_idx],
+        rtol=0.2,
     )
 
 
