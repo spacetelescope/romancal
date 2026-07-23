@@ -233,6 +233,16 @@ def test_repointed_wcs_differs(repointed_filename_and_delta, output_model):
         )
 
 
+@pytest.mark.soctests
+def test_catalog_matches_truth(run_elp, ignore_parquet_paths):
+    # must be after other uses of run_elp as this modifies the fixture
+    rtdata = run_elp
+    rtdata.output = rtdata.output.rsplit("_", 1)[0] + "_cat.parquet"
+    rtdata.get_truth(f"truth/WFI/image/{os.path.basename(rtdata.output)}")
+    diff = compare_parquet(rtdata.output, rtdata.truth, **ignore_parquet_paths)
+    assert diff.identical, diff.report()
+
+
 def test_elp_input_dm(rtdata, ignore_asdf_paths):
     """Test for input roman Datamodel to exposure level pipeline"""
     input_data = "r0000101001001001001_0001_wfi01_f158_uncal.asdf"
@@ -396,13 +406,3 @@ def test_elp_save_results(rtdata, function_jail):
     assert isinstance(coadd, rdm.datamodels.ImageModel)
     assert isinstance(catalog, rdm.datamodels.ImageSourceCatalogModel)
     assert isinstance(segmentation, rdm.datamodels.SegmentationMapModel)
-
-
-@pytest.mark.soctests
-def test_catalog_matches_truth(run_elp, ignore_parquet_paths):
-    # must be after other uses of run_elp as this modifies the fixture
-    rtdata = run_elp
-    rtdata.output = rtdata.output.rsplit("_", 1)[0] + "_cat.parquet"
-    rtdata.get_truth(f"truth/WFI/image/{os.path.basename(rtdata.output)}")
-    diff = compare_parquet(rtdata.output, rtdata.truth, **ignore_parquet_paths)
-    assert diff.identical, diff.report()
