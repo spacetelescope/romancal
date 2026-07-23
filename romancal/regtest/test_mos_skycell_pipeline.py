@@ -1,4 +1,3 @@
-import copy
 import os
 
 import pytest
@@ -57,15 +56,6 @@ def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths
     assert diff.identical, diff.report()
 
 
-def test_catalog_matches_truth(run_mos, ignore_parquet_paths):
-    # copy RegtestData instance before modifying output and truth
-    rtdata = copy.copy(run_mos)
-    rtdata.output = rtdata.output.rsplit("_", 1)[0] + "_cat.parquet"
-    rtdata.get_truth(f"truth/WFI/image/{os.path.basename(rtdata.output)}")
-    diff = compare_parquet(rtdata.output, rtdata.truth, **ignore_parquet_paths)
-    assert diff.identical, diff.report()
-
-
 def test_resample_ran(output_model):
     # DMS373 test output is resampled to a skycell
     # FIXME this doesn't test if the output is a skycell
@@ -83,3 +73,12 @@ def test_wcsinfo_wcs_roundtrip(output_model):
 
     ra_mad, dec_mad = util.comp_wcs_grids_arcs(output_model.meta.wcs, gwcs_from_wcsinfo)
     assert (ra_mad + dec_mad) / 2.0 < 1.0e-4
+
+
+def test_catalog_matches_truth(run_mos, ignore_parquet_paths):
+    # must be after the other uses of run_mos as this modifies the fixture
+    rtdata = run_mos
+    rtdata.output = rtdata.output.rsplit("_", 1)[0] + "_cat.parquet"
+    rtdata.get_truth(f"truth/WFI/image/{os.path.basename(rtdata.output)}")
+    diff = compare_parquet(rtdata.output, rtdata.truth, **ignore_parquet_paths)
+    assert diff.identical, diff.report()
