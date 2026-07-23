@@ -1,6 +1,5 @@
 """Roman tests for the High Level Pipeline"""
 
-import copy
 import os
 from pathlib import Path
 
@@ -81,8 +80,8 @@ def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths
 
 
 def test_catalog_matches_truth(run_mos, ignore_parquet_paths):
-    # copy RegtestData instance before modifying output and truth
-    rtdata = copy.copy(run_mos)
+    # must be after the above uses of run_mos as this modifies the fixture
+    rtdata = run_mos
     rtdata.output = rtdata.output.rsplit("_", 1)[0] + "_cat.parquet"
     rtdata.get_truth(f"truth/WFI/image/{os.path.basename(rtdata.output)}")
     diff = compare_parquet(rtdata.output, rtdata.truth, **ignore_parquet_paths)

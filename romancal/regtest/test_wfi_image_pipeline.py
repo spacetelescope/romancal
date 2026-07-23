@@ -1,4 +1,3 @@
-import copy
 import os
 from pathlib import Path
 
@@ -106,16 +105,6 @@ def test_catalog_produced(output_filename):
 def test_segmentation_map_produced(output_filename):
     segmentation_map_filename = output_filename.replace("_cal.asdf", "_segm.asdf")
     assert Path(segmentation_map_filename).exists()
-
-
-@pytest.mark.soctests
-def test_catalog_matches_truth(run_elp, ignore_parquet_paths):
-    # copy RegtestData instance before modifying output and truth
-    rtdata = copy.copy(run_elp)
-    rtdata.output = rtdata.output.rsplit("_", 1)[0] + "_cat.parquet"
-    rtdata.get_truth(f"truth/WFI/image/{os.path.basename(rtdata.output)}")
-    diff = compare_parquet(rtdata.output, rtdata.truth, **ignore_parquet_paths)
-    assert diff.identical, diff.report()
 
 
 @pytest.mark.soctests
@@ -407,3 +396,13 @@ def test_elp_save_results(rtdata, function_jail):
     assert isinstance(coadd, rdm.datamodels.ImageModel)
     assert isinstance(catalog, rdm.datamodels.ImageSourceCatalogModel)
     assert isinstance(segmentation, rdm.datamodels.SegmentationMapModel)
+
+
+@pytest.mark.soctests
+def test_catalog_matches_truth(run_elp, ignore_parquet_paths):
+    # must be after other uses of run_elp as this modifies the fixture
+    rtdata = run_elp
+    rtdata.output = rtdata.output.rsplit("_", 1)[0] + "_cat.parquet"
+    rtdata.get_truth(f"truth/WFI/image/{os.path.basename(rtdata.output)}")
+    diff = compare_parquet(rtdata.output, rtdata.truth, **ignore_parquet_paths)
+    assert diff.identical, diff.report()
