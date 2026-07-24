@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import numpy as np
@@ -12,7 +13,7 @@ from romancal.assign_wcs.assign_wcs_step import AssignWcsStep
 from romancal.lib.suffix import replace_suffix
 from romancal.pipeline.exposure_pipeline import ExposurePipeline
 
-from .regtestdata import compare_asdf
+from .regtestdata import compare_asdf, compare_parquet
 
 # mark all tests in this module
 pytestmark = pytest.mark.bigdata
@@ -230,6 +231,16 @@ def test_repointed_wcs_differs(repointed_filename_and_delta, output_model):
             repointed_model.meta.wcs(2048, 2048),
             atol=1.0,
         )
+
+
+@pytest.mark.soctests
+def test_catalog_matches_truth(run_elp, ignore_parquet_paths):
+    # must be after other uses of run_elp as this modifies the fixture
+    rtdata = run_elp
+    rtdata.output = rtdata.output.rsplit("_", 1)[0] + "_cat.parquet"
+    rtdata.get_truth(f"truth/WFI/image/{os.path.basename(rtdata.output)}")
+    diff = compare_parquet(rtdata.output, rtdata.truth, **ignore_parquet_paths)
+    assert diff.identical, diff.report()
 
 
 def test_elp_input_dm(rtdata, ignore_asdf_paths):
