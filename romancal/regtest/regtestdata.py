@@ -13,7 +13,7 @@ import astropy.time
 import deepdiff
 import gwcs
 import numpy as np
-import pyarrow
+import pyarrow.parquet
 import requests
 import roman_datamodels as rdm
 from astropy.units import Quantity
