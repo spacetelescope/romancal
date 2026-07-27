@@ -36,6 +36,12 @@ def input_value(request, tmp_path, fake_science_raw):
             return fn
         case "datamodel":
             return fake_science_raw
+        case "asn":
+            fake_science_raw.meta.filename = "test_uncal.asdf"
+            fake_science_raw.save(tmp_path / fake_science_raw.meta.filename)
+            return dict(
+                asn_from_list([fake_science_raw.meta.filename], product_name="foo_out")
+            )
         case "asn_fn":
             fake_science_raw.meta.filename = "test_uncal.asdf"
             fake_science_raw.save(tmp_path / fake_science_raw.meta.filename)
@@ -58,6 +64,7 @@ def input_value(request, tmp_path, fake_science_raw):
     [
         ("datamodel_fn", rdm.DataModel),
         ("datamodel", rdm.DataModel),
+        ("asn", ModelLibrary),
         ("asn_fn", ModelLibrary),
         ("library", ModelLibrary),
     ],
@@ -82,7 +89,9 @@ def test_input_to_output(function_jail, input_value, expected_output_type):
 
 
 @pytest.mark.parametrize(
-    "input_value", ["datamodel", "datamodel_fn", "asn_fn", "library"], indirect=True
+    "input_value",
+    ["datamodel", "datamodel_fn", "asn", "asn_fn", "library"],
+    indirect=True,
 )
 @pytest.mark.parametrize("save_results", [True, False])
 def test_elp_save_results(function_jail, input_value, save_results, monkeypatch):

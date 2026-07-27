@@ -18,33 +18,35 @@ def test_outlier_skips_step_on_invalid_number_of_elements_in_input(base_image):
             res.shelve(m, i, modify=False)
 
 
-def test_outlier_valid_input_asn(tmp_path, base_image, create_mock_asn_file):
+@pytest.mark.parametrize("as_filename", [True, False])
+def test_outlier_valid_input_asn(
+    function_jail, as_filename, base_image, create_mock_asn_file
+):
     """
-    Test that OutlierDetection runs with valid ASN file as input.
+    Test that OutlierDetection runs with valid ASN input.
     """
     img_1 = base_image()
     img_1.meta.filename = "img_1.asdf"
-    img_1.save(tmp_path / "img_1.asdf")
+    img_1.save(function_jail / "img_1.asdf")
     img_2 = base_image()
     img_1.meta.filename = "img_2.asdf"
-    img_2.save(tmp_path / "img_2.asdf")
+    img_2.save(function_jail / "img_2.asdf")
 
-    asn_filepath = create_mock_asn_file(tmp_path)
+    dataset = create_mock_asn_file(function_jail if as_filename else None)
 
     res = OutlierDetectionStep(
-        output_dir=tmp_path.as_posix(),
+        output_dir=function_jail.as_posix(),
         in_memory=True,
         resample_data=False,
-    ).run(asn_filepath)
+    ).run(dataset)
 
-    # assert step.skip is False
     with res:
         for i, m in enumerate(res):
             assert m.meta.cal_step.outlier_detection == "COMPLETE"
             res.shelve(m, i, modify=False)
 
 
-def test_outlier_valid_input_modelcontainer(tmp_path, base_image):
+def test_outlier_valid_input_modellibrary(tmp_path, base_image):
     """
     Test that OutlierDetection runs with valid ModelLibrary as input.
     """
@@ -212,11 +214,12 @@ def test_identical_images(tmp_path, base_image, caplog):
     [
         "ModelLibrary",
         "ASNFile",
+        "ASN",
         "DataModelList",
         "ASDFFilenameList",
     ],
 )
-def test_outlier_detection_always_returns_modelcontainer_with_updated_datamodels(
+def test_outlier_detection_always_returns_modellibrary_with_updated_datamodels(
     input_type,
     base_image,
     create_mock_asn_file,
@@ -239,6 +242,13 @@ def test_outlier_detection_always_returns_modelcontainer_with_updated_datamodels
         "ModelLibrary": library,
         "ASNFile": create_mock_asn_file(
             function_jail,
+            members_mapping=[
+                {"expname": img_1.meta.filename, "exptype": "science"},
+                {"expname": img_2.meta.filename, "exptype": "science"},
+            ],
+        ),
+        "ASN": create_mock_asn_file(
+            None,
             members_mapping=[
                 {"expname": img_1.meta.filename, "exptype": "science"},
                 {"expname": img_2.meta.filename, "exptype": "science"},
