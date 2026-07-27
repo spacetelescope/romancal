@@ -121,6 +121,14 @@ The segmentation map is
 :Data model: `~romancal.datamodels.MosaicSegmentationMapModel`
 :File suffix: _segm
 
+For L2 imaging prompt products, the segmentation map also includes:
+
+- ``skyvals``: structured HEALPix nside=2**17 sky estimates with fields
+  ``healpix17`` (NEST index), ``data`` (masked-data nanmedian), ``err``
+  (masked-err nanmedian), and ``covfrac`` (fractional healpixel coverage)
+- ``healpix11_cov``: unique nside=2**11 HEALPix coverage indices touched by
+  the image footprint
+
 Result of applying all pipeline steps up through the
 :ref:`tweakreg <tweakreg_step>` step is to produce calibrated data with the image WCS
 aligned to Gaia, and is 2D image data, which will have one less data dimensions as the input

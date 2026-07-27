@@ -18,10 +18,20 @@ from roman_datamodels.datamodels import (
     SegmentationMapModel,
 )
 
+from romancal.source_catalog._skyvals import compute_skyvals
 from romancal.source_catalog._source_catalog import RomanSourceCatalog
 from romancal.source_catalog.source_catalog_step import SourceCatalogStep
 
 from .helpers import compare_model_and_parquet_metadata
+
+SKYVALS_DTYPE = np.dtype(
+    [
+        ("healpix17", np.int64),
+        ("data", np.float32),
+        ("err", np.float32),
+        ("covfrac", np.float32),
+    ]
+)
 
 
 def make_test_image(err_dtype=np.float16):
@@ -381,6 +391,56 @@ def test_l2_input_model_unchanged(image_model, function_jail):
 
     assert_equal(original_data, image_model.data)
     assert_equal(original_err, image_model.err)
+
+
+def test_l2_segmentation_contains_skyvals(image_model):
+    _, result_segmentation_map = SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=5,
+        npixels=10,
+        save_results=False,
+        fit_psf=False,
+    )
+
+    assert isinstance(result_segmentation_map, SegmentationMapModel)
+    assert "skyvals" in result_segmentation_map
+    assert "healpix11_cov" in result_segmentation_map
+
+    skyvals = result_segmentation_map.skyvals
+    assert skyvals.dtype == SKYVALS_DTYPE
+    assert skyvals.shape[0] > 0
+
+    healpix11_cov = result_segmentation_map.healpix11_cov
+    assert healpix11_cov.ndim == 1
+    assert healpix11_cov.dtype == np.int64
+
+def test_l2_segmentation_without_skyvals_when_disabled(image_model):
+    _, result_segmentation_map = SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=5,
+        npixels=10,
+        save_results=False,
+        fit_psf=False,
+        compute_skyvals=False,
+    )
+
+    assert isinstance(result_segmentation_map, SegmentationMapModel)
+    assert "skyvals" not in result_segmentation_map
+    assert "healpix11_cov" not in result_segmentation_map
+
+
+def test_l2_skyvals_empty_when_segmentation_masks_everything(image_model):
+    skyvals, healpix11_cov = compute_skyvals(
+        input_model=image_model,
+        segmentation=np.zeros_like(image_model.data, dtype=np.uint32),
+        bad_pixel_mask=np.ones_like(image_model.data, dtype=bool),
+    )
+    assert skyvals.shape[0] == 0
+    assert healpix11_cov.shape[0] == 0
 
 
 def test_l3_input_model_unchanged(mosaic_model, function_jail):

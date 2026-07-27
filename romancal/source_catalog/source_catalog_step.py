@@ -17,6 +17,7 @@ from roman_datamodels.dqflags import pixel
 from romancal.datamodels.fileio import open_dataset
 from romancal.source_catalog._background import RomanBackground
 from romancal.source_catalog._detection import convolve_data, make_segmentation_image
+from romancal.source_catalog._skyvals import compute_skyvals
 from romancal.source_catalog._source_catalog import RomanSourceCatalog
 from romancal.source_catalog._utils import copy_model_arrays, get_ee_spline
 from romancal.source_catalog.psf import add_jitter
@@ -86,6 +87,7 @@ class SourceCatalogStep(RomanStep):
         suffix = string(default='cat')        # Default suffix for output files
         fit_psf = boolean(default=True)       # fit source PSFs for accurate astrometry?
         forced_segmentation = string(default='')  # force the use of this segmentation map
+        compute_skyvals = boolean(default=True)  # compute healpix sky summary arrays
     """
 
     def save_model(self, model, **kwargs):
@@ -278,6 +280,15 @@ class SourceCatalogStep(RomanStep):
 
         # Set the data and detection image
         segmentation_model.data = segment_img.data.astype(np.uint32)
+        if isinstance(input_model, datamodels.ImageModel) and self.compute_skyvals:
+
+            skyvals, healpix11_cov = compute_skyvals(
+                input_model=input_model,
+                segmentation=segmentation_model.data,
+                bad_pixel_mask=mask,
+            )
+            segmentation_model["skyvals"] = skyvals
+            segmentation_model["healpix11_cov"] = healpix11_cov
 
         # we update the input_model here to note that source_catalog finished
         # only for ImageModel as L3 doesn't have cal_step.source_catalog

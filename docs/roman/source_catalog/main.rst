@@ -229,6 +229,11 @@ Each pixel in the image contains an integer value corresponding to a
 source label in the source catalog. Pixels that do not belong to any
 source are assigned a value of zero.
 
+For L2 imaging products, when ``compute_skyvals=True`` (default), the
+segmentation output also includes ``skyvals`` and ``healpix11_cov``
+arrays containing HEALPix-based sky summary values for downstream
+sky-matching workflows.
+
 
 Multiband Catalogs
 ------------------
