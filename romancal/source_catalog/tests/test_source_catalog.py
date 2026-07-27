@@ -416,6 +416,7 @@ def test_l2_segmentation_contains_skyvals(image_model):
     assert healpix11_cov.ndim == 1
     assert healpix11_cov.dtype == np.int64
 
+
 def test_l2_segmentation_without_skyvals_when_disabled(image_model):
     _, result_segmentation_map = SourceCatalogStep.call(
         image_model,

@@ -281,7 +281,6 @@ class SourceCatalogStep(RomanStep):
         # Set the data and detection image
         segmentation_model.data = segment_img.data.astype(np.uint32)
         if isinstance(input_model, datamodels.ImageModel) and self.compute_skyvals:
-
             skyvals, healpix11_cov = compute_skyvals(
                 input_model=input_model,
                 segmentation=segmentation_model.data,
