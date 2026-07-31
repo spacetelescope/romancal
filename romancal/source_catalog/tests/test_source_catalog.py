@@ -432,6 +432,7 @@ def test_l2_segmentation_without_skyvals_when_disabled(image_model):
     assert "skyvals" not in result_segmentation_map
     assert "healpix11_cov" not in result_segmentation_map
 
+
 def test_l2_skyvals_values_and_covfrac_reasonable(image_model):
     """
     Verify skyvals statistics are sensible on a controlled input image.

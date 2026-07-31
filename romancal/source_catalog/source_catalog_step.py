@@ -325,7 +325,9 @@ class SourceCatalogStep(RomanStep):
         return cat_model, segmentation_model
 
     def _attach_skyvals_if_enabled(self, input_model, segmentation_model, mask):
-        if not (isinstance(input_model, datamodels.ImageModel) and self.compute_skyvals):
+        if not (
+            isinstance(input_model, datamodels.ImageModel) and self.compute_skyvals
+        ):
             return
 
         skyvals, healpix11_cov = compute_skyvals(

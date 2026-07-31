@@ -1,6 +1,7 @@
 """
 Helpers for computing HEALPix-based sky summary arrays for segmentation products.
 """
+
 import logging
 
 import numpy as np
@@ -21,7 +22,6 @@ SKYVALS_DTYPE = np.dtype(
         ("covfrac", np.float32),
     ]
 )
-
 
 
 def compute_skyvals(input_model, segmentation, bad_pixel_mask):
