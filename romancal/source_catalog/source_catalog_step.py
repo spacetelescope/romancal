@@ -162,6 +162,7 @@ class SourceCatalogStep(RomanStep):
             log.error("Cannot create source catalog. All pixels are masked.")
             cat_model.source_catalog = cat_model.create_empty_catalog()
             segmentation_model.data = np.zeros(model.data.shape, dtype=np.uint32)
+            self._attach_skyvals_if_enabled(input_model, segmentation_model, mask)
             return cat_model, segmentation_model
 
         log.info("Calculating and subtracting background")
@@ -208,6 +209,7 @@ class SourceCatalogStep(RomanStep):
             log.error("Cannot create source catalog. No sources were detected.")
             cat_model.source_catalog = cat_model.create_empty_catalog()
             segmentation_model.data = np.zeros(model.data.shape, dtype=np.uint32)
+            self._attach_skyvals_if_enabled(input_model, segmentation_model, mask)
             return cat_model, segmentation_model
 
         log.info("Creating ee_fractions model")
@@ -280,15 +282,7 @@ class SourceCatalogStep(RomanStep):
 
         # Set the data and detection image
         segmentation_model.data = segment_img.data.astype(np.uint32)
-        if isinstance(input_model, datamodels.ImageModel) and self.compute_skyvals:
-            skyvals, healpix11_cov = compute_skyvals(
-                input_model=input_model,
-                segmentation=segmentation_model.data,
-                bad_pixel_mask=mask,
-            )
-            segmentation_model["skyvals"] = skyvals
-            segmentation_model["healpix11_cov"] = healpix11_cov
-
+        self._attach_skyvals_if_enabled(input_model, segmentation_model, mask)
         # we update the input_model here to note that source_catalog finished
         # only for ImageModel as L3 doesn't have cal_step.source_catalog
         # and was not previously recorded
@@ -329,3 +323,15 @@ class SourceCatalogStep(RomanStep):
         )
 
         return cat_model, segmentation_model
+
+    def _attach_skyvals_if_enabled(self, input_model, segmentation_model, mask):
+        if not (isinstance(input_model, datamodels.ImageModel) and self.compute_skyvals):
+            return
+
+        skyvals, healpix11_cov = compute_skyvals(
+            input_model=input_model,
+            segmentation=segmentation_model.data,
+            bad_pixel_mask=mask,
+        )
+        segmentation_model["skyvals"] = skyvals
+        segmentation_model["healpix11_cov"] = healpix11_cov

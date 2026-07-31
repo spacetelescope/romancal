@@ -18,7 +18,6 @@ from roman_datamodels.datamodels import (
     SegmentationMapModel,
 )
 
-from romancal.source_catalog._skyvals import compute_skyvals
 from romancal.source_catalog._source_catalog import RomanSourceCatalog
 from romancal.source_catalog.source_catalog_step import SourceCatalogStep
 
@@ -433,15 +432,37 @@ def test_l2_segmentation_without_skyvals_when_disabled(image_model):
     assert "skyvals" not in result_segmentation_map
     assert "healpix11_cov" not in result_segmentation_map
 
-
-def test_l2_skyvals_empty_when_segmentation_masks_everything(image_model):
-    skyvals, healpix11_cov = compute_skyvals(
-        input_model=image_model,
-        segmentation=np.zeros_like(image_model.data, dtype=np.uint32),
-        bad_pixel_mask=np.ones_like(image_model.data, dtype=bool),
+def test_l2_skyvals_values_and_covfrac_reasonable(image_model):
+    """
+    Verify skyvals statistics are sensible on a controlled input image.
+    """
+    rng = np.random.default_rng(seed=9)
+    image_model.data = (rng.normal(0, 1, size=image_model.data.shape) + 100.0).astype(
+        np.float32
     )
-    assert skyvals.shape[0] == 0
-    assert healpix11_cov.shape[0] == 0
+    image_model.err = np.full_like(image_model.data, 3.0, dtype=np.float32)
+
+    _, result_segmentation_map = SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=5,
+        npixels=10,
+        save_results=False,
+        fit_psf=False,
+    )
+
+    skyvals = result_segmentation_map.skyvals
+    covfrac = skyvals["covfrac"]
+    assert skyvals.shape[0] > 0
+    # data medians should recover the injected background offset
+    # (atol=5.0 allows for some variation due to the random noise)
+    np.testing.assert_allclose(np.nanmedian(skyvals["data"]), 100.0, atol=5.0)
+    # covfrac should be bounded in [0, 1]
+    assert np.all(covfrac >= 0.0)
+    assert np.all(covfrac <= 1.0)
+    # at least some healpixels should have near-full coverage
+    assert np.any(covfrac > 0.9)
 
 
 def test_l3_input_model_unchanged(mosaic_model, function_jail):
