@@ -121,7 +121,9 @@ The segmentation map is
 :Data model: `~romancal.datamodels.MosaicSegmentationMapModel`
 :File suffix: _segm
 
-For L2 imaging prompt products, the segmentation map also includes:
+For L2 imaging prompt products, when
+``source_catalog.compute_skyvals=True`` (default), the segmentation map
+also includes:
 
 - ``skyvals``: structured HEALPix nside=2**17 sky estimates with fields
   ``healpix17`` (NEST index), ``data`` (masked-data nanmedian), ``err``
