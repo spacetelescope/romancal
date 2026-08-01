@@ -582,15 +582,15 @@ def test_multiband_source_injection_nan_catalog(libraries_si_nan, function_jail)
     # NaN pixel center locations are reasonably close
 
     # Create catalogs of "best" selected recovered sources (only one source per injection)
-    nonan_rs_no_dlbs = results['NoNan'].recovered_sources[results['NoNan'].recovered_sources['best_injected_index'] != -1]
-    grid_rs_no_dlbs = results['Grid'].recovered_sources[results['Grid'].recovered_sources['best_injected_index'] != -1]
-    block_rs_no_dlbs = results['Block'].recovered_sources[results['Block'].recovered_sources['best_injected_index'] != -1]
+    nonan_rs_no_dbls = results['NoNan'].recovered_sources[results['NoNan'].recovered_sources['best_injected_index'] != -1]
+    grid_rs_no_dbls = results['Grid'].recovered_sources[results['Grid'].recovered_sources['best_injected_index'] != -1]
+    block_rs_no_dbls = results['Block'].recovered_sources[results['Block'].recovered_sources['best_injected_index'] != -1]
 
     # Create intermediate lists of NaN pixel indices on each mosaic group
     nan_idx = [i * 21 for i in range(0, 20)]
-    nonan_ce = list(set(nan_idx) & set(nonan_rs_no_dlbs['best_injected_index'].tolist()))
-    grid_ce = list(set(nan_idx) & set(grid_rs_no_dlbs['best_injected_index'].tolist()))
-    block_ce = list(set(nan_idx) & set(block_rs_no_dlbs['best_injected_index'].tolist()))
+    nonan_ce = list(set(nan_idx) & set(nonan_rs_no_dbls['best_injected_index'].tolist()))
+    grid_ce = list(set(nan_idx) & set(grid_rs_no_dbls['best_injected_index'].tolist()))
+    block_ce = list(set(nan_idx) & set(block_rs_no_dbls['best_injected_index'].tolist()))
 
     # Create matched lists of NaN pixel indices between
     # NoNan & Grid and NoNan & Block
@@ -598,55 +598,55 @@ def test_multiband_source_injection_nan_catalog(libraries_si_nan, function_jail)
     block_inter_ce = list(set(nonan_ce) & set(block_ce))
 
     # Create numpy indices for each matched catalog object
-    ngce_idx = np.array([np.where(nonan_rs_no_dlbs['best_injected_index'] == ce)[0][0] for ce in grid_inter_ce])
-    gce_idx = np.array([np.where(grid_rs_no_dlbs['best_injected_index'] == ce)[0][0] for ce in grid_inter_ce])
-    nbce_idx = np.array([np.where(nonan_rs_no_dlbs['best_injected_index'] == ce)[0][0] for ce in block_inter_ce])
-    bce_idx = np.array([np.where(block_rs_no_dlbs['best_injected_index'] == ce)[0][0] for ce in block_inter_ce])
+    ngce_idx = np.array([np.where(nonan_rs_no_dbls['best_injected_index'] == ce)[0][0] for ce in grid_inter_ce])
+    gce_idx = np.array([np.where(grid_rs_no_dbls['best_injected_index'] == ce)[0][0] for ce in grid_inter_ce])
+    nbce_idx = np.array([np.where(nonan_rs_no_dbls['best_injected_index'] == ce)[0][0] for ce in block_inter_ce])
+    bce_idx = np.array([np.where(block_rs_no_dbls['best_injected_index'] == ce)[0][0] for ce in block_inter_ce])
 
     # Remove obvious object mismatch
     # (SI can have multiple matches for one object, and it chooses the closest.
     #  NaNs can cause a mismatch.)
-    bad_idx_mask = np.isclose(grid_rs_no_dlbs['ellipticity'][gce_idx],
-                            nonan_rs_no_dlbs['ellipticity'][ngce_idx], atol=0.3)
+    bad_idx_mask = np.isclose(grid_rs_no_dbls['ellipticity'][gce_idx],
+                            nonan_rs_no_dbls['ellipticity'][ngce_idx], atol=0.3)
     ngce_idx = ngce_idx[bad_idx_mask]
     gce_idx = gce_idx[bad_idx_mask]
 
     # Grid catalog tests
 
     # Ensure Grid has NaN flux within a 0.4" aperture of NaN pixels
-    assert np.all(np.isnan(grid_rs_no_dlbs['aper04_f158_flux'][gce_idx]))
+    assert np.all(np.isnan(grid_rs_no_dbls['aper04_f158_flux'][gce_idx]))
 
     # Ensure Grid Nan pixel objects have similar locations to matched NoNan object locations
-    assert np.allclose(grid_rs_no_dlbs['x_centroid'][gce_idx],nonan_rs_no_dlbs['x_centroid'][ngce_idx], atol=2)
-    assert np.allclose(grid_rs_no_dlbs['y_centroid'][gce_idx],nonan_rs_no_dlbs['y_centroid'][ngce_idx], atol=2)
+    assert np.allclose(grid_rs_no_dbls['x_centroid'][gce_idx],nonan_rs_no_dbls['x_centroid'][ngce_idx], atol=2)
+    assert np.allclose(grid_rs_no_dbls['y_centroid'][gce_idx],nonan_rs_no_dbls['y_centroid'][ngce_idx], atol=2)
 
     # Ensure Grid Nan pixel objects have similar size to matched NoNan object size
-    assert np.allclose(grid_rs_no_dlbs['fluxfrac_radius_50_f184'][gce_idx],
-                    nonan_rs_no_dlbs['fluxfrac_radius_50_f184'][ngce_idx],
+    assert np.allclose(grid_rs_no_dbls['fluxfrac_radius_50_f184'][gce_idx],
+                    nonan_rs_no_dbls['fluxfrac_radius_50_f184'][ngce_idx],
                     rtol=0.4)
 
     # Ensure Grid Nan pixel objects have similar kron AB Mags to matched NoNan object kron AB Mags
-    assert np.allclose(grid_rs_no_dlbs['kron_f184_abmag'][gce_idx],
-                    nonan_rs_no_dlbs['kron_f184_abmag'][ngce_idx],
+    assert np.allclose(grid_rs_no_dbls['kron_f184_abmag'][gce_idx],
+                    nonan_rs_no_dbls['kron_f184_abmag'][ngce_idx],
                     rtol=0.2)
 
     # Block catalog tests
 
     # Ensure Block has NaN flux within a 0.4" aperture of NaN pixels
-    assert np.all(np.isnan(block_rs_no_dlbs['aper04_f158_flux'][bce_idx]))
+    assert np.all(np.isnan(block_rs_no_dbls['aper04_f158_flux'][bce_idx]))
 
     # Ensure Block Nan pixel objects have similar locations to matched NoNan object locations
-    assert np.allclose(block_rs_no_dlbs['x_centroid'][bce_idx],nonan_rs_no_dlbs['x_centroid'][nbce_idx], atol=2)
-    assert np.allclose(block_rs_no_dlbs['y_centroid'][bce_idx],nonan_rs_no_dlbs['y_centroid'][nbce_idx], atol=2)
+    assert np.allclose(block_rs_no_dbls['x_centroid'][bce_idx],nonan_rs_no_dbls['x_centroid'][nbce_idx], atol=2)
+    assert np.allclose(block_rs_no_dbls['y_centroid'][bce_idx],nonan_rs_no_dbls['y_centroid'][nbce_idx], atol=2)
 
     # Ensure Block Nan pixel objects have similar size to matched NoNan object size
-    assert np.allclose(block_rs_no_dlbs['fluxfrac_radius_50_f184'][bce_idx],
-                    nonan_rs_no_dlbs['fluxfrac_radius_50_f184'][nbce_idx],
+    assert np.allclose(block_rs_no_dbls['fluxfrac_radius_50_f184'][bce_idx],
+                    nonan_rs_no_dbls['fluxfrac_radius_50_f184'][nbce_idx],
                     rtol=0.4)
 
     # Ensure Block Nan pixel objects have similar kron AB Mags to matched NoNan object kron AB Mags
-    assert np.allclose(block_rs_no_dlbs['kron_f184_abmag'][bce_idx],
-                    nonan_rs_no_dlbs['kron_f184_abmag'][nbce_idx],
+    assert np.allclose(block_rs_no_dbls['kron_f184_abmag'][bce_idx],
+                    nonan_rs_no_dbls['kron_f184_abmag'][nbce_idx],
                     rtol=0.2)
 
 
