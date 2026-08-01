@@ -588,9 +588,13 @@ def make_source_injected_library(library, seed=None):
             nanmask = np.isnan(si_model.data[y_pos_idx, x_pos_idx])
 
             # Temporarily set NaNs to medians for injections
-            si_model.data[y_pos_idx[nanmask], x_pos_idx[nanmask]] = np.nanmedian(si_model.data)
+            si_model.data[y_pos_idx[nanmask], x_pos_idx[nanmask]] = np.nanmedian(
+                si_model.data
+            )
             tmp_var_poisson = copy.deepcopy(si_model.var_poisson)
-            si_model.var_poisson[y_pos_idx[nanmask], x_pos_idx[nanmask]] = np.nanmedian(si_model.var_poisson)
+            si_model.var_poisson[y_pos_idx[nanmask], x_pos_idx[nanmask]] = np.nanmedian(
+                si_model.var_poisson
+            )
 
             # Inject sources into the detection image
             si_model = inject_sources(
@@ -601,7 +605,9 @@ def make_source_injected_library(library, seed=None):
 
             # Reinstate NaNs after injections
             si_model.data[y_pos_idx[nanmask], x_pos_idx[nanmask]] = np.nan
-            si_model.var_poisson[y_pos_idx[nanmask], x_pos_idx[nanmask]] = tmp_var_poisson[y_pos_idx[nanmask], x_pos_idx[nanmask]]
+            si_model.var_poisson[y_pos_idx[nanmask], x_pos_idx[nanmask]] = (
+                tmp_var_poisson[y_pos_idx[nanmask], x_pos_idx[nanmask]]
+            )
 
             # Add model to list for new library
             si_model_lst.append(si_model)
