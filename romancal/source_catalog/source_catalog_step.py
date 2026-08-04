@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import logging
 from typing import TYPE_CHECKING
-import asdf
 
+import asdf
 import numpy as np
 from astropy.table import join
 from photutils.segmentation import SegmentationImage
