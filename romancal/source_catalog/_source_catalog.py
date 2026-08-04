@@ -135,6 +135,11 @@ class RomanSourceCatalog:
         The PSF aperture correction model, built from the reference
         file.
 
+    dust_map_paths : dict or `None`, optional
+        Optional mapping from galactic-pole IDs to resolved SFD dust-map
+        paths. When provided, `dust_ebv` uses these paths directly
+        instead of resolving CRDS references again.
+
     Notes
     -----
     ``model.err`` is assumed to be the total error array corresponding
@@ -161,6 +166,7 @@ class RomanSourceCatalog:
         flux_unit="nJy",
         cat_type="prompt",
         ee_spline=None,
+        dust_map_paths=None,
     ):
         if not isinstance(model, ImageModel | MosaicModel):
             raise ValueError("The input model must be an ImageModel or MosaicModel.")
@@ -178,6 +184,7 @@ class RomanSourceCatalog:
         self.flux_unit = u.Unit(self.flux_unit_str)
         self.cat_type = cat_type
         self.ee_spline = ee_spline
+        self._dust_map_paths = dust_map_paths
 
         self.n_sources = len(segment_img.labels)
         self.wcs = self.model.meta.wcs
@@ -454,7 +461,9 @@ class RomanSourceCatalog:
         Emits a warning before returning all-NaN values on failure.
         """
         try:
-            dust_map_paths = self._get_sfd_map_paths()
+            dust_map_paths = self._dust_map_paths
+            if dust_map_paths is None:
+                dust_map_paths = self._get_sfd_map_paths()
             return self._get_dust_ebv(self.ra, self.dec, dust_map_paths)
         except Exception as exc:
             log.warning(
@@ -463,7 +472,8 @@ class RomanSourceCatalog:
             )
             return np.full(self.n_sources, np.nan, dtype=np.float32)
 
-    def _get_sfd_map_paths(self):
+    @classmethod
+    def _get_sfd_map_paths(cls):
         """
         Resolve CRDS references for north/south SFD dust maps.
 
@@ -481,8 +491,8 @@ class RomanSourceCatalog:
         """
         map_paths = {}
         for field, pole in (
-            ("north", self.north_galactic_pole_id),
-            ("south", self.south_galactic_pole_id),
+            ("north", cls.north_galactic_pole_id),
+            ("south", cls.south_galactic_pole_id),
         ):
             dm_headers = {"roman.meta.instrument.name": "wfi", "roman.field": field}
             reference = getreferences(
