@@ -56,7 +56,10 @@ docs = [
 test = [
     "ci-watson>=0.11.0",
     "pytest>=9.0",
-    "pytest-astropy>=0.11.0",
+    # only the parts of pytest-astropy we actually use; the meta-package
+    # pulls in pytest-skip-slow, whose --slow flag collides with ci-watson's
+    "pytest-cov>=2.3.1",
+    "pytest-doctestplus>=1.0.0",
     "pysiaf>=0.13.0",
     "deepdiff",
     "stpreview>=0.6.0",
