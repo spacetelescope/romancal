@@ -1,8 +1,2 @@
-Replace the ``pytest-astropy`` test dependency with the ``pytest-cov`` and
-``pytest-doctestplus`` sub-packages that are actually used. As of 0.12.0 the
-``pytest-astropy`` meta-package pulls in ``pytest-skip-slow``, whose ``--slow``
-command-line option collides with the one provided by ``ci-watson``, causing
-pytest to fail at plugin-load time before collecting any tests. Dropping the
-meta-package also removes a second ``slow`` marker gate that required
-``--run-slow`` in addition to ``--slow``, so ``--slow`` now behaves as
-documented.
+Depend on ``pytest-cov`` and ``pytest-doctestplus`` directly; ``pytest-astropy``
+0.12.0 pulls in a ``--slow`` option that collides with ``ci-watson``.
