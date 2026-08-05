@@ -188,3 +188,39 @@ def test_api_with_type():
     members_dict = {member["expname"]: member["exptype"] for member in members}
     for name, type_ in inlist:
         assert members_dict[name] == type_
+
+
+def test_api_tweakreg_catalogs():
+    """Catalog names are derived from the member expnames"""
+    inlist = ["a_cal.asdf", "b_cal.asdf"]
+
+    asn = asn_from_list(inlist, product_name="test", _tweakreg_catalogs=True)
+    members = asn["products"][0]["members"]
+    catalogs = [member["tweakreg_catalog"] for member in members]
+    assert catalogs == ["a_cat.parquet", "b_cat.parquet"]
+
+
+def test_api_tweakreg_catalogs_off_by_default():
+    """Members carry no catalog unless one was requested"""
+    asn = asn_from_list(["a_cal.asdf"], product_name="test")
+    assert "tweakreg_catalog" not in asn["products"][0]["members"][0]
+
+
+def test_cmdline_tweakreg_catalogs(tmp_path):
+    """Catalog names survive a trip through the association file"""
+    path = tmp_path / "test_asn.json"
+    inlist = ["a_cal.asdf", "b_cal.asdf"]
+    args = [
+        "-o",
+        str(path),
+        "--product-name",
+        "test",
+        "--_tweakreg-catalogs",
+    ]
+    _cli(args + inlist)
+
+    with path.open() as fp:
+        asn = load_asn(fp)
+    members = asn["products"][0]["members"]
+    catalogs = [member["tweakreg_catalog"] for member in members]
+    assert catalogs == ["a_cat.parquet", "b_cat.parquet"]
