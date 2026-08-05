@@ -190,14 +190,26 @@ def test_api_with_type():
         assert members_dict[name] == type_
 
 
-def test_api_tweakreg_catalogs():
+@pytest.mark.parametrize(
+    "expname, catalog",
+    [
+        ("a_cal.asdf", "a_cat.parquet"),
+        (
+            "r0000101001001001001_0001_wfi01_f158_cal.asdf",
+            "r0000101001001001001_0001_wfi01_f158_cat.parquet",
+        ),
+        # a directory on the member is kept on the catalog
+        ("sub/dir/a_cal.asdf", "sub/dir/a_cat.parquet"),
+        # the separator of the replaced suffix is preserved
+        ("a-cal.asdf", "a-cat.parquet"),
+        # an unknown suffix is appended to, not replaced
+        ("a_unknown.asdf", "a_unknown_cat.parquet"),
+    ],
+)
+def test_api_tweakreg_catalogs(expname, catalog):
     """Catalog names are derived from the member expnames"""
-    inlist = ["a_cal.asdf", "b_cal.asdf"]
-
-    asn = asn_from_list(inlist, product_name="test", _tweakreg_catalogs=True)
-    members = asn["products"][0]["members"]
-    catalogs = [member["tweakreg_catalog"] for member in members]
-    assert catalogs == ["a_cat.parquet", "b_cat.parquet"]
+    asn = asn_from_list([expname], product_name="test", _tweakreg_catalogs=True)
+    assert asn["products"][0]["members"][0]["tweakreg_catalog"] == catalog
 
 
 def test_api_tweakreg_catalogs_off_by_default():

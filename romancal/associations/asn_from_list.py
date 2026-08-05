@@ -4,8 +4,10 @@ import argparse
 import sys
 import warnings
 from collections import OrderedDict
+from pathlib import Path
 
 from romancal.associations.lib._rules_elpp_base import DMS_ELPP_Base
+from romancal.lib.suffix import replace_suffix
 
 __all__ = ["asn_from_list"]
 
@@ -70,7 +72,7 @@ def _add_tweakreg_catalogs(asn):
     catalog name in their own metadata.
 
     Catalog names are derived from each member's ``expname`` by replacing
-    the final suffix with the ``cat`` suffix, so ``x_cal.asdf`` becomes
+    the known suffix with the ``cat`` suffix, so ``x_cal.asdf`` becomes
     ``x_cat.parquet``. Names are relative, matching how the catalog name
     was previously stored in image metadata.
 
@@ -83,8 +85,9 @@ def _add_tweakreg_catalogs(asn):
     """
     for product in asn["products"]:
         for member in product["members"]:
-            stem = member["expname"].rsplit("_", 1)[0]
-            member["tweakreg_catalog"] = f"{stem}_cat.parquet"
+            expname = Path(member["expname"])
+            catalog = replace_suffix(expname.stem, "cat") + ".parquet"
+            member["tweakreg_catalog"] = str(expname.with_name(catalog))
 
 
 def _create_ordered_meta(asn):
