@@ -67,16 +67,13 @@ def _add_tweakreg_catalogs(asn):
     """Add a source catalog name to every member of an association.
 
     ``tweakreg`` uses a member's ``tweakreg_catalog`` attribute as the
-    source catalog for that member. Setting it here allows ``tweakreg``
-    to be run on already calibrated images, which no longer carry the
-    catalog name in their own metadata.
+    source catalog for that member.  This function guesses default names
+    for catalogs from image file names, so that associations can be
+    generated including references to the corresponding catalogs.
 
     Catalog names are derived from each member's ``expname`` by replacing
     the known suffix with the ``cat`` suffix, so ``x_cal.asdf`` becomes
-    ``x_cat.parquet``. Names are relative, matching how the catalog name
-    was previously stored in image metadata.
-
-    This is provisional and may change.
+    ``x_cat.parquet``.
 
     Parameters
     ----------
@@ -221,10 +218,7 @@ def _cli(args=None):
         "--_tweakreg-catalogs",
         action="store_true",
         dest="_tweakreg_catalogs",
-        help=(
-            "Add a source catalog name to each member so that tweakreg can be"
-            " run on already calibrated images. Provisional; may change."
-        ),
+        help="Add a source catalog name to each member, inferred from image name.",
     )
 
     parser.add_argument(
