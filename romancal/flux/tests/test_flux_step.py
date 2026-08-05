@@ -43,7 +43,12 @@ def test_attributes(flux_step, attr, factor):
             original_value = getattr(original_model, attr)
             result_value = getattr(result_model, attr)
 
-            assert np.allclose(original_value * scale, result_value)
+            # Tolerances are set for float16, the dtype of err and the
+            # variances: rtol is ~eps and atol covers subnormal rounding,
+            # which small scaled-down values underflow into.
+            assert np.allclose(
+                original_value * scale, result_value, rtol=1e-3, atol=1e-7
+            )
 
             original_library.shelve(original_model, i, modify=False)
             result_library.shelve(result_model, i, modify=False)
@@ -86,7 +91,7 @@ def flux_step(request):
 def image_model():
     """Product a basic ImageModel"""
     # Create a random image and specify a conversion
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(42)
     shape = (10, 10)
     image_model = datamodels.ImageModel.create_fake_data(shape=shape)
     image_model.data = rng.poisson(2.5, size=shape).astype(image_model.data.dtype)
