@@ -426,7 +426,9 @@ def test_prefetch_dust_map_paths_validates_paths(field_id):
     step = SourceCatalogStep()
     map_paths = step._prefetch_dust_map_paths()
     if map_paths is None:
-        pytest.skip("dust-map references unavailable for validation in this environment")
+        pytest.skip(
+            "dust-map references unavailable for validation in this environment"
+        )
     assert field_id in map_paths
     assert isinstance(map_paths[field_id], str) and map_paths[field_id]
     assert all(isinstance(path, str) and path for path in map_paths.values())
