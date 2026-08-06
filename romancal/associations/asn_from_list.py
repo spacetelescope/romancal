@@ -4,8 +4,10 @@ import argparse
 import sys
 import warnings
 from collections import OrderedDict
+from pathlib import Path
 
 from romancal.associations.lib._rules_elpp_base import DMS_ELPP_Base
+from romancal.lib.suffix import replace_suffix
 
 __all__ = ["asn_from_list"]
 
@@ -51,11 +53,38 @@ def asn_from_list(items, rule=DMS_ELPP_Base, **kwargs):
     if kwargs.get("psf_match_reference_filter") is not None:
         asn["psf_match_reference_filter"] = kwargs["psf_match_reference_filter"]
 
+    if kwargs.get("_tweakreg_catalogs"):
+        _add_tweakreg_catalogs(asn)
+
     # Always set data_release_id; default to 'p' if not provided
     asn["data_release_id"] = kwargs.get("data_release_id", "p")
     asn = _create_ordered_meta(asn)
 
     return asn
+
+
+def _add_tweakreg_catalogs(asn):
+    """Add a source catalog name to every member of an association.
+
+    ``tweakreg`` uses a member's ``tweakreg_catalog`` attribute as the
+    source catalog for that member.  This function guesses default names
+    for catalogs from image file names, so that associations can be
+    generated including references to the corresponding catalogs.
+
+    Catalog names are derived from each member's ``expname`` by replacing
+    the known suffix with the ``cat`` suffix, so ``x_cal.asdf`` becomes
+    ``x_cat.parquet``.
+
+    Parameters
+    ----------
+    asn : Association
+        The association to modify in place.
+    """
+    for product in asn["products"]:
+        for member in product["members"]:
+            expname = Path(member["expname"])
+            catalog = replace_suffix(expname.stem, "cat") + ".parquet"
+            member["tweakreg_catalog"] = str(expname.with_name(catalog))
 
 
 def _create_ordered_meta(asn):
@@ -186,6 +215,13 @@ def _cli(args=None):
     )
 
     parser.add_argument(
+        "--_tweakreg-catalogs",
+        action="store_true",
+        dest="_tweakreg_catalogs",
+        help="Add a source catalog name to each member, inferred from image name.",
+    )
+
+    parser.add_argument(
         "filelist",
         type=str,
         nargs="+",
@@ -215,6 +251,7 @@ def _cli(args=None):
             target=parsed.target,
             data_release_id=parsed.data_release_id,
             psf_match_reference_filter=parsed.psf_match_reference_filter,
+            _tweakreg_catalogs=parsed._tweakreg_catalogs,
         )
         _, serialized = asn.dump()
         outfile.write(serialized)
