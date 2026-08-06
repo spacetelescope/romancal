@@ -1,0 +1,2 @@
+Add a provisional ``asn_from_list`` option that records source catalog names in
+association members, so that tweakreg can be run on already calibrated images.
