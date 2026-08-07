@@ -442,7 +442,7 @@ def test_source_catalog_prefetch_failure_keeps_catalog(image_model):
             return None
 
     step = NoDustPrefetchSourceCatalogStep()
-    result = step.call(
+    result_catalog, _ = step.call(
         image_model,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
@@ -451,7 +451,7 @@ def test_source_catalog_prefetch_failure_keeps_catalog(image_model):
         fit_psf=False,
         save_results=False,
     )
-    cat = result.source_catalog
+    cat = result_catalog.source_catalog
     assert isinstance(cat, Table)
     assert "dust_ebv" in cat.colnames
     assert len(cat["dust_ebv"]) == len(cat)
