@@ -34,7 +34,7 @@ def example_asn_path(tmp_path):
         m.save(str(tmp_path / base_fn))
         fns.append(base_fn)
     asn = asn_from_list(fns, product_name=_PRODUCT_NAME)
-    base_fn, contents = asn.dump(format="json")
+    base_fn, contents = asn.dump()
     asn_filename = tmp_path / base_fn
     with open(asn_filename, "w") as f:
         f.write(contents)

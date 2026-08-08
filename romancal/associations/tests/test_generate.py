@@ -1,30 +1,18 @@
 """Test basic generate operations"""
 
-from romancal.associations import (
-    _AssociationPool,
-    _AssociationRegistry,
-    _generate,
-    load_asn,
-)
-from romancal.associations.tests.helpers import t_path
+import importlib.resources
 
-
-def test_simple():
-    """Test generate on simple registry"""
-    registry = _AssociationRegistry(
-        [t_path("data/rules_basic.py")], include_default=False
-    )
-    pool = _AssociationPool()
-    pool["value"] = ["row1", "row2"]
-
-    asns = _generate(pool, registry)
-    assert len(asns) == 1
-    assert len(asns[0]["members"]) == 2
+import romancal.associations
+from romancal.associations import load_asn
 
 
 def test_unserialize():
     """Test basic unserializing"""
-    asn_file = t_path("data/asn_mosaic.json")
-    with open(asn_file) as asn_fp:
+    with open(
+        importlib.resources.files(romancal.associations)
+        / "tests"
+        / "data"
+        / "asn_mosaic.json"
+    ) as asn_fp:
         asn = load_asn(asn_fp)
     assert isinstance(asn, dict)

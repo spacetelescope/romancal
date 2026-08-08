@@ -2,10 +2,12 @@
 
 import argparse
 import sys
+import warnings
 from collections import OrderedDict
+from pathlib import Path
 
-from ._registry import _AssociationRegistry
-from .lib._rules_elpp_base import DMS_ELPP_Base
+from romancal.associations.lib._rules_elpp_base import DMS_ELPP_Base
+from romancal.lib.suffix import replace_suffix
 
 __all__ = ["asn_from_list"]
 
@@ -19,6 +21,7 @@ def asn_from_list(items, rule=DMS_ELPP_Base, **kwargs):
         List of items to add.
 
     rule: `Association` rule
+        Deprecated
         The association rule to use.
 
     kwargs: dict
@@ -36,6 +39,9 @@ def asn_from_list(items, rule=DMS_ELPP_Base, **kwargs):
     an association. As such, the association created may not be valid.
     It is presume the user knows what they are doing.
     """
+    if rule != DMS_ELPP_Base:
+        msg = "Only the DMS_ELPP_Base rule is supported. The rule argument is deprecated and will be removed"
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
     asn = rule()
     asn._add_items(items, **kwargs)
 
@@ -47,11 +53,38 @@ def asn_from_list(items, rule=DMS_ELPP_Base, **kwargs):
     if kwargs.get("psf_match_reference_filter") is not None:
         asn["psf_match_reference_filter"] = kwargs["psf_match_reference_filter"]
 
+    if kwargs.get("_tweakreg_catalogs"):
+        _add_tweakreg_catalogs(asn)
+
     # Always set data_release_id; default to 'p' if not provided
     asn["data_release_id"] = kwargs.get("data_release_id", "p")
     asn = _create_ordered_meta(asn)
 
     return asn
+
+
+def _add_tweakreg_catalogs(asn):
+    """Add a source catalog name to every member of an association.
+
+    ``tweakreg`` uses a member's ``tweakreg_catalog`` attribute as the
+    source catalog for that member.  This function guesses default names
+    for catalogs from image file names, so that associations can be
+    generated including references to the corresponding catalogs.
+
+    Catalog names are derived from each member's ``expname`` by replacing
+    the known suffix with the ``cat`` suffix, so ``x_cal.asdf`` becomes
+    ``x_cat.parquet``.
+
+    Parameters
+    ----------
+    asn : Association
+        The association to modify in place.
+    """
+    for product in asn["products"]:
+        for member in product["members"]:
+            expname = Path(member["expname"])
+            catalog = replace_suffix(expname.stem, "cat") + ".parquet"
+            member["tweakreg_catalog"] = str(expname.with_name(catalog))
 
 
 def _create_ordered_meta(asn):
@@ -131,6 +164,7 @@ def _cli(args=None):
         "--product-name",
         type=str,
         help="The product name when creating a Level 3 association",
+        required=True,
     )
 
     parser.add_argument(
@@ -181,6 +215,13 @@ def _cli(args=None):
     )
 
     parser.add_argument(
+        "--_tweakreg-catalogs",
+        action="store_true",
+        dest="_tweakreg_catalogs",
+        help="Add a source catalog name to each member, inferred from image name.",
+    )
+
+    parser.add_argument(
         "filelist",
         type=str,
         nargs="+",
@@ -190,18 +231,27 @@ def _cli(args=None):
     parsed = parser.parse_args(args=args)
     print("Parsed args:", parsed)
 
-    # Get the rule
-    rule = _AssociationRegistry(parsed.ruledefs, include_bases=True)[parsed.rule]
+    if parsed.rule != "DMS_ELPP_Base":
+        msg = f"Use of a different rule ({parsed.rule}) was never supported and is deprecated."
+        warnings.warn(msg, UserWarning, stacklevel=2)
+
+    if parsed.ruledefs:
+        msg = "ruledefs was never supported and is deprecated."
+        warnings.warn(msg, UserWarning, stacklevel=2)
+
+    if parsed.acid != "o999":
+        msg = "associate candidate id was never supported and is deprecated."
+        warnings.warn(msg, UserWarning, stacklevel=2)
 
     with open(parsed.output_file, "w") as outfile:
         asn = asn_from_list(
             parsed.filelist,
-            rule=rule,
             product_name=parsed.product_name,
             acid=parsed.acid,
             target=parsed.target,
             data_release_id=parsed.data_release_id,
             psf_match_reference_filter=parsed.psf_match_reference_filter,
+            _tweakreg_catalogs=parsed._tweakreg_catalogs,
         )
-        _, serialized = asn.dump(format="json")
+        _, serialized = asn.dump()
         outfile.write(serialized)

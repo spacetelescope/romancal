@@ -20,7 +20,6 @@ dependencies = [
     "photutils>=3.0,<4",
     "pyarrow>=16.0",
     "pandas>=2.2.2",  # for Table.read(...) support in astropy for parquet files
-    "pyyaml>=6.0",
     # Between the intermediate and build releases we want to keep
     # the roman_datamodels pin to the released version. If there
     # is a need to change this to main then we need a new
@@ -35,7 +34,8 @@ dependencies = [
     "gwcs>=1.0.1,<2",
     # "stcal>=1.18.0,<2",
     "stcal@git+https://github.com/spacetelescope/stcal@main",
-    "stpipe>=0.11.0,<2",
+    # "stpipe>=0.11.0,<2",
+    "stpipe@git+https://github.com/spacetelescope/stpipe@main",
     "spherical-geometry>=1.4.0,<1.5",
     "tweakwcs>=0.9.0",
 ]
@@ -56,7 +56,8 @@ docs = [
 test = [
     "ci-watson>=0.11.0",
     "pytest>=9.0",
-    "pytest-astropy>=0.11.0",
+    "pytest-cov>=2.3.1",
+    "pytest-doctestplus>=1.0.0",
     "pysiaf>=0.13.0",
     "deepdiff",
     "stpreview>=0.6.0",
@@ -70,7 +71,7 @@ dev = [
 sdp = [
     "pysiaf>=0.13.0",
     "stpreview>=0.6.0",
-    "roman-photoz",
+    "roman-photoz>=0.1.1",
 ]
 
 [project.urls]
@@ -180,44 +181,6 @@ exclude_lines = [
     "raise AssertionError",
     "raise NotImplementedError",
     "if __name__ == \"__main__\":",
-]
-
-[tool.ruff]
-line-length = 88
-
-
-[tool.ruff.lint]
-extend-select = [
-    "UP",   # PyUpgrade
-    "I",    # isort
-    "B",    # BugBear
-    "S",    # Bandit
-    "RUF",  # ruff specific
-    "NPY",  # Numpy lint
-]
-exclude = [
-    "jdocs",
-    ".tox",
-    ".eggs",
-    "build",
-]
-ignore = [
-    "E741", # ambiguous variable name
-    "RUF059", # unused unpacked variable
-]
-
-[tool.ruff.lint.extend-per-file-ignores]
-"romancal/associations/__init__.py" = [
-    "E402",
-]
-"romancal/**/tests/**.py" = [
-    "S101" # Bandit: Use of assert detected (fine in test files)
-]
-"romancal/**/test/**.py" = [
-    "S101" # Bandit: Use of assert detected (fine in test files)
-]
-"romancal/regtest/**.py" = [
-    "S101" # Bandit: Use of assert detected (fine in test files)
 ]
 
 [tool.cibuildwheel.macos]

@@ -120,7 +120,7 @@ class ExposurePipeline(RomanPipeline):
 
                 if not self.tweakreg.skip and catalog is not None:
                     # attach the catalog to the model so tweakreg can see it
-                    if "source_catalog" not in model.meta:
+                    if "source_catalog" not in result.meta:
                         result.meta["source_catalog"] = {}
                     result.meta.source_catalog.tweakreg_catalog = catalog.source_catalog
 
@@ -208,6 +208,7 @@ class ExposurePipeline(RomanPipeline):
         )
 
     def save_model(self, model, **kwargs):
+        suffix = kwargs.get("suffix", None)
         # depending on model set suffix and ext
         if isinstance(
             model,
@@ -217,12 +218,18 @@ class ExposurePipeline(RomanPipeline):
             ),
         ):
             kwargs["ext"] = "parquet"
-            kwargs["suffix"] = kwargs.get("suffix", "cat")
+            if suffix is None:
+                suffix = "cat"
         elif isinstance(model, rdm.SegmentationMapModel):
+            if suffix is None:
+                suffix = "segm"
             kwargs["suffix"] = kwargs.get("suffix", "segm")
         elif isinstance(model, rdm.ImageModel):
             save_wfiwcs(self, model, force=True)
-            kwargs["suffix"] = kwargs.get("suffix", self.suffix)
+            if suffix is None:
+                suffix = self.suffix
+
+        kwargs["suffix"] = suffix
 
         # strip the index since these all have different extensions
         kwargs.pop("idx", None)

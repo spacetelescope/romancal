@@ -17,7 +17,8 @@ def test_absolute_photometric_calibration(
     """DMS140 Test: Testing application of photometric correction using
     CRDS selected photom file."""
 
-    input_data = "r0000101001001001001_0001_wfi01_f158_flat.asdf"
+    # assign_wcs stage is input to photom
+    input_data = "r0000101001001001001_0001_wfi01_f158_assignwcs.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.input = input_data
 

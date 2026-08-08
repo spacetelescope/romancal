@@ -8,7 +8,7 @@ Create an association using either the command line tool
 
 Associations
 ^^^^^^^^^^^^
-Refer to TBD for a full description of associations.
+Refer to :ref:`asn-overview` for a full description of associations.
 
 To create an association programmatically, use:
 

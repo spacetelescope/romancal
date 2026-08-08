@@ -1,18 +1,11 @@
 """Load an Association from a file or object"""
 
-from inspect import isclass
-
-from ._association import _Association
-from ._registry import _AssociationRegistry
+from romancal.associations._association import _Association
 
 
 def load_asn(
     serialized,
-    format=None,
-    first=True,
     validate=True,
-    registry=_AssociationRegistry,
-    **kwargs,
 ):
     """Load an Association from a file or object
 
@@ -21,28 +14,13 @@ def load_asn(
     serialized : object
         The serialized form of the association.
 
-    format : str or None
-        The format to force. If None, try all available.
-
     validate : bool
         Validate against the class' defined schema, if any.
 
-    first : bool
-        A serialization potentially matches many rules.
-        Only return the first succesful load.
-
-    registry : AssociationRegistry or None
-        The `AssociationRegistry` to use.
-        If None, no registry is used.
-        Can be passed just a registry class instead of instance.
-
-    kwargs : dict
-        Other arguments to pass to the `load` methods defined
-        in the `Association.IORegistry`
-
     Returns
     -------
-    The Association object
+    dict
+    The association data
 
     Raises
     ------
@@ -51,19 +29,7 @@ def load_asn(
 
     Notes
     -----
-    The `serialized` object can be in any format
-    supported by the registered I/O routines. For example, for
-    `json` and `yaml` formats, the input can be either a string or
+    The `serialized` object can be either a string or
     a file object containing the string.
-
-    If no registry is specified, the default `Association.load`
-    method is used.
     """
-    if registry is None:
-        return _Association.load(serialized, format=format, validate=validate)
-
-    if isclass(registry):
-        registry = registry()
-    return registry.load(
-        serialized, format=format, first=first, validate=validate, **kwargs
-    )
+    return _Association.load(serialized, validate=validate)

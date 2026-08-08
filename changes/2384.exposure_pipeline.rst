@@ -1,0 +1,1 @@
+Fix output file suffix when exposure pipeline is run with an association or ``ModelLibrary``.

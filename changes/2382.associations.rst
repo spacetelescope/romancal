@@ -1,0 +1,3 @@
+Remove unused associations code.
+Deprecate arguments to asn_from_list: rule, ruledefs, id (none of these were functional)
+Deprecate arguments to skycell_asn: format, rule, id (none of these were functional)

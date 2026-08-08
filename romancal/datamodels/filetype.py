@@ -1,5 +1,6 @@
 import io
 import os
+from collections.abc import MutableMapping
 from pathlib import Path
 
 import roman_datamodels as rdm
@@ -49,6 +50,9 @@ def check(init: os.PathLike | Path | io.FileIO) -> str:
 
     elif isinstance(init, ModelLibrary):
         return "ModelLibrary"
+
+    elif isinstance(init, MutableMapping):
+        return "asn"
 
     elif hasattr(init, "read") and hasattr(init, "seek"):
         magic = init.read(5)
