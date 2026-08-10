@@ -1,3 +1,0 @@
-Seed the flux test RNG and set comparison tolerances appropriate to float16,
-fixing an intermittent failure when scaled-down variances underflow to
-subnormal.

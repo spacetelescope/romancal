@@ -1,1 +1,0 @@
-Replace "JWST" with "Roman" in the name of the WCS transform produced by ``tweakwcs``.
