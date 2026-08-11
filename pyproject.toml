@@ -71,7 +71,7 @@ dev = [
 sdp = [
     "pysiaf>=0.13.0",
     "stpreview>=0.6.0",
-    "roman-photoz",
+    "roman-photoz>=0.1.1",
 ]
 
 [project.urls]

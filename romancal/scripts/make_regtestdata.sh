@@ -105,10 +105,10 @@ cp Test_linearity.asdf $outdir/truth/WFI/image/
 strun romancal.step.RampFitStep r0000101001001001001_0001_wfi01_f158_linearity.asdf --algorithm=likely --output_file=r0000101001001001001_0001_wfi01_f158_like_rampfit.asdf
 cp r0000101001001001001_0001_wfi01_f158_like_rampfit.asdf $outdir/truth/WFI/image/
 
-# We have a test that runs the flat field step directly on an _L1_ spectroscopic
-# file and verifies that it gets skipped.
+# We have a test that runs the flat field step directly on a spectroscopic
+# file and verifies that it gets skipped.  That would happen on a photom file.
 basename="r0000201001001001001_0001_wfi01_grism"
-strun romancal.step.FlatFieldStep ${basename}_assignwcs.asdf
+strun romancal.step.FlatFieldStep ${basename}_photom.asdf
 cp ${basename}_flat.asdf $outdir/truth/WFI/grism/
 
 # make a version of a file with a different pointing
