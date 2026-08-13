@@ -1,3 +1,143 @@
+1.1.0 (2026-08-10)
+==================
+
+Associations
+------------
+
+- Make some of the association modules private (`#2355
+  <https://github.com/spacetelescope/romancal/issues/2355>`_)
+- Remove unused associations code.
+  Deprecate arguments to asn_from_list: rule, ruledefs, id (none of these were
+  functional)
+  Deprecate arguments to skycell_asn: format, rule, id (none of these were
+  functional) (`#2382
+  <https://github.com/spacetelescope/romancal/issues/2382>`_)
+- Add a provisional ``asn_from_list`` option that records source catalog names
+  in
+  association members, so that tweakreg can be run on already calibrated
+  images. (`#2408 <https://github.com/spacetelescope/romancal/issues/2408>`_)
+
+
+``exposure_pipeline``
+---------------------
+
+- Fix issue where ``ExposurePipeline`` always saved results. Running
+  ``ExposurePipeline.call`` now returns a model, catalog and segmentation map.
+  (`#2352 <https://github.com/spacetelescope/romancal/issues/2352>`_)
+- Fix output file suffix when exposure pipeline is run with an association or
+  ``ModelLibrary``. (`#2384
+  <https://github.com/spacetelescope/romancal/issues/2384>`_)
+
+
+``mosaic_pipeline``
+-------------------
+
+- Fix issue where ``MosaicPipeline`` always saved results. Running
+  ``MosaicPipeline.call`` now returns a model, catalog and segmentation map.
+  (`#2352 <https://github.com/spacetelescope/romancal/issues/2352>`_)
+
+
+``orientation``
+---------------
+
+- Implement ability to choose local pysiaf xml folder
+
+  Add the option `--siaf` to `roman_set_telescope_pointing` cli. (`#2367
+  <https://github.com/spacetelescope/romancal/issues/2367>`_)
+
+
+``ramp_fitting`` (WFI-Image, WFI-Prism, WFI-Grism)
+--------------------------------------------------
+
+- Fix read noise factor of sqrt(2) in likely ramp fitting: the Roman readnoise
+  reference stores per-read noise, but stcal's likely algorithm expects CDS
+  read noise (sqrt(2) times larger). (`#2360
+  <https://github.com/spacetelescope/romancal/issues/2360>`_)
+- Record which resultant each jump was flagged in during likelihood ramp
+  fitting as a ``jump_indices`` extension on the output image, controlled by
+  the
+  new ``record_jumps`` step option. (`#2376
+  <https://github.com/spacetelescope/romancal/issues/2376>`_)
+
+
+``assign_wcs`` (WFI-Image, WFI-Prism, WFI-Grism)
+------------------------------------------------
+
+- Label GWCS transform inputs/outputs to match coordinate frame axes names.
+  (`#2351 <https://github.com/spacetelescope/romancal/issues/2351>`_)
+
+
+``flatfield`` (WFI-Image)
+-------------------------
+
+- Apply flat field correction to the ``dumo`` (uniform minus optimal slope)
+  field. (`#2360 <https://github.com/spacetelescope/romancal/issues/2360>`_)
+
+
+``flux``
+--------
+
+- Seed the flux test RNG and set comparison tolerances appropriate to float16,
+  fixing an intermittent failure when scaled-down variances underflow to
+  subnormal. (`#2406
+  <https://github.com/spacetelescope/romancal/issues/2406>`_)
+
+
+``tweakreg`` (WFI-Image)
+------------------------
+
+- Replace "JWST" with "Roman" in the name of the WCS transform produced by
+  ``tweakwcs``. (`#2219
+  <https://github.com/spacetelescope/romancal/issues/2219>`_)
+- Updated ``tweakreg`` step status handling so exposures that were attempted
+  but
+  did not produce a successful WCS solution are marked ``FAILED`` (instead of
+  ``COMPLETE``/implicit ``INCOMPLETE``).
+
+  ``meta.wcs_fit_results`` is now always populated for attempted ``tweakreg``
+  runs, including failed fits, and includes a new ``n_detector`` field
+  recording
+  the number of detectors used in the solve. (`#2342
+  <https://github.com/spacetelescope/romancal/issues/2342>`_)
+
+
+``resample``
+------------
+
+- Corrected the "level" and "subtracted" keys in the output resampled model to
+  show correct values for the resampled image. (`#2324
+  <https://github.com/spacetelescope/romancal/issues/2324>`_)
+
+
+``source_catalog``
+------------------
+
+- Added a random pixel shift to injected sources. (`#2339
+  <https://github.com/spacetelescope/romancal/issues/2339>`_)
+- Fix issue where ``SourceCatalogStep`` always saved results. Running
+  ``SourceCatalogStep.call`` now returns a catalog and segmentation map.
+  (`#2352 <https://github.com/spacetelescope/romancal/issues/2352>`_)
+
+
+``multiband_catalog``
+---------------------
+
+- Fix issue where ``MultibandCatalogStep`` always saved results. Running
+  ``MultibandCatalogStep.call`` now returns a catalog and segmentation map.
+  (`#2352 <https://github.com/spacetelescope/romancal/issues/2352>`_)
+
+
+General
+-------
+
+- Allow passing association dictionaries to steps that support associations.
+  (`#2393 <https://github.com/spacetelescope/romancal/issues/2393>`_)
+- Depend on ``pytest-cov`` and ``pytest-doctestplus`` directly;
+  ``pytest-astropy``
+  0.12.0 pulls in a ``--slow`` option that collides with ``ci-watson``. (`#2405
+  <https://github.com/spacetelescope/romancal/issues/2405>`_)
+
+
 1.0.1 (2026-06-29)
 ==================
 
