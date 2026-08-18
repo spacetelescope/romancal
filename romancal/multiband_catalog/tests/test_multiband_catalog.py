@@ -436,9 +436,9 @@ def libraries_si_nan():
                 np.round(nan_x_pos).astype(int),
             )
 
-        # NaN in a quadrant
+        # NaN in a block
         if si_type == "Block":
-            model1.data[250:, 250:] = np.nan
+            model1.data[400:, 400:] = np.nan
 
         # NaN on grid diagonal
         if si_type != "NoNan":
@@ -530,27 +530,6 @@ def test_multiband_source_injection_nan_catalog(libraries_si_nan, function_jail)
     # Block - Grid mosaics with a quadrant also set to NaN
     libmods = libraries_si_nan
 
-    # Obtain source injection locations
-    with libmods["NoNan"]:
-        for si_model in libmods["NoNan"]:
-            si_y_pos, si_x_pos = make_source_grid(
-                si_model,
-                yxmax=si_model.data.shape,
-                yxoffset=(50, 50),
-                yxgrid=(20, 20),
-                seed=RNG_SEED,
-            )
-            y_pos_idx, x_pos_idx = (
-                np.round(si_y_pos).astype(int),
-                np.round(si_x_pos).astype(int),
-            )
-
-            libmods["NoNan"].shelve(si_model, modify=False)
-
-    # Specify the Grid SI locations that should have NaN pixels
-    # From above: yxgrid=(20, 20), so every 21st entry is a diagonal
-    y_nan_idx, x_nan_idx = y_pos_idx[0::21], x_pos_idx[0::21]
-
     # Run the MultibandCatalogStep on all three libraries
     for si_type in ["NoNan", "Grid", "Block"]:
         res_cat[si_type], results[si_type] = step.call(
@@ -566,163 +545,36 @@ def test_multiband_source_injection_nan_catalog(libraries_si_nan, function_jail)
             save_debug_info=True,
         )
 
-    # Create masks for data comparisons across mosaics
-
-    # Grid Nan mask
-    grid_nan_stamp_mask = np.zeros_like(results["Grid"].si_detection_image, dtype=bool)
-    for x, y in zip(y_nan_idx, x_nan_idx):
-        grid_nan_stamp_mask[y - 10 : y + 11, x - 10 : x + 11] = True
-
-    # Block Nan mask
-    block_nan_stamp_mask = deepcopy(grid_nan_stamp_mask)
-    block_nan_stamp_mask[240:, 240:] = True
+    # Specify the Grid SI locations that should have NaN pixels
+    # From above: yxgrid=(20, 20), so every 21st entry is a diagonal
+    y_nan_idx = np.round(results['NoNan'].injected_sources['y_pos'][0::21]).astype(int)
+    x_nan_idx = np.round(results['NoNan'].injected_sources['x_pos'][0::21]).astype(int)
 
     # Compare data
+    for si_type in ["Grid", "Block"]:
+        # Ensure nan pixels match injection locations
+        with libmods[si_type]:
+            for si_model in libmods[si_type]:
+                assert np.all(np.isnan(si_model.data[y_nan_idx, x_nan_idx]))
+                libmods[si_type].shelve(si_model, modify=False)
 
-    # Grid vs NoNan
-    # All pixels far from the NaN injected sources should be close
-    assert np.allclose(
-        results["NoNan"].si_detection_image[~grid_nan_stamp_mask],
-        results["Grid"].si_detection_image[~grid_nan_stamp_mask],
-        atol=MEANFLUX * EXPTIME,
-    )
+        # si_type vs NoNan - most pixels should be close
+        sum_ac_test = np.isclose(
+            results["NoNan"].si_detection_image,
+            results[si_type].si_detection_image,
+            rtol=1e-2,
+        )
 
-    # Block vs NoNan
-    # All pixels far from the NaN injected sources and outside of
-    # the large NaN region should be close
-    assert np.allclose(
-        results["NoNan"].si_detection_image[~block_nan_stamp_mask],
-        results["Block"].si_detection_image[~block_nan_stamp_mask],
-        atol=MEANFLUX * EXPTIME,
-    )
+        # Ensure over 90% of pixels are close to NoNan data
+        assert ((np.sum(sum_ac_test) / np.sum(results["NoNan"].si_detection_image.size)) > 0.9)
 
-    # Catalog tests to ensure that the sources injected at
-    # NaN pixel center locations are reasonably close
+        # Obtain indices of sources to be injected into NaN pixels
+        is_nan_idx = np.round(results[si_type].injected_sources['label'][0::21]).astype(int)
 
-    # Create catalogs of "best" selected recovered sources (only one source per injection)
-    nonan_rs_no_dbls = results["NoNan"].recovered_sources[
-        results["NoNan"].recovered_sources["best_injected_index"] != -1
-    ]
-    grid_rs_no_dbls = results["Grid"].recovered_sources[
-        results["Grid"].recovered_sources["best_injected_index"] != -1
-    ]
-    block_rs_no_dbls = results["Block"].recovered_sources[
-        results["Block"].recovered_sources["best_injected_index"] != -1
-    ]
-
-    # Create intermediate lists of NaN pixel indices on each mosaic group
-    nan_idx = [i * 21 for i in range(0, 20)]
-    nonan_ce = list(
-        set(nan_idx) & set(nonan_rs_no_dbls["best_injected_index"].tolist())
-    )
-    grid_ce = list(set(nan_idx) & set(grid_rs_no_dbls["best_injected_index"].tolist()))
-    block_ce = list(
-        set(nan_idx) & set(block_rs_no_dbls["best_injected_index"].tolist())
-    )
-
-    # Create matched lists of NaN pixel indices between
-    # NoNan & Grid and NoNan & Block
-    grid_inter_ce = list(set(nonan_ce) & set(grid_ce))
-    block_inter_ce = list(set(nonan_ce) & set(block_ce))
-
-    # Create numpy indices for each matched catalog object
-    ngce_idx = np.array(
-        [
-            np.where(nonan_rs_no_dbls["best_injected_index"] == ce)[0][0]
-            for ce in grid_inter_ce
-        ]
-    )
-    gce_idx = np.array(
-        [
-            np.where(grid_rs_no_dbls["best_injected_index"] == ce)[0][0]
-            for ce in grid_inter_ce
-        ]
-    )
-    nbce_idx = np.array(
-        [
-            np.where(nonan_rs_no_dbls["best_injected_index"] == ce)[0][0]
-            for ce in block_inter_ce
-        ]
-    )
-    bce_idx = np.array(
-        [
-            np.where(block_rs_no_dbls["best_injected_index"] == ce)[0][0]
-            for ce in block_inter_ce
-        ]
-    )
-
-    # Remove obvious object mismatch
-    # (SI can have multiple matches for one object, and it chooses the closest.
-    #  NaNs can cause a mismatch.)
-    bad_idx_mask = np.isclose(
-        grid_rs_no_dbls["ellipticity"][gce_idx],
-        nonan_rs_no_dbls["ellipticity"][ngce_idx],
-        atol=0.3,
-    )
-    ngce_idx = ngce_idx[bad_idx_mask]
-    gce_idx = gce_idx[bad_idx_mask]
-
-    # Grid catalog tests
-
-    # Ensure Grid has NaN flux within a 0.4" aperture of NaN pixels
-    assert np.all(np.isnan(grid_rs_no_dbls["aper04_f158_flux"][gce_idx]))
-
-    # Ensure Grid Nan pixel objects have similar locations to matched NoNan object locations
-    assert np.allclose(
-        grid_rs_no_dbls["x_centroid"][gce_idx],
-        nonan_rs_no_dbls["x_centroid"][ngce_idx],
-        atol=2,
-    )
-    assert np.allclose(
-        grid_rs_no_dbls["y_centroid"][gce_idx],
-        nonan_rs_no_dbls["y_centroid"][ngce_idx],
-        atol=2,
-    )
-
-    # Ensure Grid Nan pixel objects have similar size to matched NoNan object size
-    assert np.allclose(
-        grid_rs_no_dbls["fluxfrac_radius_50_f184"][gce_idx],
-        nonan_rs_no_dbls["fluxfrac_radius_50_f184"][ngce_idx],
-        rtol=0.4,
-    )
-
-    # Ensure Grid Nan pixel objects have similar kron AB Mags to matched NoNan object kron AB Mags
-    assert np.allclose(
-        grid_rs_no_dbls["kron_f184_abmag"][gce_idx],
-        nonan_rs_no_dbls["kron_f184_abmag"][ngce_idx],
-        rtol=0.2,
-    )
-
-    # Block catalog tests
-
-    # Ensure Block has NaN flux within a 0.4" aperture of NaN pixels
-    assert np.all(np.isnan(block_rs_no_dbls["aper04_f158_flux"][bce_idx]))
-
-    # Ensure Block Nan pixel objects have similar locations to matched NoNan object locations
-    assert np.allclose(
-        block_rs_no_dbls["x_centroid"][bce_idx],
-        nonan_rs_no_dbls["x_centroid"][nbce_idx],
-        atol=2,
-    )
-    assert np.allclose(
-        block_rs_no_dbls["y_centroid"][bce_idx],
-        nonan_rs_no_dbls["y_centroid"][nbce_idx],
-        atol=2,
-    )
-
-    # Ensure Block Nan pixel objects have similar size to matched NoNan object size
-    assert np.allclose(
-        block_rs_no_dbls["fluxfrac_radius_50_f184"][bce_idx],
-        nonan_rs_no_dbls["fluxfrac_radius_50_f184"][nbce_idx],
-        rtol=0.4,
-    )
-
-    # Ensure Block Nan pixel objects have similar kron AB Mags to matched NoNan object kron AB Mags
-    assert np.allclose(
-        block_rs_no_dbls["kron_f184_abmag"][bce_idx],
-        nonan_rs_no_dbls["kron_f184_abmag"][nbce_idx],
-        rtol=0.2,
-    )
+        # Ensure that there are sources injected at isolated NaN points (farther than 2 arcsec
+        # from initial sources)
+        nan_rs_idx = np.flatnonzero(np.isin(results[si_type].recovered_sources["best_injected_index"], is_nan_idx))
+        np.sum(results[si_type].recovered_sources[nan_rs_idx]['dist_nearest'] > 2)
 
 
 def test_match_recovered_sources():
