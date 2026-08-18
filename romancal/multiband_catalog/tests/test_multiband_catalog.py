@@ -443,15 +443,10 @@ def libraries_si_nan():
         # NaN on grid diagonal
         if si_type != "NoNan":
             model1.data[nan_y_pos[0::21], nan_x_pos[0::21]] = np.nan
-            nanmask = np.isnan(model1.data)
-
-        nanmask = np.isnan(model1.data)
 
         # Second model
         model2 = deepcopy(model1)
         model2.meta.instrument.optical_element = "F184"
-
-        nanmask = np.isnan(model2.data)
 
         libs[si_type] = ModelLibrary([model1, model2])
 
