@@ -547,7 +547,7 @@ def test_multiband_source_injection_nan_catalog(libraries_si_nan, function_jail)
 
     # Compare data
     for si_type in ["Grid", "Block"]:
-        # Ensure nan pixels match injection locations
+        # Ensure nan injection locations match nan pixels
         with libmods[si_type]:
             for si_model in libmods[si_type]:
                 assert np.all(np.isnan(si_model.data[y_nan_idx, x_nan_idx]))
