@@ -75,22 +75,6 @@ cp r0000101001001001001_0002_wfi01_f158_cal.asdf $outdir/WFI/image/
 strun roman_elp r0000101001001001001_0002_wfi10_f158_uncal.asdf
 cp r0000101001001001001_0002_wfi10_f158_cal.asdf $outdir/WFI/image/
 
-# need to make a special ALL_SATURATED file for the all saturated test.
-echo "Creating regtest files for all saturated tests..."
-basename="r0000101001001001001_0001_wfi01_f158"
-python -c "
-import asdf
-basename = '$basename'
-f = asdf.open(f'{basename}_uncal.asdf')
-data = f['roman']['data'].copy()
-data[...] = 65535
-f['roman']['data'] = data
-f['roman']['meta']['filename'] = f'{basename}_ALL_SATURATED_uncal.asdf'
-f.write_to(f'{basename}_ALL_SATURATED_uncal.asdf')"
-strun roman_elp ${basename}_ALL_SATURATED_uncal.asdf
-cp ${basename}_ALL_SATURATED_uncal.asdf $outdir/WFI/image/
-cp ${basename}_ALL_SATURATED_cal.asdf $outdir/truth/WFI/image/
-
 
 # make a special file dark file with a different name
 strun romancal.step.DarkCurrentStep r0000101001001001001_0001_wfi01_f158_rampfit.asdf --output_file=Test_dark

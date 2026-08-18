@@ -144,3 +144,31 @@ def test_on_disk(function_jail, fake_science_raw, on_disk):
     pipeline.dq_init.skip = False  # unskip dqinit
     output_value, _, _ = pipeline.run(asn_filename)
     assert output_value._on_disk == on_disk
+
+
+def test_all_saturated(fake_science_raw):
+    """
+    Test ELP behavior for an all saturated image.
+    """
+    # make an all-saturated uncal
+    fake_science_raw.data[...] = 65535
+    cal, cat, segm = ExposurePipeline.call(fake_science_raw)
+    assert isinstance(cal, rdm.ImageModel)
+    cal_step_status = {
+        "dq_init": "COMPLETE",
+        "saturation": "COMPLETE",
+        "linearity": "SKIPPED",
+        "dark": "SKIPPED",
+        "ramp_fit": "SKIPPED",
+        "assign_wcs": "SKIPPED",
+        "flat_field": "SKIPPED",
+        "photom": "SKIPPED",
+        "source_catalog": "SKIPPED",
+        "tweakreg": "SKIPPED",
+    }
+    for step_name, expected in cal_step_status.items():
+        assert cal.meta.cal_step[step_name] == expected
+    for array_name in ("data", "err", "var_poisson"):
+        np.testing.assert_array_equal(cal[array_name], 0)
+    assert cat is None
+    assert segm is None
