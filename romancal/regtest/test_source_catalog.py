@@ -5,6 +5,8 @@ from astropy.table import Table
 
 from romancal.stpipe import RomanStep
 
+from .regtestdata import compare_parquet
+
 # mark all tests in this module
 pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 
@@ -28,7 +30,7 @@ def run_source_catalog(rtdata_module, request, resource_tracker):
 
     rtdata.get_data(f"WFI/image/{inputfn}")
     rtdata.input = inputfn
-    rtdata.get_truth(f"truth/WFI/image/{outputfn}")
+    rtdata.get_truth(f"truth/test_source_catalog/{outputfn}")
 
     args = [
         "romancal.step.SourceCatalogStep",
@@ -37,6 +39,16 @@ def run_source_catalog(rtdata_module, request, resource_tracker):
     with resource_tracker.track():
         RomanStep.from_cmdline(args)
     return rtdata_module
+
+
+@pytest.fixture(scope="module")
+def output_filename(run_source_catalog):
+    return run_source_catalog.output
+
+
+@pytest.fixture(scope="module")
+def truth_filename(run_source_catalog):
+    return run_source_catalog.truth
 
 
 @pytest.fixture(scope="module")
@@ -72,6 +84,11 @@ def test_has_field(fields, field):
 
 def test_log_tracked_resources(log_tracked_resources, run_source_catalog):
     log_tracked_resources()
+
+
+def test_output_matches_truth(output_filename, truth_filename, ignore_parquet_paths):
+    diff = compare_parquet(output_filename, truth_filename, **ignore_parquet_paths)
+    assert diff.identical, diff.report()
 
 
 def test_forced_catalog(rtdata_module, dms_logger):
