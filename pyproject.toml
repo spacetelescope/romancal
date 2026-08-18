@@ -24,18 +24,18 @@ dependencies = [
     # the roman_datamodels pin to the released version. If there
     # is a need to change this to main then we need a new
     # roman_datamodels release.
-    # "roman_datamodels>=1.0,<1.1",
-    "roman_datamodels@git+https://github.com/spacetelescope/roman_datamodels@main",
+    "roman_datamodels>=1.1,<1.2",
+    # "roman_datamodels@git+https://github.com/spacetelescope/roman_datamodels@main",
     "romanisim>=0.14,<0.15",
     # "romanisim@git+https://github.com/spacetelescope/romanisim@main",
     "asdf>=4.1.0,<6",
     "crds>=13.0.2",
     "drizzle>=2.2.0,<2.3.0",
     "gwcs>=1.0.1,<2",
-    # "stcal>=1.18.0,<2",
-    "stcal@git+https://github.com/spacetelescope/stcal@main",
-    # "stpipe>=0.11.0,<2",
-    "stpipe@git+https://github.com/spacetelescope/stpipe@main",
+    "stcal>=1.20.0,<2",
+    # "stcal@git+https://github.com/spacetelescope/stcal@main",
+    "stpipe>=1.1.0,<2",
+    # "stpipe@git+https://github.com/spacetelescope/stpipe@main",
     "spherical-geometry>=1.4.0,<1.5",
     "tweakwcs>=0.9.0",
 ]

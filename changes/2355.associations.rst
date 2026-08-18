@@ -1,1 +1,0 @@
-Make some of the association modules private
