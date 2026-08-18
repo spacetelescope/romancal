@@ -547,8 +547,8 @@ def test_multiband_source_injection_nan_catalog(libraries_si_nan, function_jail)
 
     # Specify the Grid SI locations that should have NaN pixels
     # From above: yxgrid=(20, 20), so every 21st entry is a diagonal
-    y_nan_idx = np.round(results['NoNan'].injected_sources['y_pos'][0::21]).astype(int)
-    x_nan_idx = np.round(results['NoNan'].injected_sources['x_pos'][0::21]).astype(int)
+    y_nan_idx = np.round(results["NoNan"].injected_sources["y_pos"][0::21]).astype(int)
+    x_nan_idx = np.round(results["NoNan"].injected_sources["x_pos"][0::21]).astype(int)
 
     # Compare data
     for si_type in ["Grid", "Block"]:
@@ -566,15 +566,23 @@ def test_multiband_source_injection_nan_catalog(libraries_si_nan, function_jail)
         )
 
         # Ensure over 90% of pixels are close to NoNan data
-        assert ((np.sum(sum_ac_test) / np.sum(results["NoNan"].si_detection_image.size)) > 0.9)
+        assert (
+            np.sum(sum_ac_test) / np.sum(results["NoNan"].si_detection_image.size)
+        ) > 0.9
 
         # Obtain indices of sources to be injected into NaN pixels
-        is_nan_idx = np.round(results[si_type].injected_sources['label'][0::21]).astype(int)
+        is_nan_idx = np.round(results[si_type].injected_sources["label"][0::21]).astype(
+            int
+        )
 
         # Ensure that there are sources injected at isolated NaN points (farther than 2 arcsec
         # from initial sources)
-        nan_rs_idx = np.flatnonzero(np.isin(results[si_type].recovered_sources["best_injected_index"], is_nan_idx))
-        np.sum(results[si_type].recovered_sources[nan_rs_idx]['dist_nearest'] > 2)
+        nan_rs_idx = np.flatnonzero(
+            np.isin(
+                results[si_type].recovered_sources["best_injected_index"], is_nan_idx
+            )
+        )
+        np.sum(results[si_type].recovered_sources[nan_rs_idx]["dist_nearest"] > 2)
 
 
 def test_match_recovered_sources():
