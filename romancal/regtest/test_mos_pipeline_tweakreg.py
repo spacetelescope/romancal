@@ -19,7 +19,10 @@ on Artifactory — this test never uploads results to Artifactory.
 Artifactory inputs (read-only download via ``rtdata``)
 -----------------------------------------------------
 * ``WFI/image/L3_regtest_asn.json`` and its ``*_cal.asdf`` members
-* Matching ``*_cat.parquet`` catalogs for each cal (same basename stem)
+* Optional matching ``*_cat.parquet`` catalogs when already published
+
+Catalogs that are not on Artifactory are produced in the test jail with
+``SourceCatalogStep`` from the downloaded cal files (no Artifactory upload).
 
 Environment
 -----------
@@ -30,18 +33,22 @@ No Artifactory write/okify upload is performed by this module.
 from __future__ import annotations
 
 import json
+import logging
 import os
 from pathlib import Path
 
 import pytest
 import roman_datamodels as rdm
-from ci_watson.artifactory_helpers import get_bigdata
+from ci_watson.artifactory_helpers import BigdataError, get_bigdata
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 
 from romancal.pipeline.mosaic_pipeline import MosaicPipeline
+from romancal.source_catalog import SourceCatalogStep
 from romancal.stpipe import RomanStep
 
 from .regtestdata import compare_asdf
+
+log = logging.getLogger(__name__)
 
 # mark all tests in this module
 pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
@@ -75,8 +82,48 @@ def _cal_to_tweakreg_name(cal_name: str) -> str:
     return f"{stem}_{TWEAKREG_SUFFIX}.asdf"
 
 
+def _ensure_catalogs_for_cal_members(rtdata, cal_members: list[str]) -> None:
+    """Ensure each cal has a sibling ``*_cat.parquet`` for TweakRegStep.
+
+    Prefer an existing Artifactory catalog when present. Otherwise run
+    ``SourceCatalogStep`` on the local cal (L3 ASN members often ship without
+    published catalogs — only the cals are required for HLP).
+    """
+    asn_dir = os.path.dirname(L3_ASN_REMOTE)
+    for cal_name in cal_members:
+        cat_name = _cal_to_catalog_name(cal_name)
+        if os.path.isfile(cat_name):
+            continue
+
+        remote_cat = os.path.join(asn_dir, cat_name)
+        try:
+            # Do not use get_data: it overwrites rtdata.input/asn bookkeeping.
+            get_bigdata(
+                rtdata._inputs_root,
+                rtdata._env,
+                remote_cat,
+                docopy=rtdata.docopy,
+            )
+        except BigdataError:
+            log.info(
+                "Catalog %s not on bigdata; generating with SourceCatalogStep from %s",
+                cat_name,
+                cal_name,
+            )
+            SourceCatalogStep.call(
+                cal_name,
+                save_results=True,
+                suffix="cat",
+            )
+
+        if not os.path.isfile(cat_name):
+            raise FileNotFoundError(
+                f"Failed to obtain or generate source catalog for tweakreg: {cat_name}"
+            )
+
+
 def _attach_catalogs_to_cal_files(member_names: list[str]) -> None:
-    """Point each on-disk cal model at its downloaded ``*_cat.parquet``.
+    """Point each on-disk cal model at its ``*_cat.parquet`` for TweakRegStep.
 
     TweakRegStep requires ``meta.source_catalog.tweakreg_catalog`` or
     ``meta.source_catalog.tweakreg_catalog_name``. ELP-produced cals used as
@@ -154,20 +201,9 @@ def run_mos_tweakreg(rtdata_module, resource_tracker):
     ]
     assert cal_members, "L3 ASN contains no science members"
 
-    # Fetch sibling source catalogs required by TweakRegStep.
-    # get_asn leaves input_remote as the ASN relative path (e.g. WFI/image/...json).
-    asn_dir = os.path.dirname(L3_ASN_REMOTE)
-    for cal_name in cal_members:
-        cat_name = _cal_to_catalog_name(cal_name)
-        # Use get_bigdata path only; do not go through get_data so we do not
-        # overwrite rtdata.input/asn bookkeeping mid-fixture.
-        get_bigdata(
-            rtdata._inputs_root,
-            rtdata._env,
-            os.path.join(asn_dir, cat_name),
-            docopy=rtdata.docopy,
-        )
-
+    # Catalogs are optional on Artifactory for L3 cal members; generate any
+    # missing ones locally so CI does not depend on unpublished parquet files.
+    _ensure_catalogs_for_cal_members(rtdata, cal_members)
     _attach_catalogs_to_cal_files(cal_members)
 
     # Run tweakreg on the multi-member cal set (single association-like call
