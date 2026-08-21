@@ -11,23 +11,26 @@ tweakreg. This module exercises:
 2. ``MosaicPipeline`` (``roman_mos``) on an ASN whose members are the
    tweakreg'd outputs
 
-Assertions focus on pipeline contract (steps complete, mosaic product type,
-side products exist, tweakreg markers present). A full ``compare_asdf`` truth
-lock is optional and only runs when a dedicated truth file is already present
-on Artifactory — this test never uploads results to Artifactory.
+Assertions cover pipeline contract (steps complete, mosaic product type,
+side products, tweakreg markers) and a required ``compare_asdf`` against a
+dedicated tweakreg-fed coadd truth on Artifactory.
 
 Artifactory inputs (read-only download via ``rtdata``)
 -----------------------------------------------------
 * ``WFI/image/L3_regtest_asn.json`` and its ``*_cal.asdf`` members
 * Optional matching ``*_cat.parquet`` catalogs when already published
+* Truth: ``truth/WFI/image/r0000101001001001001_f158_tweakreg_coadd.asdf``
+  (MosaicModel coadd from HLP run on tweakreg'd L2 — not the cal-only HLP truth)
 
 Catalogs that are not on Artifactory are produced in the test jail with
-``SourceCatalogStep`` from the downloaded cal files (no Artifactory upload).
+``SourceCatalogStep`` from the downloaded cal files (no Artifactory upload
+from this module).
 
 Environment
 -----------
 Requires bigdata access (``TEST_BIGDATA`` / ci_watson) like other regtests.
-No Artifactory write/okify upload is performed by this module.
+This module does not upload/okify truths; missing truth fails with an explicit
+message so the suite is not mistaken for a science regression.
 """
 
 from __future__ import annotations
@@ -55,11 +58,13 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 
 # Same L3 ASN family as test_mos_pipeline.py (cal members).
 L3_ASN_REMOTE = "WFI/image/L3_regtest_asn.json"
-# Product name from L3_regtest_asn.json — mosaic output basename stem.
-L3_PRODUCT_NAME = "r0000101001001001001_f158"
+# Distinct product stem so the tweakreg-fed coadd does not collide with the
+# cal-only HLP truth (r0000101001001001001_f158_coadd.asdf).
+L3_PRODUCT_NAME = "r0000101001001001001_f158_tweakreg"
 TWEAKREG_SUFFIX = "tweakregstep"
-# Optional dedicated truth for the tweakreg-fed coadd (download-only if present).
-TWEAKREG_COADD_TRUTH = f"truth/WFI/image/{L3_PRODUCT_NAME}_tweakreg_coadd.asdf"
+# Required dedicated truth: MosaicModel coadd from HLP on tweakreg'd L2.
+TWEAKREG_COADD_OUTPUT = f"{L3_PRODUCT_NAME}_coadd.asdf"
+TWEAKREG_COADD_TRUTH = f"truth/WFI/image/{TWEAKREG_COADD_OUTPUT}"
 
 
 def _cal_to_catalog_name(cal_name: str) -> str:
@@ -260,12 +265,8 @@ def run_mos_tweakreg(rtdata_module, resource_tracker):
     tweak_asn_path = "L3_tweakreg_asn.json"
     _write_tweakreg_asn(cal_members, tweak_asn_path)
 
-    output = f"{L3_PRODUCT_NAME}_coadd.asdf"
     rtdata.input = tweak_asn_path
-    rtdata.output = output
-    # Record intended truth location for local failure bookkeeping only.
-    # Do not download or upload Artifactory truth from this fixture.
-    rtdata.truth_remote = TWEAKREG_COADD_TRUTH
+    rtdata.output = TWEAKREG_COADD_OUTPUT
 
     mos_args = [
         "roman_mos",
@@ -274,6 +275,24 @@ def run_mos_tweakreg(rtdata_module, resource_tracker):
     ]
     with resource_tracker.track():
         MosaicPipeline.from_cmdline(mos_args)
+
+    # Required truth download (same pattern as test_mos_pipeline.run_mos).
+    # Fail with an explicit message if the dedicated tweakreg-HLP truth has
+    # not been published yet — distinct from a science compare_asdf mismatch.
+    try:
+        rtdata.get_truth(TWEAKREG_COADD_TRUTH)
+    except BigdataError as exc:
+        pytest.fail(
+            "Tweakreg-HLP truth file is not available yet on bigdata/Artifactory. "
+            "This failure means the baseline coadd has not been published; it is "
+            "not a MosaicPipeline/tweakreg science regression.\n"
+            f"Expected remote path: {TWEAKREG_COADD_TRUTH}\n"
+            f"Local pipeline output to promote after review: {TWEAKREG_COADD_OUTPUT}\n"
+            "Generate by running this module's fixture path, then upload/okify the "
+            "coadd ASDF to that truth path (do not overwrite the cal-only HLP truth "
+            f"r0000101001001001001_f158_coadd.asdf).\n"
+            f"Original error: {exc}"
+        )
 
     # Stash member list for downstream tests (no Artifactory upload).
     rtdata.tweakreg_members = [_cal_to_tweakreg_name(n) for n in cal_members]
@@ -291,6 +310,11 @@ def output_model(output_filename):
         yield model
 
 
+@pytest.fixture(scope="module")
+def truth_filename(run_mos_tweakreg):
+    return run_mos_tweakreg.truth
+
+
 def test_log_tracked_resources(log_tracked_resources, run_mos_tweakreg):
     """Purpose: emit resource-tracker summary for the tweakreg+HLP fixture."""
     log_tracked_resources()
@@ -303,6 +327,12 @@ def test_tweakreg_members_used(run_mos_tweakreg):
         assert os.path.isfile(name)
         with rdm.open(name) as model:
             assert model.meta.cal_step.tweakreg == "COMPLETE"
+
+
+def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths):
+    """Purpose: tweakreg-fed HLP coadd matches the dedicated Artifactory truth."""
+    diff = compare_asdf(output_filename, truth_filename, **ignore_asdf_paths)
+    assert diff.identical, diff.report()
 
 
 def test_output_is_mosaic(output_model):
@@ -328,20 +358,3 @@ def test_side_products_exist(output_filename, suffix):
     """Purpose: mosaic source catalog and segmentation products are written."""
     expected_filename = output_filename.rsplit("_", 1)[0] + f"_{suffix}"
     assert os.path.isfile(expected_filename)
-
-
-def test_optional_truth_compare(run_mos_tweakreg, ignore_asdf_paths):
-    """Purpose: if a dedicated tweakreg-HLP truth exists, compare coadd to it.
-
-    Skips when the optional truth is not on bigdata. Never uploads or okifies
-    truth to Artifactory from this test.
-    """
-    rtdata = run_mos_tweakreg
-    try:
-        rtdata.get_truth(TWEAKREG_COADD_TRUTH)
-    except Exception as exc:
-        # Missing optional truth (BigdataError/IO) should not fail the suite.
-        pytest.skip(f"Optional tweakreg HLP truth not available: {exc}")
-
-    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
-    assert diff.identical, diff.report()
