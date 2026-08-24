@@ -25,7 +25,6 @@ COARSE_MNEMONICS = [f"SCF_AC_SDR_QBJ_{idx + 1}" for idx in range(4)]
 # Pointing container
 # Attributes are as follows. Except for the observation time, all values
 # are retrieved from the engineering data.
-#    fgs_q        : Quaternion representing orientation of the FGS frame relative to the Observatory frame
 #    obstime      : Time the pointing information refers to.
 #    q            : Quaternion of the FGS.
 Pointing = namedtuple("Pointing", ["fgs_q", "obstime", "q"])
