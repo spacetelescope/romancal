@@ -11,6 +11,8 @@ import numpy as np
 from astropy.utils import lazyproperty
 from photutils.segmentation import SourceCatalog
 
+from romancal.source_catalog._wcs_utils import north_angle_at, pixel_area_at
+
 
 class SegmentCatalog:
     """
@@ -36,14 +38,11 @@ class SegmentCatalog:
         `True` values indicate masked pixels. If `None`, then no pixels
         are masked.
 
-    pixel_area : `~astropy.units.Quantity`
-        The pixel area in steradians. This is used to convert various
-        measurements from pixels to arcseconds.
-
-    wcs_angle : `~astropy.units.Quantity`
-        The angle (as a Quantity in degrees) measured counterclockwise
-        from the positive x axis to the "North" axis of the celestial
-        coordinate system.
+    pixel_area_map : `~astropy.units.Quantity`
+        2D array of per-pixel solid angles matching the shape of
+        ``model.data``. Sampled at each source position to convert
+        measurements from pixels to arcseconds, since the pixel area
+        varies across the image.
 
     detection_cat : `None` or `~photutils.segmentation.SourceCatalog`, optional
         A `~photutils.segmentation.SourceCatalog` object for the
@@ -132,8 +131,7 @@ class SegmentCatalog:
         segment_img,
         convolved_data,
         mask,
-        pixel_area,
-        wcs_angle,
+        pixel_area_map,
         detection_cat=None,
         *,
         requested_properties=None,
@@ -142,8 +140,7 @@ class SegmentCatalog:
         self.segment_img = segment_img
         self.convolved_data = convolved_data
         self.mask = mask
-        self.pixel_area = pixel_area
-        self.wcs_angle = wcs_angle
+        self.pixel_area_map = pixel_area_map
         self.detection_cat = detection_cat
         self._requested_properties = (
             None if requested_properties is None else set(requested_properties)
@@ -236,9 +233,41 @@ class SegmentCatalog:
         return abmag, abmag_err
 
     @lazyproperty
+    def pixel_area(self):
+        """
+        The solid angle of the pixel containing each source.
+
+        The pixel area varies across the image, so the conversions from
+        pixel to sky units are done per source rather than with a single
+        image-wide value.
+        """
+        return pixel_area_at(
+            self.pixel_area_map,
+            self.source_cat.x_centroid,
+            self.source_cat.y_centroid,
+        )
+
+    @lazyproperty
+    def wcs_angle(self):
+        """
+        The position angle of celestial North at each source position.
+
+        Evaluated per source rather than once at the image centre: the
+        distortion rotates the field across a detector, and the
+        convergence of meridians makes a single value badly wrong at
+        high declination and meaningless if the field contains a pole.
+        """
+        return north_angle_at(
+            self.wcs, self.source_cat.x_centroid, self.source_cat.y_centroid
+        )
+
+    @lazyproperty
     def pixel_scale(self):
         """
-        The pixel scale in arcseconds (assuming square pixels).
+        The pixel scale in arcseconds at each source position.
+
+        This is the area-preserving scale; it does not capture the
+        slight anisotropy of the pixels.
         """
         return np.sqrt(self.pixel_area).to(u.arcsec)
 

@@ -14,6 +14,7 @@ from stcal.resample.utils import compute_mean_pixel_area
 from romancal.assign_wcs.assign_wcs import add_s_region
 from romancal.datamodels import ModelLibrary
 from romancal.resample import ResampleStep
+from romancal.tests.wcs_helpers import create_wcs_object
 from romancal.resample.resample import make_output_wcs
 
 
@@ -80,7 +81,7 @@ class WfiSca:
         )
         # data from WFISim simulation of SCA #01
         l2.meta.filename = self.filename
-        l2.meta["wcs"] = create_wcs_object_without_distortion(
+        l2.meta["wcs"] = create_wcs_object(
             fiducial_world=self.fiducial_world,
             pscale=self.pscale,
             shape=self.shape,
@@ -91,63 +92,6 @@ class WfiSca:
         return model
 
 
-def create_wcs_object_without_distortion(fiducial_world, pscale, shape):
-    """
-    Create a simple WCS object without either distortion or rotation.
-
-    Parameters
-    ----------
-    fiducial_world : tuple
-        A pair of values corresponding to the fiducial's world coordinate.
-    pscale : tuple
-        A pair of values corresponding to the pixel scale in each axis.
-    shape : tuple
-        A pair of values specifying the dimensions of the WCS object.
-
-    Returns
-    -------
-    gwcs.WCS
-        A gwcs.WCS object.
-    """
-    # components of the model
-    shift = models.Shift() & models.Shift()
-
-    affine = models.AffineTransformation2D(
-        matrix=[[1, 0], [0, 1]], translation=[0, 0], name="pc_rotation_matrix"
-    )
-
-    scale = models.Scale(pscale[0]) & models.Scale(pscale[1])
-
-    tan = models.Pix2Sky_TAN()
-    celestial_rotation = models.RotateNative2Celestial(
-        fiducial_world[0],
-        fiducial_world[1],
-        180,
-    )
-
-    det2sky = shift | affine | scale | tan | celestial_rotation
-    det2sky.name = "linear_transform"
-
-    detector_frame = cf.Frame2D(
-        name="detector", axes_names=("x", "y"), unit=(u.pix, u.pix)
-    )
-    sky_frame = cf.CelestialFrame(
-        reference_frame=coord.FK5(), name="fk5", unit=(u.deg, u.deg)
-    )
-
-    pipeline = [(detector_frame, det2sky), (sky_frame, None)]
-
-    wcs_obj = WCS(pipeline)
-
-    wcs_obj.bounding_box = (
-        (-0.5, shape[-1] - 0.5),
-        (-0.5, shape[-2] - 0.5),
-    )
-
-    wcs_obj.pixel_shape = shape[::-1]
-    wcs_obj.array_shape = shape
-
-    return wcs_obj
 
 
 def _wfi_sca1():

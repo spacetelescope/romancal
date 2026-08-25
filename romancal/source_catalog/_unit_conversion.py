@@ -85,8 +85,9 @@ def scale_model_arrays(model, convolved_data, factor, *, unit=None):
         caller must use the return value of this function rather than
         relying on in-place mutation.
 
-    factor : float or `~astropy.units.Quantity`
-        Multiplicative factor.
+    factor : float, array-like, or `~astropy.units.Quantity`
+        Multiplicative factor. May be a 2D array broadcastable against
+        the model arrays, as when scaling by a per-pixel solid angle.
 
     unit : `~astropy.units.Unit`, optional
         If given, attach this unit to each scaled array using the
@@ -160,6 +161,9 @@ def validate_and_convert_to_flux_density(
 
     sb_to_flux : `~astropy.units.Quantity`
         Multiplicative factor converting ``MJy/sr`` to ``flux_unit``.
+        Normally a 2D array of per-pixel solid angles, so that the
+        resulting arrays hold total flux per pixel rather than a
+        surface brightness scaled by a single nominal pixel area.
 
     Returns
     -------

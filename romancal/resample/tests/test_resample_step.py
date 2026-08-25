@@ -17,82 +17,17 @@ from romancal.assign_wcs.assign_wcs import add_s_region
 from romancal.datamodels import ModelLibrary
 from romancal.regtest import util
 from romancal.resample import ResampleStep
+from romancal.tests.wcs_helpers import create_wcs_object
 from romancal.resample._l3_wcs import l3wcsinfo_to_wcs
 
 
-def create_wcs_object_without_distortion(fiducial_world, pscale, shape, **kwargs):
-    """
-    Create a simple WCS object without either distortion or rotation.
-
-    Parameters
-    ----------
-    fiducial_world : tuple
-        A pair of values corresponding to the fiducial's world coordinate.
-    pscale : tuple
-        A pair of values corresponding to the pixel scale in each axis.
-    shape : tuple
-        A pair of values specifying the dimensions of the WCS object.
-
-    Returns
-    -------
-    gwcs.WCS
-        A gwcs.WCS object.
-    """
-    # components of the model
-    shift = models.Shift() & models.Shift()
-    affine = models.AffineTransformation2D(
-        matrix=[[1, 0], [0, 1]], translation=[0, 0], name="pc_rotation_matrix"
-    )
-    scale = models.Scale(pscale[0]) & models.Scale(pscale[1])
-    tan = models.Pix2Sky_TAN()
-    celestial_rotation = models.RotateNative2Celestial(
-        fiducial_world[0],
-        fiducial_world[1],
-        180,
-    )
-
-    # transforms between frames
-    # detector -> sky
-    det2sky = shift | affine | scale | tan | celestial_rotation
-    det2sky.name = "linear_transform"
-
-    # frames
-    detector_frame = cf.Frame2D(
-        name="detector",
-        axes_order=(0, 1),
-        axes_names=("x", "y"),
-        unit=(u.pix, u.pix),
-    )
-    sky_frame = cf.CelestialFrame(
-        reference_frame=coord.FK5(), name="fk5", unit=(u.deg, u.deg)
-    )
-
-    pipeline = [
-        (detector_frame, det2sky),
-        (sky_frame, None),
-    ]
-
-    wcs_obj = WCS(pipeline)
-
-    wcs_obj.bounding_box = kwargs.get(
-        "bounding_box",
-        (
-            (-0.5, shape[-1] - 0.5),
-            (-0.5, shape[-2] - 0.5),
-        ),
-    )
-
-    wcs_obj.pixel_shape = shape[::-1]
-    wcs_obj.array_shape = shape
-
-    return wcs_obj
 
 
 @pytest.fixture
 def asdf_wcs_file():
     def _create_asdf_wcs_file(tmp_path):
         file_path = tmp_path / "wcs.asdf"
-        wcs_data = create_wcs_object_without_distortion(
+        wcs_data = create_wcs_object(
             (10, 0),
             (0.000031, 0.000031),
             (100, 100),
