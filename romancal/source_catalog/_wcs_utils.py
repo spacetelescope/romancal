@@ -156,8 +156,18 @@ def north_angle_at(wcs, x, y):
     replaces.
 
     North is the pixel-space direction that maps to a pure
-    increase in latitude, so it is obtained by solving ``J v = [0, 1]``,
-    using the Jacobian J.
+    increase in latitude, so it is ``J^-1 [0, 1]``, using the Jacobian
+    J.  This needs only the forward transform, unlike offsetting north
+    on the sky and inverting, which fails near an array edge and at the
+    pole.
+
+    Only the direction of ``J^-1 [0, 1]`` matters here, and for a 2x2
+    matrix that is ``[-J[0, 1], J[0, 0]]`` up to a factor of the
+    determinant, so the determinant enters only through its sign.
+    Avoiding the division keeps this finite at a celestial pole, where
+    J is singular; North is genuinely undefined there, but returning an
+    arbitrary angle is better than failing for every source in the
+    image.
 
     Parameters
     ----------
@@ -174,7 +184,7 @@ def north_angle_at(wcs, x, y):
         The position angle of North at each position, in degrees.
     """
     jacobian = wcs_jacobian(wcs, np.asarray(x), np.asarray(y))
-    north = np.linalg.solve(jacobian, np.array([0.0, 1.0]))
-    return (np.degrees(np.arctan2(north[..., 1], north[..., 0])) * u.deg).astype(
-        np.float32
-    )
+    sign = np.sign(np.linalg.det(jacobian))
+    north_x = -sign * jacobian[..., 0, 1]
+    north_y = sign * jacobian[..., 0, 0]
+    return (np.degrees(np.arctan2(north_y, north_x)) * u.deg).astype(np.float32)
