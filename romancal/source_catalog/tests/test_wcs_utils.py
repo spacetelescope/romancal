@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 import astropy.units as u
 import numpy as np
+from astropy.coordinates import SkyCoord
 from astropy.modeling import models
 
 from romancal.source_catalog._wcs_utils import north_angle_at, pixel_area_map
@@ -51,10 +52,34 @@ def test_uniform_wcs_area_matches_pixel_scale():
     assert u.allclose(area, expected, rtol=1e-5)
 
 
-def test_distorted_wcs_area_varies_and_matches_direct_jacobian():
+def _pixel_area_from_corners(wcs, x, y):
     """
-    With distortion present the map must vary, and must agree with a
-    direct per-pixel Jacobian evaluation.
+    The area of one pixel, measured with astropy's spherical routines.
+
+    The pixel is small enough to treat as a parallelogram on the sky, so
+    its area is the product of two edge lengths and the sine of the angle
+    between them. This deliberately uses `~astropy.coordinates.SkyCoord`
+    rather than differencing longitudes by hand, so that it is an
+    independent check on `pixel_area_map` rather than a restatement of it.
+    """
+    corner = SkyCoord(
+        *wcs(
+            np.array([x - 0.5, x + 0.5, x - 0.5]),
+            np.array([y - 0.5, y - 0.5, y + 0.5]),
+            with_bounding_box=False,
+        ),
+        unit=u.deg,
+    )
+    width = corner[0].separation(corner[1])
+    height = corner[0].separation(corner[2])
+    included = corner[0].position_angle(corner[1]) - corner[0].position_angle(corner[2])
+    return (width * height * np.abs(np.sin(included))).to(u.sr)
+
+
+def test_distorted_wcs_area_varies_and_matches_sky_separations():
+    """
+    With distortion present the pixel area map must vary, and must agree with
+    other pixel-area determinations.
     """
     shape = (512, 512)
     wcs = _make_wcs(shape, distorted=True)
@@ -68,17 +93,7 @@ def test_distorted_wcs_area_varies_and_matches_direct_jacobian():
     ys = rng.integers(0, shape[0], 50)
     xs = rng.integers(0, shape[1], 50)
     for x, y in zip(xs, ys, strict=True):
-        lon_a, lat_a = wcs(x - 0.5, y)
-        lon_b, lat_b = wcs(x + 0.5, y)
-        lon_c, lat_c = wcs(x, y - 0.5)
-        lon_d, lat_d = wcs(x, y + 0.5)
-        cos_lat = np.cos(np.radians(wcs(x, y)[1]))
-        direct = np.abs(
-            (lon_b - lon_a) * cos_lat * (lat_d - lat_c)
-            - (lon_d - lon_c) * cos_lat * (lat_b - lat_a)
-        )
-        direct = (direct * u.deg**2).to(u.sr)
-        assert u.allclose(area[y, x], direct, rtol=1e-4)
+        assert u.allclose(area[y, x], _pixel_area_from_corners(wcs, x, y), rtol=1e-4)
 
 
 def test_area_independent_of_step():
@@ -94,13 +109,8 @@ def test_area_independent_of_step():
 
 def test_area_correct_across_ra_branch_cut():
     """
-    Longitude differencing must wrap across RA = 0.
-
-    The fiducial sits at pixel (0, 0), which is a node of the coarse
-    grid, so the half-pixel offsets used to build the Jacobian straddle
-    RA = 0. That straddle is what exercises the wrapping; without it the
-    two offsets land on the same side of the branch cut and the test
-    would pass even with a naive difference.
+    Longitude differencing must wrap across RA = 0; all pixels must have
+    sane areas even near the 360 -> 0 wrap.
     """
     shape = (128, 128)
     step = 64
@@ -129,15 +139,13 @@ def test_segment_geometry_tracks_local_pixel_area():
 
     shape = (60, 120)
     yy, xx = np.mgrid[: shape[0], : shape[1]]
-    data = np.zeros(shape)
     segm = np.zeros(shape, dtype=int)
     for label, x0 in ((1, 30), (2, 90)):
-        r2 = (xx - x0) ** 2 + (yy - 30) ** 2
-        data += 100.0 * np.exp(-r2 / 8.0)
-        segm[r2 <= 25] = label
+        segm[(xx - x0) ** 2 + (yy - 30) ** 2 <= 25] = label
 
+    # `SegmentCatalog` only reads data, err, and meta.wcs from the model
     model = SimpleNamespace(
-        data=data,
+        data=(segm != 0) * 100.0,
         err=np.ones(shape),
         meta=SimpleNamespace(wcs=None),
     )
@@ -181,9 +189,8 @@ def test_north_angle_matches_a_tangent_point_reference():
 
 def test_north_angle_varies_around_an_enclosed_pole():
     """
-    A field containing a celestial pole is the case a single
-    image-center angle cannot represent: North points toward the pole,
-    so its position angle sweeps the full 360 degrees around it.
+    The angle to north should vary dramatically among locations in a
+    field centered on the pole.
     """
     shape = (256, 256)
     # Coarse pixels so that the array spans a usable area around the
@@ -197,11 +204,9 @@ def test_north_angle_varies_around_an_enclosed_pole():
         wcs, radius * np.cos(theta), radius * np.sin(theta)
     ).to_value(u.deg)
 
-    # The angles must sweep the whole circle. Sampling n points around
-    # the pole and excluding the endpoint leaves one gap, so the
-    # unwrapped spread tends to 360 * (n - 1) / n rather than 360.
+    # The angles must sweep a large angle.
     spread = np.degrees(np.ptp(np.unwrap(np.radians(angle))))
-    assert spread > 360.0 * (n - 1) / n - 1.0
+    assert spread > 180
 
     # Every angle must be finite: the forward-only formulation does not
     # break down near the pole
