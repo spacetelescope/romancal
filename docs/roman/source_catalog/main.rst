@@ -70,12 +70,8 @@ The image moments are computed in the pixel frame. Properties that are
 reported in sky units (``semimajor``, ``semiminor``, ``fwhm``,
 ``kron_radius``, ``segment_area``, and ``nn_distance``) are converted
 using the pixel scale local to each source, and ``orientation_sky`` is
-measured from the direction of North local to each source rather than
-from a single direction for the whole image. Both matter where the
-pixel geometry varies across the image: on a Level 2 detector image the
-pixel scale varies by about 1.5% and the direction of North by a few
-tenths of a degree, and near a celestial pole the direction of North can
-vary without limit across a single image.
+measured from the direction of north local to each source rather than
+from a single direction for the whole image.
 
 Only the size and rotation of the local pixel are accounted for, not its
 shape. Where pixels are not square, the sky-frame axis lengths and
@@ -84,22 +80,20 @@ squareness (1-3% for Roman). ``ellipticity`` and ``orientation_pix``
 are pixel-frame quantities and are not corrected at all.
 
 Circular aperture photometry is performed at several aperture sizes
-(:math:`r` = 0.1, 0.2, 0.4, 0.8, 1.6 arcsec) for each source. The radii
-are specified on the sky, so they are converted to pixels using the
-pixel scale local to each source; every aperture therefore subtends the
-same solid angle no matter where in the image it falls. Because a single
-aperture can only be measured at one radius at a time, sources are
-grouped into batches that share a common radius, chosen so that no
-source's aperture radius is wrong by more than a small fraction
-(:math:`10^{-4}`) of its correct value. An image with uniform pixels
-needs only a single batch. The ``aperture_radii`` entry in the catalog
-metadata reports the mean radius over all sources rather than the exact
-radius used for any one of them.
+(:math:`r` = 0.1, 0.2, 0.4, 0.8, 1.6 arcsec) for each source. These
+radii are converted to pixels using the pixel scale local to each
+source.  Because a single aperture can only be measured at one radius at
+a time, sources are grouped into batches that share a common radius,
+chosen so that no source's aperture radius is wrong by more than about
+one part in :math:`10^{4}`.
+
+The ``circle_pix`` and ``annulus_pix`` entries in the catalog metadata
+report the mean radius over all sources rather than the exact radius
+used for any one of them. The ``circle_arcsec`` and ``annulus_arcsec``
+entries are exact and are the same for every source.
 
 Elliptical Kron aperture photometry is also performed, where the
-aperture size is determined by the source shape. The Kron radius is
-derived from the image moments and is therefore expressed in pixels, so
-the Kron aperture is unaffected by the pixel scale.
+aperture size is determined by the source shape.
 
 Isophotal photometry is measured using the total flux within the source
 segment.
@@ -135,26 +129,11 @@ Surface Brightness to Flux Conversion
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Level 2 and Level 3 pixel values are surface brightnesses, not fluxes.
-Flat fielding divides out the varying solid angle subtended by each
-pixel, so a pixel that covers more sky does not hold a proportionally
-larger value; the only remaining record of the pixel solid angle is the
-WCS. Recovering the flux entering a pixel therefore requires multiplying
+Recovering the flux entering a pixel therefore requires multiplying
 its surface brightness by the solid angle of that particular pixel.
-
-The solid angle is computed directly from the WCS, as the absolute
-determinant of its Jacobian, evaluated for every pixel in the image. The
-``meta.photometry.pixel_area`` value written by the :ref:`photom
-<photom_step>` step is not used: it is a single nominal value for the
-detector and cannot represent the variation across it.
-
-The variation is not negligible for Level 2 data. Across one WFI
-detector the pixel solid angle varies by 2-3% from corner to corner, so
-a flux derived from a single image-wide value carries a systematic error
-of the same size that depends on where the source happens to land.
-Level 3 skycells are close to uniform by construction, varying by around
-:math:`10^{-4}` across a skycell, though their pixels can depart from
-square by a few parts in :math:`10^{4}` where the tangent point of the
-projection is far from the skycell.
+The solid angle is computed directly from the WCS.    Note that the
+variation in the pixel solid angle for WFI L2 images is of order 2%.
+For L3 coadds the variation in pixel solid angle is much smaller.
 
 All fluxes are reported in nJy. To calculate AB magnitudes, use the
 following formula:
@@ -172,12 +151,10 @@ circular annulus centered on the source. The circular annulus has an
 inner and outer radius of 2.4 and 2.8 arcsec, respectively, converted to
 pixels using the pixel scale local to each source. The local background
 flux is calculated as the sigma-clipped median value within the annulus,
-and is reported per pixel: it is the flux that a pixel at the position
-of the source would receive from the background, so the median is
-normalized by the solid angle of that pixel rather than by an
-image-wide value. Although this local background value is included in
-the source catalog, it is not subtracted from any of the measured
-fluxes.
+divided by the local pixel solid angle, so despite the column name it is
+a surface brightness (nJy/arcsec\ :sup:`2`) rather than a flux. Although
+this local background value is included in the source catalog, it is not
+subtracted from any of the measured fluxes.
 
 Each source has a field, `is_extended`, intended to indicate whether the
 source is more extended than expected, were the object a point source.
