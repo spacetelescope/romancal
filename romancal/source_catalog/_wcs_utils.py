@@ -24,14 +24,15 @@ def wcs_jacobian(wcs, x, y):
     describes the sky offset produced by a unit step along each detector
     axis::
 
-        [[dxi/dx, dxi/dy],
-         [deta/dx, deta/dy]]
+        [[d(alpha cos delta)/dx, d(alpha cos delta)/dy],
+         [d(delta)/dx,           d(delta)/dy]]
 
-    where ``xi`` is the East (longitude) direction scaled by
-    ``cos(latitude)`` and ``eta`` is the North (latitude) direction,
-    both in arcsec. Everything about the local pixel geometry follows
-    from this matrix: its determinant is the pixel solid angle, and the
-    direction mapping to ``eta`` is celestial North.
+    where ``alpha`` and ``delta`` are the longitude and latitude of the
+    world frame. The longitude derivatives carry the ``cos(delta)``
+    factor so that both rows are true angles on the sky, in arcsec.
+    Everything about the local pixel geometry follows from this matrix:
+    its determinant is the pixel solid angle, and the direction mapping
+    to increasing ``delta`` is celestial North.
 
     Parameters
     ----------
