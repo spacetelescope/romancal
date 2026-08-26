@@ -109,8 +109,13 @@ def test_area_independent_of_step():
 
 def test_area_correct_across_ra_branch_cut():
     """
-    Longitude differencing must wrap across RA = 0; all pixels must have
-    sane areas even near the 360 -> 0 wrap.
+    All pixels must have sane areas even where the longitude wraps from
+    360 back to 0.
+
+    The fiducial sits at pixel (0, 0), so the half-pixel offsets used to
+    build the Jacobian straddle RA = 0. Differencing direction cosines
+    has no branch cut to get wrong, but the guard below keeps this
+    honest if the representation ever changes back.
     """
     shape = (128, 128)
     step = 64
@@ -122,6 +127,36 @@ def test_area_correct_across_ra_branch_cut():
     area = pixel_area_map(wcs, shape, step=step)
     expected = ((PSCALE * u.deg) ** 2).to(u.sr)
     assert u.allclose(area, expected, rtol=1e-5)
+
+
+def test_area_correct_at_an_enclosed_pole():
+    """
+    The pixel area must be correct at a celestial pole.
+
+    Latitude and longitude are degenerate there, so differencing them
+    gives a vanishing area; differencing direction cosines does not.
+    The fiducial sits at pixel (0, 0), which is a node of the coarse
+    grid, so the pole is sampled directly rather than interpolated
+    over.
+    """
+    shape = (256, 256)
+    pscale = 10.0 / 3600.0
+    wcs = _make_wcs(shape, pscale=pscale, crval=(0.0, 90.0))
+
+    assert wcs(0.0, 0.0, with_bounding_box=False)[1] > 89.999, (
+        "test did not place the pole on the array"
+    )
+
+    area = pixel_area_map(wcs, shape, step=64)
+    expected = ((pscale * u.deg) ** 2).to(u.sr)
+
+    # The pixel containing the pole, where a (longitude, latitude)
+    # Jacobian would be singular
+    assert u.isclose(area[0, 0], expected, rtol=1e-3)
+
+    # ... and its whole neighbourhood, which the spline would otherwise
+    # smear the singular value across
+    assert u.allclose(area[:128, :128], expected, rtol=1e-3)
 
 
 def test_segment_geometry_tracks_local_pixel_area():

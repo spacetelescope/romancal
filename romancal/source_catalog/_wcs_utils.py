@@ -7,13 +7,24 @@ import astropy.units as u
 import numpy as np
 from scipy.interpolate import RectBivariateSpline
 
+ARCSEC_PER_RADIAN = (1.0 * u.rad).to_value(u.arcsec)
 
-def _wrap_lon_diff(lon1, lon0):
+
+def _direction_cosines(lon, lat):
     """
-    Difference two longitudes (in degrees), wrapping across the 0/360
-    degree branch cut.
+    The Cartesian unit vectors of the given sky positions.
+
+    Longitude and latitude are in degrees; the result has shape
+    ``lon.shape + (3,)``. This representation is smooth over the whole
+    sphere, unlike (longitude, latitude), which is degenerate at the
+    poles and discontinuous at the 0/360 degree branch cut.
     """
-    return (lon1 - lon0 + 180.0) % 360.0 - 180.0
+    lon = np.radians(lon)
+    lat = np.radians(lat)
+    cos_lat = np.cos(lat)
+    return np.stack(
+        [cos_lat * np.cos(lon), cos_lat * np.sin(lon), np.sin(lat)], axis=-1
+    )
 
 
 def wcs_jacobian(wcs, x, y):
@@ -22,17 +33,25 @@ def wcs_jacobian(wcs, x, y):
 
     The Jacobian is evaluated by central differences over one pixel and
     describes the sky offset produced by a unit step along each detector
-    axis::
+    axis. Its two columns are the pixel's edge vectors, expressed in the
+    Cartesian direction cosines ``n`` of the sky position::
 
-        [[d(alpha cos delta)/dx, d(alpha cos delta)/dy],
-         [d(delta)/dx,           d(delta)/dy]]
+        [[dn_x/dx, dn_x/dy],
+         [dn_y/dx, dn_y/dy],
+         [dn_z/dx, dn_z/dy]]
 
-    where ``alpha`` and ``delta`` are the longitude and latitude of the
-    world frame. The longitude derivatives carry the ``cos(delta)``
-    factor so that both rows are true angles on the sky, in arcsec.
-    Everything about the local pixel geometry follows from this matrix:
-    its determinant is the pixel solid angle, and the direction mapping
-    to increasing ``delta`` is celestial North.
+    Differencing unit vectors rather than (longitude, latitude) keeps
+    this well behaved everywhere: there is no ``cos(latitude)`` factor
+    to collapse at a celestial pole, and no branch cut to wrap across at
+    a longitude of zero. Everything about the local pixel geometry
+    follows from these two vectors: the norm of their cross product is
+    the pixel solid angle, and the pixel-space direction they map to
+    celestial North gives the local position angle.
+
+    The columns are chord lengths on the unit sphere rather than arc
+    lengths, which understates the angle by a relative ``theta**2 / 24``:
+    around 1e-14 for a pixel, and negligible beside the truncation error
+    of the central difference itself.
 
     Parameters
     ----------
@@ -46,44 +65,31 @@ def wcs_jacobian(wcs, x, y):
     Returns
     -------
     jacobian : `~numpy.ndarray`
-        Array of shape ``x.shape + (2, 2)`` in arcsec per pixel.
+        Array of shape ``x.shape + (3, 2)`` in arcsec per pixel.
     """
 
     # Positions may lie outside the WCS bounding box, which would
     # otherwise be evaluated as NaN.
     def evaluate(xx, yy):
-        return wcs(xx, yy, with_bounding_box=False)
+        return _direction_cosines(*wcs(xx, yy, with_bounding_box=False))
 
-    _, lat = evaluate(x, y)
-    cos_lat = np.cos(np.radians(lat))
+    d_dx = (evaluate(x + 0.5, y) - evaluate(x - 0.5, y)) * ARCSEC_PER_RADIAN
+    d_dy = (evaluate(x, y + 0.5) - evaluate(x, y - 0.5)) * ARCSEC_PER_RADIAN
 
-    lon_xlo, lat_xlo = evaluate(x - 0.5, y)
-    lon_xhi, lat_xhi = evaluate(x + 0.5, y)
-    lon_ylo, lat_ylo = evaluate(x, y - 0.5)
-    lon_yhi, lat_yhi = evaluate(x, y + 0.5)
-
-    arcsec = 3600.0
-    dxi_dx = _wrap_lon_diff(lon_xhi, lon_xlo) * cos_lat * arcsec
-    dxi_dy = _wrap_lon_diff(lon_yhi, lon_ylo) * cos_lat * arcsec
-    deta_dx = (lat_xhi - lat_xlo) * arcsec
-    deta_dy = (lat_yhi - lat_ylo) * arcsec
-
-    return np.stack(
-        [np.stack([dxi_dx, dxi_dy], axis=-1), np.stack([deta_dx, deta_dy], axis=-1)],
-        axis=-2,
-    )
+    return np.stack([d_dx, d_dy], axis=-1)
 
 
 def pixel_area_map(wcs, shape, step=64):
     """
     Compute the on-sky solid angle of every pixel in an image.
 
-    The area is the determinant of the local WCS Jacobian, evaluated on
-    a coarse grid and then spline-interpolated onto the full image grid.
-    The Roman distortion varies smoothly on scales far larger than
-    ``step``, so the interpolation error (~3e-5 at the default ``step``
-    for a WFI detector) is negligible compared to the ~2.5% peak-to-peak
-    area variation the map exists to capture.
+    The area is the area of the parallelogram spanned by the columns of
+    the local WCS Jacobian, evaluated on a coarse grid and then
+    spline-interpolated onto the full image grid. The Roman distortion
+    varies smoothly on scales far larger than ``step``, so the
+    interpolation error (~1e-7 at the default ``step`` for a WFI
+    detector) is negligible compared to the ~2.5% peak-to-peak area
+    variation the map exists to capture.
 
     Parameters
     ----------
@@ -112,7 +118,8 @@ def pixel_area_map(wcs, shape, step=64):
     gx = np.arange(-step, nx + step, step, dtype=float)
     xx, yy = np.meshgrid(gx, gy)
 
-    coarse_area = np.abs(np.linalg.det(wcs_jacobian(wcs, xx, yy)))
+    jacobian = wcs_jacobian(wcs, xx, yy)
+    coarse_area = np.linalg.norm(np.cross(jacobian[..., 0], jacobian[..., 1]), axis=-1)
 
     spline = RectBivariateSpline(gy, gx, coarse_area)
     area = spline(np.arange(ny, dtype=float), np.arange(nx, dtype=float))
@@ -155,17 +162,20 @@ def north_angle_at(wcs, x, y):
     the detector, matching the convention of the image-center value it
     replaces.
 
-    North is the pixel-space direction that maps to a pure
-    increase in latitude, so it is ``J^-1 [0, 1]``, using the Jacobian
-    J.  This needs only the forward transform, unlike offsetting north
-    on the sky and inverting, which fails near an array edge and at the
-    pole.
+    North at a sky position ``n`` is the tangent direction
+    ``z - (z . n) n``, and the answer is the pixel-space step that the
+    Jacobian J maps to it, so it solves ``J v = north``. That system is
+    overdetermined but consistent, since North lies in the plane the
+    columns of J span, and it is solved in the least-squares sense
+    through the 2x2 matrix ``J.T J``. Using only the forward transform
+    this way avoids the array-edge and pole failures of offsetting north
+    on the sky and inverting.
 
-    Only the direction of ``J^-1 [0, 1]`` matters here, and for a 2x2
-    matrix that is ``[-J[0, 1], J[0, 0]]`` up to a factor of the
-    determinant, so the determinant enters only through its sign.
-    Avoiding the division keeps this finite at a celestial pole, where
-    J is singular; North is genuinely undefined there, but returning an
+    Only the direction of ``v`` matters here, so the determinant of
+    ``J.T J`` can be dropped: it is a Gram determinant and so never
+    negative, and dividing by it would only rescale ``v``. That keeps
+    the result finite at a celestial pole, where the North tangent
+    vanishes. North is genuinely undefined there, but returning an
     arbitrary angle is better than failing for every source in the
     image.
 
@@ -183,8 +193,22 @@ def north_angle_at(wcs, x, y):
     angle : `~astropy.units.Quantity`
         The position angle of North at each position, in degrees.
     """
-    jacobian = wcs_jacobian(wcs, np.asarray(x), np.asarray(y))
-    sign = np.sign(np.linalg.det(jacobian))
-    north_x = -sign * jacobian[..., 0, 1]
-    north_y = sign * jacobian[..., 0, 0]
+    x = np.asarray(x)
+    y = np.asarray(y)
+    jacobian = wcs_jacobian(wcs, x, y)
+
+    position = _direction_cosines(*wcs(x, y, with_bounding_box=False))
+    north = np.array([0.0, 0.0, 1.0]) - position[..., 2, np.newaxis] * position
+
+    gram = np.einsum("...ki,...kj->...ij", jacobian, jacobian)
+    projection = np.einsum("...ki,...k->...i", jacobian, north)
+
+    # The adjugate of the 2x2 Gram matrix, applied to the projection
+    north_x = (
+        gram[..., 1, 1] * projection[..., 0] - gram[..., 0, 1] * projection[..., 1]
+    )
+    north_y = (
+        gram[..., 0, 0] * projection[..., 1] - gram[..., 1, 0] * projection[..., 0]
+    )
+
     return (np.degrees(np.arctan2(north_y, north_x)) * u.deg).astype(np.float32)
