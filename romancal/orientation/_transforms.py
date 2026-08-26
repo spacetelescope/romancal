@@ -5,6 +5,7 @@ import logging
 import sys
 from collections.abc import Callable
 from math import cos, sin
+from pathlib import Path
 from typing import Any
 
 import asdf
@@ -34,6 +35,8 @@ M_ics2idl = MZ2X = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
 class Transforms:
     """The matrices used in calculation of the M_eci2siaf transformation."""
 
+    #: FGS Boresite Adjustment Matrix (BAM) reference file path
+    bam_ref: str | Path | None = None
     #: B-frame to FGS
     m_b2fgs: np.ndarray | None = None
     #: ECI to B-frame
@@ -286,21 +289,24 @@ def calc_gsapp2gs(m_eci2gsapp, velocity):
     return m_gsapp2gs
 
 
-def calc_m_b2fgs(fgs_q=None):
-    """Calculate the B-to-FGS frame DCM
+def calc_m_b2fgs(refpath=None):
+    """Calculate the FGS Boresite Adjustment Matrix (BAM) frame DCM
 
     Parameters
     ----------
-    fgs_q : [float, float, float, float] or None
-        The quaterion representing the B to FGS transformation.
-        If no B-to-FGS quaternion is given, use a pre-launch defined matrix.
+    refpath : Path-like or None
+        Path to the reference file containing the BAM.
+        If None, retrieve the BAM reference file.
     """
-    if fgs_q is None:
+    if refpath is None:
+        logger.warning('No B-to-FGS reference specified and CRDS retrieval is not implemented.')
+    if refpath is None:
         logger.warning("No B-to-FGS information is given. Using pre-launch values.")
-        fgs_q = olib.FGS_DEFAULT_QUATERNION
+        bam_q = olib.BAM_QUATERNION
+    bam_q = olib.BAM_QUATERNION
 
     # Calculate the DCM from the quaterion
-    return calc_quat2matrix(fgs_q)
+    return calc_quat2matrix(bam_q)
 
 
 def calc_m_fgs2gs(x, y):

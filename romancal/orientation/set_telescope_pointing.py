@@ -135,10 +135,7 @@ def add_wcs(
                 "\n\tFailing WCS processing."
             )
 
-        t_pars, transforms = update_wcs(
-            model,
-            **transform_kwargs,
-        )
+        t_pars, transforms = update_wcs(model, **transform_kwargs)
 
         if dry_run:
             logger.info("Dry run requested; results are not saved.")
