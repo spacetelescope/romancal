@@ -153,12 +153,11 @@ def north_angle_at(wcs, x, y):
 
     The angle is measured counterclockwise from the positive x axis of
     the detector, matching the convention of the image-center value it
-    replaces. North is the pixel-space direction that maps to a pure
-    increase in latitude, so it is obtained by solving ``J v = [0, 1]``.
+    replaces.
 
-    Unlike offsetting a sky coordinate and transforming back, this uses
-    only the forward transform, so it neither leaves the array near an
-    edge nor degenerates when the offset would cross a celestial pole.
+    North is the pixel-space direction that maps to a pure
+    increase in latitude, so it is obtained by solving ``J v = [0, 1]``,
+    using the Jacobian J.
 
     Parameters
     ----------
