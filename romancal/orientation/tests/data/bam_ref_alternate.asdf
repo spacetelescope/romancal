@@ -1,0 +1,26 @@
+#ASDF 1.0.0
+#ASDF_STANDARD 1.6.0
+%YAML 1.1
+%TAG ! tag:stsci.edu:asdf/
+--- !core/asdf-1.1.0
+asdf_library: !core/software-1.0.0 {author: The ASDF Developers, homepage: 'http://github.com/asdf-format/asdf',
+  name: asdf, version: 5.3.1}
+history:
+  extensions:
+  - !core/extension_metadata-1.0.0
+    extension_class: asdf.extension._manifest.ManifestExtension
+    extension_uri: asdf://asdf-format.org/core/extensions/core-1.6.0
+    manifest_software: !core/software-1.0.0 {name: asdf_standard, version: 1.5.0}
+    software: !core/software-1.0.0 {name: asdf, version: 5.3.1}
+fgs_tbl: {Qb1: 0.6822141509826322, Qb2: -0.1800546332580956, Qb3: 0.6837984564491885,
+  Qb4: -0.18596734175399293}
+meta:
+  author: T. Sohn, T. Desjardins
+  description: Quaternion values for the alignment matrix between the Roman observatory
+    boresight and fine guidance system (FGS).
+  instrument: {name: WFI}
+  origin: STSCI/SOC
+  pedgriee: GROUND
+  reftype: bam
+  useafter: '2020-01-01T00:00:00'
+...
