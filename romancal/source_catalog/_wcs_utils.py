@@ -114,8 +114,6 @@ def pixel_area_map(wcs, shape, step=64):
 
     coarse_area = np.abs(np.linalg.det(wcs_jacobian(wcs, xx, yy)))
 
-    # Interpolate on separable 1D axes; building full-resolution
-    # coordinate arrays instead would allocate hundreds of MB per call.
     spline = RectBivariateSpline(gy, gx, coarse_area)
     area = spline(np.arange(ny, dtype=float), np.arange(nx, dtype=float))
 
