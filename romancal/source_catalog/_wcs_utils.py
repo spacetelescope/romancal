@@ -11,45 +11,32 @@ from scipy.interpolate import RectBivariateSpline
 ARCSEC_PER_RADIAN = (1.0 * u.rad).to_value(u.arcsec)
 
 
-def _spherical(lon, lat):
-    """
-    A `~astropy.coordinates.UnitSphericalRepresentation` of the given
-    sky positions, with longitude and latitude given in degrees.
-    """
-    return UnitSphericalRepresentation(lon * u.deg, lat * u.deg)
-
-
-def _as_vectors(representation):
-    """
-    Reshape a `~astropy.coordinates.CartesianRepresentation` to put the
-    Cartesian components last, giving shape ``lon.shape + (3,)``.
-    """
-    return np.moveaxis(representation.xyz.value, 0, -1)
-
-
 def _direction_cosines(lon, lat):
     """
-    The Cartesian unit vectors of the given sky positions.
+    The Cartesian unit vectors of the given sky positions, in degrees,
+    with shape ``lon.shape + (3,)``.
 
     This representation is smooth over the whole sphere, unlike
     (longitude, latitude), which is degenerate at the poles and
     discontinuous at the 0/360 degree branch cut.
     """
-    return _as_vectors(_spherical(lon, lat).to_cartesian())
+    spherical = UnitSphericalRepresentation(lon * u.deg, lat * u.deg)
+    return np.moveaxis(spherical.to_cartesian().xyz.value, 0, -1)
 
 
 def _north_vectors(lon, lat):
     """
     Unit vectors pointing toward celestial North at the given sky
-    positions.
+    positions, in degrees, with shape ``lon.shape + (3,)``.
 
-    This is the direction of increasing latitude, which
+    North is the direction of increasing latitude, which
     `~astropy.coordinates.UnitSphericalRepresentation.unit_vectors`
-    supplies directly. North is undefined at a pole; astropy resolves
-    that by returning the limit reached along the given longitude,
-    which is as good an answer as any and keeps the result finite.
+    supplies directly. It is undefined at a pole; astropy resolves that
+    by returning the limit reached along the given longitude, which is
+    as good an answer as any and keeps the result finite.
     """
-    return _as_vectors(_spherical(lon, lat).unit_vectors()["lat"])
+    spherical = UnitSphericalRepresentation(lon * u.deg, lat * u.deg)
+    return np.moveaxis(spherical.unit_vectors()["lat"].xyz.value, 0, -1)
 
 
 def wcs_jacobian(wcs, x, y):
@@ -188,16 +175,12 @@ def north_angle_at(wcs, x, y):
     replaces.
 
     The answer is the pixel-space step that the Jacobian J maps to the
-    North direction, so it solves ``J v = north``. That system is
-    overdetermined but consistent, since North lies in the plane the
-    columns of J span, and it is solved in the least-squares sense
-    through the 2x2 matrix ``J.T J``. Using only the forward transform
-    this way avoids the array-edge and pole failures of offsetting north
-    on the sky and inverting.
-
-    Only the direction of ``v`` matters here, so the determinant of
-    ``J.T J`` can be dropped: it is a Gram determinant and so never
-    negative, and dividing by it would only rescale ``v``.
+    North direction, so it solves ``J v = north``. There are three
+    equations and two unknowns, but the system is consistent, since
+    North lies in the plane the columns of J span; the normal equations
+    below therefore give the exact answer rather than a compromise.
+    Using only the forward transform this way avoids the array-edge and
+    pole failures of offsetting north on the sky and inverting.
 
     Parameters
     ----------
@@ -218,15 +201,10 @@ def north_angle_at(wcs, x, y):
     jacobian = wcs_jacobian(wcs, x, y)
     north = _north_vectors(*wcs(x, y, with_bounding_box=False))
 
-    gram = np.einsum("...ki,...kj->...ij", jacobian, jacobian)
-    projection = np.einsum("...ki,...k->...i", jacobian, north)
-
-    # The adjugate of the 2x2 Gram matrix, applied to the projection
-    north_x = (
-        gram[..., 1, 1] * projection[..., 0] - gram[..., 0, 1] * projection[..., 1]
-    )
-    north_y = (
-        gram[..., 0, 0] * projection[..., 1] - gram[..., 1, 0] * projection[..., 0]
-    )
+    transpose = jacobian.swapaxes(-1, -2)
+    step = np.linalg.solve(
+        transpose @ jacobian, transpose @ north[..., np.newaxis]
+    ).squeeze(-1)
+    north_x, north_y = step[..., 0], step[..., 1]
 
     return (np.degrees(np.arctan2(north_y, north_x)) * u.deg).astype(np.float32)
