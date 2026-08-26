@@ -24,21 +24,6 @@ def _direction_cosines(lon, lat):
     return np.moveaxis(spherical.to_cartesian().xyz.value, 0, -1)
 
 
-def _north_vectors(lon, lat):
-    """
-    Unit vectors pointing toward celestial North at the given sky
-    positions, in degrees, with shape ``lon.shape + (3,)``.
-
-    North is the direction of increasing latitude, which
-    `~astropy.coordinates.UnitSphericalRepresentation.unit_vectors`
-    supplies directly. It is undefined at a pole; astropy resolves that
-    by returning the limit reached along the given longitude, which is
-    as good an answer as any and keeps the result finite.
-    """
-    spherical = UnitSphericalRepresentation(lon * u.deg, lat * u.deg)
-    return np.moveaxis(spherical.unit_vectors()["lat"].xyz.value, 0, -1)
-
-
 def wcs_jacobian(wcs, x, y):
     """
     Compute the local WCS Jacobian at the given pixel positions.
@@ -172,13 +157,17 @@ def north_angle_at(wcs, x, y):
 
     The angle is measured counterclockwise from the positive x axis of
     the detector, matching the convention of the image-center value it
-    replaces.
+    replaces and the convention `orientation_sky` expects.
 
-    The answer is the pixel-space step that the Jacobian J maps to the
-    North direction, so it solves ``J v = north``. There are three
-    equations and two unknowns, but the system is consistent, since
-    North lies in the plane the columns of J span; the normal equations
-    below therefore give the exact answer rather than a compromise.
+    North is found by projecting the celestial pole, ``[0, 0, 1]``, into
+    the plane of the pixel grid: the answer is the pixel-space step
+    ``v`` that the Jacobian J maps onto it, so it solves ``J v = pole``.
+    There are three equations and two unknowns, and the normal equations
+    below give the least-squares solution. The part of the pole that
+    points along the line of sight is perpendicular to the plane the
+    columns of J span, so it cannot be reached by any ``v`` and simply
+    drops out; what is left is the North direction on the sky.
+
     Using only the forward transform this way avoids the array-edge and
     pole failures of offsetting north on the sky and inverting.
 
@@ -196,15 +185,11 @@ def north_angle_at(wcs, x, y):
     angle : `~astropy.units.Quantity`
         The position angle of North at each position, in degrees.
     """
-    x = np.asarray(x)
-    y = np.asarray(y)
-    jacobian = wcs_jacobian(wcs, x, y)
-    north = _north_vectors(*wcs(x, y, with_bounding_box=False))
+    jacobian = wcs_jacobian(wcs, np.asarray(x), np.asarray(y))
 
+    pole = np.array([0.0, 0.0, 1.0])[:, np.newaxis]
     transpose = jacobian.swapaxes(-1, -2)
-    step = np.linalg.solve(
-        transpose @ jacobian, transpose @ north[..., np.newaxis]
-    ).squeeze(-1)
-    north_x, north_y = step[..., 0], step[..., 1]
+    step = np.linalg.solve(transpose @ jacobian, transpose @ pole)
+    north_x, north_y = step[..., 0, 0], step[..., 1, 0]
 
     return (np.degrees(np.arctan2(north_y, north_x)) * u.deg).astype(np.float32)
