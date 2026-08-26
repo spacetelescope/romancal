@@ -35,8 +35,6 @@ M_ics2idl = MZ2X = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
 class Transforms:
     """The matrices used in calculation of the M_eci2siaf transformation."""
 
-    #: FGS Boresite Adjustment Matrix (BAM) reference file path
-    bam_ref: str | Path | None = None
     #: B-frame to FGS
     m_b2fgs: np.ndarray | None = None
     #: ECI to B-frame
@@ -111,6 +109,8 @@ class TransformParameters:
     allow_default: bool = False
     #: Aperture in use
     aperture: str = ""
+    #: FGS Boresite Adjustment Matrix (BAM) reference file path
+    bam_ref: str | Path | None = None
     #: Default quaternion to use if engineering is not available.
     default_quaternion: tuple | None = None
     #: Commanded position of the guide star in (H, V) space.
@@ -303,9 +303,15 @@ def calc_m_b2fgs(refpath=None):
     if refpath is None:
         logger.warning("No B-to-FGS information is given. Using pre-launch values.")
         bam_q = olib.BAM_QUATERNION
-    bam_q = olib.BAM_QUATERNION
+    else:
+        logger.info('B-to-FGS quaternion reading from %s', refpath)
+        with asdf.open(refpath) as af:
+            bam_q = []
+            for idx in range(4):
+                bam_q.append(af.tree['fgs_tbl'][f'Qb{idx + 1}'])
 
-    # Calculate the DCM from the quaterion
+    # Calculate the DCM from the quaterion.
+    logger.info('B-to-FGS quaternion: %s', bam_q)
     return calc_quat2matrix(bam_q)
 
 
@@ -426,7 +432,7 @@ def calc_transforms(t_pars: TransformParameters):
     t.m_eci2b = calc_quat2matrix(t_pars.pointing.q)
 
     # ECI to FGS
-    t.m_b2fgs = calc_m_b2fgs(t_pars.pointing.fgs_q)
+    t.m_b2fgs = calc_m_b2fgs(t_pars.bam_ref)
     t.m_eci2fgs = np.dot(t.m_b2fgs, t.m_eci2b)
 
     # FGS to Guide star apparent.
