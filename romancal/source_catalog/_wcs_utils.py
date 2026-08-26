@@ -153,7 +153,7 @@ def north_angle_at(wcs, x, y):
     positions.
 
     The angle is measured counterclockwise from the positive x axis of
-    the detector, matching the convention of the image-centre value it
+    the detector, matching the convention of the image-center value it
     replaces. North is the pixel-space direction that maps to a pure
     increase in latitude, so it is obtained by solving ``J v = [0, 1]``.
 

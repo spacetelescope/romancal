@@ -182,7 +182,7 @@ def test_north_angle_matches_a_tangent_point_reference():
 def test_north_angle_varies_around_an_enclosed_pole():
     """
     A field containing a celestial pole is the case a single
-    image-centre angle cannot represent: North points toward the pole,
+    image-center angle cannot represent: North points toward the pole,
     so its position angle sweeps the full 360 degrees around it.
     """
     shape = (256, 256)

@@ -252,7 +252,7 @@ class SegmentCatalog:
         """
         The position angle of celestial North at each source position.
 
-        Evaluated per source rather than once at the image centre: the
+        Evaluated per source rather than once at the image center: the
         distortion rotates the field across a detector, and the
         convergence of meridians makes a single value badly wrong at
         high declination and meaningless if the field contains a pole.
