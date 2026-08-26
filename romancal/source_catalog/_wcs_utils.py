@@ -46,11 +46,6 @@ def wcs_jacobian(wcs, x, y):
     to collapse at a celestial pole, and no branch cut to wrap across at
     a longitude of zero.
 
-    The edge vectors are chords across the unit sphere rather than arcs
-    along it, which understates the angle by a relative
-    ``theta**2 / 24``: around 1e-14 for a pixel, and negligible beside
-    the truncation error of the central difference itself.
-
     Parameters
     ----------
     wcs : WCS object
@@ -160,35 +155,8 @@ def north_angle_at(wcs, x, y):
     the detector, matching the convention of the image-center value it
     replaces and the convention `orientation_sky` expects.
 
-    The columns of the Jacobian J are the pixel's two edge vectors in
-    xyz. To point North, write the direction of the celestial pole as a
-    combination of them::
-
-        [0, 0, 1] = a * (x edge) + b * (y edge)
-
-    ``a`` and ``b`` are then how far to step along the detector x and y
-    axes to head North, and the angle of ``(a, b)`` is the answer.
-    Dotting that equation with each edge vector in turn gives two
-    equations in the two unknowns, which are the normal equations
-    ``J.T J v = J.T pole`` solved below.
-
-    ``J.T pole`` holds the two projections of the pole onto the edge
-    vectors, and ``J.T J`` holds the dot products of the edge vectors
-    with each other. The second is needed because the projections are
-    not themselves ``a`` and ``b``: the two edges differ in length by a
-    few percent and are not quite perpendicular, so projecting onto each
-    separately is not the same as decomposing into both. Ignoring it
-    would misplace North by around two degrees, against a real variation
-    across a detector of half a degree.
-
-    The pole generally points partly out of the plane of the two edges.
-    No choice of ``a`` and ``b`` can reach that part, so the
-    least-squares solution discards it, leaving the direction of North
-    on the sky. That is why the pole can be used directly here, with no
-    need to work out which way North lies beforehand.
-
-    Using only the forward transform this way avoids the array-edge and
-    pole failures of offsetting north on the sky and inverting.
+    We use unit vectors on the sphere here to avoid degeneracies
+    at the celestial pole.
 
     Parameters
     ----------
@@ -204,13 +172,20 @@ def north_angle_at(wcs, x, y):
     angle : `~astropy.units.Quantity`
         The position angle of North at each position, in degrees.
     """
+    # pixel x and y edges in cartesian coordinates
     jacobian = wcs_jacobian(wcs, np.asarray(x), np.asarray(y))
 
     pole = np.array([0.0, 0.0, 1.0])[:, np.newaxis]
     transpose = jacobian.swapaxes(-1, -2)
 
-    # Normal equations: edge-to-edge dot products on the left, the
-    # projections of the pole onto each edge on the right
+    # step gives the combination of the edge vectors so that
+    # pole ~ a * edge_x + b * edge_y
+    # this is the least squares solution of J step ~ pole,
+    # given by (JT J) step = JT pole
+    # note: near the pole, most of the pole vector is out of the
+    # plane of the pixel; JT limits to the projection along
+    # the pixel edges so that we're solving only for the in-plane
+    # component
     step = np.linalg.solve(transpose @ jacobian, transpose @ pole)
     north_x, north_y = step[..., 0, 0], step[..., 1, 0]
 
