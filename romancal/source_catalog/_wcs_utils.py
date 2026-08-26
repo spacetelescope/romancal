@@ -5,26 +5,51 @@ North, sampled across an image.
 
 import astropy.units as u
 import numpy as np
+from astropy.coordinates import UnitSphericalRepresentation
 from scipy.interpolate import RectBivariateSpline
 
 ARCSEC_PER_RADIAN = (1.0 * u.rad).to_value(u.arcsec)
+
+
+def _spherical(lon, lat):
+    """
+    A `~astropy.coordinates.UnitSphericalRepresentation` of the given
+    sky positions, with longitude and latitude given in degrees.
+    """
+    return UnitSphericalRepresentation(lon * u.deg, lat * u.deg)
+
+
+def _as_vectors(representation):
+    """
+    Reshape a `~astropy.coordinates.CartesianRepresentation` to put the
+    Cartesian components last, giving shape ``lon.shape + (3,)``.
+    """
+    return np.moveaxis(representation.xyz.value, 0, -1)
 
 
 def _direction_cosines(lon, lat):
     """
     The Cartesian unit vectors of the given sky positions.
 
-    Longitude and latitude are in degrees; the result has shape
-    ``lon.shape + (3,)``. This representation is smooth over the whole
-    sphere, unlike (longitude, latitude), which is degenerate at the
-    poles and discontinuous at the 0/360 degree branch cut.
+    This representation is smooth over the whole sphere, unlike
+    (longitude, latitude), which is degenerate at the poles and
+    discontinuous at the 0/360 degree branch cut.
     """
-    lon = np.radians(lon)
-    lat = np.radians(lat)
-    cos_lat = np.cos(lat)
-    return np.stack(
-        [cos_lat * np.cos(lon), cos_lat * np.sin(lon), np.sin(lat)], axis=-1
-    )
+    return _as_vectors(_spherical(lon, lat).to_cartesian())
+
+
+def _north_vectors(lon, lat):
+    """
+    Unit vectors pointing toward celestial North at the given sky
+    positions.
+
+    This is the direction of increasing latitude, which
+    `~astropy.coordinates.UnitSphericalRepresentation.unit_vectors`
+    supplies directly. North is undefined at a pole; astropy resolves
+    that by returning the limit reached along the given longitude,
+    which is as good an answer as any and keeps the result finite.
+    """
+    return _as_vectors(_spherical(lon, lat).unit_vectors()["lat"])
 
 
 def wcs_jacobian(wcs, x, y):
@@ -162,9 +187,8 @@ def north_angle_at(wcs, x, y):
     the detector, matching the convention of the image-center value it
     replaces.
 
-    North at a sky position ``n`` is the tangent direction
-    ``z - (z . n) n``, and the answer is the pixel-space step that the
-    Jacobian J maps to it, so it solves ``J v = north``. That system is
+    The answer is the pixel-space step that the Jacobian J maps to the
+    North direction, so it solves ``J v = north``. That system is
     overdetermined but consistent, since North lies in the plane the
     columns of J span, and it is solved in the least-squares sense
     through the 2x2 matrix ``J.T J``. Using only the forward transform
@@ -173,11 +197,7 @@ def north_angle_at(wcs, x, y):
 
     Only the direction of ``v`` matters here, so the determinant of
     ``J.T J`` can be dropped: it is a Gram determinant and so never
-    negative, and dividing by it would only rescale ``v``. That keeps
-    the result finite at a celestial pole, where the North tangent
-    vanishes. North is genuinely undefined there, but returning an
-    arbitrary angle is better than failing for every source in the
-    image.
+    negative, and dividing by it would only rescale ``v``.
 
     Parameters
     ----------
@@ -196,9 +216,7 @@ def north_angle_at(wcs, x, y):
     x = np.asarray(x)
     y = np.asarray(y)
     jacobian = wcs_jacobian(wcs, x, y)
-
-    position = _direction_cosines(*wcs(x, y, with_bounding_box=False))
-    north = np.array([0.0, 0.0, 1.0]) - position[..., 2, np.newaxis] * position
+    north = _north_vectors(*wcs(x, y, with_bounding_box=False))
 
     gram = np.einsum("...ki,...kj->...ij", jacobian, jacobian)
     projection = np.einsum("...ki,...k->...i", jacobian, north)
