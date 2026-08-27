@@ -56,11 +56,9 @@ def _pixel_area_from_corners(wcs, x, y):
     """
     The area of one pixel, measured with astropy's spherical routines.
 
-    The pixel is small enough to treat as a parallelogram on the sky, so
+    We treat the pixel as a parallelogram on the sky, so
     its area is the product of two edge lengths and the sine of the angle
-    between them. This deliberately uses `~astropy.coordinates.SkyCoord`
-    rather than differencing longitudes by hand, so that it is an
-    independent check on `pixel_area_map` rather than a restatement of it.
+    between them.
     """
     corner = SkyCoord(
         *wcs(

@@ -39,12 +39,8 @@ def wcs_jacobian(wcs, x, y):
     vectors. They span the plane tangent to the sky at that pixel; the
     norm of their cross product is the pixel's solid angle, and the
     combination of them that reaches the celestial pole gives the local
-    direction of North.
-
-    Differencing unit vectors rather than (longitude, latitude) keeps
-    this well behaved everywhere: there is no ``cos(latitude)`` factor
-    to collapse at a celestial pole, and no branch cut to wrap across at
-    a longitude of zero.
+    direction of North.  We use 3D cartesian vectors rather than
+    e.g. angular sky coordinates to avoid any singularities.
 
     Parameters
     ----------
