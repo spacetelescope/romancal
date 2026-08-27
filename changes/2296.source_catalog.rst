@@ -1,0 +1,1 @@
+Changed detection parameters to npixels=9, snr_threshold=1.7
