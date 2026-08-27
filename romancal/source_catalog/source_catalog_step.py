@@ -7,12 +7,14 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+import asdf
 import numpy as np
 from astropy.table import join
 from photutils.segmentation import SegmentationImage
 from roman_datamodels import datamodels
 from roman_datamodels.datamodels import ImageModel
 from roman_datamodels.dqflags import pixel
+from stpipe import crds_client
 
 from romancal.datamodels.fileio import open_dataset
 from romancal.source_catalog._background import RomanBackground
@@ -75,7 +77,7 @@ class SourceCatalogStep(RomanStep):
 
     class_alias = "source_catalog"
 
-    reference_file_types: ClassVar = ["apcorr"]
+    reference_file_types: ClassVar = ["apcorr", "epsf"]
 
     spec = """
         bkg_boxsize = integer(default=1000)   # background mesh box size in pixels
@@ -114,8 +116,64 @@ class SourceCatalogStep(RomanStep):
 
         return super().save_model(model, **kwargs)
 
+    def _prefetch_dust_map_paths(self):
+        """
+        Resolve and validate north/south dustmap references before catalog
+        generation.
+
+        Returns
+        -------
+        dict or None
+            Mapping from dust-map pole IDs to local file paths, or `None`
+            if prefetch fails.
+        """
+        try:
+            map_paths = RomanSourceCatalog._get_sfd_map_paths()
+            for pole, path in map_paths.items():
+                map_paths[pole] = crds_client.check_reference_open(path)
+            return map_paths
+        except Exception as exc:
+            log.warning(
+                "Could not prefetch dustmap references: %s. "
+                "dust_ebv will fall back to NaN values if lookup fails later.",
+                exc,
+            )
+            return None
+
+    def _is_imaging_exposure(self) -> bool:
+        """
+        Return whether the current input corresponds to an imaging exposure.
+        """
+        input_name = self.search_attr("_input_filename", None)
+        if input_name is None:
+            return True
+        input_name = str(input_name)
+        if not input_name.lower().endswith(".asdf"):
+            return True
+
+        try:
+            with asdf.open(input_name, memmap=True) as af:
+                exp_type = af["roman"]["meta"]["exposure"]["type"]
+            return exp_type in ("WFI_IMAGE", "WFI_LOLO")
+        except Exception:
+            return True
+
+    def get_ref_override(self, reference_file_type):
+        """
+        Override ePSF prefetch behavior: prefetch only for imaging exposures.
+        """
+        override = super().get_ref_override(reference_file_type)
+        if override is not None:
+            return override
+
+        if reference_file_type == "epsf" and not self._is_imaging_exposure():
+            return "N/A"
+
+        return None
+
     def process(self, dataset):
         input_model = open_dataset(dataset, update_version=self.update_version)
+        dust_map_paths = self._prefetch_dust_map_paths()
 
         # get the name of the psf reference file
         if self.fit_psf:
@@ -226,6 +284,7 @@ class SourceCatalogStep(RomanStep):
             mask=mask,
             cat_type=cat_type,
             ee_spline=ee_spline,
+            dust_map_paths=dust_map_paths,
         )
         cat = catobj.catalog
 
@@ -246,6 +305,7 @@ class SourceCatalogStep(RomanStep):
                 mask=mask,
                 cat_type="forced_full",
                 ee_spline=ee_spline,
+                dust_map_paths=dust_map_paths,
             )
 
             # We have two catalogs, both using the same segmentation

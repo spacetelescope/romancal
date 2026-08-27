@@ -389,6 +389,75 @@ def test_nested_metadata_propagated_to_catalog_and_segmentation(
         assert [list(r) for r in result.meta.exposure.read_pattern] == read_pattern
 
 
+def test_source_catalog_step_reference_file_types_includes_epsf():
+    """Check that source catalog prefetch advertises both apcorr and epsf references."""
+    assert SourceCatalogStep.reference_file_types == ["apcorr", "epsf"]
+
+
+@pytest.mark.parametrize(
+    "field_id",
+    [
+        RomanSourceCatalog.north_galactic_pole_id,
+        RomanSourceCatalog.south_galactic_pole_id,
+    ],
+    ids=["north", "south"],
+)
+def test_get_sfd_map_paths_returns_both_fields(field_id):
+    """Ensure dust-map lookup resolves a path for each galactic pole field ID."""
+    try:
+        map_paths = RomanSourceCatalog._get_sfd_map_paths()
+    except Exception as exc:
+        pytest.skip(f"dust-map references unavailable in this environment: {exc}")
+    assert field_id in map_paths
+    assert isinstance(map_paths[field_id], str) and map_paths[field_id]
+    assert all(isinstance(path, str) and path for path in map_paths.values())
+
+
+@pytest.mark.parametrize(
+    "field_id",
+    [
+        RomanSourceCatalog.north_galactic_pole_id,
+        RomanSourceCatalog.south_galactic_pole_id,
+    ],
+    ids=["north", "south"],
+)
+def test_prefetch_dust_map_paths_validates_paths(field_id):
+    """Ensure step dust-map prefetch returns a validated path for each galactic pole."""
+    step = SourceCatalogStep()
+    map_paths = step._prefetch_dust_map_paths()
+    if map_paths is None:
+        pytest.skip(
+            "dust-map references unavailable for validation in this environment"
+        )
+    assert field_id in map_paths
+    assert isinstance(map_paths[field_id], str) and map_paths[field_id]
+    assert all(isinstance(path, str) and path for path in map_paths.values())
+
+
+def test_source_catalog_prefetch_failure_keeps_catalog(image_model):
+    """Verify catalog generation succeeds and dust_ebv is still computed when prefetch returns no maps."""
+
+    class NoDustPrefetchSourceCatalogStep(SourceCatalogStep):
+        def _prefetch_dust_map_paths(self):
+            return None
+
+    step = NoDustPrefetchSourceCatalogStep()
+    result_catalog, _ = step.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=3,
+        npixels=10,
+        fit_psf=False,
+        save_results=False,
+    )
+    cat = result_catalog.source_catalog
+    assert isinstance(cat, Table)
+    assert "dust_ebv" in cat.colnames
+    assert len(cat["dust_ebv"]) == len(cat)
+    assert np.all(np.isfinite(cat["dust_ebv"]))
+
+
 def test_l2_input_model_unchanged(image_model, function_jail):
     """
     Test that the input model data and error arrays are unchanged after
