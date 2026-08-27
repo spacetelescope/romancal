@@ -66,10 +66,34 @@ image moments of the pixel values within the source segments using
 These properties include the semimajor and semiminor axes, ellipticity,
 and orientation of the major axis.
 
+The image moments are computed in the pixel frame. Properties that are
+reported in sky units (``semimajor``, ``semiminor``, ``fwhm``,
+``kron_radius``, ``segment_area``, and ``nn_distance``) are converted
+using the pixel scale local to each source, and ``orientation_sky`` is
+measured from the direction of north local to each source rather than
+from a single direction for the whole image.
+
+Only the size and rotation of the local pixel are accounted for, not its
+shape. Where pixels are not square, the sky-frame axis lengths and
+position angle carry a residual error of order the departure from
+squareness (1-3% for Roman). ``ellipticity`` and ``orientation_pix``
+are pixel-frame quantities and are not corrected at all.
+
 Circular aperture photometry is performed at several aperture sizes
-(:math:`r` = 0.1, 0.2, 0.4, 0.8, 1.6 arcsec) for each source. Elliptical
-Kron aperture photometry is also performed, where the aperture size is
-determined by the source shape.
+(:math:`r` = 0.1, 0.2, 0.4, 0.8, 1.6 arcsec) for each source. These
+radii are converted to pixels using the pixel scale local to each
+source.  Because a single aperture can only be measured at one radius at
+a time, sources are grouped into batches that share a common radius,
+chosen so that no source's aperture radius is wrong by more than about
+one part in :math:`10^{4}`.
+
+The ``circle_pix`` and ``annulus_pix`` entries in the catalog metadata
+report the mean radius over all sources rather than the exact radius
+used for any one of them. The ``circle_arcsec`` and ``annulus_arcsec``
+entries are exact and are the same for every source.
+
+Elliptical Kron aperture photometry is also performed, where the
+aperture size is determined by the source shape.
 
 Isophotal photometry is measured using the total flux within the source
 segment.
@@ -101,6 +125,16 @@ and the effect of the image drizzling on the PSF. Finally, the PSF is
 azimuthally averaged to remove any azimuthal signatures, which will be
 different in the coadded product than in the individual input exposures.
 
+Surface Brightness to Flux Conversion
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Level 2 and Level 3 pixel values are surface brightnesses, not fluxes.
+Recovering the flux entering a pixel therefore requires multiplying
+its surface brightness by the solid angle of that particular pixel.
+The solid angle is computed directly from the WCS.    Note that the
+variation in the pixel solid angle for WFI L2 images is of order 2%.
+For L3 coadds the variation in pixel solid angle is much smaller.
+
 All fluxes are reported in nJy. To calculate AB magnitudes, use the
 following formula:
 
@@ -114,10 +148,13 @@ source Poisson noise.
 
 A local background is estimated for each source measured within a
 circular annulus centered on the source. The circular annulus has an
-inner and outer radius of 2.4 and 2.8 arcsec, respectively. The local
-background flux is calculated as the sigma-clipped median value within
-the annulus. Although this local background value is included in the
-source catalog, it is not subtracted from any of the measured fluxes.
+inner and outer radius of 2.4 and 2.8 arcsec, respectively, converted to
+pixels using the pixel scale local to each source. The local background
+flux is calculated as the sigma-clipped median value within the annulus,
+divided by the local pixel solid angle, and is
+a surface brightness (nJy/arcsec\ :sup:`2`) rather than a flux. Although
+this local background value is included in the source catalog, it is not
+subtracted from any of the measured fluxes.
 
 Each source has a field, `is_extended`, intended to indicate whether the
 source is more extended than expected, were the object a point source.

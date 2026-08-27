@@ -12,6 +12,8 @@ from astropy.utils.decorators import lazyproperty
 from astropy.utils.exceptions import AstropyUserWarning
 from photutils.aperture import CircularAnnulus, CircularAperture, aperture_photometry
 
+from romancal.source_catalog._wcs_utils import pixel_area_at
+
 log = logging.getLogger(__name__)
 
 
@@ -37,9 +39,10 @@ class ApertureCatalog:
         coordinates. Non-finite positions must already have been
         replaced with finite placeholders by the caller.
 
-    pixel_scale : `~astropy.units.Quantity`
-        The pixel scale (with arcsec-compatible units), used to convert
-        the configured radii from arcsec to pixels.
+    pixel_area_map : `~astropy.units.Quantity`
+        2D array of per-pixel solid angles matching the shape of
+        ``model.data``. Used to convert the annulus background back to
+        a surface brightness.
 
     ee_spline : callable, optional
         Encircled-energy spline mapping aperture radius (pixels) to
@@ -58,6 +61,12 @@ class ApertureCatalog:
     CIRCLE_APERTURE_RADII_ARCSEC = (0.1, 0.2, 0.4, 0.8, 1.6)
     ANNULUS_RADII_ARCSEC = (2.4, 2.8)
 
+    # photutils apertures take a single scalar radius, so sources are
+    # grouped into bins of similar pixel scale and measured in batches.
+    # These bound the resulting fractional error in the aperture radius.
+    RADIUS_BIN_TOLERANCE = 1e-4
+    MAX_RADIUS_BINS = 64
+
     @classmethod
     def aperture_flux_colnames_for_radii(cls, radii_arcsec=None):
         """
@@ -75,14 +84,14 @@ class ApertureCatalog:
         self,
         model,
         xypos_finite,
-        pixel_scale,
+        pixel_area_map,
         *,
         ee_spline=None,
         requested_properties=None,
     ):
         self.model = model
-        self.pixel_scale = pixel_scale
         self.xypos_finite = xypos_finite
+        self.pixel_area_map = pixel_area_map
         self.ee_spline = ee_spline
 
         self.fractions = []
@@ -126,6 +135,14 @@ class ApertureCatalog:
         ]
 
     @lazyproperty
+    def _source_pixel_scale(self):
+        """
+        The angular size (in arcsec) of a pixel at each source position,
+        defined as the square root of the local pixel solid angle.
+        """
+        return np.sqrt(self._source_pixel_area)
+
+    @lazyproperty
     def aperture_radii(self):
         """
         A dictionary of the aperture radii used for aperture photometry.
@@ -135,7 +152,18 @@ class ApertureCatalog:
         * ``'circle'`` and ``'annulus'`` contain radii as
           `~astropy.units.Quantity` arrays in arcsec
         * ``'circle_pix'`` and ``'annulus_pix'`` contain the same radii
-          as plain floating-point arrays in pixels.
+          as plain floating-point arrays in pixels, with shape
+          ``(n_radii, n_sources)``.
+
+        The pixel radii vary from source to source because the pixel
+        solid angle varies across the detector; a single pixel radius
+        would subtend a different sky area in different parts of the
+        image.
+
+        These are the exact radii the apertures represent. The
+        photometry itself measures sources in batches that share a
+        common radius, which reproduces these values to within
+        `RADIUS_BIN_TOLERANCE`; see `_radius_bins`.
         """
         params = {}
         radii = np.array(self.CIRCLE_APERTURE_RADII_ARCSEC) << u.arcsec
@@ -143,14 +171,68 @@ class ApertureCatalog:
         params["circle"] = radii.copy()
         params["annulus"] = annulus_radii.copy()
 
-        radii /= self.pixel_scale
-        annulus_radii /= self.pixel_scale
-        radii = radii.to(u.dimensionless_unscaled).value
-        annulus_radii = annulus_radii.to(u.dimensionless_unscaled).value
-        params["circle_pix"] = radii
-        params["annulus_pix"] = annulus_radii
+        scale = self._source_pixel_scale[np.newaxis, :]
+        params["circle_pix"] = (radii[:, np.newaxis] / scale).to_value(
+            u.dimensionless_unscaled
+        )
+        params["annulus_pix"] = (annulus_radii[:, np.newaxis] / scale).to_value(
+            u.dimensionless_unscaled
+        )
 
         return params
+
+    @lazyproperty
+    def _source_pixel_area(self):
+        """
+        The solid angle (in arcsec**2) of the pixel containing each
+        source.
+
+        ``model.data`` carries the per-pixel solid angle, so recovering
+        a surface brightness from it requires dividing by the local
+        area rather than by a single image-wide value.
+        """
+        return pixel_area_at(
+            self.pixel_area_map, self.xypos_finite[:, 0], self.xypos_finite[:, 1]
+        ).to(u.arcsec**2)
+
+    @lazyproperty
+    def _radius_bins(self):
+        """
+        Group sources into bins of similar local pixel scale.
+
+        `~photutils.aperture.CircularAperture` takes a single scalar
+        radius, so sources are measured in batches that share a radius.
+        Bins are spaced uniformly between the smallest and largest
+        pixel scale, and each source is assigned to the nearest bin.
+        The number of bins is chosen so that the aperture radius is
+        accurate to roughly `RADIUS_BIN_TOLERANCE`; an image with
+        uniform pixels needs only one bin.
+
+        Returns
+        -------
+        bins : list of (`~numpy.ndarray`, float)
+            Source indices and the pixel scale (in arcsec) to use for
+            that group. A bin that no source falls in is returned empty
+            rather than skipped; it simply measures nothing.
+        """
+        scale = self._source_pixel_scale.to_value(u.arcsec)
+        if scale.size == 0:
+            return []
+
+        spread = np.ptp(scale) / scale.mean()
+        n_bins = int(np.ceil(spread / self.RADIUS_BIN_TOLERANCE))
+        n_bins = int(np.clip(n_bins, 1, min(self.MAX_RADIUS_BINS, scale.size)))
+        if n_bins == 1:
+            return [(np.arange(scale.size), scale.mean())]
+
+        centers = np.linspace(scale.min(), scale.max(), n_bins)
+        spacing = centers[1] - centers[0]
+        nearest = np.round((scale - centers[0]) / spacing).astype(int)
+
+        bins = []
+        for value in range(n_bins):
+            bins.append((np.flatnonzero(nearest == value), centers[value]))
+        return bins
 
     @lazyproperty
     def _aperture_background(self):
@@ -162,12 +244,14 @@ class ApertureCatalog:
         annulus. The background error is the standard error of the
         median, sqrt(pi / (2 * N)) * std.
         """
-        bkg_aper = CircularAnnulus(
-            self.xypos_finite,
-            self.aperture_radii["annulus_pix"][0],
-            self.aperture_radii["annulus_pix"][1],
-        )
-        bkg_aper_masks = bkg_aper.to_mask(method="center")
+        r_in_arcsec, r_out_arcsec = self.ANNULUS_RADII_ARCSEC
+        bkg_aper_masks = [None] * self.xypos_finite.shape[0]
+        for idx, scale in self._radius_bins:
+            annulus = CircularAnnulus(
+                self.xypos_finite[idx], r_in_arcsec / scale, r_out_arcsec / scale
+            )
+            for source, mask in zip(idx, annulus.to_mask(method="center"), strict=True):
+                bkg_aper_masks[source] = mask
         sigclip = SigmaClip(sigma=3.0)
 
         with warnings.catch_warnings():
@@ -193,7 +277,7 @@ class ApertureCatalog:
                 bkg_std.append(std)
 
             nvalues = np.array(nvalues)
-            pixel_area = self.pixel_scale**2
+            pixel_area = self._source_pixel_area
             bkg_median = u.Quantity(bkg_median) / pixel_area
             bkg_std = u.Quantity(bkg_std) / pixel_area
 
@@ -294,27 +378,40 @@ class ApertureCatalog:
             aperture with the data array before assigning the flux
             attributes.
         """
-        apertures = [
-            CircularAperture(self.xypos_finite, radius)
-            for radius in self.aperture_radii["circle_pix"]
-        ]
-        aper_phot = aperture_photometry(
-            self.model.data, apertures, error=self.model.err
-        )
+        radii_arcsec = np.array(self.CIRCLE_APERTURE_RADII_ARCSEC)
+        n_radii = radii_arcsec.size
+        n_sources = self.xypos_finite.shape[0]
+        unit = getattr(self.model.data, "unit", None)
 
-        for i, aperture in enumerate(apertures):
-            tmp_flux_col = f"aperture_sum_{i}"
-            tmp_flux_err_col = f"aperture_sum_err_{i}"
+        flux = np.zeros((n_radii, n_sources))
+        flux_err = np.zeros((n_radii, n_sources))
 
-            if subtract_local_bkg:
-                # Subtract the local background measured in the annulus
-                aper_areas = aperture.area_overlap(self.model.data)
-                aper_phot[tmp_flux_col] -= self.aper_bkg_flux * aper_areas
+        # Sources are measured in batches sharing a common radius; see
+        # `_radius_bins` for how the batches are chosen.
+        for idx, scale in self._radius_bins:
+            apertures = [
+                CircularAperture(self.xypos_finite[idx], radius / scale)
+                for radius in radii_arcsec
+            ]
+            phot = aperture_photometry(self.model.data, apertures, error=self.model.err)
+            for i, aperture in enumerate(apertures):
+                values = phot[f"aperture_sum_{i}"]
+                if subtract_local_bkg:
+                    # Subtract the local background measured in the annulus
+                    areas = aperture.area_overlap(self.model.data)
+                    values = values - self.aper_bkg_flux[idx] * areas
+                flux[i, idx] = getattr(values, "value", values)
+                errors = phot[f"aperture_sum_err_{i}"]
+                flux_err[i, idx] = getattr(errors, "value", errors)
 
-            # Set the flux and error attributes
+        for i in range(n_radii):
             flux_col = self.aperture_flux_colnames[i]
-            flux_err_col = f"{flux_col}_err"
-            setattr(self, flux_col, aper_phot[tmp_flux_col].astype(np.float32))
-            setattr(self, flux_err_col, aper_phot[tmp_flux_err_col].astype(np.float32))
+            values = flux[i].astype(np.float32)
+            errors = flux_err[i].astype(np.float32)
+            if unit is not None:
+                values = values << unit
+                errors = errors << unit
+            setattr(self, flux_col, values)
+            setattr(self, f"{flux_col}_err", errors)
 
         self.calc_ee_fractions()

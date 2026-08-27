@@ -29,7 +29,7 @@ from romancal.source_catalog._segment import SegmentCatalog
 from romancal.source_catalog._unit_conversion import (
     validate_and_convert_to_flux_density,
 )
-from romancal.source_catalog._wcs_helpers import pixel_scale_angle_at_skycoord
+from romancal.source_catalog._wcs_utils import pixel_area_at, pixel_area_map
 from romancal.source_catalog.psf import _PSFCatalog
 
 log = logging.getLogger(__name__)
@@ -189,7 +189,9 @@ class RomanSourceCatalog:
             self.l2_to_sb = self.model.meta.photometry.conversion_megajanskys
         else:
             self.l2_to_sb = 1.0
-        self.sb_to_flux = (1.0 * (u.MJy / u.sr) * self._pixel_area).to(self.flux_unit)
+        self.sb_to_flux = (1.0 * (u.MJy / u.sr) * self._pixel_area_map).to(
+            self.flux_unit
+        )
 
         if self.fit_psf and self.psf_model is None:
             log.error(
@@ -210,60 +212,23 @@ class RomanSourceCatalog:
         return self.n_sources
 
     @lazyproperty
-    def _pixscale_angle(self):
+    def _pixel_area_map(self):
         """
-        The pixel scale in arcseconds and the angle in degrees measured
-        counterclockwise from the positive x axis to the "North" axis of
-        the celestial coordinate system.
-
-        The pixel scale is returned as a Quantity in arcsec and the
-        angle is returned as a Quantity in degrees.
-
-        Both are measured at the center of the image.
+        The per-pixel solid angle (as a 2D Quantity in steradians),
+        taken directly from the WCS; meta.photometry.pixel_area is not used.
         """
-        ysize, xsize = self.model.data.shape
-        ycen = (ysize - 1) / 2.0
-        xcen = (xsize - 1) / 2.0
-        skycoord = self.wcs.pixel_to_world(xcen, ycen)
-        _, pixscale, angle = pixel_scale_angle_at_skycoord(skycoord, self.wcs)
-        return pixscale, angle
+        return pixel_area_map(self.wcs, self.model.data.shape)
 
     @lazyproperty
-    def _pixel_scale(self):
+    def _source_pixel_scale(self):
         """
-        The pixel scale (as a Quantity in arcseconds) at the center of
-        the image.
+        The area-preserving pixel scale (in arcsec) at each source
+        position.
         """
-        return self._pixscale_angle[0]
-
-    @lazyproperty
-    def _wcs_angle(self):
-        """
-        The angle (as a Quantity in degrees) measured counterclockwise
-        from the positive x axis to the "North" axis of the celestial
-        coordinate system.
-
-        Measured at the center of the image.
-        """
-        return self._pixscale_angle[1]
-
-    @lazyproperty
-    def _pixel_area(self):
-        """
-        The pixel area (as a Quantity in steradians).
-
-        If the meta.photometry.pixel_area value is a negative
-        placeholder (e.g., -999999 sr), the value is calculated from the
-        WCS at the center of the image.
-        """
-        if (
-            "photometry" in self.model.meta
-            and self.model.meta.photometry.pixel_area > 0
-        ):
-            pixel_area = self.model.meta.photometry.pixel_area * u.sr
-        else:
-            pixel_area = (self._pixel_scale**2).to(u.sr)
-        return pixel_area
+        area = pixel_area_at(
+            self._pixel_area_map, self._xypos_finite[:, 0], self._xypos_finite[:, 1]
+        )
+        return np.sqrt(area).to(u.arcsec)
 
     @lazyproperty
     def _xypos(self):
@@ -602,8 +567,7 @@ class RomanSourceCatalog:
             self.segment_img,
             self.convolved_data,
             self.mask,
-            self._pixel_area,
-            self._wcs_angle,
+            self._pixel_area_map,
             detection_cat=self.detection_cat,
             requested_properties=self.column_names,
         )
@@ -612,7 +576,7 @@ class RomanSourceCatalog:
         return ApertureCatalog(
             self.model,
             self._xypos_finite,
-            self._pixel_scale,
+            self._pixel_area_map,
             ee_spline=self.ee_spline,
             requested_properties=self.column_names,
         )
@@ -630,7 +594,7 @@ class RomanSourceCatalog:
             self.label,
             self._xypos,
             self._xypos_finite,
-            self._pixel_scale,
+            self._source_pixel_scale,
             requested_properties=self.column_names,
         )
 
@@ -765,11 +729,14 @@ class RomanSourceCatalog:
         self.meta = {key: old_meta.get(key, None) for key in keys}
 
         # Reformat the aperture radii for the metadata to remove
-        # Quantity objects
+        # Quantity objects. The pixel radii vary from source to source,
+        # so the metadata records their mean.
         if self.aperture_cat is not None:
             aper_radii = self.aperture_cat.aperture_radii.copy()
             aper_radii["circle_arcsec"] = aper_radii.pop("circle").value
             aper_radii["annulus_arcsec"] = aper_radii.pop("annulus").value
+            for key in ("circle_pix", "annulus_pix"):
+                aper_radii[key] = aper_radii[key].mean(axis=1).astype(np.float32)
             self.meta["aperture_radii"] = aper_radii
 
             if self.ee_spline:

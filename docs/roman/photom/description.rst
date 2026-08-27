@@ -27,12 +27,13 @@ then loads the calibration information from that row of the table.
 For these table-based PHOTOM reference files, the calibration information in each
 row includes a scalar flux conversion constant, the conversion uncertainty, and the nominal pixel area.
 
-The scalar conversion constant is copied to the header keyword "conversion_megajanskys", which
-gives the conversion from DN/s to megaJy/steradian, and converted to microJy/square arcseconds and saved to
-the header keyword "conversion_microjanskys". The same process is performed for the uncertainty, with
-the values saved in "conversion_megajanskys_uncertainty" and "conversion_microjanskys_uncertainty",
-respectively.
+The scalar conversion constant is copied to
+``meta.photometry.conversion_megajanskys``, which gives the conversion
+from DN/s to megaJy/steradian, and the uncertainty is copied to
+``meta.photometry.conversion_megajanskys_uncertainty``.
 
-The step also populates the metadata keywords "pixelarea_steradians" and "pixelarea_arcsecsq" in the
-science data product, which give the average pixel area in units of
-steradians and square arcseconds, respectively.
+The step also populates ``meta.photometry.pixel_area`` in the science
+data product, which gives the average pixel area over the detector in
+steradians. This is a single nominal value and does not describe how the
+pixel area varies across the detector; code that needs the solid angle
+of a particular pixel should compute it from the WCS instead.
