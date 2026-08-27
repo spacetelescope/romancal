@@ -1,2 +1,0 @@
-Depend on ``pytest-cov`` and ``pytest-doctestplus`` directly; ``pytest-astropy``
-0.12.0 pulls in a ``--slow`` option that collides with ``ci-watson``.
