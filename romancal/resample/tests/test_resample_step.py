@@ -3,13 +3,8 @@ from functools import reduce
 import numpy as np
 import pytest
 from asdf import AsdfFile
-from astropy import coordinates as coord
-from astropy import units as u
-from astropy.modeling import models
 from astropy.table import Table
 from astropy.time import Time
-from gwcs import WCS
-from gwcs import coordinate_frames as cf
 from numpy.testing import assert_allclose, assert_equal
 from roman_datamodels import datamodels
 
@@ -17,10 +12,8 @@ from romancal.assign_wcs.assign_wcs import add_s_region
 from romancal.datamodels import ModelLibrary
 from romancal.regtest import util
 from romancal.resample import ResampleStep
-from romancal.tests.wcs_helpers import create_wcs_object
 from romancal.resample._l3_wcs import l3wcsinfo_to_wcs
-
-
+from romancal.tests.wcs_helpers import create_wcs_object
 
 
 @pytest.fixture

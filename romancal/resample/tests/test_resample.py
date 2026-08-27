@@ -1,12 +1,8 @@
 import asdf
 import numpy as np
 import pytest
-from astropy import coordinates as coord
 from astropy import units as u
-from astropy.modeling import models
 from astropy.time import Time
-from gwcs import WCS
-from gwcs import coordinate_frames as cf
 from roman_datamodels import datamodels
 from stcal.alignment.util import sregion_to_footprint
 from stcal.resample.utils import compute_mean_pixel_area
@@ -14,8 +10,8 @@ from stcal.resample.utils import compute_mean_pixel_area
 from romancal.assign_wcs.assign_wcs import add_s_region
 from romancal.datamodels import ModelLibrary
 from romancal.resample import ResampleStep
-from romancal.tests.wcs_helpers import create_wcs_object
 from romancal.resample.resample import make_output_wcs
+from romancal.tests.wcs_helpers import create_wcs_object
 
 
 class WfiSca:
@@ -90,8 +86,6 @@ class WfiSca:
         model = datamodels.ImageModel(l2)
         add_s_region(model)
         return model
-
-
 
 
 def _wfi_sca1():
