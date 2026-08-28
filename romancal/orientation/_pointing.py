@@ -348,9 +348,7 @@ def mnemonics_to_pointings(ordered_mnemonics):
     for obstime, mnemonics_at_time in ordered_mnemonics:
         # Observatory orientation, required
         try:
-            q = np.array(
-                [mnemonics_at_time[m].value for m in COARSE_MNEMONICS]
-            )
+            q = np.array([mnemonics_at_time[m].value for m in COARSE_MNEMONICS])
         except KeyError as exception:
             raise ValueError(
                 f"One or more quaternion mnemonics not in the telemetry {COARSE_MNEMONICS}"

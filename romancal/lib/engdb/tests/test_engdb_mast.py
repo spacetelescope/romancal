@@ -158,8 +158,8 @@ def test_headers_env(envs, expected, monkeypatch):
 def test_headers_kwargs(kwargs, expected, monkeypatch):
     """Check that headers are being appropriately set"""
     # Ensure tokens do not get confused by external settings
-    monkeypatch.delenv('MAST_AUTH_TOKEN', raising=False)
-    monkeypatch.delenv('MAST_API_TOKEN', raising=False)
+    monkeypatch.delenv("MAST_AUTH_TOKEN", raising=False)
+    monkeypatch.delenv("MAST_API_TOKEN", raising=False)
 
     edb = engdb_mast.EngdbMast(check_aliveness=False, **kwargs)
 

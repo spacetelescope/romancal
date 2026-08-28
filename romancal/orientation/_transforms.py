@@ -9,9 +9,9 @@ from pathlib import Path
 from typing import Any
 
 import asdf
+import numpy as np
 from crds import getreferences
 from crds.exceptions import CrdsError
-import numpy as np
 from stcal.velocity_aberration import compute_va_effects_vector
 
 from . import _lib as olib
@@ -307,7 +307,9 @@ def calc_m_b2fgs(refpath, crds_pars):
     """
     if refpath is None:
         try:
-            refpath = getreferences(crds_pars, reftypes=['bam'], observatory='roman')['bam']
+            refpath = getreferences(crds_pars, reftypes=["bam"], observatory="roman")[
+                "bam"
+            ]
         except CrdsError:
             logger.warning("Unable to retrieve BAM reference")
             logger.debug("CRDS error", exc_info=True)
@@ -316,14 +318,14 @@ def calc_m_b2fgs(refpath, crds_pars):
         logger.warning("No B-to-FGS information is given. Using pre-launch values.")
         bam_q = olib.BAM_QUATERNION
     else:
-        logger.info('B-to-FGS quaternion reading from %s', refpath)
+        logger.info("B-to-FGS quaternion reading from %s", refpath)
         with asdf.open(refpath) as af:
             bam_q = []
             for idx in range(4):
-                bam_q.append(af.tree['fgs_tbl'][f'Qb{idx + 1}'])
+                bam_q.append(af.tree["fgs_tbl"][f"Qb{idx + 1}"])
 
     # Calculate the DCM from the quaterion.
-    logger.info('B-to-FGS quaternion: %s', bam_q)
+    logger.info("B-to-FGS quaternion: %s", bam_q)
     return calc_quat2matrix(bam_q)
 
 

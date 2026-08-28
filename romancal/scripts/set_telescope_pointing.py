@@ -50,11 +50,11 @@ def _main():
         help="Commanded position of the guide start in (H,V) space",
     )
     parser.add_argument(
-        '--override-bam',
-        dest='bam_ref',
+        "--override-bam",
+        dest="bam_ref",
         type=str,
         default=None,
-        help='Use specified file instead of retrieving the BAM reference from CRDS'
+        help="Use specified file instead of retrieving the BAM reference from CRDS",
     )
     parser.add_argument(
         "-q",
