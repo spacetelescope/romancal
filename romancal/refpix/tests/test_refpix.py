@@ -1,3 +1,6 @@
+import numpy as np
+from numpy.testing import assert_allclose
+
 from romancal.refpix._data import StandardView
 from romancal.refpix.refpix import run_steps
 
@@ -19,5 +22,14 @@ def test_run_steps_regression(datamodel, ref_pix_ref):
         fft_interpolate=True,
     )
 
-    assert (result.data == regression_out).all()
+    # The correction is applied one resultant at a time, while the reference
+    # code works on the whole ramp at once. scipy >= 1.18 batches transforms
+    # across resultants differently than it does a single resultant, so the two
+    # agree only to float32 round off (about one ULP of the largest values).
+    assert_allclose(
+        result.data,
+        regression_out,
+        rtol=1e-5,
+        atol=1e-6 * np.abs(regression_out).max(),
+    )
     # regression_out does not return amp33 data
