@@ -82,33 +82,98 @@ class StandardView(BaseView):
     """
 
     @classmethod
-    def from_datamodel(cls, datamodel: RampModel) -> StandardView:
+    def from_arrays(cls, detector: np.ndarray, amp33: np.ndarray) -> StandardView:
         """
-        Read the datamodel into the standard view.
+        Combine the detector and amp33 pixels into the standard view.
         """
-        detector = datamodel.data
-
-        # Extract amp33
-        amp33 = datamodel.amp33
         # amp33 is normally a uint16, but this computation requires it to match
         # the data type of the detector pixels.
         amp33 = amp33.astype(detector.dtype)
 
         return cls(np.dstack([detector, amp33]))
 
-    def update(self, datamodel: RampModel) -> RampModel:
+    @classmethod
+    def from_datamodel(
+        cls, datamodel: RampModel, resultant: int | None = None
+    ) -> StandardView:
+        """
+        Read the datamodel into the standard view.
+
+        Parameters
+        ----------
+        datamodel : RampModel
+            The ramp to read.
+        resultant : int, optional
+            Read only this resultant rather than the whole ramp. It is selected
+            with a slice rather than an index so that the returned view keeps
+            the leading resultant axis, which lets the rest of the computation
+            be written without caring how many resultants it was handed.
+        """
+        frames = slice(None) if resultant is None else slice(resultant, resultant + 1)
+
+        return cls.from_arrays(datamodel.data[frames], datamodel.amp33[frames])
+
+    def update(self, datamodel: RampModel, resultant: int | None = None) -> RampModel:
         """
         Update the datamodel in place with the data from the standard view.
             - Returns the updated datamodel for a functional approach.
-        """
 
-        datamodel.data = self.detector
+        The datamodel's arrays are written into rather than replaced. This is
+        what allows a single resultant to be updated at a time, and it also
+        avoids leaving the datamodel holding a (non-contiguous) view of this
+        view's padded array, which would keep that whole array alive.
+
+        Parameters
+        ----------
+        datamodel : RampModel
+            The ramp to update.
+        resultant : int, optional
+            Update only this resultant, which is expected when this view holds
+            a single resultant read by ``from_datamodel``.
+        """
+        frames = slice(None) if resultant is None else slice(resultant, resultant + 1)
+
+        datamodel.data[frames] = self.detector
         # ABS to avoid casting negative numbers to uint16
-        datamodel.amp33 = np.abs(self.amp33).astype(datamodel.amp33.dtype)
-        datamodel.border_ref_pix_left = self.left
-        datamodel.border_ref_pix_right = self.right
+        datamodel.amp33[frames] = np.abs(self.amp33).astype(datamodel.amp33.dtype)
+        datamodel.border_ref_pix_left[frames] = self.left
+        datamodel.border_ref_pix_right[frames] = self.right
 
         return datamodel
+
+    @classmethod
+    def compute_offset(cls, detector: np.ndarray, amp33: np.ndarray) -> np.ndarray:
+        """
+        Use linear least squares regression to compute the best fit intercept
+        (offset) of all the data, combining one resultant at a time.
+
+        The offset is the only part of the correction which couples the
+        resultants to each other, so it is fit up front. That lets the
+        correction itself be applied one resultant at a time, without ever
+        building the standard view of the whole ramp.
+        """
+        frames = detector.shape[0]
+
+        # Create an independent variable indexed by frame and centered at zero
+        indep = np.arange(frames, dtype=detector.dtype)
+        indep = indep - np.mean(indep)
+
+        # Compute sums needed for linear least squares, accumulating over the
+        # resultants rather than reducing across a whole-ramp array
+        sx = np.sum(indep)
+        sxx = np.sum(indep**2)
+        sy = sxy = None
+        for resultant in range(frames):
+            frame = cls.from_arrays(
+                detector[resultant : resultant + 1], amp33[resultant : resultant + 1]
+            ).data[0]
+            if sy is None:
+                sy, sxy = np.zeros_like(frame), np.zeros_like(frame)
+            sy += frame
+            sxy += indep[resultant] * frame
+
+        # Compute the offset (y-intercept) for the fit
+        return (sy * sxx - sx * sxy) / (frames * sxx - sx**2)
 
     @property
     def detector(self) -> np.ndarray:
@@ -170,40 +235,23 @@ class StandardView(BaseView):
 
         return ChannelView(output, offset=self.offset)
 
-    def remove_offset(self) -> StandardView:
+    def remove_offset(self, offset: np.ndarray) -> StandardView:
         """
-        Use linear least squares regression to compute the best fit intercept
-        (offset) of all the data and then subtract that from the data.
+        Subtract the offset fit by ``compute_offset`` from the data.
             - This records the offset in the class so that it can be added back
               to the data later.
             - Returns the class back to the user even though it will be modified
               in place by the views. This is so that it can be treated functionally.
+
+        The fit is made over the whole ramp while the subtraction is made a
+        resultant at a time, so the offset is computed separately and handed in
+        here rather than being fit from this view's data.
         """
 
-        frames, rows, columns = self.data.shape
+        # Apply the offset to the data (in place), broadcasting over the frames
+        self.data -= offset
 
-        # Reshape data so that it is a view of the data of shape:
-        #    [frame, frame_data]
-        # where frame_data is the data for a single frame
-        data = self.data.reshape((frames, rows * columns))
-
-        # Craate an independent variable indexed by frame and centered at zero
-        indep = np.arange(frames, dtype=data.dtype)
-        indep = indep - np.mean(indep)
-
-        # Compute sums needed for linear least squares
-        sx = np.sum(indep)
-        sxx = np.sum(indep**2)
-        sy = np.sum(data, axis=0)
-        sxy = np.matmul(indep, data, dtype=data.dtype)
-
-        # Compute the offset (y-intercept) for the fit
-        offset = (sy * sxx - sx * sxy) / (frames * sxx - sx**2)
-
-        # Apply the offset to the data (in place)
-        data -= offset
-
-        self.offset = offset.reshape(rows, columns)
+        self.offset = offset
 
         return self
 
@@ -528,9 +576,17 @@ class ChannelView(BaseView):
         """
         Compute the the correction array for the the detector.
         """
-        correction = self.reference_fft.correction(coeffs)
+        channels, frames, rows, columns = self.data.shape
 
-        return correction.reshape(self.data.shape).astype(self.data.dtype)
+        # Fill in the correction one channel at a time (rather than stacking the
+        # channels once they have all been computed) so that only one copy of it
+        # is ever held in memory.
+        correction = np.empty(self.data.shape, dtype=self.data.dtype)
+        self.reference_fft.correction(
+            coeffs, out=correction.reshape(channels, frames, rows * columns)
+        )
+
+        return correction
 
     def apply_correction(self, coeffs: Coefficients) -> StandardView:
         """
@@ -582,9 +638,12 @@ class ReferenceFFT:
             yield correction
 
         # Add zeros in for the amp33 channel as it does not get changed
-        yield np.zeros(correction.shape)
+        # (matching the dtype so that stacking does not promote everything)
+        yield np.zeros(correction.shape, dtype=correction.dtype)
 
-    def correction(self, coeffs: Coefficients) -> np.ndarray:
+    def correction(
+        self, coeffs: Coefficients, out: np.ndarray | None = None
+    ) -> np.ndarray:
         """
         Get the correction array for all of the data.
             - Stacks all channels into a single array
@@ -592,9 +651,23 @@ class ReferenceFFT:
         Returns the correction array with the rows and columns in a single combined
         dimension, and the dtypes not adjusted to the original dtypes.
             - This will be handled by the ChannelView class
-        """
 
-        return np.array(list(self.channel_correction(coeffs)))
+        Parameters
+        ----------
+        out : np.ndarray, optional
+            Write each channel into this array (casting to its dtype) as it is
+            computed, instead of stacking the channels afterwards. This avoids
+            holding a second copy of the full correction.
+        """
+        channels = self.channel_correction(coeffs)
+
+        if out is None:
+            return np.array(list(channels))
+
+        for index, correction in enumerate(channels):
+            out[index] = correction
+
+        return out
 
 
 @dataclass
