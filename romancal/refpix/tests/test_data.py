@@ -88,8 +88,10 @@ class TestStandardView:
         # Check that the datamodel's data has been updated
         assert (new.data != old_detector).any()
         assert (new.amp33 != old_amp33).any()
-        assert (new.border_ref_pix_left != old_left).any()
-        assert (new.border_ref_pix_right != old_right).any()
+
+        # The border reference pixels are extracted in dq_init and left alone
+        assert (new.border_ref_pix_left == old_left).all()
+        assert (new.border_ref_pix_right == old_right).all()
 
         # Check the dtype has been preserved
         assert new.data.dtype == old_detector.dtype
@@ -99,8 +101,6 @@ class TestStandardView:
 
         # Check the data has been updated correctly
         assert (new.data == standard.detector).all()
-        assert (new.border_ref_pix_left == standard.left).all()
-        assert (new.border_ref_pix_right == standard.right).all()
 
         # The amp33's dtype changes because it needs to be shifted to match the
         # original data's dtype

@@ -132,8 +132,10 @@ class StandardView(BaseView):
         datamodel.data[frames] = self.detector
         # ABS to avoid casting negative numbers to uint16
         datamodel.amp33[frames] = np.abs(self.amp33).astype(datamodel.amp33.dtype)
-        datamodel.border_ref_pix_left[frames] = self.left
-        datamodel.border_ref_pix_right[frames] = self.right
+
+        # the border_ref_pix_* arrays are deliberately left alone; they are
+        # extracted once in dq_init, and refpix previously re-extracted only
+        # the left and right of the four, which was never consistent
 
         return datamodel
 
