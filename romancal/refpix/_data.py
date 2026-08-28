@@ -128,7 +128,8 @@ class StandardView(BaseView):
         """
         frames = slice(None) if resultant is None else slice(resultant, resultant + 1)
 
-        # update data in place; note separate border and amp33 arrays are left unchanged
+        # update data in place; note separate border and amp33 arrays are left
+        # unchanged (see #2429 for what they ought to contain)
         datamodel.data[frames] = self.detector
 
         return datamodel
