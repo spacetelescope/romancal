@@ -10,7 +10,14 @@ def test_run_steps_regression(datamodel, ref_pix_ref):
         regression, ref_pix_ref.alpha, ref_pix_ref.gamma, ref_pix_ref.zeta
     )
 
-    result = run_steps(datamodel, ref_pix_ref, True, True, True, True)
+    result = run_steps(
+        datamodel,
+        ref_pix_ref,
+        remove_offset=True,
+        remove_trends=True,
+        cosine_interpolate=True,
+        fft_interpolate=True,
+    )
 
     assert (result.data == regression_out).all()
     # regression_out does not return amp33 data
