@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import Any
 
 import asdf
+from crds import getreferences
+from crds.exceptions import CrdsError
 import numpy as np
 from stcal.velocity_aberration import compute_va_effects_vector
 
@@ -111,6 +113,8 @@ class TransformParameters:
     aperture: str = ""
     #: FGS Boresite Adjustment Matrix (BAM) reference file path
     bam_ref: str | Path | None = None
+    #: Parameters needed for CRDS queries
+    crds_pars: dict | None = None
     #: Default quaternion to use if engineering is not available.
     default_quaternion: tuple | None = None
     #: Commanded position of the guide star in (H, V) space.
@@ -289,7 +293,7 @@ def calc_gsapp2gs(m_eci2gsapp, velocity):
     return m_gsapp2gs
 
 
-def calc_m_b2fgs(refpath=None):
+def calc_m_b2fgs(refpath, crds_pars):
     """Calculate the FGS Boresite Adjustment Matrix (BAM) frame DCM
 
     Parameters
@@ -297,9 +301,17 @@ def calc_m_b2fgs(refpath=None):
     refpath : Path-like or None
         Path to the reference file containing the BAM.
         If None, retrieve the BAM reference file.
+
+    crds_pars : dict or None
+        Parameters necessary for CRDS queries. Usually the model meta is given.
     """
     if refpath is None:
-        logger.warning('No B-to-FGS reference specified and CRDS retrieval is not implemented.')
+        try:
+            refpath = getreferences(crds_pars, reftypes=['bam'], observatory='roman')['bam']
+        except CrdsError:
+            logger.warning("Unable to retrieve BAM reference")
+            logger.debug("CRDS error", exc_info=True)
+
     if refpath is None:
         logger.warning("No B-to-FGS information is given. Using pre-launch values.")
         bam_q = olib.BAM_QUATERNION
@@ -432,7 +444,7 @@ def calc_transforms(t_pars: TransformParameters):
     t.m_eci2b = calc_quat2matrix(t_pars.pointing.q)
 
     # ECI to FGS
-    t.m_b2fgs = calc_m_b2fgs(t_pars.bam_ref)
+    t.m_b2fgs = calc_m_b2fgs(t_pars.bam_ref, t_pars.crds_pars)
     t.m_eci2fgs = np.dot(t.m_b2fgs, t.m_eci2b)
 
     # FGS to Guide star apparent.
@@ -551,6 +563,9 @@ def t_pars_from_model(model, t_pars):
         Transformation parameters updated with model information.
         Updating is performed in-place.
     """
+    # Gather all parameters for CRDS usage.
+    t_pars.crds_pars = model.get_crds_parameters()
+
     # Instrument details
     t_pars.aperture = model.meta.wcsinfo.aperture_name
     try:
