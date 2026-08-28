@@ -104,11 +104,11 @@ class StandardView(BaseView):
         datamodel : RampModel
             The ramp to read.
         resultant : int, optional
-            Read only this resultant rather than the whole ramp. It is selected
-            with a slice rather than an index so that the returned view keeps
-            the leading resultant axis, which lets the rest of the computation
-            be written without caring how many resultants it was handed.
+            Read only this resultant rather than the whole ramp.
         """
+        # select with slice rather than integer in order to preserve the leading axis,
+        # making the returned number of dimensions independent of whether an individual
+        # resultant was requested
         frames = slice(None) if resultant is None else slice(resultant, resultant + 1)
 
         return cls.from_arrays(datamodel.data[frames], datamodel.amp33[frames])
@@ -117,11 +117,6 @@ class StandardView(BaseView):
         """
         Update the datamodel in place with the data from the standard view.
             - Returns the updated datamodel for a functional approach.
-
-        The datamodel's arrays are written into rather than replaced. This is
-        what allows a single resultant to be updated at a time, and it also
-        avoids leaving the datamodel holding a (non-contiguous) view of this
-        view's padded array, which would keep that whole array alive.
 
         Parameters
         ----------
@@ -133,6 +128,7 @@ class StandardView(BaseView):
         """
         frames = slice(None) if resultant is None else slice(resultant, resultant + 1)
 
+        # update in place
         datamodel.data[frames] = self.detector
         # ABS to avoid casting negative numbers to uint16
         datamodel.amp33[frames] = np.abs(self.amp33).astype(datamodel.amp33.dtype)
@@ -655,9 +651,7 @@ class ReferenceFFT:
         Parameters
         ----------
         out : np.ndarray, optional
-            Write each channel into this array (casting to its dtype) as it is
-            computed, instead of stacking the channels afterwards. This avoids
-            holding a second copy of the full correction.
+            Write output to this array
         """
         channels = self.channel_correction(coeffs)
 

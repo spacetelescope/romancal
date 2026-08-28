@@ -1,7 +1,3 @@
-Correct the reference pixels one resultant at a time rather than holding the
-whole ramp in the padded channel view, cutting peak memory usage of the step
-from roughly 6.5x the size of the ramp to well under 0.5x (29.7 GB to 5.4 GB
-for a 55-resultant TVAC ramp) while leaving the results bit-for-bit unchanged.
-Also fix the arguments passed from ``RefPixStep`` to ``run_steps``, which were
-each shifted by one position, so that (for example) ``fft_interpolate=False``
-no longer turns off the cosine interpolation instead.
+Reduce peak memory usage of the reference pixel correction step dramatically by
+processing resultants individually. Also fix the arguments passed from
+``RefPixStep`` to ``run_steps``, which were each shifted by one position.
