@@ -1,5 +1,5 @@
 Reduce peak memory usage of the reference pixel correction step dramatically by
-processing resultants individually. The step no longer overwrites
-``border_ref_pix_left`` and ``border_ref_pix_right``, which it had been updating
-inconsistently with the top and bottom borders. Also fix the arguments passed
+processing resultants individually. The step no longer writes its corrected
+reference pixels back to ``amp33`` or ``border_ref_pix_left`` / ``_right``,
+leaving all of them as ``dq_init`` extracted them. Also fix the arguments passed
 from ``RefPixStep`` to ``run_steps``, which were each shifted by one position.

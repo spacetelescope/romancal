@@ -87,9 +87,9 @@ class TestStandardView:
 
         # Check that the datamodel's data has been updated
         assert (new.data != old_detector).any()
-        assert (new.amp33 != old_amp33).any()
 
-        # The border reference pixels are extracted in dq_init and left alone
+        # The reference pixels are extracted in dq_init and left alone
+        assert (new.amp33 == old_amp33).all()
         assert (new.border_ref_pix_left == old_left).all()
         assert (new.border_ref_pix_right == old_right).all()
 
@@ -101,10 +101,6 @@ class TestStandardView:
 
         # Check the data has been updated correctly
         assert (new.data == standard.detector).all()
-
-        # The amp33's dtype changes because it needs to be shifted to match the
-        # original data's dtype
-        assert (new.amp33 == standard.amp33.astype(old_amp33.dtype)).all()
 
     def test_from_datamodel_single_resultant(self, datamodel):
         """

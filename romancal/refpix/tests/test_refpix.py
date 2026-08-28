@@ -22,10 +22,8 @@ def test_run_steps_regression(datamodel, ref_pix_ref):
         fft_interpolate=True,
     )
 
-    # The correction is applied one resultant at a time, while the reference
-    # code works on the whole ramp at once. scipy >= 1.18 batches transforms
-    # across resultants differently than it does a single resultant, so the two
-    # agree only to float32 round off (about one ULP of the largest values).
+    # tolerance corresponds to one quantum of float32 precision for the largest values
+    # and addresses different numerical approaches in different scipy versions
     assert_allclose(
         result.data,
         regression_out,
