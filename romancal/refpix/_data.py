@@ -128,12 +128,8 @@ class StandardView(BaseView):
         """
         frames = slice(None) if resultant is None else slice(resultant, resultant + 1)
 
-        # update in place
+        # update data in place; note separate border and amp33 arrays are left unchanged
         datamodel.data[frames] = self.detector
-
-        # The reference pixels the correction is derived from -- amp33 and the
-        # border_ref_pix_* arrays -- are deliberately left as dq_init extracted
-        # them, rather than being written back in their corrected form.
 
         return datamodel
 
