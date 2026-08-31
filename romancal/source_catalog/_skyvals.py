@@ -121,8 +121,6 @@ def compute_skyvals(input_model, segmentation, bad_pixel_mask):
     # Coarse (nside=2**11) coverage index list for quick downstream footprint use.
     # Source pixels remain part of the footprint even though they are excluded
     # from the sky-statistic reductions above.
-    healpix11_cov = np.unique(coverage_healpix17 // HEALPIX11_DIVISOR).astype(
-        np.int64
-    )
+    healpix11_cov = np.unique(coverage_healpix17 // HEALPIX11_DIVISOR).astype(np.int64)
 
     return skyvals, healpix11_cov

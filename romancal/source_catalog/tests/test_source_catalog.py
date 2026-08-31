@@ -479,9 +479,7 @@ def test_skyvals_coverage_includes_source_pixels(monkeypatch):
     monkeypatch.setattr(
         "romancal.source_catalog._skyvals.get_pixel_area_sr", lambda model: 1.0
     )
-    skyvals, healpix11_cov = compute_skyvals(
-        input_model, segmentation, bad_pixel_mask
-    )
+    skyvals, healpix11_cov = compute_skyvals(input_model, segmentation, bad_pixel_mask)
 
     assert skyvals.shape == (1,)
     assert skyvals["data"][0] == 20.0
