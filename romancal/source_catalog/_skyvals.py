@@ -36,32 +36,53 @@ def compute_skyvals(input_model, segmentation, bad_pixel_mask):
         2D segmentation labels; source pixels are non-zero.
     bad_pixel_mask : np.ndarray
         Boolean 2D mask where True means "exclude pixel from sky calculation".
+
+    Returns
+    -------
+    skyvals : np.ndarray
+        Structured array with one row per NEST-ordered HEALPix cell at
+        ``nside=2**17``. Its ``healpix17``, ``data``, ``err``, and
+        ``covfrac`` fields contain the cell index, median image value, median
+        error value, and image-footprint coverage fraction, respectively.
+    healpix11_cov : np.ndarray
+        Unique NEST-ordered HEALPix cell indices at ``nside=2**11`` that
+        contain at least one pixel not rejected by the bad-pixel mask,
+        regardless of its segmentation label.
     """
     data = input_model.data
     err = input_model.err
     wcs = input_model.meta.wcs
     pixel_area_sr = get_pixel_area_sr(input_model)
 
+    # Footprint coverage includes all usable pixels, including source pixels.
+    coverage = ~bad_pixel_mask
+    if not np.any(coverage):
+        log.warning(
+            "No usable pixels for skyvals after bad-pixel masking; "
+            "returning empty skyvals/healpix11_cov arrays."
+        )
+        return np.empty((0,), dtype=SKYVALS_DTYPE), np.empty((0,), dtype=np.int64)
+
     # Valid sky pixels are those not rejected by upstream masks and not part
     # of detected sources.
-    valid = (~bad_pixel_mask) & (segmentation == 0)
+    valid = coverage & (segmentation == 0)
     if not np.any(valid):
         # Fallback: if every source-masked pixel is rejected, use all unmasked
         # pixels so we still produce per-exposure sky estimates.
-        valid = ~bad_pixel_mask
-        if not np.any(valid):
-            log.warning(
-                "No usable pixels for skyvals after bad-pixel masking; "
-                "returning empty skyvals/healpix11_cov arrays."
-            )
-            return np.empty((0,), dtype=SKYVALS_DTYPE), np.empty((0,), dtype=np.int64)
+        valid = coverage
 
-    yy, xx = np.nonzero(valid)
-    ra, dec = wcs.pixel_to_world_values(xx, yy)
+    coverage_yy, coverage_xx = np.nonzero(coverage)
+    ra, dec = wcs.pixel_to_world_values(coverage_xx, coverage_yy)
 
     # Convert sky coordinates to NEST-ordered HEALPix indices at nside=2**17.
     healpix = HEALPix(nside=HEALPIX17_NSIDE, order="nested", frame="icrs")
-    healpix17 = healpix.lonlat_to_healpix(ra * u.deg, dec * u.deg).astype(np.int64)
+    coverage_healpix17 = healpix.lonlat_to_healpix(ra * u.deg, dec * u.deg).astype(
+        np.int64
+    )
+    is_sky_pixel = valid[coverage_yy, coverage_xx]
+    yy = coverage_yy[is_sky_pixel]
+    xx = coverage_xx[is_sky_pixel]
+    healpix17 = coverage_healpix17[is_sky_pixel]
 
     vals_data = data[yy, xx]
     vals_err = err[yy, xx]
@@ -98,6 +119,10 @@ def compute_skyvals(input_model, segmentation, bad_pixel_mask):
     skyvals["covfrac"] = covfrac
 
     # Coarse (nside=2**11) coverage index list for quick downstream footprint use.
-    healpix11_cov = np.unique(unique_hp // HEALPIX11_DIVISOR).astype(np.int64)
+    # Source pixels remain part of the footprint even though they are excluded
+    # from the sky-statistic reductions above.
+    healpix11_cov = np.unique(coverage_healpix17 // HEALPIX11_DIVISOR).astype(
+        np.int64
+    )
 
     return skyvals, healpix11_cov

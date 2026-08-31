@@ -1,5 +1,6 @@
 from pathlib import Path
 from re import match
+from types import SimpleNamespace
 
 import astropy.units as u
 import numpy as np
@@ -18,6 +19,7 @@ from roman_datamodels.datamodels import (
     SegmentationMapModel,
 )
 
+from romancal.source_catalog._skyvals import compute_skyvals
 from romancal.source_catalog._source_catalog import RomanSourceCatalog
 from romancal.source_catalog.source_catalog_step import SourceCatalogStep
 
@@ -459,6 +461,31 @@ def test_l2_segmentation_without_skyvals_when_disabled(image_model):
     assert isinstance(result_segmentation_map, SegmentationMapModel)
     assert "skyvals" not in result_segmentation_map
     assert "healpix11_cov" not in result_segmentation_map
+
+
+def test_skyvals_coverage_includes_source_pixels(monkeypatch):
+    class WCS:
+        def pixel_to_world_values(self, x, y):
+            return np.asarray(x) * 180.0, np.asarray(y) * 0.0
+
+    input_model = SimpleNamespace(
+        data=np.array([[10.0, 20.0]], dtype=np.float32),
+        err=np.ones((1, 2), dtype=np.float32),
+        meta=SimpleNamespace(wcs=WCS()),
+    )
+    segmentation = np.array([[1, 0]], dtype=np.uint32)
+    bad_pixel_mask = np.zeros((1, 2), dtype=bool)
+
+    monkeypatch.setattr(
+        "romancal.source_catalog._skyvals.get_pixel_area_sr", lambda model: 1.0
+    )
+    skyvals, healpix11_cov = compute_skyvals(
+        input_model, segmentation, bad_pixel_mask
+    )
+
+    assert skyvals.shape == (1,)
+    assert skyvals["data"][0] == 20.0
+    assert healpix11_cov.shape == (2,)
 
 
 def test_l2_skyvals_values_and_covfrac_reasonable(image_model):
