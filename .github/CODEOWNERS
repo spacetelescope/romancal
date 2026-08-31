@@ -11,26 +11,26 @@
 /.github/						@zacharyburnett @jhunkeler
 
 # steps and packages
-/romancal/assign_wcs/			@spacetelescope/romancal-maintainers @ddavis-stsci
-/romancal/associations/			@spacetelescope/romancal-maintainers @ddavis-stsci @mairanteodoro
-/romancal/dark_current/			@spacetelescope/romancal-maintainers @ddavis-stsci
-/romancal/datamodels/			@spacetelescope/romancal-maintainers @PaulHuwe
-/romancal/dq_init/				@spacetelescope/romancal-maintainers @ddavis-stsci
-/romancal/flatfield/			@spacetelescope/romancal-maintainers @ddavis-stsci
-/romancal/flux/					@spacetelescope/romancal-maintainers @stscieisenhamer
-/romancal/jump/					@spacetelescope/romancal-maintainers @WilliamJamieson
-/romancal/lib/					@spacetelescope/romancal-maintainers @ddavis-stsci
-/romancal/linearity/			@spacetelescope/romancal-maintainers @ddavis-stsci
-/romancal/multiband_catalog/	@spacetelescope/romancal-maintainers @larrybradley @mairanteodoro @stscieisenhamer
-/romancal/orientation/			@spacetelescope/romancal-maintainers @stscieisenhamer
-/romancal/outlier_detection/	@spacetelescope/romancal-maintainers @mairanteodoro
-/romancal/photom/				@spacetelescope/romancal-maintainers @ddavis-stsci
-/romancal/pipeline/				@spacetelescope/romancal-maintainers @ddavis-stsci
-/romancal/ramp_fitting/			@spacetelescope/romancal-maintainers @WilliamJamieson @stscieisenhamer
-/romancal/refpix/				@spacetelescope/romancal-maintainers @WilliamJamieson
-/romancal/resample/				@spacetelescope/romancal-maintainers @mairanteodoro
-/romancal/saturation/			@spacetelescope/romancal-maintainers @ddavis-stsci
-/romancal/skymatch/				@spacetelescope/romancal-maintainers @mairanteodoro
-/romancal/source_catalog/		@spacetelescope/romancal-maintainers @larrybradley @mairanteodoro @stscieisenhamer
-/romancal/stpipe/				@spacetelescope/romancal-maintainers @ddavis-stsci
-/romancal/tweakreg/				@spacetelescope/romancal-maintainers @mairanteodoro
+/romancal/assign_wcs/			@ddavis-stsci
+/romancal/associations/			@ddavis-stsci @mairanteodoro
+/romancal/dark_current/			@ddavis-stsci
+/romancal/datamodels/			@PaulHuwe
+/romancal/dq_init/				@ddavis-stsci
+/romancal/flatfield/			@ddavis-stsci
+/romancal/flux/					@stscieisenhamer
+/romancal/jump/					@WilliamJamieson
+/romancal/lib/					@ddavis-stsci
+/romancal/linearity/			@ddavis-stsci
+/romancal/multiband_catalog/	@larrybradley @mairanteodoro @stscieisenhamer
+/romancal/orientation/			@stscieisenhamer
+/romancal/outlier_detection/	@mairanteodoro
+/romancal/photom/				@ddavis-stsci
+/romancal/pipeline/				@ddavis-stsci
+/romancal/ramp_fitting/			@WilliamJamieson @stscieisenhamer
+/romancal/refpix/				@WilliamJamieson
+/romancal/resample/				@mairanteodoro
+/romancal/saturation/			@ddavis-stsci
+/romancal/skymatch/				@mairanteodoro
+/romancal/source_catalog/		@larrybradley @mairanteodoro @stscieisenhamer
+/romancal/stpipe/				@ddavis-stsci
+/romancal/tweakreg/				@mairanteodoro
