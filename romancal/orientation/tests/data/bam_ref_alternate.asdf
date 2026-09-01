@@ -12,15 +12,15 @@ history:
     extension_uri: asdf://asdf-format.org/core/extensions/core-1.6.0
     manifest_software: !core/software-1.0.0 {name: asdf_standard, version: 1.5.0}
     software: !core/software-1.0.0 {name: asdf, version: 5.3.1}
-fgs_tbl: {Qb1: 0.6822141509826322, Qb2: -0.1800546332580956, Qb3: 0.6837984564491885,
-  Qb4: -0.18596734175399293}
-meta:
-  author: T. Sohn, T. Desjardins
-  description: Quaternion values for the alignment matrix between the Roman observatory
-    boresight and fine guidance system (FGS).
-  instrument: {name: WFI}
-  origin: STSCI/SOC
-  pedgriee: GROUND
-  reftype: bam
-  useafter: '2020-01-01T00:00:00'
+roman:
+  fgs_tbl: {Qb1: 0.6, Qb2: -0.1, Qb3: 0.6, Qb4: -0.1}
+  meta:
+    author: SCSB with modified values for testing
+    description: Quaternion values for the alignment matrix between the Roman observatory
+                 boresight and fine guidance system (FGS).
+    instrument: {name: WFI}
+    origin: STSCI/SOC
+    pedgriee: GROUND
+    reftype: bam
+    useafter: '2020-01-01T00:00:00'
 ...

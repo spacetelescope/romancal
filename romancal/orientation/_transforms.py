@@ -322,7 +322,7 @@ def calc_m_b2fgs(refpath, crds_pars):
         with asdf.open(refpath) as af:
             bam_q = []
             for idx in range(4):
-                bam_q.append(af.tree["fgs_tbl"][f"Qb{idx + 1}"])
+                bam_q.append(af.tree['roman']["fgs_tbl"][f"Qb{idx + 1}"])
 
     # Calculate the DCM from the quaterion.
     logger.info("B-to-FGS quaternion: %s", bam_q)
