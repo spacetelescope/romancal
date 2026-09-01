@@ -20,7 +20,7 @@ from romancal.orientation import _transforms as tlib
                     [9.99962530e-01, 7.49694373e-03, -4.32836248e-03],
                 ]
             ),
-            marks=pytest.mark.xfail(reason='Reference not yet available', strict=False)
+            marks=pytest.mark.xfail(reason="Reference not yet available", strict=False),
         ),
         (
             "bam_ref_good.asdf",
