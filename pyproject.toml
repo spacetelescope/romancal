@@ -13,6 +13,7 @@ classifiers = [
 ]
 dependencies = [
     "astropy>=6.1.4,<9",
+    "astropy-healpix>=1.1.2",
     "jsonschema>=4.8",
     "numpy>=2.0",
     "scipy>=1.14.1",

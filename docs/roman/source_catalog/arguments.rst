@@ -27,3 +27,8 @@ The ``source_catalog`` step has the following arguments:
 
 * ``--forced_segmentation``: A string value indicating the filename of
   the segmentation map to use for forced segmentation
+
+* ``--compute_skyvals``: A boolean value indicating whether to compute
+  and attach HEALPix sky summary arrays (``skyvals`` and
+  ``healpix11_cov``) to L2 segmentation-map outputs (default is
+  ``True``)
