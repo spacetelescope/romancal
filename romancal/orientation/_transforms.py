@@ -305,24 +305,27 @@ def calc_m_b2fgs(refpath, crds_pars):
     crds_pars : dict or None
         Parameters necessary for CRDS queries. Usually the model meta is given.
     """
+    bam_q = None
     if refpath is None:
         try:
             refpath = getreferences(crds_pars, reftypes=["bam"], observatory="roman")[
                 "bam"
             ]
-        except CrdsError:
+        except (CrdsError, TypeError):
             logger.warning("Unable to retrieve BAM reference")
             logger.debug("CRDS error", exc_info=True)
 
-    if refpath is None:
-        logger.warning("No B-to-FGS information is given. Using pre-launch values.")
-        bam_q = olib.BAM_QUATERNION
-    else:
+    if refpath is not None:
         logger.info("B-to-FGS quaternion reading from %s", refpath)
         with asdf.open(refpath) as af:
             bam_q = []
             for idx in range(4):
                 bam_q.append(af.tree["roman"]["fgs_tbl"][f"Qb{idx + 1}"])
+
+    # Did we get a BAM quaternion
+    if bam_q is None:
+        logger.warning("No B-to-FGS information is given. Using pre-launch values.")
+        bam_q = olib.BAM_QUATERNION
 
     # Calculate the DCM from the quaterion.
     logger.info("B-to-FGS quaternion: %s", bam_q)
