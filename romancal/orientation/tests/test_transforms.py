@@ -20,15 +20,15 @@ from romancal.orientation import _transforms as tlib
                     [9.99962530e-01, 7.49694373e-03, -4.32836248e-03],
                 ]
             ),
-            marks=pytest.mark.xfail(reason="Reference not yet available", strict=False),
+            marks=pytest.mark.xfail(reason="CRDS reference not available", strict=False)
         ),
         (
             "bam_ref_good.asdf",
             np.array(
                 [
-                    [0.26, -0.24, -0.7],
-                    [0.0, 0.96, -0.24],
-                    [0.74, 0.0, 0.26],
+                    [-0.04, -1.04, -0.52],
+                    [ 0.88,  0.26, -0.64],
+                    [ 0.76, -0.32,  0.66],
                 ]
             ),
         ),
@@ -36,9 +36,9 @@ from romancal.orientation import _transforms as tlib
             "bam_ref_alternate.asdf",
             np.array(
                 [
-                    [0.26, -0.24, 0.7],
-                    [0.0, -0.44, -0.24],
-                    [0.74, 0.0, 0.26],
+                    [-0.04, -1.04,  0.52],
+                    [-0.88, -0.6 , -0.64],
+                    [ 0.76, -0.32, -1.  ],
                 ]
             ),
         ),

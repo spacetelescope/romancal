@@ -318,9 +318,7 @@ def calc_m_b2fgs(refpath, crds_pars):
     if refpath is not None:
         logger.info("B-to-FGS quaternion reading from %s", refpath)
         with asdf.open(refpath) as af:
-            bam_q = []
-            for idx in range(4):
-                bam_q.append(af.tree["roman"]["fgs_tbl"][f"Qb{idx + 1}"])
+            bam_q = af.tree["roman"]["bam_quaternion"]
 
     # Did we get a BAM quaternion
     if bam_q is None:

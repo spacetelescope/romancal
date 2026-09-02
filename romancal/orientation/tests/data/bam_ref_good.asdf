@@ -13,11 +13,14 @@ history:
     manifest_software: !core/software-1.0.0 {name: asdf_standard, version: 1.5.0}
     software: !core/software-1.0.0 {name: asdf, version: 5.3.1}
 roman:
-  fgs_tbl: {Qb1: -0.1, Qb2: 0.6, Qb3: -0.1, Qb4: 0.6}
+  bam_quaternion: !core/ndarray-1.1.0
+    data: [-0.1, 0.4, -0.6, 0.8]
+    datatype: float64
+    shape: [4]
   meta:
-    author: SCSB with modified values for testing
+    author: SCSB with test values
     description: Quaternion values for the alignment matrix between the Roman observatory
-                 boresight and fine guidance system (FGS).
+      boresight and fine guidance system (FGS).
     instrument: {name: WFI}
     origin: STSCI/SOC
     pedigree: GROUND
