@@ -20,7 +20,8 @@ roman:
                  boresight and fine guidance system (FGS).
     instrument: {name: WFI}
     origin: STSCI/SOC
-    pedgriee: GROUND
-    reftype: bam
+    pedigree: GROUND
+    reftype: BAM
+    telescope: ROMAN
     useafter: '2020-01-01T00:00:00'
 ...
