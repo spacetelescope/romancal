@@ -17,11 +17,12 @@ DEBUG_FULL = logging.DEBUG - 1
 LOGLEVELS = [logging.INFO, logging.DEBUG, DEBUG_FULL]
 
 # Default and pre-defined matricies.
-# Conversion of the FGS Unified Frame (FGS) reference point from the V-Frame.
-# This is the pre-launch value, later to be refined and provided
-# in the SIAF.
+
+# The Boresite Adjustment Matrix (BAM) otherwise referred to as B-to-FGS.
+# Normally defined in the CRDS reference BAM reference file or specified by the user.
+# If not specified or retrievable, this matrix is used as the final fallback.
 # Last update: 20260505 by T.Sohn
-FGS_DEFAULT_QUATERNION = np.array(
+BAM_QUATERNION = np.array(
     [-0.18596734175399293, 0.6837984564491885, -0.1800546332580956, 0.6822141509826322]
 )
 

@@ -13,13 +13,7 @@ import romancal.orientation._siaf as siaf_lib  # noqa: E402
     "basepath, n_apers",
     [
         (None, 22),
-        pytest.param(
-            Path(__file__).parent / "data" / "siaf",
-            5,
-            marks=pytest.mark.xfail(
-                reason="released pysiaf does not support basepath feature", strict=False
-            ),
-        ),
+        (Path(__file__).parent / "data" / "siaf", 5),
     ],
 )
 def test_open_siaf(basepath, n_apers):
