@@ -1,0 +1,1 @@
+Add crds reference read for BAM to set_telescope_pointing
