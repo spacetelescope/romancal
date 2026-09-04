@@ -87,9 +87,11 @@ class TestStandardView:
 
         # Check that the datamodel's data has been updated
         assert (new.data != old_detector).any()
-        assert (new.amp33 != old_amp33).any()
-        assert (new.border_ref_pix_left != old_left).any()
-        assert (new.border_ref_pix_right != old_right).any()
+
+        # The reference pixels are extracted in dq_init and left alone
+        assert (new.amp33 == old_amp33).all()
+        assert (new.border_ref_pix_left == old_left).all()
+        assert (new.border_ref_pix_right == old_right).all()
 
         # Check the dtype has been preserved
         assert new.data.dtype == old_detector.dtype
@@ -99,12 +101,36 @@ class TestStandardView:
 
         # Check the data has been updated correctly
         assert (new.data == standard.detector).all()
-        assert (new.border_ref_pix_left == standard.left).all()
-        assert (new.border_ref_pix_right == standard.right).all()
 
-        # The amp33's dtype changes because it needs to be shifted to match the
-        # original data's dtype
-        assert (new.amp33 == standard.amp33.astype(old_amp33.dtype)).all()
+    def test_from_datamodel_single_resultant(self, datamodel):
+        """
+        Reading a single resultant has to match that resultant of the whole ramp.
+        """
+        whole = StandardView.from_datamodel(datamodel)
+
+        for resultant in range(Dims.N_FRAMES):
+            single = StandardView.from_datamodel(datamodel, resultant)
+
+            # The resultant axis is kept so the rest of the computation is
+            # unchanged
+            assert single.data.shape == (1, Dims.N_ROWS, Dims.N_COLS)
+            assert (single.data[0] == whole.data[resultant]).all()
+
+    def test_update_single_resultant(self, datamodel):
+        """
+        Updating one resultant at a time writes each one into the right place,
+        and leaves the rest of the ramp alone.
+        """
+        model = datamodel.copy()
+        expected = model.data.copy()
+
+        for resultant in range(Dims.N_FRAMES):
+            view = StandardView.from_datamodel(model, resultant)
+            view.data *= 2
+            view.update(model, resultant)
+
+            expected[resultant] *= 2
+            assert (model.data == expected).all()
 
     def test_create_standard_view(self, data):
         """
@@ -254,12 +280,38 @@ class TestStandardView:
         # Check that the regression matches the channels property
         assert (standard.channels.data == regression).all()
 
+    def test_compute_offset(self, data):
+        offset = StandardView.compute_offset(
+            data[:, :, : Const.N_COLUMNS], data[:, :, Const.N_COLUMNS :]
+        )
+
+        assert offset.shape == (Dims.N_ROWS, Dims.N_COLS)
+        assert offset.dtype == data.dtype
+        assert (offset != 0).all()
+
+    def test_compute_offset_regression(self, data):
+        # Copy the data, because the regression utility modifies the data in-place
+        regression = data.copy()
+        _, b = reference_utils.remove_linear_trends(regression, True)
+
+        # Run the internal utility. Accumulating the fit a resultant at a time
+        # has to reproduce the fit made across the whole ramp at once.
+        offset = StandardView.compute_offset(
+            data[:, :, : Const.N_COLUMNS], data[:, :, Const.N_COLUMNS :]
+        )
+
+        # Check that the regression matches
+        assert (offset == b).all()
+
     def test_remove_offset(self, data):
         non_view_data = data.copy()
         standard = StandardView(data)
         assert standard.offset is None
 
-        new = standard.remove_offset()
+        offset = StandardView.compute_offset(
+            data[:, :, : Const.N_COLUMNS], data[:, :, Const.N_COLUMNS :]
+        )
+        new = standard.remove_offset(offset)
 
         # Check that new object returned is the same as the original
         assert new is standard
@@ -267,14 +319,12 @@ class TestStandardView:
         # Check that the data is still a view of the original
         assert new.data is data
 
-        # Check that the offset is now set
-        assert new.offset is not None
-        assert new.offset.shape == (Dims.N_ROWS, Dims.N_COLS)
-        assert (new.offset != 0).all()
+        # Check that the offset is now recorded
+        assert new.offset is offset
 
         # Check that the data has been updated and that the offset has been removed
         assert (new.data != non_view_data).any()
-        assert (new.data == (non_view_data - new.offset)).all()
+        assert (new.data == (non_view_data - offset)).all()
 
         # add offset back (error accumulates due to floating point arithmetic)
         reset = StandardView(new.data + new.offset)
@@ -288,10 +338,9 @@ class TestStandardView:
         _, b = reference_utils.remove_linear_trends(regression, True)
 
         # Run the internal utility
-        new = standard.remove_offset()
+        new = standard.remove_offset(b)
 
         # Check that the regression matches the new object
-        assert (new.offset == b).all()
         assert (new.data == regression).all()
 
     def test_apply_offset(self, data, offset):
@@ -333,7 +382,11 @@ class TestStandardView:
     def test_offset_roundtrip(self, data):
         standard = StandardView(data.copy())
 
-        no_offset = standard.remove_offset()
+        no_offset = standard.remove_offset(
+            StandardView.compute_offset(
+                data[:, :, : Const.N_COLUMNS], data[:, :, Const.N_COLUMNS :]
+            )
+        )
         assert no_offset.offset is not None
         assert (no_offset.data != data).any()
 
