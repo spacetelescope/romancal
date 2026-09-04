@@ -299,10 +299,5 @@ def make_source_grid(
     y_pos, x_pos = np.meshgrid(ypts, xpts)
     y_pos = np.ravel(y_pos)
     x_pos = np.ravel(x_pos)
-    y_pos_idx, x_pos_idx = y_pos.astype(int), x_pos.astype(int)
-
-    # Discard positions in NA empty regions
-    nanmask = np.isnan(model.data[y_pos_idx, x_pos_idx])
-    y_pos, x_pos = y_pos[~nanmask], x_pos[~nanmask]
 
     return y_pos, x_pos

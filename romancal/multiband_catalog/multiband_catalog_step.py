@@ -164,6 +164,7 @@ class MultibandCatalogStep(RomanStep):
 
             # Write data for tests
             if self.save_debug_info:
+                segmentation_model["detection_image"] = segment_img.detection_image
                 segmentation_model["si_data"] = si_segment_img.data.astype(np.uint32)
                 segmentation_model["si_detection_image"] = (
                     si_segment_img.detection_image
