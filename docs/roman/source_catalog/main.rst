@@ -36,8 +36,8 @@ corresponding to different sizes of sources, using a matched filter
 approach that provides the optimal SNR for matching sources.  The
 templates include a pseudo point-source profile, a Gaussian whose FWHM
 is set by the
-``kernel_fwhm`` parameter, together with three larger templates standing
-in for galaxies, with half-light radii of 4, 16, and 64 pixels. Each
+``kernel_fwhm`` parameter, together with two larger templates standing
+in for galaxies, with half-light radii of 4 and 16 pixels. Each
 filter is applied with inverse-variance weighting, so it produces
 the maximum-likelihood amplitude of that template divided by its own
 uncertainty: a signal-to-noise ratio image.  These SNR images are further

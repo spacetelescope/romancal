@@ -23,11 +23,7 @@ from romancal.source_catalog._template_detection import (
 
 @pytest.fixture
 def wide_image():
-    """A frame with sources spanning the template sizes, plus a close pair.
-
-    Note that the 330 pix image scale is too small to fit an 'exp_large' galaxy plus
-    associated background subtraction, so that's left out here.
-    """
+    """A frame with sources spanning the template sizes, plus a close pair."""
     shape = (330, 330)
     yy, xx = np.mgrid[0 : shape[0], 0 : shape[1]]
     sources = (
@@ -116,7 +112,7 @@ def test_detects_sources_of_each_size(wide_image):
     assert len(template_index) == segment_img.n_labels
     assert len(significance) == segment_img.n_labels
     assert np.all(significance >= 5.0)  # the threshold is the floor
-    assert len(_template_fwhms(2.0)) == 4
+    assert len(_template_fwhms(2.0)) == 3
 
     # the point source and the large galaxy are not assigned the same template
     labels = np.asarray(segment_img.data)

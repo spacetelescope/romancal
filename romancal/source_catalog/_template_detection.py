@@ -47,11 +47,16 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 # Template bank.  The first entry is the PSF and is sized by the step's
-# ``kernel_fwhm``; the rest are exponential discs of half-light radius 4, 16
-# and 64 pixels, converted to the equivalent Gaussian FWHM (FWHM ~ 1.678 r_e).
+# ``kernel_fwhm``; the rest are exponential discs of half-light radius 4 and
+# 16 pixels, converted to the equivalent Gaussian FWHM (FWHM ~ 1.678 r_e).
 # The spacing is logarithmic so that a source of any size is within a factor
 # of two of some template.
-_TEMPLATE_RE = (4.0, 16.0, 64.0)  # exponential half-light radii, pixels
+#
+# A fourth rung at 64 pixels was dropped: its 431 pixel kernel was the
+# largest single cost in the step, it claimed almost no sources, and its
+# smooth halo would win the maximum image over the compact peak of a
+# neighbor, erasing sources next to bright stars and large galaxies.
+_TEMPLATE_RE = (4.0, 16.0)  # exponential half-light radii, pixels
 _RE_TO_FWHM = 1.678
 
 # Kernel box size for the templates, in units of the template FWHM.  The
