@@ -188,6 +188,7 @@ class SourceCatalogStep(RomanStep):
             mask=mask,
         )
         model.data -= bkg.background
+        del bkg  # not used later; save memory
 
         pixel_scale = _pixel_scale(model)
         kernel_fwhm_px = self.kernel_fwhm / pixel_scale
