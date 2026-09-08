@@ -77,6 +77,13 @@ _BKG_BOX_FACTOR = 4
 # most of the flux.
 _MOMENT_SIZE_FACTOR = 4
 
+# Avoid letting a single bad pixel ruin an image during image convolutions
+# needed to find sources. Roman's full well is about
+# 130k electrons, so a single pixel cannot exceed a signal-to-noise of
+# ~sqrt(130000) ~ 360 in an L2 exposure; a coadd of even several hundred
+# exposures stays well under 10^4.
+_DETECTION_MAX_SNR = 1.0e4
+
 # Deblending contrast for the maximum image; children must hold at least this
 # fraction of a parent's flux to be deblended.
 _DEBLEND_CONTRAST = 0.001
@@ -95,6 +102,48 @@ def _template_fwhms(kernel_fwhm, pixel_scale):
     arcsec per pixel.
     """
     return tuple(f / pixel_scale for f in (float(kernel_fwhm), *_TEMPLATE_FWHM))
+
+
+def _clip_for_detection(data, err, mask=None):
+    """
+    Clip unphysical pixels to sane values to avoid having a bad pixel contaminate
+    detection FFTs and convolutions.
+
+    Only the significance images are built from the clipped data; the moments
+    and all of the photometry see the original values.  A bad pixel therefore
+    still ruins the photometry of its own segment, but nothing else.
+
+    Parameters
+    ----------
+    data : 2D `numpy.ndarray`
+        Background-subtracted data.
+    err : 2D `numpy.ndarray`
+        Per-pixel uncertainty.
+    mask : 2D `numpy.ndarray`, optional
+        Boolean mask; True values are ignored.
+
+    Returns
+    -------
+    clipped : 2D `numpy.ndarray`
+        ``data``, or a copy with the offending pixels bounded.  No
+        copy is made when nothing needs clipping, the usual case.
+    n_clipped : int
+        How many pixels were bounded.
+    """
+    # ``err`` is float16 in some products, and there 1e4 * err overflows to
+    # infinity for err > 6.55, which would quietly exempt those pixels from
+    # the ceiling.  Widen before multiplying rather than after, which also
+    # builds the limit in one pass instead of three.
+    limit = _DETECTION_MAX_SNR * np.abs(err, dtype=np.float32)
+    over = np.abs(data) > limit
+    if mask is not None:
+        over &= ~mask
+    n_clipped = int(over.sum())
+    if not n_clipped:
+        return data, 0
+    clipped = data.copy()
+    clipped[over] = np.copysign(limit[over], data[over])
+    return clipped, n_clipped
 
 
 def _bkg_box_size(fwhm):
@@ -137,6 +186,13 @@ def make_template_snr_images(data, err, kernel_fwhm, pixel_scale, mask=None):
     wht = np.where(good, 1.0 / np.where(good, err, 1.0) ** 2, 0.0)
     wht = wht.astype(np.float32)
 
+    clipped_data, n_clipped = _clip_for_detection(data, err, mask)
+    if n_clipped:
+        log.warning(
+            f"Clipped {n_clipped} pixels above {_DETECTION_MAX_SNR:.0g} sigma "
+            "for detection; the photometry still sees their original values"
+        )
+
     snr_images = []
     for fwhm in _template_fwhms(kernel_fwhm, pixel_scale):
         kernel = make_gaussian_kernel(fwhm, size_factor=_TEMPLATE_SIZE_FACTOR)
@@ -156,7 +212,7 @@ def make_template_snr_images(data, err, kernel_fwhm, pixel_scale, mask=None):
         # and leave the median nothing to reject.
         box = _bkg_box_size(fwhm)
         bkg = RomanBackground(data, box_size=box, mask=mask).background
-        num, denom2 = ivw_convolve(data - bkg, wht, kernel, mask=mask)
+        num, denom2 = ivw_convolve(clipped_data - bkg, wht, kernel, mask=mask)
         snr_images.append(snr_from_ivw(num, denom2))
         del bkg
         log.info(

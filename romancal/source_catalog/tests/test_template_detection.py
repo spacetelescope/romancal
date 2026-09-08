@@ -213,6 +213,27 @@ def test_no_template_fits_returns_no_sources():
     assert result == (None, None, None, None)
 
 
+def test_a_hot_pixel_does_not_poison_the_whole_frame(wide_image):
+    """One corrupt pixel must not raise the noise floor everywhere."""
+    data, err = wide_image
+    data = data.copy()
+    data[250, 60] = 1e13
+
+    segment_img, _, _, _ = _detect(data, err)
+
+    assert segment_img is not None
+    # can go to thousands when the FFT misbehaves
+    assert segment_img.n_labels < 50
+
+    # the five fixture sources are all still found
+    labels = np.asarray(segment_img.data)
+    for y, x in ((70, 70), (70, 170), (190, 70), (240, 250), (240, 266)):
+        assert labels[y, x] != 0
+
+    # the bad pixel still gets a segment of its own
+    assert labels[250, 60] != 0
+
+
 @pytest.mark.parametrize(
     ("depth", "pixel_err"),
     [
