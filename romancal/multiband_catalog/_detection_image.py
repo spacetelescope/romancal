@@ -6,8 +6,8 @@ from astropy.convolution import convolve_fft
 from astropy.utils.exceptions import AstropyUserWarning
 
 from romancal.datamodels import ModelLibrary
-from romancal.source_catalog._detection import make_gaussian_kernel
 from romancal.lib.basic_utils import compute_var_rnoise
+from romancal.source_catalog._detection import make_gaussian_kernel
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
