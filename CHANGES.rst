@@ -1,3 +1,13 @@
+1.0.2 (2026-09-08)
+==================
+
+``orientation``
+---------------
+
+- Add crds reference read for BAM to set_telescope_pointing (`#2428
+  <https://github.com/spacetelescope/romancal/issues/2428>`_)
+
+
 1.0.1 (2026-06-29)
 ==================
 
