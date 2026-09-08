@@ -59,13 +59,16 @@ class SourceCatalogStep(RomanStep):
         are searched whatever the pixel scale of the image.
 
     snr_threshold : float, optional
-        Per-pixel signal-to-noise ratio above the background required
-        for a pixel to be considered part of a source.
+        Detection threshold in sigma.  This is the significance of a
+        template, not of a single pixel: a source is detected where some
+        template's matched filter reaches this many sigma, so the default
+        of 5.0 means "detect 5 sigma sources".
 
     npixels : int, optional
-        Smallest segment to keep, counted as unmasked, positive pixels
-        in the segment.  Segments smaller than this size are excluded
-        during segment merging.
+        Smallest segment to keep, counted as the unmasked pixels that are
+        positive in the convolved image the moments are measured on, so
+        that moments can be computed.  It is applied during segment
+        merging, after each segment has been narrowed and dilated.
 
     deblend : bool, optional
         If `True`, deblend overlapping sources after detection.
@@ -94,7 +97,7 @@ class SourceCatalogStep(RomanStep):
         snr_threshold = float(default=5.0)    # detection threshold in sigma
         npixels = integer(default=9)          # min usable pixels in a final segment
         deblend = boolean(default=True)       # deblend sources?
-        max_sources = integer(default=30000)  # keep only this many most significant sources (0 = no limit)
+        max_sources = integer(default=30000)  # keep this many brightest (0 = no limit)
         suffix = string(default='cat')        # Default suffix for output files
         fit_psf = boolean(default=True)       # fit source PSFs for accurate astrometry?
         forced_segmentation = string(default='')  # force the use of this segmentation map
@@ -214,6 +217,11 @@ class SourceCatalogStep(RomanStep):
                 bkg_boxsize=self.bkg_boxsize,
                 max_sources=self.max_sources,
             )
+            if detection_image is None:
+                # No template fits the image, so nothing was convolved.
+                # Keep the segmentation model valid; the empty-catalog
+                # return below does the rest.
+                detection_image = np.zeros(model.data.shape, dtype=np.float32)
             segmentation_model["detection_image"] = detection_image
         else:
             detection_image = convolve_data(

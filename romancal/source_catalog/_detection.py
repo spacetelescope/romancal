@@ -104,13 +104,15 @@ def make_segmentation_image(
     return segment_img
 
 
-# photutils discretizes the kernel on a grid oversampled 10x in each axis.
-# This can dominate the memory usage for large kernels; this parameter
-# limits the size of the oversampled grid photutils builds.
-
-
 def _oversampling(size, max_oversampled_grid=2000):
-    """Oversampling factor for a kernel of ``size`` pixels across."""
+    """
+    Oversampling factor for a kernel of ``size`` pixels across.
+
+    photutils discretizes the kernel on a grid oversampled 10x in each
+    axis, which can dominate the memory used to build a large kernel.
+    ``max_oversampled_grid`` caps the side of that grid, backing the
+    oversampling off from 10 once the kernel is large enough to need it.
+    """
     return int(np.clip(max_oversampled_grid // size, 1, 10))
 
 
@@ -179,7 +181,8 @@ def ivw_convolve(data, wht, kernel, mask=None):
     maximum-likelihood amplitude of a template kernel divided by its uncertainty,
     given some Gaussian noise.
 
-    Masked pixels enter the convolution with zero weight so the result is defined on masked pixels.
+    Masked pixels enter the convolution with zero weight, so the result is
+    defined on masked pixels.
 
     Parameters
     ----------
@@ -209,8 +212,10 @@ def snr_from_ivw(num, denom2):
     """
     Form a signal-to-noise ratio image from accumulated `ivw_convolve` arrays.
 
-    Kept separate from `ivw_convolve` because the arrays must be summed over
-    bands before the ratio is taken.  ``denom2`` is mathematically
+    Kept separate from `ivw_convolve` because the arrays must be summed
+    over bands before the ratio is taken; templates, by contrast, are
+    combined after it, by taking the maximum of their ratios.
+    ``denom2`` is mathematically
     non-negative, but the FFT returns small negative values where it should
     return zero, so it is clamped before the square root.
 

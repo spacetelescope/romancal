@@ -6,7 +6,7 @@ sizes.  Each convolution is turned into a significance image, the
 maximum-likelihood amplitude of that template divided by its uncertainty,
 and the per-pixel maximum over templates becomes a single detection image on
 which sources are found via watershed and deblended.  This enables
-the deblending and sounce detection to happen on a single image, reducing
+the deblending and source detection to happen on a single image, reducing
 challenges surrounding multiply detecting the same sources with different kernels.
 
 However, for segment definition purposes we want to compute segments going
@@ -265,12 +265,6 @@ def _assign_segments(
         Grow each segment by this many pixels before painting.
     max_sources : int, optional
         Stop after this many sources have been painted.  Zero means no limit.
-
-    Returns
-    -------
-    segment_img : `SegmentationImage` or None
-    template_index : 1D `numpy.ndarray`
-    significance : 1D `numpy.ndarray`
 
     Returns
     -------

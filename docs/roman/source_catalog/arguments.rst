@@ -11,9 +11,10 @@ The ``source_catalog`` step has the following arguments:
   angular sizes as well, so the bank searches the same physical scales
   whatever the pixel scale of the image.
 
-* ``--snr_threshold``: A floating-point value that sets the
-  signal-to-noise ratio threshold above the background for source
-  detection.
+* ``--snr_threshold``: A floating-point value giving the detection
+  threshold in sigma.  This is the significance of a template rather
+  than of a single pixel, so the default of 5.0 means that a source is
+  detected where some template's matched filter reaches 5 sigma.
 
 * ``--npixels``: An integer value that sets the minimum number of
   pixels a source segment must retain to be kept, counting only the
