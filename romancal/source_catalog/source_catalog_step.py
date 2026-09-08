@@ -23,6 +23,7 @@ from romancal.source_catalog._template_detection import (
     make_segmentation_image_template,
 )
 from romancal.source_catalog._utils import copy_model_arrays, get_ee_spline
+from romancal.source_catalog._wcs_helpers import pixel_scale_angle_at_skycoord
 from romancal.source_catalog.psf import add_jitter
 from romancal.stpipe import RomanStep
 
@@ -52,8 +53,10 @@ class SourceCatalogStep(RomanStep):
         background.
 
     kernel_fwhm : float, optional
-        Full-width-at-half-maximum, in pixels, of the Gaussian smoothing
-        kernel used for source detection.
+        Full-width-at-half-maximum, in arcsec, of the Gaussian smoothing
+        kernel used for source detection.  The larger templates in the
+        detection bank are angular sizes too, so the same physical scales
+        are searched whatever the pixel scale of the image.
 
     snr_threshold : float, optional
         Per-pixel signal-to-noise ratio above the background required
@@ -87,7 +90,7 @@ class SourceCatalogStep(RomanStep):
 
     spec = """
         bkg_boxsize = integer(default=1000)   # background mesh box size in pixels
-        kernel_fwhm = float(default=2.0)      # Gaussian kernel FWHM in pixels
+        kernel_fwhm = float(default=0.2)      # Gaussian kernel FWHM in arcsec
         snr_threshold = float(default=5.0)    # detection threshold in sigma
         npixels = integer(default=9)          # min usable pixels in a final segment
         deblend = boolean(default=True)       # deblend sources?
@@ -183,6 +186,13 @@ class SourceCatalogStep(RomanStep):
         )
         model.data -= bkg.background
 
+        pixel_scale = _pixel_scale(model)
+        kernel_fwhm_px = self.kernel_fwhm / pixel_scale
+        log.info(
+            f"Pixel scale {pixel_scale:.4f} arcsec/px; PSF kernel FWHM "
+            f"{self.kernel_fwhm} arcsec = {kernel_fwhm_px:.2f} px"
+        )
+
         log.info("Detecting sources")
         det_template = None
         det_significance = None
@@ -198,6 +208,7 @@ class SourceCatalogStep(RomanStep):
                 snr_threshold=self.snr_threshold,
                 n_pixels=self.npixels,
                 kernel_fwhm=self.kernel_fwhm,
+                pixel_scale=pixel_scale,
                 deblend=self.deblend,
                 mask=mask,
                 bkg_boxsize=self.bkg_boxsize,
@@ -206,7 +217,7 @@ class SourceCatalogStep(RomanStep):
             segmentation_model["detection_image"] = detection_image
         else:
             detection_image = convolve_data(
-                model.data, kernel_fwhm=self.kernel_fwhm, mask=mask
+                model.data, kernel_fwhm=kernel_fwhm_px, mask=mask
             )
             forced_segmodel = datamodels.open(self.forced_segmentation)
             # forced_segmodel.data is asdf.tags.core.ndarray.NDArrayType
@@ -242,7 +253,7 @@ class SourceCatalogStep(RomanStep):
             cat_model,
             segment_img,
             detection_image,
-            self.kernel_fwhm,
+            kernel_fwhm_px,
             fit_psf=fit_psf,
             psf_model=psf_model,
             mask=mask,
@@ -269,7 +280,7 @@ class SourceCatalogStep(RomanStep):
                 cat_model,
                 segment_img,
                 forced_detection_image,
-                self.kernel_fwhm,
+                kernel_fwhm_px,
                 fit_psf=self.fit_psf,
                 psf_model=psf_model,
                 mask=mask,
@@ -362,3 +373,11 @@ class SourceCatalogStep(RomanStep):
         )
         segmentation_model["skyvals"] = skyvals
         segmentation_model["healpix11_cov"] = healpix11_cov
+
+
+def _pixel_scale(model):
+    """Pixel scale in arcsec per pixel, measured at the center of ``model``."""
+    ysize, xsize = model.data.shape
+    skycoord = model.meta.wcs.pixel_to_world((xsize - 1) / 2.0, (ysize - 1) / 2.0)
+    _, scale, _ = pixel_scale_angle_at_skycoord(skycoord, model.meta.wcs)
+    return scale.to("arcsec").value

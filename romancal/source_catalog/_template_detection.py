@@ -46,18 +46,20 @@ from romancal.source_catalog._detection import (
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
-# Template bank.  The first entry is the PSF and is sized by the step's
-# ``kernel_fwhm``; the rest are exponential discs of half-light radius 4 and
-# 16 pixels, converted to the equivalent Gaussian FWHM (FWHM ~ 1.678 r_e).
-# The spacing is logarithmic so that a source of any size is within a factor
-# of two of some template.
+# Template bank.  Every template is a Gaussian; these are the FWHM of the
+# larger ones, standing in for galaxies.  The PSF template comes first and
+# is sized by the step's ``kernel_fwhm``, so the default bank is 0.2, 0.6
+# and 2.4 arcsec.  The sizes are angular rather than in pixels so that the
+# same physical scales are searched whatever the pixel scale: an L3 coadd
+# at 0.055 arcsec/pixel spreads a galaxy over twice as many pixels as the
+# L2 image at 0.11 that went into it.
 #
-# A fourth rung at 64 pixels was dropped: its 431 pixel kernel was the
-# largest single cost in the step, it claimed almost no sources, and its
-# smooth halo would win the maximum image over the compact peak of a
-# neighbor, erasing sources next to bright stars and large galaxies.
-_TEMPLATE_RE = (4.0, 16.0)  # exponential half-light radii, pixels
-_RE_TO_FWHM = 1.678
+# The spacing is logarithmic.  A source falling between two rungs is worst
+# off at their geometric mean, where a template mismatched in width by a
+# factor r keeps 2r / (1 + r^2) of the SNR: 87 percent across the first
+# gap of three, 80 percent across the second of four.  The tighter gap is
+# at the bottom because that is where the small faint galaxies are.
+_TEMPLATE_FWHM = (0.6, 2.4)  # arcsec
 
 # Kernel box size for the templates, in units of the template FWHM.  The
 # kernel only has to reach the template's wings, so a few FWHM is enough.
@@ -86,9 +88,13 @@ _DEBLEND_CONTRAST = 0.001
 _SEGMENT_DILATE = 1
 
 
-def _template_fwhms(kernel_fwhm):
-    """Template FWHMs in pixels, PSF first."""
-    return (float(kernel_fwhm), *(_RE_TO_FWHM * re for re in _TEMPLATE_RE))
+def _template_fwhms(kernel_fwhm, pixel_scale):
+    """Template FWHMs in pixels, PSF first.
+
+    ``kernel_fwhm`` and the bank are in arcsec; ``pixel_scale`` is in
+    arcsec per pixel.
+    """
+    return tuple(f / pixel_scale for f in (float(kernel_fwhm), *_TEMPLATE_FWHM))
 
 
 def _bkg_box_size(fwhm):
@@ -96,7 +102,7 @@ def _bkg_box_size(fwhm):
     return max(math.ceil(_BKG_BOX_FACTOR * fwhm), 1)
 
 
-def make_template_snr_images(data, err, kernel_fwhm, mask=None):
+def make_template_snr_images(data, err, kernel_fwhm, pixel_scale, mask=None):
     """
     Compute a matched-filter significance image for each template.
 
@@ -107,7 +113,10 @@ def make_template_snr_images(data, err, kernel_fwhm, mask=None):
     err : 2D `numpy.ndarray`
         Per-pixel uncertainty.
     kernel_fwhm : float
-        FWHM of the PSF template, in pixels.
+        FWHM of the PSF template, in arcsec.
+    pixel_scale : float
+        Pixel scale in arcsec per pixel, used to put the template bank on
+        the pixel grid.
     mask : 2D `numpy.ndarray`, optional
         Boolean mask; True values are given zero weight.
 
@@ -129,7 +138,7 @@ def make_template_snr_images(data, err, kernel_fwhm, mask=None):
     wht = wht.astype(np.float32)
 
     snr_images = []
-    for fwhm in _template_fwhms(kernel_fwhm):
+    for fwhm in _template_fwhms(kernel_fwhm, pixel_scale):
         kernel = make_gaussian_kernel(fwhm, size_factor=_TEMPLATE_SIZE_FACTOR)
         if kernel.shape[0] > min(data.shape):
             # The kernel is wider than the image, so it is all boundary.
@@ -166,7 +175,9 @@ def make_template_snr_images(data, err, kernel_fwhm, mask=None):
     # additional background removed.
     # We should investigate subtracting one, but we need to more carefully
     # track what scale the background should be removed on for each different template
-    psf_kernel = make_gaussian_kernel(kernel_fwhm, size_factor=_MOMENT_SIZE_FACTOR)
+    psf_kernel = make_gaussian_kernel(
+        kernel_fwhm / pixel_scale, size_factor=_MOMENT_SIZE_FACTOR
+    )
     conv_psf = fft_convolve(data, psf_kernel, mask=mask)
 
     return snr_images, conv_psf
@@ -400,6 +411,7 @@ def make_segmentation_image_template(
     snr_threshold,
     n_pixels,
     kernel_fwhm,
+    pixel_scale,
     deblend=True,
     mask=None,
     bkg_boxsize=100,
@@ -421,7 +433,9 @@ def make_segmentation_image_template(
         can use for moment computation.  It is applied after narrowing and
         dilation, not to the deblended children of the maximum image.
     kernel_fwhm : float
-        FWHM of the PSF template, in pixels.
+        FWHM of the PSF template, in arcsec.
+    pixel_scale : float
+        Pixel scale in arcsec per pixel.
     deblend : bool, optional
         Whether to deblend the maximum image.
     mask : 2D `numpy.ndarray`, optional
@@ -443,7 +457,9 @@ def make_segmentation_image_template(
     significance : 1D `numpy.ndarray` or None
         Peak significance of each source, in sigma.
     """
-    snr_images, conv_psf = make_template_snr_images(data, err, kernel_fwhm, mask=mask)
+    snr_images, conv_psf = make_template_snr_images(
+        data, err, kernel_fwhm, pixel_scale, mask=mask
+    )
     if not snr_images:
         # Nothing in the bank fits the image; already logged.
         return None, None, None, None

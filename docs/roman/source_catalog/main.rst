@@ -34,10 +34,11 @@ then performed using the `Photutils segmentation <https://photutils.readthedocs.
 We convolve the background-subtracted image with a variety of templates
 corresponding to different sizes of sources, using a matched filter
 approach that provides the optimal SNR for matching sources.  The
-templates include a pseudo point-source profile, a Gaussian whose FWHM
-is set by the
-``kernel_fwhm`` parameter, together with two larger templates standing
-in for galaxies, with half-light radii of 4 and 16 pixels. Each
+templates are all Gaussians: a point-source template whose FWHM is set
+by the ``kernel_fwhm`` parameter, together with two larger ones standing
+in for galaxies.  Their sizes are angular rather than in pixels, so that
+the same physical scales are searched whatever the pixel scale of the
+image; the default bank is 0.2, 0.6, and 2.4 arcsec FWHM.  Each
 filter is applied with inverse-variance weighting, so it produces
 the maximum-likelihood amplitude of that template divided by its own
 uncertainty: a signal-to-noise ratio image.  These SNR images are further

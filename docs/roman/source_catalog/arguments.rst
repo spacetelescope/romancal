@@ -6,8 +6,10 @@ The ``source_catalog`` step has the following arguments:
 * ``--bkg_boxsize``: An integer value giving the background mesh box
   size in pixels
 
-* ``--kernel_fwhm``: A floating-point value giving the FWHM in pixels
-  of the point-source detection template
+* ``--kernel_fwhm``: A floating-point value giving the FWHM in arcsec
+  of the point-source detection template.  The larger templates are
+  angular sizes as well, so the bank searches the same physical scales
+  whatever the pixel scale of the image.
 
 * ``--snr_threshold``: A floating-point value that sets the
   signal-to-noise ratio threshold above the background for source

@@ -96,8 +96,8 @@ class RomanSourceCatalog:
         measurements. The image is assumed to be background subtracted.
 
     kernel_fwhm : float
-        The full-width at half-maximum (FWHM) of the DAOFind 2D Gaussian
-        kernel. This kernel is used to calculate the DAOFind sharpness
+        The full-width at half-maximum (FWHM), in pixels, of the DAOFind
+        2D Gaussian kernel. This kernel is used to calculate the DAOFind sharpness
         and roundness properties. DAOFind uses a special kernel that
         sums to zero.
 
