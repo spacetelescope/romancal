@@ -16,10 +16,14 @@ from roman_datamodels.dqflags import pixel
 
 from romancal.datamodels.fileio import open_dataset
 from romancal.source_catalog._background import RomanBackground
-from romancal.source_catalog._detection import convolve_data, make_segmentation_image
+from romancal.source_catalog._detection import convolve_data
 from romancal.source_catalog._skyvals import compute_skyvals
 from romancal.source_catalog._source_catalog import RomanSourceCatalog
+from romancal.source_catalog._template_detection import (
+    make_segmentation_image_template,
+)
 from romancal.source_catalog._utils import copy_model_arrays, get_ee_spline
+from romancal.source_catalog._wcs_helpers import pixel_scale_angle_at_skycoord
 from romancal.source_catalog.psf import add_jitter
 from romancal.stpipe import RomanStep
 
@@ -49,19 +53,28 @@ class SourceCatalogStep(RomanStep):
         background.
 
     kernel_fwhm : float, optional
-        Full-width-at-half-maximum, in pixels, of the Gaussian smoothing
-        kernel used for source detection.
+        Full-width-at-half-maximum, in arcsec, of the Gaussian smoothing
+        kernel used for source detection.  The larger templates in the
+        detection bank are angular sizes too, so the same physical scales
+        are searched whatever the pixel scale of the image.
 
     snr_threshold : float, optional
-        Per-pixel signal-to-noise ratio above the background required
-        for a pixel to be considered part of a source.
+        Detection threshold in sigma.  This is the significance of a
+        template, not of a single pixel: a source is detected where some
+        template's matched filter reaches this many sigma, so the default
+        of 5.0 means "detect 5 sigma sources".
 
     npixels : int, optional
-        Minimum number of connected pixels above ``snr_threshold``
-        required for a detection to be retained as a source.
+        Smallest segment to keep, counted as the unmasked pixels that are
+        positive in the convolved image the moments are measured on, so
+        that moments can be computed.  It is applied during segment
+        merging, after each segment has been narrowed and dilated.
 
     deblend : bool, optional
         If `True`, deblend overlapping sources after detection.
+
+    max_sources : int, optional
+        Keep only this many sources, starting with the most significant.
 
     suffix : str, optional
         Suffix appended to the output filenames.  Default ``'cat'``.
@@ -80,10 +93,11 @@ class SourceCatalogStep(RomanStep):
 
     spec = """
         bkg_boxsize = integer(default=1000)   # background mesh box size in pixels
-        kernel_fwhm = float(default=2.0)      # Gaussian kernel FWHM in pixels
-        snr_threshold = float(default=3.0)    # per-pixel SNR threshold above the bkg
-        npixels = integer(default=25)         # min number of pixels in source
-        deblend = boolean(default=False)      # deblend sources?
+        kernel_fwhm = float(default=0.2)      # Gaussian kernel FWHM in arcsec
+        snr_threshold = float(default=5.0)    # detection threshold in sigma
+        npixels = integer(default=9)          # min usable pixels in a final segment
+        deblend = boolean(default=True)       # deblend sources?
+        max_sources = integer(default=30000)  # keep this many brightest (0 = no limit)
         suffix = string(default='cat')        # Default suffix for output files
         fit_psf = boolean(default=True)       # fit source PSFs for accurate astrometry?
         forced_segmentation = string(default='')  # force the use of this segmentation map
@@ -166,30 +180,54 @@ class SourceCatalogStep(RomanStep):
             return cat_model, segmentation_model
 
         log.info("Calculating and subtracting background")
+        # bad pixel mask rather than coverage_mask to keep finite RMS estimates
+        # in holes
         bkg = RomanBackground(
             model.data,
             box_size=self.bkg_boxsize,
-            coverage_mask=mask,
+            mask=mask,
         )
         model.data -= bkg.background
+        del bkg  # not used later; save memory
 
-        log.info("Creating detection image")
-        detection_image = convolve_data(
-            model.data, kernel_fwhm=self.kernel_fwhm, mask=mask
+        pixel_scale = _pixel_scale(model)
+        kernel_fwhm_px = self.kernel_fwhm / pixel_scale
+        log.info(
+            f"Pixel scale {pixel_scale:.4f} arcsec/px; PSF kernel FWHM "
+            f"{self.kernel_fwhm} arcsec = {kernel_fwhm_px:.2f} px"
         )
 
         log.info("Detecting sources")
+        det_template = None
+        det_significance = None
         if not self.forced_segmentation:
-            segment_img = make_segmentation_image(
+            (
+                segment_img,
                 detection_image,
+                det_template,
+                det_significance,
+            ) = make_segmentation_image_template(
+                model.data,
+                model.err,
                 snr_threshold=self.snr_threshold,
                 n_pixels=self.npixels,
-                bkg_rms=bkg.background_rms,
+                kernel_fwhm=self.kernel_fwhm,
+                pixel_scale=pixel_scale,
                 deblend=self.deblend,
                 mask=mask,
+                bkg_boxsize=self.bkg_boxsize,
+                max_sources=self.max_sources,
             )
+            if detection_image is None:
+                # No template fits the image, so nothing was convolved.
+                # Keep the segmentation model valid; the empty-catalog
+                # return below does the rest.
+                detection_image = np.zeros(model.data.shape, dtype=np.float32)
             segmentation_model["detection_image"] = detection_image
         else:
+            detection_image = convolve_data(
+                model.data, kernel_fwhm=kernel_fwhm_px, mask=mask
+            )
             forced_segmodel = datamodels.open(self.forced_segmentation)
             # forced_segmodel.data is asdf.tags.core.ndarray.NDArrayType
             forced_segimg = forced_segmodel.data[...]
@@ -224,7 +262,7 @@ class SourceCatalogStep(RomanStep):
             cat_model,
             segment_img,
             detection_image,
-            self.kernel_fwhm,
+            kernel_fwhm_px,
             fit_psf=fit_psf,
             psf_model=psf_model,
             mask=mask,
@@ -232,6 +270,13 @@ class SourceCatalogStep(RomanStep):
             ee_spline=ee_spline,
         )
         cat = catobj.catalog
+
+        if det_template is not None:
+            # which template detected each source, and how significant its
+            # peak was.  Extra columns beyond the schema are carried through
+            # to the output table.
+            cat["det_template"] = det_template
+            cat["det_significance"] = det_significance
 
         if self.forced_segmentation:
             # TODO: improve this so that the moment-based properties are
@@ -244,7 +289,7 @@ class SourceCatalogStep(RomanStep):
                 cat_model,
                 segment_img,
                 forced_detection_image,
-                self.kernel_fwhm,
+                kernel_fwhm_px,
                 fit_psf=self.fit_psf,
                 psf_model=psf_model,
                 mask=mask,
@@ -337,3 +382,11 @@ class SourceCatalogStep(RomanStep):
         )
         segmentation_model["skyvals"] = skyvals
         segmentation_model["healpix11_cov"] = healpix11_cov
+
+
+def _pixel_scale(model):
+    """Pixel scale in arcsec per pixel, measured at the center of ``model``."""
+    ysize, xsize = model.data.shape
+    skycoord = model.meta.wcs.pixel_to_world((xsize - 1) / 2.0, (ysize - 1) / 2.0)
+    _, scale, _ = pixel_scale_angle_at_skycoord(skycoord, model.meta.wcs)
+    return scale.to("arcsec").value

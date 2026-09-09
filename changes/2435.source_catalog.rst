@@ -1,0 +1,9 @@
+Overhaul source detection in the SourceCatalogStep, broadly aiming to
+improve depth while not damaging purity.  The new approach blends
+matched filter detection using a range of different sized kernels
+and watershed deblending.
+
+The ``kernel_fwhm`` parameter is now given in arcseconds rather than
+pixels, with a new default of 0.2, and the larger detection templates are
+angular sizes as well.  The bank therefore searches the same physical
+scales whatever the pixel scale of the image.

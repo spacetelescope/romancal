@@ -96,8 +96,8 @@ class RomanSourceCatalog:
         measurements. The image is assumed to be background subtracted.
 
     kernel_fwhm : float
-        The full-width at half-maximum (FWHM) of the DAOFind 2D Gaussian
-        kernel. This kernel is used to calculate the DAOFind sharpness
+        The full-width at half-maximum (FWHM), in pixels, of the DAOFind
+        2D Gaussian kernel. This kernel is used to calculate the DAOFind sharpness
         and roundness properties. DAOFind uses a special kernel that
         sums to zero.
 
@@ -629,10 +629,14 @@ class RomanSourceCatalog:
         )
 
     def _make_psf_cat(self):
+        # ``_xypos_finite`` is row-for-row ``_xypos`` with any non-finite
+        # entry replaced by -1000.  A position off the image is handled
+        # without crashing: photutils returns NaN and sets the source's
+        # flags.  A non-finite position raises.
         return _PSFCatalog(
             self.model,
             self.psf_model,
-            self._xypos,
+            self._xypos_finite,
             self.mask,
             requested_properties=self.column_names,
         )
