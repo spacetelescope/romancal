@@ -14,6 +14,11 @@ The ramp fitting step has the following optional argument that can be set by the
 
 * ``--include_var_rnoise``: boolean indicating whether to include var_rnoise in output (can be reconstructed from err and other variances)
 
+* ``--record_jumps``: boolean indicating whether to record which resultant each
+  jump was flagged in as a ``jump_indices`` extension on the output image. The
+  extension is an ``(N, 3)`` integer array whose columns are ``(resultant, y,
+  x)`` in the trimmed science frame. Likelihood algorithm only. The default is True.
+
 * ``--rejection_threshold``: float specifying the CR sigma rejection threshold.
 
 * ``--threshold_intercept``: float overriding the intercept parameter for the threshold function in the jump detection algorithm.

@@ -10,9 +10,6 @@ Telescope Pointing Utilities
 .. automodapi:: romancal.orientation.pointing_summary
    :no-inheritance-diagram:
 
-.. automodapi:: romancal.orientation.v1_calculate
-   :no-inheritance-diagram:
-
 
 Commands
 --------

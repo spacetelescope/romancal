@@ -75,27 +75,3 @@ def test_dark_current_outfile_suffix(
     rtdata.get_truth(f"truth/WFI/image/{output}")
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     assert diff.identical, diff.report()
-
-
-@pytest.mark.bigdata
-def test_dark_current_output(rtdata, ignore_asdf_paths, resource_tracker, request):
-    """Function to run and compare Dark Current subtraction files. Here the
-    test for overriding the CRDS dark reference file."""
-
-    input_datafile = "r0000101001001001001_0001_wfi01_f158_rampfit.asdf"
-    rtdata.get_data(f"WFI/image/{input_datafile}")
-    rtdata.input = input_datafile
-    dark_output_name = "r0000101001001001001_0001_wfi01_f158_darkcurrent.asdf"
-
-    args = [
-        "romancal.step.DarkCurrentStep",
-        rtdata.input,
-        f"--dark_output={dark_output_name}",
-    ]
-    with resource_tracker.track(log=request):
-        RomanStep.from_cmdline(args)
-    output = "r0000101001001001001_0001_wfi01_f158_darkcurrent.asdf"
-    rtdata.output = output
-    rtdata.get_truth(f"truth/WFI/image/{output}")
-    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
-    assert diff.identical, diff.report()

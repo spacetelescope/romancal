@@ -1,15 +1,14 @@
 from pathlib import Path
 from re import match
+from types import SimpleNamespace
 
 import astropy.units as u
 import numpy as np
-import pyarrow
 import pytest
 from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
 from astropy.time import Time
 from numpy.testing import assert_equal
-from roman_datamodels import datamodels as rdm
 from roman_datamodels.datamodels import (
     ForcedImageSourceCatalogModel,
     ImageModel,
@@ -20,10 +19,20 @@ from roman_datamodels.datamodels import (
     SegmentationMapModel,
 )
 
-from romancal.source_catalog.source_catalog import RomanSourceCatalog
+from romancal.source_catalog._skyvals import compute_skyvals
+from romancal.source_catalog._source_catalog import RomanSourceCatalog
 from romancal.source_catalog.source_catalog_step import SourceCatalogStep
 
 from .helpers import compare_model_and_parquet_metadata
+
+SKYVALS_DTYPE = np.dtype(
+    [
+        ("healpix17", np.int64),
+        ("data", np.float32),
+        ("err", np.float32),
+        ("covfrac", np.float32),
+    ]
+)
 
 
 def make_test_image(err_dtype=np.float16):
@@ -125,8 +134,7 @@ def image_model():
 
 def test_forced_catalog(image_model, function_jail, ignore_parquet_metadata_paths):
     output_filename = "force_cat.parquet"
-    step = SourceCatalogStep()
-    _ = step.call(
+    _ = SourceCatalogStep.call(
         image_model,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
@@ -135,7 +143,7 @@ def test_forced_catalog(image_model, function_jail, ignore_parquet_metadata_path
         save_results=True,
         output_file="source_cat.asdf",
     )
-    result_force = step.call(
+    result_force, segmentation_map = SourceCatalogStep.call(
         image_model,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
@@ -146,8 +154,10 @@ def test_forced_catalog(image_model, function_jail, ignore_parquet_metadata_path
         forced_segmentation="source_segm.asdf",
     )
     assert isinstance(result_force, ForcedImageSourceCatalogModel)
+    assert isinstance(segmentation_map, SegmentationMapModel)
 
     assert Path(output_filename).exists()
+    assert Path("force_segm.asdf").exists()
     catalog = Table.read(output_filename)
     has_forced_fields = False
     for field in catalog.dtype.names:
@@ -182,9 +192,10 @@ def test_l2_source_catalog(
     ignore_parquet_metadata_paths,
 ):
     image_model.meta.filename = "test_cal.asdf"
-    output_filename = "test_cat.parquet"
-    step = SourceCatalogStep()
-    result = step.call(
+    catalog_filename = "test_cat.parquet"
+    segmentation_map_filename = "test_segm.asdf"
+
+    result_catalog, result_segmentation_map = SourceCatalogStep.call(
         image_model,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
@@ -193,16 +204,20 @@ def test_l2_source_catalog(
         save_results=save_results,
     )
 
+    assert isinstance(result_catalog, ImageSourceCatalogModel)
+    assert isinstance(result_segmentation_map, SegmentationMapModel)
+
     if save_results:
-        assert Path(output_filename).exists()
+        assert Path(segmentation_map_filename).exists()
+        assert Path(catalog_filename).exists()
         compare_model_and_parquet_metadata(
-            image_model, output_filename, ignore_parquet_metadata_paths
+            image_model, catalog_filename, ignore_parquet_metadata_paths
         )
-        cat = Table.read(output_filename)
+        cat = Table.read(catalog_filename)
     else:
-        # FIXME: test output_filename doesn't exists but due to
-        # https://github.com/spacetelescope/romancal/issues/1960 it always will
-        cat = result.source_catalog
+        assert not Path(segmentation_map_filename).exists()
+        assert not Path(catalog_filename).exists()
+        cat = result_catalog.source_catalog
         assert isinstance(cat, Table)
     assert len(cat) == nsources
 
@@ -257,13 +272,13 @@ def test_l3_source_catalog(
     function_jail,
     ignore_parquet_metadata_paths,
 ):
-    step = SourceCatalogStep()
     mosaic_model.meta.filename = "test_coadd.asdf"
-    output_filename = "test_cat.parquet"
+    catalog_filename = "test_cat.parquet"
+    segmentation_map_filename = "test_segm.asdf"
 
     # Create model and set some crucial meta required to
     # create the L3 PSF for flux determination.
-    result = step.call(
+    result_catalog, result_segmentation_map = SourceCatalogStep.call(
         mosaic_model,
         bkg_boxsize=50,
         kernel_fwhm=2.0,
@@ -272,20 +287,24 @@ def test_l3_source_catalog(
         save_results=save_results,
     )
 
+    assert isinstance(result_catalog, MosaicSourceCatalogModel)
+    assert isinstance(result_segmentation_map, MosaicSegmentationMapModel)
+
     if save_results:
-        assert Path(output_filename).exists()
-        cat = Table.read(output_filename)
+        assert Path(segmentation_map_filename).exists()
+        assert Path(catalog_filename).exists()
+        cat = Table.read(catalog_filename)
         compare_model_and_parquet_metadata(
-            mosaic_model, output_filename, ignore_parquet_metadata_paths
+            mosaic_model, catalog_filename, ignore_parquet_metadata_paths
         )
     else:
-        # FIXME: test output_filename doesn't exists but due to
-        # https://github.com/spacetelescope/romancal/issues/1960 it always will
-        cat = result.source_catalog
+        assert not Path(segmentation_map_filename).exists()
+        assert not Path(catalog_filename).exists()
+        cat = result_catalog.source_catalog
         assert isinstance(cat, Table)
     assert len(cat) == nsources
 
-    assert result.meta.data_release_id == mosaic_model.meta.data_release_id
+    assert result_catalog.meta.data_release_id == mosaic_model.meta.data_release_id
 
     # Check that the ee_fraction_xx entries are in the metadata
     if "aperture_radii" in cat.meta:
@@ -321,8 +340,7 @@ def test_background(mosaic_model, function_jail):
     """
     Test background fallback when Background2D fails.
     """
-    step = SourceCatalogStep()
-    result = step.call(
+    result_catalog, _ = SourceCatalogStep.call(
         mosaic_model,
         bkg_boxsize=1000,
         kernel_fwhm=2.0,
@@ -331,9 +349,55 @@ def test_background(mosaic_model, function_jail):
         fit_psf=False,
     )
 
-    cat = result.source_catalog
+    cat = result_catalog.source_catalog
 
     assert isinstance(cat, Table)
+
+
+@pytest.mark.parametrize("model_fixture", ("image_model", "mosaic_model"))
+def test_source_catalog_populates_dust_ebv(model_fixture, request, function_jail):
+    """Ensure prompt source catalogs include a per-source dust_ebv column."""
+    model = request.getfixturevalue(model_fixture)
+    result_catalog, _ = SourceCatalogStep.call(
+        model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=3,
+        npixels=10,
+        save_results=False,
+    )
+    cat = result_catalog.source_catalog
+    assert "dust_ebv" in cat.colnames
+    assert len(cat["dust_ebv"]) == len(cat)
+    assert cat["dust_ebv"].dtype == np.float32
+
+
+def test_nested_metadata_propagated_to_catalog_and_segmentation(
+    image_model, function_jail
+):
+    """
+    Nested (list-of-list) metadata such as ``meta.exposure.read_pattern``
+    should be propagated to both the source catalog and segmentation map
+    models.
+    """
+    read_pattern = [[1], [2, 3], [4, 5, 6], [7, 8, 9, 10]]
+    image_model.meta.exposure.read_pattern = read_pattern
+
+    result_catalog, result_segmentation_map = SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=5,
+        npixels=10,
+        save_results=False,
+        fit_psf=False,
+    )
+
+    assert isinstance(result_catalog, ImageSourceCatalogModel)
+    assert isinstance(result_segmentation_map, SegmentationMapModel)
+
+    for result in (result_catalog, result_segmentation_map):
+        assert [list(r) for r in result.meta.exposure.read_pattern] == read_pattern
 
 
 def test_l2_input_model_unchanged(image_model, function_jail):
@@ -344,8 +408,7 @@ def test_l2_input_model_unchanged(image_model, function_jail):
     original_data = image_model.data.copy()
     original_err = image_model.err.copy()
 
-    step = SourceCatalogStep()
-    step.call(
+    SourceCatalogStep.call(
         image_model,
         snr_threshold=0.5,
         npixels=5,
@@ -359,6 +422,103 @@ def test_l2_input_model_unchanged(image_model, function_jail):
     assert_equal(original_err, image_model.err)
 
 
+def test_l2_segmentation_contains_skyvals(image_model):
+    _, result_segmentation_map = SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=5,
+        npixels=10,
+        save_results=False,
+        fit_psf=False,
+    )
+
+    assert isinstance(result_segmentation_map, SegmentationMapModel)
+    assert "skyvals" in result_segmentation_map
+    assert "healpix11_cov" in result_segmentation_map
+
+    skyvals = result_segmentation_map.skyvals
+    assert skyvals.dtype == SKYVALS_DTYPE
+    assert skyvals.shape[0] > 0
+
+    healpix11_cov = result_segmentation_map.healpix11_cov
+    assert healpix11_cov.ndim == 1
+    assert healpix11_cov.dtype == np.int64
+
+
+def test_l2_segmentation_without_skyvals_when_disabled(image_model):
+    _, result_segmentation_map = SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=5,
+        npixels=10,
+        save_results=False,
+        fit_psf=False,
+        compute_skyvals=False,
+    )
+
+    assert isinstance(result_segmentation_map, SegmentationMapModel)
+    assert "skyvals" not in result_segmentation_map
+    assert "healpix11_cov" not in result_segmentation_map
+
+
+def test_skyvals_coverage_includes_source_pixels(monkeypatch):
+    class WCS:
+        def pixel_to_world_values(self, x, y):
+            return np.asarray(x) * 180.0, np.asarray(y) * 0.0
+
+    input_model = SimpleNamespace(
+        data=np.array([[10.0, 20.0]], dtype=np.float32),
+        err=np.ones((1, 2), dtype=np.float32),
+        meta=SimpleNamespace(wcs=WCS()),
+    )
+    segmentation = np.array([[1, 0]], dtype=np.uint32)
+    bad_pixel_mask = np.zeros((1, 2), dtype=bool)
+
+    monkeypatch.setattr(
+        "romancal.source_catalog._skyvals.get_pixel_area_sr", lambda model: 1.0
+    )
+    skyvals, healpix11_cov = compute_skyvals(input_model, segmentation, bad_pixel_mask)
+
+    assert skyvals.shape == (1,)
+    assert skyvals["data"][0] == 20.0
+    assert healpix11_cov.shape == (2,)
+
+
+def test_l2_skyvals_values_and_covfrac_reasonable(image_model):
+    """
+    Verify skyvals statistics are sensible on a controlled input image.
+    """
+    rng = np.random.default_rng(seed=9)
+    image_model.data = (rng.normal(0, 1, size=image_model.data.shape) + 100.0).astype(
+        np.float32
+    )
+    image_model.err = np.full_like(image_model.data, 3.0, dtype=np.float32)
+
+    _, result_segmentation_map = SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=5,
+        npixels=10,
+        save_results=False,
+        fit_psf=False,
+    )
+
+    skyvals = result_segmentation_map.skyvals
+    covfrac = skyvals["covfrac"]
+    assert skyvals.shape[0] > 0
+    # data medians should recover the injected background offset
+    # (atol=5.0 allows for some variation due to the random noise)
+    np.testing.assert_allclose(np.nanmedian(skyvals["data"]), 100.0, atol=5.0)
+    # covfrac should be bounded in [0, 1]
+    assert np.all(covfrac >= 0.0)
+    assert np.all(covfrac <= 1.0)
+    # at least some healpixels should have near-full coverage
+    assert np.any(covfrac > 0.9)
+
+
 def test_l3_input_model_unchanged(mosaic_model, function_jail):
     """
     Test that the input model data and error arrays are unchanged after
@@ -367,8 +527,7 @@ def test_l3_input_model_unchanged(mosaic_model, function_jail):
     original_data = mosaic_model.data.copy()
     original_err = mosaic_model.err.copy()
 
-    step = SourceCatalogStep()
-    step.call(
+    SourceCatalogStep.call(
         mosaic_model,
         snr_threshold=0.5,
         npixels=5,
@@ -386,9 +545,8 @@ def test_invalid_step_inputs(image_model, mosaic_model, function_jail):
     for input_model in (image_model, mosaic_model):
         model = input_model.copy()
         model.data = np.full(model.data.shape, np.nan)
-        step = SourceCatalogStep()
-        result = step.call(model)
-        cat = result.source_catalog
+        result_catalog, _ = SourceCatalogStep.call(model)
+        cat = result_catalog.source_catalog
         assert isinstance(cat, Table)
         assert len(cat) == 0
 
@@ -402,8 +560,7 @@ def test_psf_photometry(function_jail, image_model):
     """
     Test PSF photometry.
     """
-    step = SourceCatalogStep()
-    result = step.call(
+    result_catalog, _ = SourceCatalogStep.call(
         image_model,
         bkg_boxsize=20,
         kernel_fwhm=2.0,
@@ -412,7 +569,7 @@ def test_psf_photometry(function_jail, image_model):
         save_results=False,
     )
 
-    cat = result.source_catalog
+    cat = result_catalog.source_catalog
     assert isinstance(cat, Table)
     assert len(cat) == 7
 
@@ -436,8 +593,7 @@ def test_do_psf_photometry_column_names(function_jail, image_model, fit_psf):
     Test that fit_psf will determine whether the PSF
     photometry columns are added to the final catalog or not.
     """
-    step = SourceCatalogStep()
-    result = step.call(
+    result_catalog, _ = SourceCatalogStep.call(
         image_model,
         bkg_boxsize=20,
         kernel_fwhm=2.0,
@@ -447,7 +603,7 @@ def test_do_psf_photometry_column_names(function_jail, image_model, fit_psf):
         fit_psf=fit_psf,
     )
 
-    cat = result.source_catalog
+    cat = result_catalog.source_catalog
     assert isinstance(cat, Table)
 
     psf_colnames = []
@@ -462,258 +618,39 @@ def test_do_psf_photometry_column_names(function_jail, image_model, fit_psf):
 
 
 @pytest.mark.parametrize(
-    "snr_threshold, npixels, nsources, save_results, return_updated_model, expected_result, expected_outputs",
-    (
-        (
-            3,
-            10,
-            7,
-            True,
-            True,
-            ImageModel,
-            {
-                "cat": ImageSourceCatalogModel,
-                "segm": SegmentationMapModel,
-                "sourcecatalog": ImageModel,
-            },
-        ),
-        (
-            3,
-            50,
-            5,
-            True,
-            False,
-            ImageSourceCatalogModel,
-            {
-                "cat": ImageSourceCatalogModel,
-                "segm": SegmentationMapModel,
-            },
-        ),
-        (
-            10,
-            10,
-            7,
-            False,
-            True,
-            ImageModel,
-            {
-                "cat": ImageSourceCatalogModel,
-                "segm": SegmentationMapModel,
-            },
-        ),
-        (
-            20,
-            10,
-            5,
-            False,
-            False,
-            ImageSourceCatalogModel,
-            {
-                "cat": ImageSourceCatalogModel,
-                "segm": SegmentationMapModel,
-            },
-        ),
-    ),
+    "ra, dec",
+    [
+        (np.array([10.0, 20.0]), np.array([30.0])),
+        (np.array([[10.0, 20.0]]), np.array([30.0, 40.0])),
+    ],
 )
-def test_l2_source_catalog_keywords(
-    image_model,
-    snr_threshold,
-    npixels,
-    nsources,
-    save_results,
-    return_updated_model,
-    expected_result,
-    expected_outputs,
-    monkeypatch,
-    function_jail,
-):
-    """
-    Test that the proper object is returned in the call to SourceCatalogStep
-    and that the desired output files are saved to the disk with the correct type.
-    """
+def test_get_dust_ebv_shape_mismatch_raises(ra, dec):
+    """Raise when RA/Dec input shapes are inconsistent."""
+    cat = object.__new__(RomanSourceCatalog)
+    map_paths = {
+        RomanSourceCatalog.north_galactic_pole_id: "north.fits",
+        RomanSourceCatalog.south_galactic_pole_id: "south.fits",
+    }
+    with pytest.raises(ValueError, match=r"ra\.shape must equal dec\.shape"):
+        cat._get_dust_ebv(ra, dec, map_paths)
+
+
+def test_dust_ebv_property_returns_nan_on_failure(monkeypatch):
+    """Return NaNs when CRDS lookup/interpolation fails."""
+
+    def fail_getreferences(*args, **kwargs):
+        raise RuntimeError()
+
     monkeypatch.setattr(
-        SourceCatalogStep, "return_updated_model", return_updated_model, raising=False
+        "romancal.source_catalog._source_catalog.getreferences", fail_getreferences
     )
 
-    result = SourceCatalogStep.call(
-        image_model,
-        bkg_boxsize=50,
-        kernel_fwhm=2.0,
-        snr_threshold=snr_threshold,
-        npixels=npixels,
-        save_results=save_results,
-    )
+    cat = object.__new__(RomanSourceCatalog)
+    cat.ra = np.array([1.0, 2.0, 3.0], dtype=float)
+    cat.dec = np.array([4.0, 5.0, 6.0], dtype=float)
+    cat.n_sources = 3
 
-    # assert that we returned the correct object
-    assert isinstance(result, expected_result)
-
-    # assert that the desired output files were saved to disk and that
-    # they are of the correct type
-    for suffix in expected_outputs.keys():
-        if suffix == "cat":
-            ext = "parquet"
-        else:
-            ext = "asdf"
-
-        # annoying case.  Sometimes we have meta.filename as just "none" and
-        # this test relies on the filename actually being at none_cat.parquet, etc.
-        # But if we return a source catalog with a correct meta.filename (e.g.,
-        # none_cat.parquet), this test needs to know how to translate that back
-        # to the equivalent segmentation file.
-        basefilename = result.meta.filename.split("_")[0]
-        filepath = Path(function_jail / f"{basefilename}_{suffix}.{ext}")
-        assert filepath.exists()
-
-        if suffix == "cat":
-            # the catalog is saved as a parquet file
-            tbl = pyarrow.parquet.read_table(filepath)
-            assert isinstance(tbl, pyarrow.Table)
-        else:
-            assert isinstance(rdm.open(filepath), expected_outputs.get(suffix))
-
-
-@pytest.mark.parametrize(
-    "snr_threshold, npixels, nsources, save_results, return_updated_model, expected_result, expected_outputs",
-    (
-        (
-            3,
-            10,
-            7,
-            True,
-            True,
-            MosaicModel,
-            {
-                "cat": MosaicSourceCatalogModel,
-                "segm": MosaicSegmentationMapModel,
-                "sourcecatalog": MosaicModel,
-            },
-        ),
-        (
-            3,
-            50,
-            5,
-            True,
-            False,
-            MosaicSourceCatalogModel,
-            {
-                "cat": MosaicSourceCatalogModel,
-                "segm": MosaicSegmentationMapModel,
-            },
-        ),
-        (
-            10,
-            10,
-            7,
-            False,
-            True,
-            MosaicModel,
-            {
-                "cat": MosaicSourceCatalogModel,
-                "segm": MosaicSegmentationMapModel,
-            },
-        ),
-        (
-            20,
-            10,
-            5,
-            False,
-            False,
-            MosaicSourceCatalogModel,
-            {
-                "cat": MosaicSourceCatalogModel,
-                "segm": MosaicSegmentationMapModel,
-            },
-        ),
-    ),
-)
-def test_l3_source_catalog_keywords(
-    mosaic_model,
-    snr_threshold,
-    npixels,
-    nsources,
-    save_results,
-    return_updated_model,
-    expected_result,
-    expected_outputs,
-    monkeypatch,
-    function_jail,
-):
-    """
-    Test that the proper object is returned in the call to SourceCatalogStep
-    and that the desired output files are saved to the disk with the correct type.
-    """
-    # this step attribute controls whether to return a datamodel or source catalog
-    monkeypatch.setattr(
-        SourceCatalogStep, "return_updated_model", return_updated_model, raising=False
-    )
-
-    result = SourceCatalogStep.call(
-        mosaic_model,
-        bkg_boxsize=50,
-        kernel_fwhm=2.0,
-        snr_threshold=snr_threshold,
-        npixels=npixels,
-        save_results=save_results,
-    )
-
-    # assert that we returned the correct object
-    assert isinstance(result, expected_result)
-
-    # assert that the desired output files were saved to disk and that
-    # they are of the correct type
-    for suffix in expected_outputs.keys():
-        if suffix == "cat":
-            ext = "parquet"
-        else:
-            ext = "asdf"
-
-        basefilename = result.meta.filename.split("_")[0]
-        filepath = Path(function_jail / f"{basefilename}_{suffix}.{ext}")
-        assert filepath.exists()
-
-        if suffix == "cat":
-            # the catalog is saved as a parquet file
-            tbl = pyarrow.parquet.read_table(filepath)
-            assert isinstance(tbl, pyarrow.Table)
-        else:
-            assert isinstance(rdm.open(filepath), expected_outputs.get(suffix))
-
-
-@pytest.mark.parametrize(
-    "return_updated_model, expected_result",
-    (
-        (
-            True,
-            ImageModel,
-        ),
-        (
-            False,
-            ImageSourceCatalogModel,
-        ),
-    ),
-)
-def test_l2_source_catalog_return_updated_model_attribute(
-    image_model,
-    return_updated_model,
-    expected_result,
-    function_jail,
-):
-    """
-    Test that the proper object is returned in the call to SourceCatalogStep.
-    """
-    step = SourceCatalogStep(
-        bkg_boxsize=50,
-        kernel_fwhm=2.0,
-        snr_threshold=3,
-        npixels=10,
-    )
-
-    if return_updated_model:
-        # mimic what happens in the ELP -- i.e. set the "hidden" parameter
-        # to cause this step to return a model instead of a catalog
-        step.return_updated_model = return_updated_model
-
-    result = step.run(image_model)
-
-    # assert that we returned the correct object
-    assert isinstance(result, expected_result)
+    result = cat.dust_ebv
+    assert result.dtype == np.float32
+    assert result.shape == (3,)
+    assert np.all(np.isnan(result))

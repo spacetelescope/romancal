@@ -97,6 +97,40 @@ def test_model_difference(tmp_path):
     )
 
 
+def test_crds_context_difference(tmp_path, ignore_asdf_paths):
+    """
+    Test that a crds context difference is only reported if another difference is found.
+    """
+    ignores = {"ignore": ["roman.meta.filename", *ignore_asdf_paths["ignore"]]}
+    pmap_0 = "roman_1234.pmap"
+    pmap_1 = "roman_5678.pmap"
+    model = rdm.ImageModel.create_fake_data()
+    model.meta.wcs = None
+    model.meta.ref_file.crds.context = pmap_0
+    fn0 = tmp_path / "a.asdf"
+    fn1 = tmp_path / "b.asdf"
+    model.save(fn0)
+
+    # just change context
+    model.meta.ref_file.crds.context = pmap_1
+    model.save(fn1)
+
+    # no difference
+    diff = compare_asdf(fn0, fn1, **ignores)
+    assert diff.identical
+
+    # change one other value
+    model.meta.ref_file.flat = "abc.asdf"
+    model.save(fn1)
+
+    # a difference should be reported
+    diff = compare_asdf(fn0, fn1, **ignores)
+    assert not diff.identical
+    report = diff.report()
+    assert f"crds_context: {pmap_0}" in report
+    assert f"crds_context: {pmap_1}" in report
+
+
 @pytest.mark.parametrize("n_diffs", [1, 3, 7])
 def test_n_diffs(tmp_path, n_diffs):
     fn0 = tmp_path / "test0.asdf"

@@ -397,6 +397,7 @@ def test_skymatch_2x(wfi_rate, skymethod, subtract):
     [
         "ModelLibrary",
         "ASNFile",
+        "ASN",
         "DataModelList",
         "ASDFFilenameList",
     ],
@@ -423,6 +424,16 @@ def test_skymatch_always_returns_modellibrary_with_updated_datamodels(
 
     step_input_map = {
         "ModelLibrary": library,
+        "ASN": create_mock_asn_file(
+            None,
+            members_mapping=[
+                {"expname": im1a.meta.filename, "exptype": "science"},
+                {"expname": im1b.meta.filename, "exptype": "science"},
+                {"expname": im2a.meta.filename, "exptype": "science"},
+                {"expname": im2b.meta.filename, "exptype": "science"},
+                {"expname": im3.meta.filename, "exptype": "science"},
+            ],
+        ),
         "ASNFile": create_mock_asn_file(
             function_jail,
             members_mapping=[

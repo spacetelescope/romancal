@@ -12,11 +12,10 @@ log.setLevel(logging.DEBUG)
 ATOD_LIMIT = 65535.0  # Hard DN limit of 16-bit A-to-D converter
 
 
-def flag_saturation(input_model, ref_model):
+def flag_saturation(input_model, ref_model, n_pix_grow_sat=0, backup=0):
     """
-    Short Summary
-    -------------
-    Function to call stcal for flagging saturated pixels.
+    Flag saturated pixels, wrapping stcal.  Optionally extend flagging backwards
+    in order to be conservative.
 
     Parameters
     ----------
@@ -25,6 +24,12 @@ def flag_saturation(input_model, ref_model):
 
     ref_model : `~roman_datamodels.datamodels.SaturationRefModel`
         Saturation reference file data model
+
+    n_pix_grow_sat : int
+        Number of pixels to grow each saturated pixel by.
+
+    backup : int
+        Number of resultants to flag before each saturated resultant.
 
     Returns
     -------
@@ -44,6 +49,8 @@ def flag_saturation(input_model, ref_model):
     sat_thresh = ref_model.data.copy()
     sat_dq = ref_model.dq.copy()
 
+    read_pattern = input_model.meta.exposure.read_pattern
+
     # Obtain dq arrays updated for saturation
     # The third variable is the processed ZEROFRAME, which is not
     # used in romancal, so is always None.
@@ -55,8 +62,8 @@ def flag_saturation(input_model, ref_model):
         sat_dq,
         ATOD_LIMIT,
         pixel,
-        n_pix_grow_sat=0,
-        read_pattern=input_model.meta.exposure.read_pattern,
+        n_pix_grow_sat=n_pix_grow_sat,
+        read_pattern=read_pattern,
     )
 
     # Save the flags in the output GROUPDQ array
@@ -64,5 +71,18 @@ def flag_saturation(input_model, ref_model):
 
     # Save the NO_SAT_CHECK flags in the output PIXELDQ array
     input_model.pixeldq = pdq_new[0, :]
+
+    # back saturation flagging up some frames to be safe since if the
+    # non-linearity curve is sharp enough
+    # the existing algorithm can fail on a large group
+    # important to run this in ascending order
+    for _ in range(backup):
+        for i in range(len(read_pattern) - 1):
+            if len(read_pattern[i]) > 1:
+                input_model.groupdq[i, :, :] |= (
+                    input_model.groupdq[i + 1, :, :] & pixel.SATURATED
+                )
+
+    input_model.meta.cal_step.saturation = "COMPLETE"
 
     return input_model

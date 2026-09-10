@@ -10,6 +10,5 @@ Resample
    main.rst
    arguments.rst
    resample_step.rst
-   resample_utils.rst
 
 .. automodapi:: romancal.resample

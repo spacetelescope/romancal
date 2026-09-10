@@ -20,7 +20,8 @@ flat-field reference file to the science image. The processing steps are:
 - Reset the values of pixels in the flat that have DQ="NO_FLAT_FIELD" to
   1.0, so that they have no effect when applied to the science data.
 
-- Apply the flat by dividing it into the science exposure SCI and ERR arrays.
+- Apply the flat by dividing it into the science exposure SCI and ERR arrays,
+  and into the DUMO (uniform-minus-optimal slope) array if present.
 
 - Propagate the FLAT reference file DQ values into the science exposure
   DQ array using a bitwise OR operation.
@@ -36,6 +37,9 @@ and flat-field reference file data using the following formula:
 
 .. math::
    SCI^{\prime}_{science} = SCI_{science} / SCI_{flat}
+
+.. math::
+   DUMO^{\prime}_{science} = DUMO_{science} / SCI_{flat}
 
 The flat-field data is also applied to the VAR_POISSON and VAR_RNOISE
 variance arrays,

@@ -116,6 +116,56 @@ def test_get_values_nozip(engdb):
     assert_xfail(isinstance(result.value[0], str))
 
 
+@pytest.mark.parametrize(
+    "envs, expected",
+    [
+        ({"MAST_AUTH_TOKEN": None, "MAST_API_TOKEN": None}, {}),
+        (
+            {"MAST_AUTH_TOKEN": "MAST_AUTH_TOKEN", "MAST_API_TOKEN": None},
+            {"x-asb-auth": "MAST_AUTH_TOKEN"},
+        ),
+        (
+            {"MAST_AUTH_TOKEN": None, "MAST_API_TOKEN": "MAST_API_TOKEN"},
+            {"Authorization": "token MAST_API_TOKEN"},
+        ),
+        (
+            {"MAST_AUTH_TOKEN": "MAST_AUTH_TOKEN", "MAST_API_TOKEN": "MAST_API_TOKEN"},
+            {"x-asb-auth": "MAST_AUTH_TOKEN"},
+        ),
+    ],
+)
+def test_headers_env(envs, expected, monkeypatch):
+    """Check that headers are being appropriately set from environment"""
+    for env, value in envs.items():
+        if value is None:
+            monkeypatch.delenv(env, raising=False)
+        else:
+            monkeypatch.setenv(env, value)
+
+    edb = engdb_mast.EngdbMast(check_aliveness=False)
+
+    assert edb._metareq.headers == expected
+
+
+@pytest.mark.parametrize(
+    "kwargs, expected",
+    [
+        ({}, {}),
+        ({"token": "token"}, {"Authorization": "token token"}),
+        ({"token": "token", "rsdp_auth": True}, {"x-asb-auth": "token"}),
+    ],
+)
+def test_headers_kwargs(kwargs, expected, monkeypatch):
+    """Check that headers are being appropriately set"""
+    # Ensure tokens do not get confused by external settings
+    monkeypatch.delenv("MAST_AUTH_TOKEN", raising=False)
+    monkeypatch.delenv("MAST_API_TOKEN", raising=False)
+
+    edb = engdb_mast.EngdbMast(check_aliveness=False, **kwargs)
+
+    assert edb._metareq.headers == expected
+
+
 def test_negative_aliveness():
     """Ensure failure occurs with a bad url"""
     with pytest.raises(RuntimeError):
@@ -123,6 +173,30 @@ def test_negative_aliveness():
             eng_base_url="https://127.0.0.1/_engdb_mast_test",
             token="dummytoken",  # noqa: S106
         )
+
+
+@pytest.mark.parametrize(
+    "env, var, value, default",
+    [
+        ("ENG_BASE_URL", "eng_base_url", None, engdb_mast.MAST_BASE_URL + "/"),
+        ("ENG_BASE_URL", "eng_base_url", "something/", None),
+        ("ENG_DATA_URI", "data_uri", None, engdb_mast.DATA_URI),
+        ("ENG_DATA_URI", "data_uri", "something", None),
+        ("ENG_META_URI", "meta_uri", None, engdb_mast.META_URI),
+        ("ENG_META_URI", "meta_uri", "something", None),
+    ],
+)
+def test_uri_from_environment(env, var, value, default, monkeypatch):
+    """Test settings from environment variables"""
+    if value is None:
+        monkeypatch.delenv(env, raising=False)
+        value = default
+    else:
+        monkeypatch.setenv(env, value)
+
+    s = engdb_mast.EngdbMast(check_aliveness=False)
+
+    assert getattr(s, var) == value
 
 
 # ######################

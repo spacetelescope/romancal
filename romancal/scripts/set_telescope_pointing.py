@@ -12,14 +12,14 @@ for a list of exposures.
 
 import argparse
 import logging
-import warnings
 from pathlib import Path
 
+import romancal.orientation._lib as olib
 import romancal.orientation.set_telescope_pointing as stp
 from romancal.lib.engdb.engdb_tools import AVAILABLE_SERVICES
 
 
-def main():
+def _main():
     """Set the initial world coordinate system."""
     parser = argparse.ArgumentParser(
         description=(
@@ -50,6 +50,13 @@ def main():
         help="Commanded position of the guide start in (H,V) space",
     )
     parser.add_argument(
+        "--override-bam",
+        dest="bam_ref",
+        type=str,
+        default=None,
+        help="Use specified file instead of retrieving the BAM reference from CRDS",
+    )
+    parser.add_argument(
         "-q",
         "--quaternion",
         dest="default_quaternion",
@@ -68,6 +75,13 @@ def main():
         default="mast",
         choices=[name for name in AVAILABLE_SERVICES],
         help="Database service to use. Default: %(default)s",
+    )
+    parser.add_argument(
+        "--siaf",
+        dest="siaf_path",
+        type=str,
+        default=None,
+        help="Folder for alternate pysiaf XML files",
     )
     parser.add_argument(
         "--tolerance",
@@ -95,6 +109,41 @@ def main():
                 " Otherwise, a hardwired default is used."
             ),
         )
+        parser.add_argument(
+            "--eng-data-uri",
+            dest="data_uri",
+            type=str,
+            default=None,
+            help=(
+                "The URI component required to retrieve the engineering data."
+                " If not specified, the environment variable 'ENG_DATA_URI' is used."
+                " Otherwise, a hardwired default is used."
+            ),
+        )
+        parser.add_argument(
+            "--eng-meta-uri",
+            dest="meta_uri",
+            type=str,
+            default=None,
+            help=(
+                "The URI component required to retrieve the engineering metadata."
+                " If not specified, the environment variable 'ENG_META_URI' is used."
+                " Otherwise, a hardwired default is used."
+            ),
+        )
+        parser.add_argument(
+            "--token",
+            type=str,
+            default=None,
+            help=(
+                "MAST token to use for access."
+                " If not specified, the environment variable 'MAST_API_TOKEN' is used."
+                " Otherwise, no token is used."
+            ),
+        )
+        parser.add_argument(
+            "--rsdp-auth", action="store_true", help="Use RSDP authentication"
+        )
 
     # Arguments pertinent only to the EngdbEDP service
     if "edp" in AVAILABLE_SERVICES:
@@ -120,7 +169,7 @@ def main():
     logger_format_debug = logging.Formatter(
         "%(levelname)s:%(filename)s::%(funcName)s: %(message)s"
     )
-    level = stp.LOGLEVELS[min(len(stp.LOGLEVELS) - 1, args.verbose)]
+    level = olib.LOGLEVELS[min(len(olib.LOGLEVELS) - 1, args.verbose)]
     logger.setLevel(level)
     if level <= logging.DEBUG:
         logger_handler.setFormatter(logger_format_debug)
@@ -128,7 +177,15 @@ def main():
 
     # Gather the service-specific args
     service_kwargs = {"service": args.service}
-    for arg in ["eng_base_url", "environment", "path_to_cc"]:
+    for arg in [
+        "eng_base_url",
+        "data_uri",
+        "meta_uri",
+        "environment",
+        "path_to_cc",
+        "token",
+        "rsdp_auth",
+    ]:
         try:
             service_kwargs[arg] = getattr(args, arg)
         except AttributeError:
@@ -154,9 +211,11 @@ def main():
                 # all keyword arguments below are defined in
                 # set_telescope_pointing.TransformParameters
                 allow_default=args.allow_default,
+                bam_ref=args.bam_ref,
                 default_quaternion=args.default_quaternion,
                 gscommanded=args.gscommanded,
                 service_kwargs=service_kwargs,
+                siaf_path=args.siaf_path,
                 tolerance=args.tolerance,
             )
         except (TypeError, ValueError) as exception:
@@ -164,16 +223,5 @@ def main():
             logger.debug("Full exception:", exc_info=exception)
 
 
-def deprecated_name():
-    """Raise warning if filename.* is no longer used, and provide correct one."""
-    filename = Path(__file__)
-    warnings.warn(
-        f"usage of `{filename.name}` is deprecated; use `{filename.stem}` instead",
-        stacklevel=2,
-    )
-
-    main()
-
-
 if __name__ == "__main__":
-    main()
+    _main()

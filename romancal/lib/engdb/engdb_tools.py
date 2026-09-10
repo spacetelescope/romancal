@@ -56,8 +56,8 @@ logger.addHandler(logging.NullHandler())
 
 # Define the available services
 AVAILABLE_SERVICES = {
-    "edp": EngdbEDP,
     "mast": EngdbMast,
+    "edp": EngdbEDP,
 }
 
 # Expected errors from service initialization

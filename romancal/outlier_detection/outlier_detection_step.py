@@ -4,7 +4,7 @@ import logging
 from functools import partial
 
 from romancal.datamodels.fileio import open_dataset
-from romancal.outlier_detection.utils import detect_outliers
+from romancal.outlier_detection.outlier_detection import detect_outliers
 
 from ..stpipe import RomanStep
 
@@ -43,7 +43,7 @@ class OutlierDetectionStep(RomanStep):
         save_intermediate_results = boolean(default=False) # Specifies whether or not to write out intermediate products to disk
         resample_data = boolean(default=True) # Specifies whether or not to resample the input images when performing outlier detection
         resample_on_skycell = boolean(default=True) # if association contains skycell information use the skycell wcs for resampling
-        good_bits = string(default="~DO_NOT_USE+NON_SCIENCE")  # DQ bit value to be considered 'good'
+        good_bits = string(default="~DO_NOT_USE")  # DQ bit value to be considered 'good'
         in_memory = boolean(default=True) # Specifies whether or not to keep all intermediate products and datamodels in memory, ignored if run as part of a pipeline
         pixmap_stepsize = float(default=10)  # step size for computation of the pixel map
         pixmap_order = integer(1, 3, default=3)  # interpolating spline order (1 or 3) used when pixmap_stepsize > 1
@@ -80,16 +80,6 @@ class OutlierDetectionStep(RomanStep):
             list(library.map_function(set_skip))
 
             return library
-
-        # check that all inputs are WFI_IMAGE
-        def get_exptype(model, index):
-            return model.meta.exposure.type
-
-        exptypes = list(library.map_function(get_exptype, modify=False))
-        if any(exptype != "WFI_IMAGE" for exptype in exptypes):
-            raise ValueError(
-                f"outlier_detection only supports WFI_IMAGE exposure types: {set(exptypes)}"
-            )
 
         # Setup output path naming if associations are involved.
         asn_id = library.asn.get("asn_id", None)

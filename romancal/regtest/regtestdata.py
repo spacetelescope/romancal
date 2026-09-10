@@ -1,9 +1,6 @@
 import os
-import os.path as op
 import pprint
-import sys
 from contextlib import chdir
-from glob import glob as _sys_glob
 from pathlib import Path
 from textwrap import dedent
 
@@ -13,18 +10,16 @@ import astropy.time
 import deepdiff
 import gwcs
 import numpy as np
-import requests
+import roman_datamodels as rdm
 from astropy.units import Quantity
 from ci_watson.artifactory_helpers import (
-    BigdataError,
-    check_url,
     get_bigdata,
     get_bigdata_root,
 )
 from deepdiff.operator import BaseOperator
 from gwcs.wcstools import grid_from_bounding_box
 
-from romancal.associations.load_asn import load_asn
+from romancal.associations._load_asn import load_asn
 
 # from romancal.lib.suffix import replace_suffix
 
@@ -173,35 +168,6 @@ class RegtestData:
 
         return self.input
 
-    def data_glob(self, path=None, glob="*", docopy=None):
-        """Get a list of files"""
-        if path is None:
-            path = self.input_remote
-        else:
-            self.input_remote = path
-        if docopy is None:
-            docopy = self.docopy
-
-        # Get full path and proceed depending on whether
-        # is a local path or URL.
-        root = self.bigdata_root
-        if op.exists(root):
-            root_path = op.join(root, self._inputs_root, self._env)
-            root_len = len(root_path) + 1
-            path = op.join(root_path, path)
-            file_paths = _data_glob_local(path, glob)
-        elif check_url(root):
-            root_len = len(self._env) + 1
-            file_paths = _data_glob_url(
-                self._inputs_root, self._env, path, glob, root=root
-            )
-        else:
-            raise BigdataError(f"Path cannot be found: {path}")
-
-        # Remove the root from the paths
-        file_paths = [file_path[root_len:] for file_path in file_paths]
-        return file_paths
-
     def get_truth(self, path=None, docopy=None):
         """Copy truth data from Artifactory remote resource to the CWD/truth
 
@@ -277,81 +243,6 @@ class RegtestData:
     def open(cls, filename):
         with asdf.open(filename) as af:
             return cls(**af.tree)
-
-
-def _data_glob_local(*glob_parts):
-    """Perform a glob on the local path
-
-    Parameters
-    ----------
-    glob_parts: (path-like,[...])
-        List of components that will be built into a single path
-
-    Returns
-    -------
-    file_paths: [str[, ...]]
-        Full file paths that match the glob criterion
-    """
-    full_glob = Path().joinpath(*glob_parts)
-    return _sys_glob(str(full_glob))
-
-
-def _data_glob_url(*url_parts, root=None):
-    """
-    Parameters
-    ----------
-    url: (str[,...])
-        List of components that will be used to create a URL path
-
-    root: str
-        The root server path to the Artifactory server.
-        Normally retrieved from `get_bigdata_root`.
-
-    Returns
-    -------
-    url_paths: [str[, ...]]
-        Full URLS that match the glob criterion
-    """
-    # Fix root root-ed-ness
-    if root.endswith("/"):
-        root = root[:-1]
-
-    # Access
-    try:
-        envkey = os.environ["API_KEY_FILE"]
-    except KeyError:
-        envkey = ARTIFACTORY_API_KEY_FILE
-
-    try:
-        with open(envkey) as fp:
-            headers = {"X-JFrog-Art-Api": fp.readline().strip()}
-    except (PermissionError, FileNotFoundError):
-        print(
-            "Warning: Anonymous Artifactory search requests are limited to "
-            "1000 results. Use an API key and define API_KEY_FILE environment"
-            "variable to get full search results.",
-            file=sys.stderr,
-        )
-        headers = None
-
-    search_url = "/".join([root, "api/search/pattern"])
-
-    # Join and re-split the url so that every component is identified.
-    url = "/".join([root] + [idx for idx in url_parts])
-    all_parts = url.split("/")
-
-    # Pick out "roman-pipeline", the repo name
-    repo = all_parts[4]
-
-    # Format the pattern
-    pattern = repo + ":" + "/".join(all_parts[5:])
-
-    # Make the query
-    params = {"pattern": pattern}
-    with requests.get(search_url, params=params, headers=headers, timeout=TIMEOUT) as r:
-        url_paths = r.json()["files"]
-
-    return url_paths
 
 
 class NDArrayTypeOperator(BaseOperator):
@@ -497,23 +388,33 @@ class DiffResult:
         return not self.diff
 
     @staticmethod
-    def _model_type(file):
-        import roman_datamodels as rdm
-
+    def _file_info(file):
         try:
-            with rdm.open(file) as mdl:
-                return mdl.__class__.__name__
+            with rdm.open(file) as model:
+                model_type = type(model).__name__
+                crds_context = (
+                    model.get("meta", {})
+                    .get("ref_file", {})
+                    .get("crds", {})
+                    .get("context", "Unknown context")
+                )
         except Exception:
-            return "Not a model"
+            model_type = "Not a model"
+            crds_context = "Unknown context"
+        return model_type, crds_context
 
     def report(self, **kwargs):
+        result_model_type, result_crds_context = self._file_info(self.result)
+        truth_model_type, truth_crds_context = self._file_info(self.truth)
         title = dedent(
             f"""
             Diff report for:
                 result file: {self.result}
-                    model type: {self._model_type(self.result)}
+                    model type: {result_model_type}
+                    crds_context: {result_crds_context}
                 truth file: {self.truth}
-                    model type: {self._model_type(self.result)}
+                    model type: {truth_model_type}
+                    crds_context: {truth_crds_context}
             """
         )
         report = pprint.pformat(self.diff)

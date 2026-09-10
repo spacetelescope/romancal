@@ -2,7 +2,7 @@ import pytest
 import roman_datamodels as rdm
 
 from romancal.pipeline.mosaic_pipeline import MosaicPipeline
-from romancal.resample.l3_wcs import l3wcsinfo_to_wcs
+from romancal.resample._l3_wcs import l3wcsinfo_to_wcs
 
 from . import util
 from .regtestdata import compare_asdf

@@ -13,8 +13,9 @@ from .regtestdata import compare_asdf
 # mark all tests in this module
 pytestmark = [pytest.mark.bigdata]
 
-IMAGE_FILENAME = "r0000101001001001001_0001_wfi01_f158_assignwcs.asdf"
-GRISM_FILENAME = "r0000201001001001001_0001_wfi01_grism_assignwcs.asdf"
+# photom stage is input to flat fielding
+IMAGE_FILENAME = "r0000101001001001001_0001_wfi01_f158_photom.asdf"
+GRISM_FILENAME = "r0000201001001001001_0001_wfi01_grism_photom.asdf"
 
 
 @pytest.fixture(

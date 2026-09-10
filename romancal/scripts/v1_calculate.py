@@ -8,21 +8,22 @@ from sys import stdout
 
 from astropy.time import Time
 
-import romancal.orientation.set_telescope_pointing as stp
+import romancal.orientation._lib as olib
+import romancal.orientation._pointing as plib
 from romancal.lib.engdb.engdb_tools import AVAILABLE_SERVICES
-from romancal.orientation import v1_calculate
+from romancal.orientation import _v1_calculate as v1c
 
 # Available reduce functions
 REDUCE_FUNCS_MAPPING = {
-    "all": stp.all_pointings,
-    "first": stp.first_pointing,
-    "average": stp.pointing_from_average,
+    "all": plib.all_pointings,
+    "first": plib.first_pointing,
+    "average": plib.pointing_from_average,
 }
 REDUCE_FUNCS = list(REDUCE_FUNCS_MAPPING.keys())
 
 
 # Begin execution
-def main():
+def _main():
     """Calculate V1, the telescope's boresight axis, the direction the telescope is pointing."""
     parser = argparse.ArgumentParser(description="Calculate V1 over a time period.")
 
@@ -105,7 +106,7 @@ def main():
     logger_format_debug = logging.Formatter(
         "%(levelname)s:%(filename)s::%(funcName)s: %(message)s"
     )
-    level = stp.LOGLEVELS[min(len(stp.LOGLEVELS) - 1, args.verbose)]
+    level = olib.LOGLEVELS[min(len(olib.LOGLEVELS) - 1, args.verbose)]
     logger.setLevel(level)
     if level <= logging.DEBUG:
         logger_handler.setFormatter(logger_format_debug)
@@ -145,23 +146,23 @@ def main():
     # Process the file list.
     logger.info("Starting V1 calculation...")
     if input_as_files:
-        v1s = v1_calculate.v1_calculate_from_models(
+        v1s = v1c.v1_calculate_from_models(
             args.time_sources,
             reduce_func=REDUCE_FUNCS_MAPPING[args.pointing],
             service_kwargs=service_kwargs,
         )
     else:
-        v1s = v1_calculate.v1_calculate_over_time(
+        v1s = v1c.v1_calculate_over_time(
             obsstart,
             obsend,
             reduce_func=REDUCE_FUNCS_MAPPING[args.pointing],
             service_kwargs=service_kwargs,
         )
 
-    formatted = v1_calculate.simplify_table(v1s)
+    formatted = v1c.simplify_table(v1s)
     formatted.write(args.output, format="ascii.ecsv")
     logger.info("...V1 calculation completed.")
 
 
 if __name__ == "__main__":
-    main()
+    _main()

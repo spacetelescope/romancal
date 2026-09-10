@@ -3,7 +3,7 @@ import glob
 import logging
 import re
 
-from . import asn_from_list
+from romancal.associations import asn_from_list
 
 # Configure logging
 logger = logging.getLogger(__name__)

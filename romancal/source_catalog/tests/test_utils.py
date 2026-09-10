@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 
-from romancal.source_catalog.utils import copy_model_arrays
+from romancal.source_catalog._utils import copy_model_arrays
 
 rng = np.random.default_rng(12345)
 

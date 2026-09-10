@@ -35,6 +35,7 @@ fieldlist = [
     "aper02_f213m_flux",  # DMS539 PSF-matched photometry
     "segment_f213m_flux",  # DMS539
     "kron_f213m_flux",  # DMS539
+    "dust_ebv",  # dust extinction values
 ]
 
 
@@ -52,6 +53,8 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request, dms_logger)
         inputasnfn,
         "--deblend",
         "True",  # use deblending, DMS 393
+        "--kernel_fwhms",
+        "2.0,5.0",  # DMS 391: explicitly test both PSF-like and extended-source kernels
         "--inject_sources",  # turn on source injection, DMS 396
         "True",
     ]

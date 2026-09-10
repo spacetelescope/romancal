@@ -10,14 +10,14 @@ from romancal.orientation import pointing_summary
 
 
 # Begin execution
-def main():
+def _main():
     """Run pointing verification."""
     parser = argparse.ArgumentParser(
         description="""Summarize various pointing information in a table. Compare
                     the calculated V1 and REFPOINT pointing with the proposed TARGET pointing.
                     E.g.
-                    $ pointing_summary exp1.fits
-                    $ pointing_summary *.fits
+                    $ pointing_summary exp1.asdf
+                    $ pointing_summary *.asdf
                     """
     )
 
@@ -63,4 +63,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    _main()

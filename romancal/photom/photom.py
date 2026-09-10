@@ -5,7 +5,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-def photom_io(input_model, photom_metadata):
+def _photom_io(input_model, photom_metadata):
     """
     Combine photometric scalar conversion factors and add to the science metadata.
 
@@ -25,21 +25,21 @@ def photom_io(input_model, photom_metadata):
     conversion = photom_metadata["photmjsr"]  # unit is MJy / sr
 
     # Store the conversion factor in the meta data
-    log.info(f"photmjsr value: {conversion:.6g}")
+    log.info(f"photmjsr value: {conversion}")
     input_model.meta.photometry.conversion_megajanskys = conversion
 
     # Get the scalar conversion uncertainty factor
     uncertainty_conv = photom_metadata["uncertainty"]
 
     # Store the uncertainty conversion factor in the meta data
-    log.info(f"uncertainty value: {uncertainty_conv:.6g}")
+    log.info(f"uncertainty value: {uncertainty_conv}")
     input_model.meta.photometry.conversion_megajanskys_uncertainty = uncertainty_conv
 
     # Return updated input model
     return input_model
 
 
-def save_area_info(input_model, photom_parameters):
+def _save_area_info(input_model, photom_parameters):
     """
     Read the pixel area value in the photom parameters, then convert and
     copy them to the metadata of the input datamodel.
@@ -99,10 +99,10 @@ def apply_photom(input_model, photom):
         return input_model
 
     # Copy pixel area information to output datamodel
-    output_model = save_area_info(input_model, photom_parameters)
+    output_model = _save_area_info(input_model, photom_parameters)
 
     # Copy conversions to output model
-    output_model = photom_io(output_model, photom_parameters)
+    output_model = _photom_io(output_model, photom_parameters)
 
     # Return updated output model
     return output_model

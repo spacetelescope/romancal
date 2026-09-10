@@ -53,6 +53,12 @@ def test_flatfield_step_interface(instrument, exptype):
     assert result.var_flat.shape == shape
     assert result.meta.cal_step.flat_field == "COMPLETE"
 
+    # test that dumo is also divided by the flat
+    wfi_image_model.dumo = np.ones(shape, dtype=np.float16) * 4.0
+    flatref_model["data"] = np.ones(shape, dtype=np.float32) * 2.0
+    result = FlatFieldStep.call(wfi_image_model, override_flat=flatref_model)
+    np.testing.assert_allclose(result.dumo, 2.0, rtol=1e-2)
+
     # test that the step is skipped if the reference file is N/A
     result = FlatFieldStep.call(wfi_image_model, override_flat="N/A")
 
@@ -117,39 +123,3 @@ def test_skip_var_flat(include_var_flat):
     wfi_image_model.meta.cal_logs = []
     result = FlatFieldStep.call(wfi_image_model, include_var_flat=include_var_flat)
     assert hasattr(result, "var_flat") == include_var_flat
-
-
-@pytest.mark.parametrize(
-    "instrument",
-    [
-        "WFI",
-    ],
-)
-@pytest.mark.parametrize(
-    "exptype",
-    [
-        "WFI_GRISM",
-        "WFI_PRISM",
-    ],
-)
-def test_spectroscopic_skip(instrument, exptype):
-    shape = (20, 20)
-
-    wfi_image_model = ImageModel.create_fake_data(shape=shape)
-    wfi_image_model.meta.instrument.name = instrument
-    wfi_image_model.meta.instrument.detector = "WFI01"
-    wfi_image_model.meta.instrument.optical_element = "F158"
-
-    wfi_image_model.meta.exposure.start_time = Time("2024-02-01T00:00:00.000")
-    wfi_image_model.meta.exposure.end_time = Time("2024-02-01T00:00:05.000")
-
-    wfi_image_model.meta.exposure.type = exptype
-    wfi_image_model.meta.cal_step = {}
-    for step_name in wfi_image_model.schema_info("required")["roman"]["meta"][
-        "cal_step"
-    ]["required"].info:
-        wfi_image_model.meta.cal_step[step_name] = "INCOMPLETE"
-    wfi_image_model.meta.cal_logs = []
-
-    result = FlatFieldStep.call(wfi_image_model)
-    assert result.meta.cal_step.flat_field == "SKIPPED"

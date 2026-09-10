@@ -19,10 +19,10 @@ import romancal.skycell.skymap as sc
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
-__all__ = ["ImageFootprint", "find_skycell_matches"]
+__all__ = ["find_skycell_matches"]
 
 
-class ImageFootprint:
+class _ImageFootprint:
     """abstraction of an image footprint"""
 
     _radec_corners: NDArray[float]
@@ -41,7 +41,7 @@ class ImageFootprint:
         cls,
         wcs: WCS,
         extra_vertices_per_edge: int = 0,
-    ) -> "ImageFootprint":
+    ) -> "_ImageFootprint":
         """create an image footprint from a GWCS object (and image shape, if no bounding box is present)
 
         Parameters
@@ -196,9 +196,9 @@ def find_skycell_matches(
     """
 
     if isinstance(image_corners, WCS):
-        footprint = ImageFootprint.from_wcs(image_corners, extra_vertices_per_edge=3)
+        footprint = _ImageFootprint.from_wcs(image_corners, extra_vertices_per_edge=3)
     else:
-        footprint = ImageFootprint(image_corners)
+        footprint = _ImageFootprint(image_corners)
 
     if skymap is None:
         skymap = sc.SKYMAP
