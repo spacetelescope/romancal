@@ -82,9 +82,9 @@ def test_output_has_16_resultants(output_model):
         ("linearity", "COMPLETE"),
         ("ramp_fit", "COMPLETE"),
         ("saturation", "COMPLETE"),
+        ("photom", "COMPLETE"),
         # skipped
         ("flat_field", "SKIPPED"),
-        ("photom", "SKIPPED"),
     ),
 )
 def test_step_status(output_model, step_name, status):

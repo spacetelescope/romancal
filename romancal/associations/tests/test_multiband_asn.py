@@ -1,5 +1,7 @@
 import os
 
+import pytest
+
 from romancal.associations import multiband_asn
 
 
@@ -15,20 +17,35 @@ def test_parse_file_list_wildcard(tmp_path):
     assert set(os.path.basename(f) for f in parsed_files) == set(filenames)
 
 
-def test_get_skycell_groups():
+@pytest.mark.parametrize(
+    "files,expected_keys",
+    [
+        (
+            [
+                "r00001_p_full_270p65x48y69_f123_coadd.asdf",
+                "r00001_p_full_270p65x48y69_f456_coadd.asdf",
+                "r00001_p_full_271p66x49y70_f123_coadd.asdf",
+            ],
+            {"270p65x48y69", "271p66x49y70"},
+        ),
+        (
+            [
+                "r00001_p_full_270m65x48y69_f123_coadd.asdf",
+                "r00001_p_full_270m65x48y69_f456_coadd.asdf",
+                "r00001_p_full_271m66x49y70_f123_coadd.asdf",
+            ],
+            {"270m65x48y69", "271m66x49y70"},
+        ),
+    ],
+)
+def test_get_skycell_groups(files, expected_keys):
     """Test that _get_skycell_groups correctly groups files by skycell id."""
-    files = [
-        "r00001_p_full_270p65x48y69_f123_coadd.asdf",
-        "r00001_p_full_270p65x48y69_f456_coadd.asdf",
-        "r00001_p_full_271p66x49y70_f123_coadd.asdf",
-    ]
     assoc = multiband_asn.MultibandAssociation(files)
     groups = assoc._get_skycell_groups(files)
-    assert set(groups.keys()) == {"270p65x48y69", "271p66x49y70"}
-    assert set(groups["270p65x48y69"]) == {
-        "r00001_p_full_270p65x48y69_f123_coadd.asdf",
-        "r00001_p_full_270p65x48y69_f456_coadd.asdf",
-    }
+    assert set(groups.keys()) == expected_keys
+    # Check that all files are present in their respective groups
+    for key in expected_keys:
+        assert all(key in f for f in groups[key])
 
 
 def test_parse_file_list_no_wildcard():

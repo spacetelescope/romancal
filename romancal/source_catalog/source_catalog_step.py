@@ -11,16 +11,16 @@ import numpy as np
 from astropy.table import join
 from photutils.segmentation import SegmentationImage
 from roman_datamodels import datamodels
-from roman_datamodels.datamodels import ImageModel, MosaicModel
+from roman_datamodels.datamodels import ImageModel
 from roman_datamodels.dqflags import pixel
 
 from romancal.datamodels.fileio import open_dataset
-from romancal.source_catalog.background import RomanBackground
-from romancal.source_catalog.detection import convolve_data, make_segmentation_image
+from romancal.source_catalog._background import RomanBackground
+from romancal.source_catalog._detection import convolve_data, make_segmentation_image
+from romancal.source_catalog._skyvals import compute_skyvals
+from romancal.source_catalog._source_catalog import RomanSourceCatalog
+from romancal.source_catalog._utils import copy_model_arrays, get_ee_spline
 from romancal.source_catalog.psf import add_jitter
-from romancal.source_catalog.save_utils import save_all_results, save_empty_results
-from romancal.source_catalog.source_catalog import RomanSourceCatalog
-from romancal.source_catalog.utils import get_ee_spline
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:
@@ -37,9 +37,41 @@ class SourceCatalogStep(RomanStep):
     measurements.
 
     Parameters
-    -----------
+    ----------
     input : str, `ImageModel`, or `MosaicModel`
         Path to an ASDF file, or an `ImageModel` or `MosaicModel`.
+
+    Other Parameters
+    ----------------
+    bkg_boxsize : int, optional
+        Edge length, in pixels, of the square mesh boxes used by
+        `~photutils.background.Background2D` to estimate the global 2D
+        background.
+
+    kernel_fwhm : float, optional
+        Full-width-at-half-maximum, in pixels, of the Gaussian smoothing
+        kernel used for source detection.
+
+    snr_threshold : float, optional
+        Per-pixel signal-to-noise ratio above the background required
+        for a pixel to be considered part of a source.
+
+    npixels : int, optional
+        Minimum number of connected pixels above ``snr_threshold``
+        required for a detection to be retained as a source.
+
+    deblend : bool, optional
+        If `True`, deblend overlapping sources after detection.
+
+    suffix : str, optional
+        Suffix appended to the output filenames.  Default ``'cat'``.
+
+    fit_psf : bool, optional
+        If `True`, fit source PSFs.
+
+    forced_segmentation : str, optional
+        If non-empty, path to a pre-computed segmentation image to use
+        in place of fresh source detection (forced photometry mode).
     """
 
     class_alias = "source_catalog"
@@ -55,7 +87,34 @@ class SourceCatalogStep(RomanStep):
         suffix = string(default='cat')        # Default suffix for output files
         fit_psf = boolean(default=True)       # fit source PSFs for accurate astrometry?
         forced_segmentation = string(default='')  # force the use of this segmentation map
+        compute_skyvals = boolean(default=True)  # compute healpix sky summary arrays
     """
+
+    def save_model(self, model, **kwargs):
+        # depending on model set suffix and ext
+        if isinstance(
+            model,
+            (
+                datamodels.ForcedImageSourceCatalogModel,
+                datamodels.ImageSourceCatalogModel,
+                datamodels.ForcedMosaicSourceCatalogModel,
+                datamodels.MosaicSourceCatalogModel,
+            ),
+        ):
+            kwargs["ext"] = "parquet"
+            kwargs["suffix"] = kwargs.get("suffix", "cat")
+        elif isinstance(
+            model,
+            (datamodels.SegmentationMapModel, datamodels.MosaicSegmentationMapModel),
+        ):
+            kwargs["suffix"] = kwargs.get("suffix", "segm")
+        else:
+            raise NotImplementedError(f"unsupported model: {type(model)}")
+
+        # strip the index since these all have different extensions
+        kwargs.pop("idx")
+
+        return super().save_model(model, **kwargs)
 
     def process(self, dataset):
         input_model = open_dataset(dataset, update_version=self.update_version)
@@ -64,10 +123,10 @@ class SourceCatalogStep(RomanStep):
         if self.fit_psf:
             self.ref_file = self.get_reference_file(input_model, "epsf")
             log.info("Using ePSF reference file: %s", self.ref_file)
-            psf_ref_model = datamodels.open(self.ref_file)
-            psf_ref_model.psf = add_jitter(psf_ref_model, input_model)
+            psf_model = datamodels.open(self.ref_file)
+            psf_model.psf = add_jitter(psf_model, input_model)
         else:
-            psf_ref_model = None
+            psf_model = None
 
         # Define a boolean mask for pixels to be excluded
         mask = (
@@ -76,66 +135,35 @@ class SourceCatalogStep(RomanStep):
             | (input_model.err <= 0)
         )
 
-        # Copy the data and error arrays to avoid modifying the input
-        # model. The metadata and dq and weight arrays are not copied
-        # because they are not modified in this step.
+        # Copy the data and error arrays to avoid modifying the input model
+        model = copy_model_arrays(input_model)
+
+        # Create a DQ mask for ImageModel
         if isinstance(input_model, ImageModel):
-            model = ImageModel()
-            model.meta = input_model.meta
-            model.data = input_model.data.copy()
-            # cast to float32 so unit manipulations later on don't overflow
-            model.err = input_model.err.copy().astype("float32")
-            model.dq = input_model.dq
-
-            # Create a DQ mask for pixels to be excluded; currently all
-            # pixels with any DQ flag are excluded from the source catalog
-            # except for those in ignored_dq_flags.
-            # TODO: revisit these flags when CRDS reference files are updated
-            ignored_dq_flags = pixel.NO_LIN_CORR
-            dq_mask = np.any(model.dq[..., None] & ~ignored_dq_flags, axis=-1)
-
-            # TODO: to set the mask to True for *only* dq_flags use:
-            # dq_mask = np.any(model.dq[..., None] & dq_flags, axis=-1)
+            if model.dq.shape != model.data.shape:
+                msg = (
+                    f"model.dq shape {model.dq.shape} does not match "
+                    f"model.data shape {model.data.shape}; expected a 2D "
+                    "DQ array."
+                )
+                raise ValueError(msg)
+            dq_mask = (model.dq & pixel.DO_NOT_USE) != 0
             mask |= dq_mask
-        elif isinstance(input_model, MosaicModel):
-            model = MosaicModel()
-            model.meta = input_model.meta
-            model.data = input_model.data.copy()
-            model.err = input_model.err.copy()
-            model.weight = input_model.weight
 
         # Initialize the source catalog model, copying the metadata
         # from the input model
-        if isinstance(model, ImageModel):
-            if self.forced_segmentation:
-                cat_model_cls = datamodels.ForcedImageSourceCatalogModel
-            else:
-                cat_model_cls = datamodels.ImageSourceCatalogModel
-        else:
-            if self.forced_segmentation:
-                cat_model_cls = datamodels.ForcedMosaicSourceCatalogModel
-            else:
-                cat_model_cls = datamodels.MosaicSourceCatalogModel
-        cat_model = cat_model_cls.create_minimal({"meta": model.meta})
-        cat_model.meta["image"] = {
-            "filename": model.meta.filename,
-            "file_date": model.meta.file_date,
-        }
-        # copy over the data release id since there is no association input
-        if "data_release_id" in model.meta:
-            cat_model.meta.data_release_id = model.meta.data_release_id
-
-        # make L3 metadata
-        if self.forced_segmentation:
-            cat_model.meta.image.forced_segmentation = self.forced_segmentation
+        cat_model, segmentation_model = self._make_catalog_and_segmentation_models(
+            model
+        )
 
         # Return an empty segmentation image and catalog table if all
         # pixels are masked
         if np.all(mask):
-            msg = "Cannot create source catalog. All pixels are masked."
-            return save_empty_results(
-                self, model.data.shape, cat_model, input_model=input_model, msg=msg
-            )
+            log.error("Cannot create source catalog. All pixels are masked.")
+            cat_model.source_catalog = cat_model.create_empty_catalog()
+            segmentation_model.data = np.zeros(model.data.shape, dtype=np.uint32)
+            self._attach_skyvals_if_enabled(input_model, segmentation_model, mask)
+            return cat_model, segmentation_model
 
         log.info("Calculating and subtracting background")
         bkg = RomanBackground(
@@ -155,13 +183,12 @@ class SourceCatalogStep(RomanStep):
             segment_img = make_segmentation_image(
                 detection_image,
                 snr_threshold=self.snr_threshold,
-                npixels=self.npixels,
+                n_pixels=self.npixels,
                 bkg_rms=bkg.background_rms,
                 deblend=self.deblend,
                 mask=mask,
             )
-            if segment_img is not None:
-                segment_img.detection_image = detection_image
+            segmentation_model["detection_image"] = detection_image
         else:
             forced_segmodel = datamodels.open(self.forced_segmentation)
             # forced_segmodel.data is asdf.tags.core.ndarray.NDArrayType
@@ -179,10 +206,11 @@ class SourceCatalogStep(RomanStep):
         # Return an empty segmentation image and catalog table if no
         # sources are detected
         if segment_img is None:
-            msg = "Cannot create source catalog. No sources were detected."
-            return save_empty_results(
-                self, model.data.shape, cat_model, input_model=input_model, msg=msg
-            )
+            log.error("Cannot create source catalog. No sources were detected.")
+            cat_model.source_catalog = cat_model.create_empty_catalog()
+            segmentation_model.data = np.zeros(model.data.shape, dtype=np.uint32)
+            self._attach_skyvals_if_enabled(input_model, segmentation_model, mask)
+            return cat_model, segmentation_model
 
         log.info("Creating ee_fractions model")
         apcorr_ref = self.get_reference_file(input_model, "apcorr")
@@ -198,8 +226,8 @@ class SourceCatalogStep(RomanStep):
             detection_image,
             self.kernel_fwhm,
             fit_psf=fit_psf,
+            psf_model=psf_model,
             mask=mask,
-            psf_ref_model=psf_ref_model,
             cat_type=cat_type,
             ee_spline=ee_spline,
         )
@@ -209,7 +237,8 @@ class SourceCatalogStep(RomanStep):
             # TODO: improve this so that the moment-based properties are
             # not recomputed from the forced_detection_image
             forced_detection_image = forced_segmodel.detection_image
-            segment_img.detection_image = forced_detection_image
+            # record detection image used
+            segmentation_model["detection_image"] = forced_detection_image
             forced_catobj = RomanSourceCatalog(
                 model,
                 cat_model,
@@ -217,8 +246,8 @@ class SourceCatalogStep(RomanStep):
                 forced_detection_image,
                 self.kernel_fwhm,
                 fit_psf=self.fit_psf,
+                psf_model=psf_model,
                 mask=mask,
-                psf_ref_model=psf_ref_model,
                 cat_type="forced_full",
                 ee_spline=ee_spline,
             )
@@ -251,4 +280,60 @@ class SourceCatalogStep(RomanStep):
         # Put the resulting catalog table in the catalog model
         cat_model.source_catalog = cat
 
-        return save_all_results(self, segment_img, cat_model, input_model=input_model)
+        # Set the data and detection image
+        segmentation_model.data = segment_img.data.astype(np.uint32)
+        self._attach_skyvals_if_enabled(input_model, segmentation_model, mask)
+        # we update the input_model here to note that source_catalog finished
+        # only for ImageModel as L3 doesn't have cal_step.source_catalog
+        # and was not previously recorded
+        if isinstance(input_model, datamodels.ImageModel):
+            self.finalize_result(input_model, self._reference_files_used)
+            input_model.meta.cal_step.source_catalog = "COMPLETE"
+        return cat_model, segmentation_model
+
+    def _make_catalog_and_segmentation_models(self, model):
+        if isinstance(model, ImageModel):
+            if self.forced_segmentation:
+                cat_model_cls = datamodels.ForcedImageSourceCatalogModel
+            else:
+                cat_model_cls = datamodels.ImageSourceCatalogModel
+            segmentation_model_cls = datamodels.SegmentationMapModel
+        else:
+            if self.forced_segmentation:
+                cat_model_cls = datamodels.ForcedMosaicSourceCatalogModel
+            else:
+                cat_model_cls = datamodels.MosaicSourceCatalogModel
+            segmentation_model_cls = datamodels.MosaicSegmentationMapModel
+
+        cat_model = cat_model_cls.create_minimal({"meta": model.meta})
+        cat_model.meta["image"] = {
+            "filename": model.meta.filename,
+            "file_date": model.meta.file_date,
+        }
+        # copy over the data release id since there is no association input
+        if "data_release_id" in model.meta:
+            cat_model.meta.data_release_id = model.meta.data_release_id
+
+        # make L3 metadata
+        if self.forced_segmentation:
+            cat_model.meta.image.forced_segmentation = self.forced_segmentation
+
+        segmentation_model = segmentation_model_cls.create_minimal(
+            {"meta": cat_model.meta}
+        )
+
+        return cat_model, segmentation_model
+
+    def _attach_skyvals_if_enabled(self, input_model, segmentation_model, mask):
+        if not (
+            isinstance(input_model, datamodels.ImageModel) and self.compute_skyvals
+        ):
+            return
+
+        skyvals, healpix11_cov = compute_skyvals(
+            input_model=input_model,
+            segmentation=segmentation_model.data,
+            bad_pixel_mask=mask,
+        )
+        segmentation_model["skyvals"] = skyvals
+        segmentation_model["healpix11_cov"] = healpix11_cov

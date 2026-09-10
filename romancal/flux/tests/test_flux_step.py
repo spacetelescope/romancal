@@ -43,7 +43,12 @@ def test_attributes(flux_step, attr, factor):
             original_value = getattr(original_model, attr)
             result_value = getattr(result_model, attr)
 
-            assert np.allclose(original_value * scale, result_value)
+            # Tolerances are set for float16, the dtype of err and the
+            # variances: rtol is ~eps and atol covers subnormal rounding,
+            # which small scaled-down values underflow into.
+            assert np.allclose(
+                original_value * scale, result_value, rtol=1e-3, atol=1e-7
+            )
 
             original_library.shelve(original_model, i, modify=False)
             result_library.shelve(result_model, i, modify=False)
@@ -86,13 +91,20 @@ def flux_step(request):
 def image_model():
     """Product a basic ImageModel"""
     # Create a random image and specify a conversion
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(42)
     shape = (10, 10)
     image_model = datamodels.ImageModel.create_fake_data(shape=shape)
-    image_model.data = rng.poisson(2.5, size=shape).astype(np.float32)
-    image_model.var_rnoise = rng.normal(1, 0.05, size=shape).astype(np.float32)
-    image_model.var_poisson = rng.poisson(1, size=shape).astype(np.float32)
-    image_model.var_flat = rng.uniform(0, 1, size=shape).astype(np.float32)
+    image_model.data = rng.poisson(2.5, size=shape).astype(image_model.data.dtype)
+    # var_* other than poisson are optional, use var_poisson dtype
+    image_model.var_rnoise = rng.normal(1, 0.05, size=shape).astype(
+        image_model.var_poisson.dtype
+    )
+    image_model.var_poisson = rng.poisson(1, size=shape).astype(
+        image_model.var_poisson.dtype
+    )
+    image_model.var_flat = rng.uniform(0, 1, size=shape).astype(
+        image_model.var_poisson.dtype
+    )
     image_model.meta.photometry.conversion_megajanskys = (2.0 * u.MJy / u.sr).value
     image_model.meta.cal_step = {}
     for step_name in image_model.schema_info("required")["roman"]["meta"]["cal_step"][
@@ -100,6 +112,8 @@ def image_model():
     ].info:
         image_model.meta.cal_step[step_name] = "INCOMPLETE"
     image_model.meta.cal_logs = []
+    # validate the above modifications
+    image_model.validate()
 
     return image_model
 

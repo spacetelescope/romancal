@@ -10,34 +10,6 @@ from roman_datamodels.dqflags import pixel
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
-MICRONS_100 = 1.0e-4  # 100 microns, in meters
-
-
-def do_correction(input_model, flat=None, include_var_flat=False):
-    """Flat-field a Roman data model using a flat-field model
-
-    Parameters
-    ----------
-    input_model : Roman data model
-        Input science data model to be flat-fielded.
-
-    flat : Roman data model, or None
-        Data model containing flat-field for all instruments
-
-    include_var_flat : bool
-        compute & store the flat field variance?
-
-    Returns
-    -------
-    output_model : data model
-        The data model for the flat-fielded science data.
-        The data is modified in place.
-    """
-
-    do_flat_field(input_model, flat, include_var_flat=include_var_flat)
-
-    return input_model
-
 
 def do_flat_field(output_model, flat_model, include_var_flat=False):
     """Apply flat-fielding, and update the output model.
@@ -58,20 +30,16 @@ def do_flat_field(output_model, flat_model, include_var_flat=False):
         log.warning("Flat data array is not the same shape as the science data")
         log.warning("Step will be skipped")
         output_model.meta.cal_step.flat_field = "SKIPPED"
-    elif output_model.meta.exposure.type == "WFI_SPECTRAL":
-        # Check to see if attempt to flatten non-Image data
-        log.info("Skipping flat field for spectral exposure.")
-        output_model.meta.cal_step.flat_field = "SKIPPED"
     elif flat_model is None:
         # Check to see if attempt to flatten non-Image data
         log.info("Skipping flat field - no flat reference file.")
         output_model.meta.cal_step.flat_field = "SKIPPED"
     else:
-        apply_flat_field(output_model, flat_model, include_var_flat=include_var_flat)
+        _apply_flat_field(output_model, flat_model, include_var_flat=include_var_flat)
         output_model.meta.cal_step.flat_field = "COMPLETE"
 
 
-def apply_flat_field(science, flat, include_var_flat=False):
+def _apply_flat_field(science, flat, include_var_flat=False):
     """Flat field the data and error arrays.
 
     Extended summary
@@ -114,6 +82,8 @@ def apply_flat_field(science, flat, include_var_flat=False):
     # Now let's apply the correction to science data and error arrays.  Rely
     # on array broadcasting to handle the cubes
     science.data = (science.data / flat_data).astype(science.data.dtype)
+    if hasattr(science, "dumo"):
+        science.dumo = (science.dumo / flat_data).astype(science.dumo.dtype)
 
     # Update the variances using BASELINE algorithm.  For guider data, it has
     # not gone through ramp fitting so there is no Poisson noise or readnoise

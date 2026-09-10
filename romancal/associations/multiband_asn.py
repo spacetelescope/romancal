@@ -3,7 +3,7 @@ import glob
 import logging
 import re
 
-from . import asn_from_list
+from romancal.associations import asn_from_list
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -14,7 +14,7 @@ __all__ = ["MultibandAssociation"]
 
 
 _COADD_RE = re.compile(
-    r"^(?P<prefix>.*_)(?P<skycell>[0-9p]*x[0-9]*y[0-9]*)_(?P<filter>f[0-9]+)_coadd\.asdf$"
+    r"^(?P<prefix>.*_)(?P<skycell>[0-9]+[pm][0-9]*x[0-9]*y[0-9]*)_(?P<filter>f[0-9]+)_coadd\.asdf$"
 )
 
 
@@ -69,8 +69,16 @@ class MultibandAssociation:
                 groups.setdefault(key, []).append(filename)
         return groups
 
-    def create_multiband_asn(self):
-        """Create a multiband association from a list of files."""
+    def create_multiband_asn(self, psf_match_reference_filter=None):
+        """Create a multiband association from a list of files.
+
+        Parameters
+        ----------
+        psf_match_reference_filter : str, optional
+            Reference filter for PSF matching, stored as a top-level key in
+            the association and read by ``MultibandCatalogStep``.  If None,
+            the step defaults to the reddest filter.
+        """
         for skycell_id, filenames in self.skycell_groups.items():
             # Group by the file prefix (everything up to and including the underscore
             # before the skycell id). This prefix encodes program, data_release_id,
@@ -109,6 +117,8 @@ class MultibandAssociation:
                     "--data-release-id",
                     data_release_id,
                 ]
+                if psf_match_reference_filter is not None:
+                    args += ["--psf-match-reference-filter", psf_match_reference_filter]
                 asn_from_list._cli(args)
 
 
@@ -123,11 +133,20 @@ def _cli():
         nargs="+",
         help="List of files to include in the multiband association",
     )
+    parser.add_argument(
+        "--psf-match-reference-filter",
+        type=str,
+        default=None,
+        help="Reference filter for PSF matching (used by MultibandCatalogStep)",
+        dest="psf_match_reference_filter",
+    )
 
     args = parser.parse_args()
 
     multiband_asn = MultibandAssociation(args.files)
 
-    multiband_asn.create_multiband_asn()
+    multiband_asn.create_multiband_asn(
+        psf_match_reference_filter=args.psf_match_reference_filter
+    )
 
     logger.info("Multiband association creation complete.")

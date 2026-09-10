@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -8,41 +9,66 @@ from romancal.datamodels import ModelLibrary, filetype
 DATA_DIRECTORY = Path(__file__).parent / "data"
 
 
-def test_filetype():
-    file_1 = filetype.check(DATA_DIRECTORY / "empty.json")
-    file_2 = filetype.check(DATA_DIRECTORY / "example_schema.json")
-    with open(DATA_DIRECTORY / "fake.json") as file_h:
-        file_3 = filetype.check(file_h)
-    file_4 = filetype.check(DATA_DIRECTORY / "empty.asdf")
-    file_5 = filetype.check(DATA_DIRECTORY / "pluto.asdf")
-    with open(DATA_DIRECTORY / "pluto.asdf", "rb") as file_h:
-        file_6 = filetype.check(file_h)
-    file_7 = filetype.check(DATA_DIRECTORY / "fake.asdf")
-    with open(DATA_DIRECTORY / "fake.json") as file_h:
-        file_8 = filetype.check(file_h)
-    file_9 = filetype.check(str(DATA_DIRECTORY / "pluto.asdf"))
-    im1 = rdm.datamodels.ImageModel.create_fake_data(shape=(20, 20))
-    file_11 = filetype.check(im1)
-    model_library = ModelLibrary([im1])
-    file_10 = filetype.check(model_library)
+@pytest.fixture
+def model():
+    model = rdm.datamodels.ImageModel.create_fake_data(shape=(20, 20))
+    model.meta.filename = "test.asdf"
+    return model
 
-    assert file_1 == "asn"
-    assert file_2 == "asn"
-    assert file_3 == "asn"
-    assert file_4 == "asdf"
-    assert file_5 == "asdf"
-    assert file_6 == "asdf"
-    assert file_7 == "asdf"
-    assert file_8 == "asn"
-    assert file_9 == "asdf"
-    assert file_10 == "ModelLibrary"
-    assert file_11 == "DataModel"
 
+@pytest.fixture
+def model_filename(model, tmp_path):
+    fn = tmp_path / "test.asdf"
+    model.save(fn)
+    return fn
+
+
+@pytest.fixture
+def model_file_handle(model_filename):
+    with open(model_filename, "rb") as fh:
+        yield fh
+
+
+@pytest.fixture
+def library(model):
+    return ModelLibrary([model])
+
+
+@pytest.fixture
+def association_filename(library, function_jail):
+    return library._save(function_jail)
+
+
+@pytest.fixture
+def association_file_handle(association_filename):
+    with open(association_filename) as fh:
+        yield fh
+
+
+@pytest.fixture
+def association_dict(association_filename):
+    with open(association_filename) as f:
+        asn = json.load(f)
+    return asn
+
+
+@pytest.mark.parametrize(
+    "init_fixture, expected",
+    [
+        ("model", "DataModel"),
+        ("model_filename", "asdf"),
+        ("model_file_handle", "asdf"),
+        ("library", "ModelLibrary"),
+        ("association_filename", "asn"),
+        ("association_file_handle", "asn"),
+        ("association_dict", "asn"),
+    ],
+)
+def test_filetype(init_fixture, expected, request):
+    assert filetype.check(request.getfixturevalue(init_fixture)) == expected
+
+
+@pytest.mark.parametrize("init_value", [2, "missing.txt", "test"])
+def test_failures(init_value, function_jail):
     with pytest.raises(ValueError):
-        filetype.check(DATA_DIRECTORY / "empty.txt")
-
-    with pytest.raises(ValueError):
-        filetype.check(2)
-
-    with pytest.raises(ValueError):
-        filetype.check("test")
+        filetype.check(init_value)

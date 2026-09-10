@@ -52,7 +52,7 @@ class FlatFieldStep(RomanStep):
             log.debug("Using no FLAT ref file")
 
         # Do the flat-field correction
-        flat_field.do_correction(
+        flat_field.do_flat_field(
             input_model, reference_file_model, include_var_flat=self.include_var_flat
         )
 

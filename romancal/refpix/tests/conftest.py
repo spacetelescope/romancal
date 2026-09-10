@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from roman_datamodels.datamodels import RampModel, RefpixRefModel
 
-from romancal.refpix.data import Coefficients, Const, StandardView
+from romancal.refpix._data import Coefficients, Const, StandardView
 
 RNG = np.random.default_rng(42)
 
@@ -54,8 +54,9 @@ def datamodel(data):
     datamodel.data = detector
     datamodel.amp33 = amp33.astype(datamodel.amp33.dtype)
 
-    datamodel.border_ref_pix_left = datamodel.data[:, :, : Const.REF]
-    datamodel.border_ref_pix_right = datamodel.data[:, :, -Const.REF :]
+    # copies, not views, matching what dq_init stores
+    datamodel.border_ref_pix_left = datamodel.data[:, :, : Const.REF].copy()
+    datamodel.border_ref_pix_right = datamodel.data[:, :, -Const.REF :].copy()
 
     return datamodel
 

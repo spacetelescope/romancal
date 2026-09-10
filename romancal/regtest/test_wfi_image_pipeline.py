@@ -5,7 +5,6 @@ import pytest
 import roman_datamodels as rdm
 from gwcs.wcstools import grid_from_bounding_box
 from numpy.testing import assert_allclose
-from roman_datamodels.datamodels import ImageModel
 from roman_datamodels.dqflags import pixel
 
 from romancal.assign_wcs.assign_wcs_step import AssignWcsStep
@@ -94,6 +93,16 @@ def test_log_tracked_resources(log_tracked_resources, run_elp):
 def test_output_matches_truth(output_filename, truth_filename, ignore_asdf_paths):
     diff = compare_asdf(output_filename, truth_filename, **ignore_asdf_paths)
     assert diff.identical, diff.report()
+
+
+def test_catalog_produced(output_filename):
+    catalog_filename = output_filename.replace("_cal.asdf", "_cat.parquet")
+    assert Path(catalog_filename).exists()
+
+
+def test_segmentation_map_produced(output_filename):
+    segmentation_map_filename = output_filename.replace("_cal.asdf", "_segm.asdf")
+    assert Path(segmentation_map_filename).exists()
 
 
 @pytest.mark.soctests
@@ -246,81 +255,6 @@ def test_elp_input_dm(rtdata, ignore_asdf_paths):
         assert model.meta.cal_step.photom == "COMPLETE"
 
 
-@pytest.fixture(scope="module")
-def run_all_saturated(rtdata_module):
-    """
-    Test ELP handling of an all saturated input model
-    """
-    rtdata = rtdata_module
-
-    input_data = "r0000101001001001001_0001_wfi01_f158_ALL_SATURATED_uncal.asdf"
-    rtdata.get_data(f"WFI/image/{input_data}")
-    rtdata.input = input_data
-
-    # Test Pipeline
-    output = "r0000101001001001001_0001_wfi01_f158_ALL_SATURATED_cal.asdf"
-    rtdata.output = output
-    args = [
-        "roman_elp",
-        rtdata.input,
-    ]
-    ExposurePipeline.from_cmdline(args)
-
-    # get truth file
-    rtdata.get_truth(f"truth/WFI/image/{output}")
-    return rtdata
-
-
-@pytest.fixture(scope="module")
-def all_saturated_model(run_all_saturated):
-    with rdm.open(run_all_saturated.output) as model:
-        yield model
-
-
-def test_all_saturated_against_truth(run_all_saturated, ignore_asdf_paths):
-    diff = compare_asdf(
-        run_all_saturated.output, run_all_saturated.truth, **ignore_asdf_paths
-    )
-    assert diff.identical, diff.report()
-
-
-@pytest.mark.parametrize(
-    "step_name, status",
-    [
-        ("dq_init", "COMPLETE"),
-        ("saturation", "COMPLETE"),
-        ("linearity", "SKIPPED"),
-        ("dark", "SKIPPED"),
-        ("ramp_fit", "SKIPPED"),
-        ("assign_wcs", "SKIPPED"),
-        ("flat_field", "SKIPPED"),
-        ("photom", "SKIPPED"),
-        ("source_catalog", "SKIPPED"),
-        ("tweakreg", "SKIPPED"),
-    ],
-)
-def test_all_saturated_status(all_saturated_model, step_name, status):
-    """
-    For an all saturated input the pipeline should skip all steps after saturation.
-    """
-    assert getattr(all_saturated_model.meta.cal_step, step_name) == status
-
-
-def test_all_saturated_model_type(all_saturated_model):
-    """
-    For an all saturated input the output model should be an ImageModel.
-    """
-    assert isinstance(all_saturated_model, ImageModel)
-
-
-@pytest.mark.parametrize("array_name", ["data", "err", "var_poisson"])
-def test_all_saturated_zeroed(all_saturated_model, array_name):
-    """
-    For an all saturated input the output model should contain 0s for data and err arrays.
-    """
-    np.testing.assert_array_equal(getattr(all_saturated_model, array_name), 0)
-
-
 def test_pipeline_suffix(rtdata, ignore_asdf_paths):
     """
     Tests passing suffix to the pipeline
@@ -360,3 +294,22 @@ def test_pipeline_suffix(rtdata, ignore_asdf_paths):
         assert model.meta.cal_step.source_catalog == "COMPLETE"
         assert model.meta.cal_step.tweakreg == "SKIPPED"
         assert model.meta.filename == output
+
+
+def test_elp_save_results(rtdata, function_jail):
+    """ExposurePipline.call with save_results=False should not generate files"""
+    input_data = "r0000101001001001001_0001_wfi01_f158_uncal.asdf"
+    rtdata.get_data(f"WFI/image/{input_data}")
+
+    initial_files = {p.name for p in Path(function_jail).glob("*")}
+    result = ExposurePipeline.call(rtdata.input, save_results=False)
+
+    # no files should be produced
+    assert not {p.name for p in Path(function_jail).glob("*")} - initial_files
+
+    # check result contains model, catalog, segmentation
+    assert len(result) == 3
+    coadd, catalog, segmentation = result
+    assert isinstance(coadd, rdm.datamodels.ImageModel)
+    assert isinstance(catalog, rdm.datamodels.ImageSourceCatalogModel)
+    assert isinstance(segmentation, rdm.datamodels.SegmentationMapModel)

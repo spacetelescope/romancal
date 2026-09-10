@@ -40,10 +40,12 @@ class RampFitStep(RomanStep):
     spec = """
         algorithm = option('ols_cas22', 'likely', default='likely')  # Algorithm to use to fit. Note: `ols_cas22` is deprecated and will be removed in a future version
         suffix = string(default='rampfit')  # Default suffix of results
+        rejection_threshold = float(default=4.5,min=0) # CR sigma rejection threshold
         use_ramp_jump_detection = boolean(default=True) # Use jump detection during ramp fitting
         threshold_intercept = float(default=None) # Override the intercept parameter for the threshold function in the jump detection algorithm.
         threshold_constant = float(default=None) # Override the constant parameter for the threshold function in the jump detection algorithm.
         include_var_rnoise = boolean(default=False) # include var_rnoise in output (can be reconstructed from err and other variances)
+        record_jumps = boolean(default=True) # record which resultant each jump was flagged in as a jump_indices extension (likely algorithm only)
         maximum_cores = string(default='1') # cores for multiprocessing. Can be an integer, 'half', 'quarter', or 'all'
         expand_large_events = boolean(default=False) # Turns on Snowball detection
         min_sat_area = float(default=1.0) # minimum required area for the central saturation of snowballs
@@ -73,220 +75,348 @@ class RampFitStep(RomanStep):
         # Do the fitting based on the algorithm selected.
         algorithm = self.algorithm.lower()
         if algorithm == "ols_cas22":
-            out_model = self.ols_cas22(
+            out_model = ols_cas22(
                 input_model,
                 readnoise_model,
                 gain_model,
                 include_var_rnoise=self.include_var_rnoise,
+                use_jump=self.use_ramp_jump_detection,
+                threshold_intercept=self.threshold_intercept,
+                threshold_constant=self.threshold_constant,
             )
-            out_model.meta.cal_step.ramp_fit = "COMPLETE"
         elif algorithm == "likely":
-            out_model = self.likely(
+            jump_kw = dict(
+                maximum_cores=self.maximum_cores,
+                expand_large_events=self.expand_large_events,
+                min_sat_area=self.min_sat_area,
+                min_jump_area=self.min_jump_area,
+                expand_factor=self.expand_factor,
+                sat_required_snowball=self.sat_required_snowball,
+                min_sat_radius_extend=self.min_sat_radius_extend,
+                sat_expand=self.sat_expand,
+                edge_size=self.edge_size,
+            )
+
+            out_model = likely(
                 input_model,
                 readnoise_model,
                 gain_model,
+                include_var_rnoise=self.include_var_rnoise,
+                record_jumps=self.record_jumps,
+                jump_kw=jump_kw,
             )
         else:
             log.error("Algorithm %s is not supported. Skipping step.")
-            out_model = input
+            out_model = input_model
             out_model.meta.cal_step.ramp_fit = "SKIPPED"
 
         return out_model
 
-    @deprecated("0.22.0")
-    def ols_cas22(
-        self, input_model, readnoise_model, gain_model, include_var_rnoise=False
-    ):
-        """Peform Optimal Linear Fitting on arbitrarily space resulants
 
-        Parameters
-        ----------
-        input_model : RampModel
-            Model containing ramps.
+@deprecated("0.22.0")
+def ols_cas22(
+    input_model,
+    readnoise_model,
+    gain_model,
+    include_var_rnoise=False,
+    use_jump=True,
+    threshold_intercept=None,
+    threshold_constant=None,
+):
+    """Peform Optimal Linear Fitting on arbitrarily space resulants
 
-        readnoise_model : ReadnoiseRefModel
-            Model with the read noise reference information.
+    Parameters
+    ----------
+    input_model : RampModel
+        Model containing ramps.
 
-        gain_model : GainRefModel
-            Model with the gain reference information.
+    readnoise_model : ReadnoiseRefModel
+        Model with the read noise reference information.
 
-        Returns
-        -------
-        out_model : ImageModel
-            Model containing a count-rate image.
+    gain_model : GainRefModel
+        Model with the gain reference information.
 
-        """
-        use_jump = self.use_ramp_jump_detection
+    use_jump : bool
+        If True, fit jumps as part of ramp fitting.
 
-        if use_jump:
-            log.info("Jump detection as part of ramp fitting is enabled.")
-        else:
-            log.info("Jump detection as part of ramp fitting is disabled.")
+    threshold_intercept : float
+        y-intercept to use for jump significance equation
 
-        kwargs = {}
-        if self.threshold_intercept is not None:
-            kwargs["threshold_intercept"] = self.threshold_intercept
-        if self.threshold_constant is not None:
-            kwargs["threshold_constant"] = self.threshold_constant
+    threshold_constant : float
+        slope to use for jump significance equation
 
-        gain = gain_model.data
-        read_time = input_model.meta.exposure.frame_time
+    Returns
+    -------
+    out_model : ImageModel
+        Model containing a count-rate image.
 
-        # Account for the gain.  Do not modify input_model.
-        resultants = input_model.data * gain
-        read_noise = readnoise_model.data * gain
-        dq = input_model.groupdq
+    """
 
-        # Force read pattern to be pure lists not LNodes
-        read_pattern = [list(reads) for reads in input_model.meta.exposure.read_pattern]
-        if len(read_pattern) != resultants.shape[0]:
-            raise RuntimeError("mismatch between resultants shape and read_pattern.")
+    if use_jump:
+        log.info("Jump detection as part of ramp fitting is enabled.")
+    else:
+        log.info("Jump detection as part of ramp fitting is disabled.")
 
-        # Fit the ramps
-        output = ols_cas22_fit.fit_ramps_casertano(
-            resultants,
-            dq,
-            read_noise,
-            read_time,
-            read_pattern=read_pattern,
-            use_jump=use_jump,
-            **kwargs,
+    kwargs = {}
+    if threshold_intercept is not None:
+        kwargs["threshold_intercept"] = threshold_intercept
+    if threshold_constant is not None:
+        kwargs["threshold_constant"] = threshold_constant
+
+    gain = gain_model.data
+    read_time = input_model.meta.exposure.frame_time
+
+    # Account for the gain.  Do not modify input_model.
+    resultants = input_model.data * gain
+    read_noise = readnoise_model.data * gain
+    dq = input_model.groupdq
+
+    # Force read pattern to be pure lists not LNodes
+    read_pattern = [list(reads) for reads in input_model.meta.exposure.read_pattern]
+    if len(read_pattern) != resultants.shape[0]:
+        raise RuntimeError("mismatch between resultants shape and read_pattern.")
+
+    # Fit the ramps
+    output = ols_cas22_fit.fit_ramps_casertano(
+        resultants,
+        dq,
+        read_noise,
+        read_time,
+        read_pattern=read_pattern,
+        use_jump=use_jump,
+        **kwargs,
+    )
+
+    # Break out the information and fix units back to DN/s
+    slopes = output.parameters[..., Parameter.slope] / gain
+    var_rnoise = output.variances[..., Variance.read_var] / gain**2
+    var_poisson = output.variances[..., Variance.poisson_var] / gain**2
+    err = np.sqrt(var_poisson + var_rnoise)
+    dq = output.dq.astype(np.uint32)
+
+    # Propagate DQ flags forward.
+    ramp_dq = get_pixeldq_flags(dq, input_model.pixeldq, slopes, err, gain)
+
+    # Create the image model.  Rescale by the gain back to DN/s
+    image_info = {
+        "slope": slopes,
+        "dq": ramp_dq,
+        "var_poisson": var_poisson,
+        "var_rnoise": var_rnoise,
+        "err": err,
+    }
+    image_model = _create_image_model(
+        input_model, image_info, include_var_rnoise=include_var_rnoise
+    )
+    image_model.meta.cal_step.ramp_fit = "COMPLETE"
+
+    # That's all folks
+    return image_model
+
+
+def likely(
+    input_model,
+    readnoise_model,
+    gain_model,
+    rejection_threshold=4.5,
+    include_var_rnoise=False,
+    record_jumps=True,
+    jump_kw=None,
+):
+    """Perform Maximum Likelihood Algorithm
+
+    Parameters
+    ----------
+    input_model : RampModel
+        Model containing ramps.
+
+    readnoise_model : ReadnoiseRefModel
+        Model with the read noise reference information.
+
+    gain_model : GainRefModel
+        Model with the gain reference information.
+
+    rejection_threshold : float
+        Reject CRs at this SNR
+
+    include_var_rnoise : bool
+        if True, include var_rnoise estimates in the output data model
+
+    record_jumps : bool
+        if True, record which resultant each jump was flagged in as a
+        ``jump_indices`` extension on the output model.
+
+    jump_kw : dict
+        Additional keywords to control jump detection; see _setup_jump_data.
+
+    Returns
+    -------
+    out_model : ImageModel
+        Model containing a count-rate image.
+    """
+    # Add the needed components to the input model.
+    input_model["flags_do_not_use"] = pixel.DO_NOT_USE
+    input_model["flags_saturated"] = pixel.SATURATED
+    input_model["rejection_threshold"] = rejection_threshold
+    input_model["flags_jump_det"] = pixel.JUMP_DET
+    # Add an axis to match the JWST data cube
+    input_model.data = input_model.data[np.newaxis, :, :, :]
+    input_model.groupdq = input_model.groupdq[np.newaxis, :, :, :]
+    # add ancillary information needed by likelihood fitting
+    input_model.read_pattern = _get_readtimes(input_model)
+    input_model.zeroframe = None
+    input_model.average_dark_current = np.zeros(
+        [input_model.data.shape[2], input_model.data.shape[3]]
+    )
+
+    # Setup jump data to handle snowballs and other special situations handled by
+    # the likelihood algorithm
+    if jump_kw is None:
+        jump_kw = dict()
+    jump_data = _setup_jump_data(input_model, readnoise_model, gain_model, **jump_kw)
+
+    # stcal's likely_fit expects CDS read noise (sqrt(2) * per-read noise);
+    # the Roman readnoise reference stores per-read noise, so convert here.
+    image_info, _, _ = likely_ramp_fit(
+        input_model, readnoise_model.data * SQRT2, gain_model.data, jump_data=jump_data
+    )
+
+    # Flag pixels that have only a single resultant.
+    oneresultant = (
+        np.sum(
+            (input_model.groupdq[0] & (group.SATURATED | group.DO_NOT_USE)) == 0,
+            axis=0,
         )
+        <= 1
+    )
+    # we need to revisit the pixeldq handling!
+    image_info["dq"] |= pixel.DO_NOT_USE * oneresultant
 
-        # Break out the information and fix units back to DN/s
-        slopes = output.parameters[..., Parameter.slope] / gain
-        var_rnoise = output.variances[..., Variance.read_var] / gain**2
-        var_poisson = output.variances[..., Variance.poisson_var] / gain**2
-        err = np.sqrt(var_poisson + var_rnoise)
-        dq = output.dq.astype(np.uint32)
+    out_model = _create_image_model(
+        input_model, image_info, include_var_rnoise=include_var_rnoise
+    )
 
-        # Propagate DQ flags forward.
-        ramp_dq = get_pixeldq_flags(dq, input_model.pixeldq, slopes, err, gain)
+    # Record which resultant each jump was flagged in.  stcal wrote the
+    # resultant-level JUMP_DET flags back into groupdq; reduce them to a sparse
+    # list of indices in the trimmed science frame.
+    if record_jumps:
+        out_model["jump_indices"] = _jump_indices(input_model.groupdq[0])
 
-        # Create the image model.  Rescale by the gain back to DN/s
-        image_info = {
-            "slope": slopes,
-            "dq": ramp_dq,
-            "var_poisson": var_poisson,
-            "var_rnoise": var_rnoise,
-            "err": err,
-        }
-        image_model = create_image_model(
-            input_model, image_info, include_var_rnoise=include_var_rnoise
-        )
+    out_model.meta.cal_step.ramp_fit = "COMPLETE"
 
-        # That's all folks
-        return image_model
+    return out_model
 
-    def likely(self, input_model, readnoise_model, gain_model):
-        """Perform Maximum Likelihood Algorithm
 
-        Parameters
-        ----------
-        input_model : RampModel
-            Model containing ramps.
+def _jump_indices(groupdq):
+    """Reduce a resultant-level jump DQ cube to sparse science-frame indices.
 
-        readnoise_model : ReadnoiseRefModel
-            Model with the read noise reference information.
+    Parameters
+    ----------
+    groupdq : np.ndarray
+        Group DQ cube (nresultants, nrows, ncols) including the 4-pixel
+        reference border, with JUMP_DET set where jumps were flagged.
 
-        gain_model : GainRefModel
-            Model with the gain reference information.
+    Returns
+    -------
+    jump_indices : np.ndarray
+        Array of shape (N, 3) with columns (resultant, y, x), where y and x are
+        in the border-trimmed science frame matching ``out_model.data``.
+    """
+    res, y, x = np.nonzero(groupdq & group.JUMP_DET)
+    nrows, ncols = groupdq.shape[1:]
+    # Drop jumps in the reference border and shift to trimmed coordinates.
+    keep = (y >= 4) & (y < nrows - 4) & (x >= 4) & (x < ncols - 4)
+    # max row/col = 4088 and max resultant = 511 both fit comfortably in int16.
+    return np.stack([res[keep], y[keep] - 4, x[keep] - 4], axis=1).astype(np.int16)
 
-        Returns
-        -------
-        out_model : ImageModel
-            Model containing a count-rate image.
-        """
-        # Add the needed components to the input model.
-        input_model["flags_do_not_use"] = pixel.DO_NOT_USE
-        input_model["flags_saturated"] = pixel.SATURATED
-        # FIXME: needs to exposed in the spec
-        input_model["rejection_threshold"] = None
-        input_model["flags_jump_det"] = pixel.JUMP_DET
-        # Add an axis to match the JWST data cube
-        input_model.data = input_model.data[np.newaxis, :, :, :]
-        input_model.groupdq = input_model.groupdq[np.newaxis, :, :, :]
-        # add ancillary information needed by likelihood fitting
-        input_model.read_pattern = get_readtimes(input_model)
-        input_model.zeroframe = None
-        input_model.average_dark_current = np.zeros(
-            [input_model.data.shape[2], input_model.data.shape[3]]
-        )
 
-        # Setup jump data to handle snowballs and other special situations handled by
-        # the likelihood algorithm
-        jump_data = self._setup_jump_data(input_model, readnoise_model, gain_model)
+def _setup_jump_data(
+    result,
+    rnoise_m,
+    gain_m,
+    expand_large_events=False,
+    min_jump_area=6,
+    min_sat_area=1,
+    expand_factor=1.9,
+    sat_required_snowball=True,
+    min_sat_radius_extend=0.5,
+    sat_expand=2,
+    edge_size=0,
+    maximum_cores="1",
+):
+    """
+    Create a JumpData instance to be used by STCAL jump.
 
-        image_info, _, _ = likely_ramp_fit(
-            input_model, readnoise_model.data, gain_model.data, jump_data=jump_data
-        )
+    Parameters
+    ----------
+    result : RampModel
+        The ramp model input from the previous step.
 
-        # Flag pixels that have only a single resultant.
-        oneresultant = (
-            np.sum(
-                (input_model.groupdq[0] & (group.SATURATED | group.DO_NOT_USE)) == 0,
-                axis=0,
-            )
-            <= 1
-        )
-        # we need to revisit the pixeldq handling!
-        image_info["dq"] |= pixel.DO_NOT_USE * oneresultant
+    rnoise_m : ReadNoise model
+        Readnoise reference model
 
-        out_model = create_image_model(
-            input_model, image_info, include_var_rnoise=self.include_var_rnoise
-        )
+    gain_m : GainModel
+        Gain reference model
 
-        out_model.meta.cal_step.ramp_fit = "COMPLETE"
+    expand_large_events : bool
+        if True, identify and flag potential snowballs
 
-        return out_model
+    min_jump_area : int
+        minimum saturated area to trigger large event processing
 
-    def _setup_jump_data(self, result, rnoise_m, gain_m):
-        """
-        Create a JumpData instance to be used by STCAL jump.
+    min_sat_area : float
+        minimum required area for the central saturation of snowballs
 
-        Parameters
-        ----------
-        result : RampModel
-            The ramp model input from the previous step.
+    expand_factor : float
+        The expansion factor for the enclosing circles or ellipses
 
-        rnoise_m : ReadNoise model
-            Readnoise reference model
+    sat_required_snowball : bool
+        Require the center of snowballs to be saturated
 
-        gain_m : GainModel
-            Gain reference model
+    min_sat_radius_extend : float
+        The min radius of the sat core to trigger the extension of the core
 
-        Returns
-        -------
-        jump_data : JumpData
-            The data container to be used to run the STCAL detect_jumps_data.
-        """
+    sat_expand : int
+        Number of pixels to add to the radius of the saturated core of snowballs
 
-        # Instantiate a JumpData class and populate it based on the input RampModel.
-        jump_data = JumpData(result, gain_m.data, rnoise_m.data, pixel)
+    edge_size : int
+        Distance from detector edge where a saturated core is not required for snowball detection
 
-        # Setup snowball detection
-        sat_expand = self.sat_expand * 2
-        jump_data.set_snowball_info(
-            self.expand_large_events,
-            self.min_jump_area,
-            self.min_sat_area,
-            self.expand_factor,
-            self.sat_required_snowball,
-            self.min_sat_radius_extend,
-            sat_expand,
-            self.edge_size,
-        )
+    maximum_cores : string
+        str(int) giving the maximum number of cores to use, or 'quarter', 'half', or 'all'
 
-        # Performance setup
-        jump_data.max_cores = self.maximum_cores
+    Returns
+    -------
+    jump_data : JumpData
+        The data container to be used to run the STCAL detect_jumps_data.
+    """
 
-        return jump_data
+    # Instantiate a JumpData class and populate it based on the input RampModel.
+    jump_data = JumpData(result, gain_m.data, rnoise_m.data, pixel)
+
+    # Setup snowball detection
+    sat_expand = sat_expand * 2
+    jump_data.set_snowball_info(
+        expand_large_events,
+        min_jump_area,
+        min_sat_area,
+        expand_factor,
+        sat_required_snowball,
+        min_sat_radius_extend,
+        sat_expand,
+        edge_size,
+    )
+
+    # Performance setup
+    jump_data.max_cores = maximum_cores
+
+    return jump_data
 
 
 # #########
 # Utilities
 # #########
-def create_image_model(input_model, image_info, include_var_rnoise=False):
+def _create_image_model(input_model, image_info, include_var_rnoise=False):
     """Creates an ImageModel from the computed arrays from ramp_fit.
 
     Parameters
@@ -389,7 +519,7 @@ def slopes_uniform_weights(input_model):
     # of uniform weighting (a diagonal covariance matrix consisting only
     # of read noise).
 
-    readtimes = get_readtimes(input_model)
+    readtimes = _get_readtimes(input_model)
 
     ni = np.array([len(t) for t in readtimes])
     ti = np.array([np.mean(t) for t in readtimes])
@@ -400,11 +530,16 @@ def slopes_uniform_weights(input_model):
 
     # We want the weighted sum over reads.
     if len(input_model.data.shape) == 3:
-        return np.sum(weights[:, None, None] * input_model.data, axis=0)
+        data = input_model.data
     elif len(input_model.data.shape) == 4:
-        return np.sum(weights[:, None, None] * input_model.data[0], axis=0)
+        data = input_model.data[0]
     else:
         raise ValueError("Unexpected shape for input_model.data")
+
+    # einsum rather than sum-of-products so that a ramp sized (and float64)
+    # temporary is never materialized; this is the largest allocation in the
+    # step for ramps with few resultants.
+    return np.einsum("i,ijk->jk", weights, data)
 
 
 def get_pixeldq_flags(groupdq, pixeldq, slopes, err, gain):
@@ -454,7 +589,7 @@ def get_pixeldq_flags(groupdq, pixeldq, slopes, err, gain):
     return outpixeldq
 
 
-def get_readtimes(ramp_data):
+def _get_readtimes(ramp_data):
     """Get the read times needed to compute the covariance matrices.
 
     If there is already a read_pattern in the ramp_data class, then just get it.

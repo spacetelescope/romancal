@@ -7,36 +7,38 @@ Exposure Level Processing
 :Class: `romancal.pipeline.ExposurePipeline`
 :Alias: exposure_pipeline
 
-The ``ExposurePipeline`` applies detector-level corrections to given exposure
-types (imaging, prism, and grism.). It is applied to one
-exposure at a time.
+The ``ExposurePipeline`` applies detector-level corrections to all WFI exposure
+types. It is applied to one exposure at a time.
 It is sometimes referred to as "ramps-to-slopes" processing, because the input
 raw data are in the form of ramps containing accumulating counts from the
 non-destructive detector readouts and the output is a corrected countrate
 (slope) image.
 
-The list of steps applied by the ``ExposurePipeline`` pipeline is shown in the
-table below.
+The steps applied depend on the exposure type, as shown in the table below.
 
 .. |check| unicode:: U+2713 .. checkmark
 
-================================================== ========= ========= =========
- Step                                              WFI-Image WFI-Prism WFI-Grism
-================================================== ========= ========= =========
- :ref:`dq_init <dq_init_step>`                      |check|    |check|  |check|
- :ref:`saturation <saturation_step>`                |check|    |check|  |check|
- :ref:`refpix <refpix>`                             |check|    |check|  |check|
- :ref:`dark_decay <dark_decay_step>`                |check|    |check|  |check|
- :ref:`wfi18_transient <wfi18_transient_step>`      |check|    |check|  |check|
- :ref:`linearity <linearity_step>`                  |check|    |check|  |check|
- :ref:`ramp_fitting <ramp_fitting_step>`            |check|    |check|  |check|
- :ref:`dark_current <dark_current_step>`            |check|    |check|  |check|
- :ref:`assign_wcs <assign_wcs_step>`                |check|    |check|  |check|
- :ref:`flatfield <flatfield_step>`                  |check|
- :ref:`photom <photom_step>`                        |check|
+================================================== ========= ============= ==========
+ Step                                              WFI-Image  WFI-WFSC     WFI-Other
+                                                   WFI-LOLO   (WFSC only)
+================================================== ========= ============= ==========
+ :ref:`dq_init <dq_init_step>`                      |check|    |check|      |check|
+ :ref:`saturation <saturation_step>`                |check|    |check|      |check|
+ :ref:`refpix <refpix>`                             |check|    |check|      |check|
+ :ref:`dark_decay <dark_decay_step>`                |check|    |check|      |check|
+ :ref:`wfi18_transient <wfi18_transient_step>`      |check|    |check|      |check|
+ :ref:`linearity <linearity_step>`                  |check|    |check|      |check|
+ :ref:`ramp_fitting <ramp_fitting_step>`            |check|    |check|      |check|
+ :ref:`dark_current <dark_current_step>`            |check|    |check|      |check|
+ :ref:`assign_wcs <assign_wcs_step>`                |check|    |check|      |check|
+ :ref:`photom <photom_step>`                        |check|    |check|      |check|
+ :ref:`flatfield <flatfield_step>`                  |check|    |check|
  :ref:`source_catalog <source_catalog_step>`        |check|
  :ref:`tweakreg <tweakreg_step>`                    |check|
-================================================== ========= ========= =========
+================================================== ========= ============= ==========
+
+WFI-Other covers ``WFI_SPECTRAL``, ``WFI_FLAT``, ``WFI_IM_DARK``, and
+``WFI_SP_DARK`` exposure types, which stop after ``photom``.
 
 
 Arguments
@@ -45,6 +47,20 @@ The ``exposure`` pipeline has no arguments
 
 Inputs
 ------
+
+For more details about step arguments (including datatypes, possible values
+and defaults) see :py:obj:`romancal.pipeline.exposure_pipeline.ExposurePipeline.spec`.
+
+``--on_disk``
+  When `True` the input association will be opened in a way that uses
+  temporary files to avoid keeping all input models in memory.
+
+You can see the options for strun using:
+
+strun --help roman_elp
+
+and this will list all the strun options as well as the step options for the roman_elp.
+
 
 3D raw data
 +++++++++++
@@ -69,15 +85,16 @@ extensions. When such a file is loaded into the pipeline, it is immediately
 converted into a `~romancal.datamodels.RampModel`, and has all additional data arrays
 for errors and Data Quality flags created and initialized.
 
-When the ``ExposurePipeline`` processes a fully saturated input (all pixels flagged as saturated).
-The corresponding output image will:
+When the ``ExposurePipeline`` processes a fully saturated input (all pixels flagged as saturated),
+the corresponding output image will:
 
 - contain all 0 data arrays
 - contain all 0 variance arrays
 - not be processed by steps beyond saturation
 
-A single fully saturated input will also cause :ref:`tweakreg <tweakreg_step>` to be skipped
-for all input images.
+Fully saturated exposures are skipped by :ref:`tweakreg <tweakreg_step>` individually;
+other exposures in the same association are still aligned normally.
+
 
 Outputs
 -------
@@ -88,8 +105,8 @@ Outputs
 :Data model: `~romancal.datamodels.ImageModel`
 :File suffix: _cal
 
-Catalog file (SourceCatalog)
-+++++++++++++++++++++++++++++++++++
+Catalog (SourceCatalog)
++++++++++++++++++++++++
 
 The catalog data is in
 
@@ -103,6 +120,16 @@ The segmentation map is
 
 :Data model: `~romancal.datamodels.MosaicSegmentationMapModel`
 :File suffix: _segm
+
+For L2 imaging prompt products, when
+``source_catalog.compute_skyvals=True`` (default), the segmentation map
+also includes:
+
+- ``skyvals``: structured HEALPix nside=2**17 sky estimates with fields
+  ``healpix17`` (NEST index), ``data`` (masked-data nanmedian), ``err``
+  (masked-err nanmedian), and ``covfrac`` (fractional healpixel coverage)
+- ``healpix11_cov``: unique nside=2**11 HEALPix coverage indices touched by
+  the image footprint
 
 Result of applying all pipeline steps up through the
 :ref:`tweakreg <tweakreg_step>` step is to produce calibrated data with the image WCS

@@ -78,6 +78,11 @@ def open_dataset(
             result = ModelLibrary(dataset, update_version=update_version, **open_kwargs)
 
         case "asdf":
+            if open_kwargs.pop("on_disk", None) is not None:
+                warnings.warn(
+                    "on_disk is only supported for associations, ignoring on_disk",
+                    stacklevel=2,
+                )
             model = rdm.open(dataset, **open_kwargs)
             if update_version:
                 result = update_model_version(model, close_on_update=True)

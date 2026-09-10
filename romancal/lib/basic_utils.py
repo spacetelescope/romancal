@@ -1,126 +1,6 @@
 """General utility objects"""
 
 import numpy as np
-from roman_datamodels.dqflags import group, pixel
-
-
-def bytes2human(n):
-    """Convert bytes to human-readable format
-
-    Taken from the `psutil` library which references
-    http://code.activestate.com/recipes/578019
-
-    Parameters
-    ----------
-    n : int
-        Number to convert
-
-    Returns
-    -------
-    readable : str
-        A string with units attached.
-
-    Examples
-    --------
-    >>> bytes2human(10000)
-        '9.8K'
-
-    >>> bytes2human(100001221)
-        '95.4M'
-    """
-    symbols = ("K", "M", "G", "T", "P", "E", "Z", "Y")
-    prefix = {}
-    for i, s in enumerate(symbols):
-        prefix[s] = 1 << (i + 1) * 10
-    for s in reversed(symbols):
-        if n >= prefix[s]:
-            value = float(n) / prefix[s]
-            return f"{value:.1f}{s}"
-    return f"{n}B"
-
-
-def is_fully_saturated(model):
-    """
-    Check to see if all data pixels are flagged as saturated.
-    """
-
-    if np.all(np.bitwise_and(model.groupdq, group.SATURATED) == group.SATURATED):
-        return True
-    elif np.all(np.bitwise_and(model.pixeldq, pixel.SATURATED) == pixel.SATURATED):
-        return True
-
-    return False
-
-
-def is_association(asn_data):
-    """
-    Test if an object is an association by checking for required fields
-    """
-    return (
-        isinstance(asn_data, dict) and "asn_id" in asn_data and "asn_pool" in asn_data
-    )
-
-
-class LoggingContext:
-    """Logging context manager
-    Keep logging configuration within a context
-    Based on the Python 3 Logging Cookbook example
-    Parameters
-    ==========
-    logger: logging.Logger
-        The logger to modify.
-    level: int
-        The log level to set.
-    handler: logging.Handler
-        The handler to use.
-    close: bool
-        Close the handler when done.
-    """
-
-    def __init__(self, logger, level=None, handler=None, close=True):
-        self.logger = logger
-        self.level = level
-        self.handler = handler
-        self.close = close
-
-        self.old_level = None
-
-    def __enter__(self):
-        if self.level is not None:
-            self.old_level = self.logger.level
-            self.logger.setLevel(self.level)
-        if self.handler:
-            self.logger.addHandler(self.handler)
-
-    def __exit__(self, et, ev, tb):
-        if self.level is not None:
-            self.logger.setLevel(self.old_level)
-        if self.handler:
-            self.logger.removeHandler(self.handler)
-        if self.handler and self.close:
-            self.handler.close()
-        # implicit return of None => don't swallow exceptions
-
-
-def recarray_to_ndarray(x, to_dtype="<f8"):
-    """
-    Convert a structured array to a 2D ndarray.
-
-    Parameters
-    ----------
-    x : np.record
-        Structured array
-    to_dtype : str
-        Cast all columns in `x` to this dtype in the output ndarray.
-
-    Returns
-    -------
-    array : np.ndarray
-        Numpy array (without labeled columns).
-    """
-    names = x.dtype.names
-    astype = [(name, to_dtype) for name in names]
-    return np.asarray(x.astype(astype).view(to_dtype).reshape((-1, len(names))))
 
 
 def parse_visitID(visit_id):
@@ -152,14 +32,18 @@ def parse_visitID(visit_id):
     return visit_id_parts
 
 
-def frame_read_times(frame_time, sca, frame_number=0):
+def frame_read_times(
+    frame_time, sca, frame_number=0, stride_gw=256, gw_pseudotime_factor=1.5
+):
     """
     Compute the pixel read times for a single frame.
 
-    This is a placeholder function that assumes a uniform read
-    across each channel within the frame time.  A more careful
-    treatment will need to account for time spent reading out the
-    guide window.
+    This is a provisional routine that approximately accounts for
+    time spent reading out the guide window.  The routine is primarily
+    intended for the WFI18 first read correction, and has a fudge
+    factor for the guide window time due to the fact that the guide
+    window reads reduce the the WFI18 transient more than science pixel
+    reads.
 
     Data shape for the frame is assumed to be 4096 x 4096, with
     32 channels along the columns.
@@ -173,6 +57,16 @@ def frame_read_times(frame_time, sca, frame_number=0):
     frame_number : float, optional
         The frame number.  Default of zero means that pixels start
         reading out at t=0.
+    stride_gw : int, optional
+        The number of science rows read out between guide window
+        excursions.  Defined in the guide window MA tables.  The
+        default of 256 is currently used in all guide window MA
+        tables.
+    gw_pseudotime_factor : float, optional
+        The factor by which to inflate the relative time spent
+        reading out the guide window.  Accounts for the fact that
+        the WFI18 transient appears to decay slightly faster when
+        reading out the guide window.  Default 1.5.
 
     Returns
     -------
@@ -182,9 +76,35 @@ def frame_read_times(frame_time, sca, frame_number=0):
     nchannel = 32
     nrow = 4096
     ncol = 128
-    one_channel_read_time = np.linspace(
-        0, frame_time, nrow * ncol, endpoint=False
-    ).reshape(nrow, ncol)
+
+    # The "padding," or clock cycles between rows, will likely never change.
+    npad = 14
+
+    # The clock cycle time, in seconds; this will likely never change.
+    pixtime = 4.915263e-06
+
+    # Define a 2D timing pattern for a single readout channel
+    icol, irow = np.meshgrid(np.arange(ncol), np.arange(nrow))
+    science_clocknum = (icol + irow * (ncol + npad)).astype(float)
+
+    # The number of clock cycles spent in guide window mode can be
+    # very closely figured as the total number of clock cycles minus
+    # those spent reading out science pixels.
+    clockcycles_tot = frame_time / pixtime
+    clockcycles_gw = clockcycles_tot - np.amax(science_clocknum)
+
+    num_gw_readouts = nrow // stride_gw
+    cycles_per_gw = clockcycles_gw / num_gw_readouts * gw_pseudotime_factor
+
+    for i in range(1, num_gw_readouts):
+        science_clocknum[i * stride_gw :] += cycles_per_gw
+
+    # Scale the clock cycles to the appropriate frame time, leaving
+    # one last guide window excursion at the end.  We cannot just
+    # multiply by the pixel time because gw_pseudotime_factor may not
+    # be unity.
+    one_channel_read_time = frame_time * science_clocknum
+    one_channel_read_time /= np.amax(science_clocknum) + cycles_per_gw
 
     # WFI channels alternate readout direction in the +x and -x directions
     # we implement this by flipping the x direction of every other channel

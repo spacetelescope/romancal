@@ -7,8 +7,8 @@ Ramp Fitting
 .. toctree::
    :maxdepth: 2
 
-   ols-description.rst
    likelihood-description.rst
+   ols-description.rst
    arguments.rst
    reference_files.rst
 

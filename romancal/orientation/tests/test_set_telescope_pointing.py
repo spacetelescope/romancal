@@ -13,6 +13,10 @@ import roman_datamodels as rdm
 from astropy.time import Time
 
 from romancal.lib.engdb import engdb_mast, engdb_tools
+from romancal.orientation import _lib as olib
+from romancal.orientation import _pointing as plib
+from romancal.orientation import _transforms as tlib
+from romancal.orientation import _wcs as wlib
 from romancal.orientation import set_telescope_pointing as stp
 
 # pysiaf is not a required dependency. If not present, ignore all this.
@@ -23,21 +27,24 @@ stp.logger.setLevel(logging.DEBUG)
 stp.logger.addHandler(logging.StreamHandler())
 
 # Setup for some times
-STARTTIME = Time("2027-03-11T13:26:56.571", format="isot")
-ENDTIME = Time("2027-03-11T13:27:56.658", format="isot")
+STARTTIME = Time("2025-09-12T12:33:28", format="isot")
+ENDTIME = Time("2025-09-12T12:34:28", format="isot")
 BADSTARTTIME = Time("2020-02-02T02:02:02", format="isot")
 BADENDTIME = Time("2020-02-02T02:12:02", format="isot")
-DEFAULT_RADECREF = (149.9709175757851, 86.7401422250309)
+DEFAULT_RADECREF = (266.59060641987423, -30.664532676056954)
 
 # Header defaults
 TARG_RA = 270.0
-TARG_DEC = 66.01
+TARG_DEC = 66.0
 
 # Default set of transform parameters
+# These are the set of initial conditions used in the notebook `demo_vacorrection` as
+# sent by T.Sohn to J.Eisenhamer on 2015-11-19. The transforms produced are represented
+# in the truth file `data/transforms.asdf` and the resulting WCS results in `data/wcs.asdf`
 TRANSFORM_KWARGS = {
     "aperture": "WFI01_FULL",
     "gscommanded": (916.4728835141, -186.8939737044),
-    "pointing": stp.Pointing(
+    "pointing": plib.Pointing(
         fgs_q=np.array(
             [
                 -0.18596734175399293,
@@ -46,7 +53,7 @@ TRANSFORM_KWARGS = {
                 0.6822141509826322,
             ]
         ),
-        obstime=Time(1804771646.4242268, format="unix"),
+        obstime=Time(1757680438.0280416, format="unix"),
         q=np.array([-0.33879082, 0.62326573, -0.36611627, 0.60226181]),
     ),
     "velocity": (-5.473753741352352, -27.480586797035414, -11.875972151015253),
@@ -54,21 +61,6 @@ TRANSFORM_KWARGS = {
 
 # Get the mock databases
 DATA_PATH = Path(__file__).parent / "data"
-
-# Meta attributes for test comparisons
-METAS_EQUALITY = [
-    "meta.pointing.pointing_engineering_source",
-]
-METAS_ISCLOSE = [
-    "meta.wcsinfo.dec_ref",
-    "meta.wcsinfo.ra_ref",
-    "meta.wcsinfo.roll_ref",
-    "meta.wcsinfo.v2_ref",
-    "meta.wcsinfo.v3_ref",
-    "meta.pointing.ra_v1",
-    "meta.pointing.dec_v1",
-    "meta.pointing.pa_v3",
-]
 
 # Some tests depend on the default engineering database to be available. Check now.
 NO_ENGDB = False
@@ -89,11 +81,80 @@ def test_add_wcs_default(science_raw_model, tmp_path):
         tolerance=0,
         allow_default=True,
         default_quaternion=TRANSFORM_KWARGS["pointing"].q,
+        gscommanded=TRANSFORM_KWARGS["gscommanded"],
     )
 
     with rdm.open(model_path) as result:
         assert np.isclose(result.meta.wcsinfo.ra_ref, DEFAULT_RADECREF[0])
         assert np.isclose(result.meta.wcsinfo.dec_ref, DEFAULT_RADECREF[1])
+        assert np.allclose(
+            result.meta.pointing.quaternion, TRANSFORM_KWARGS["pointing"].q
+        )
+        assert np.allclose(
+            result.meta.guide_star.hv_position, TRANSFORM_KWARGS["gscommanded"]
+        )
+
+
+def test_alternate_siaf(tmp_path_factory):
+    """Test alternate siaf"""
+    t_pars = _make_t_pars(**TRANSFORM_KWARGS)
+    t_pars.siaf_path = Path(__file__).parent / "data" / "siaf"
+
+    # Calculate the transforms and WCS information
+    wcsinfo, vinfo, transforms = wlib.calc_wcs(t_pars)
+
+    # Save all for later examination.
+    transforms_path = tmp_path_factory.mktemp("transforms")
+    transforms.write_to_asdf(transforms_path / "altsiaf_transforms.asdf")
+    wcs_asdf_file = asdf.AsdfFile(
+        {"wcsinfo": wcsinfo._asdict(), "vinfo": vinfo._asdict()}
+    )
+    wcs_asdf_file.write_to(transforms_path / "altsiaf_wcs.asdf")
+
+    # Test the wcs results
+    wcs = {"wcsinfo": wcsinfo, "vinfo": vinfo}
+    with asdf.open(DATA_PATH / "altsiaf_wcs.asdf") as af:
+        expected = af.tree
+    for wcs_type in ["wcsinfo", "vinfo"]:
+        wcs_dict = wcs[wcs_type]._asdict()
+        for key in wcs_dict:
+            if key != "s_region":
+                assert np.isclose(expected[wcs_type][key], wcs_dict[key]), (
+                    f"wcs_type: {wcs_type} Key {key} differs expected {expected[wcs_type][key]} calculated {wcs_dict[key]}"
+                )
+            else:
+                assert expected[wcs_type][key] == wcs_dict[key]
+
+    # Test the transforms
+    for matrix in dataclasses.fields(tlib.Transforms()):
+        _test_transforms(
+            transforms, t_pars, matrix.name, expected_fname="altsiaf_transforms.asdf"
+        )
+
+
+def test_add_wcs_default_from_model(science_raw_model, tmp_path):
+    """Handle when no pointing exists and the default is used."""
+    m = science_raw_model
+    m.meta.exposure.start_time = Time("2022-01-01T00:00:00")
+    m.meta.exposure.end_time = Time("2022-01-01T01:00:00")
+    m.meta.pointing.quaternion = tuple(TRANSFORM_KWARGS["pointing"].q)
+    m.meta.guide_star.hv_position = TRANSFORM_KWARGS["gscommanded"]
+    model_path = _model_to_tmpfile(m, tmp_path)
+    stp.add_wcs(
+        model_path,
+        tolerance=0,
+        allow_default=True,
+    )
+
+    with rdm.open(model_path) as result:
+        assert np.isclose(result.meta.wcsinfo.ra_ref, DEFAULT_RADECREF[0])
+        assert np.isclose(result.meta.wcsinfo.dec_ref, DEFAULT_RADECREF[1])
+        assert np.allclose(
+            result.meta.pointing.quaternion, TRANSFORM_KWARGS["pointing"].q
+        )
+        assert np.allclose(
+            result.meta.guide_star.hv_position, TRANSFORM_KWARGS["gscommanded"]
+        )
 
 
 def test_change_base_url():
@@ -103,7 +164,7 @@ def test_change_base_url():
     """
     service_kwargs = {"service": "mast", "eng_base_url": engdb_mast.MAST_BASE_URL}
     with pytest.raises(ValueError):
-        stp.get_pointing(
+        plib.get_pointing(
             Time("2015-06-15"), Time("2015-06-17"), service_kwargs=service_kwargs
         )
 
@@ -115,7 +176,7 @@ def test_change_base_url_fail():
         "eng_base_url": "https://nonexistent.fake.example",
     }
     with pytest.raises(ValueError):
-        stp.get_pointing(
+        plib.get_pointing(
             Time(STARTTIME, format="isot"),
             Time(ENDTIME, format="isot"),
             service_kwargs=service_kwargs,
@@ -126,50 +187,54 @@ def test_change_base_url_fail():
 def test_get_mnemonics():
     """Test getting mnemonics"""
     try:
-        mnemonics = stp.get_mnemonics(STARTTIME, ENDTIME, 60)
+        mnemonics = plib.get_mnemonics(STARTTIME, ENDTIME, 60)
     except ValueError as exception:
         pytest.xfail(reason=str(exception))
 
-    assert len(mnemonics) == len(stp.COARSE_MNEMONICS)
+    assert len(mnemonics) == len(plib.COARSE_MNEMONICS)
 
 
 @pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")
 def test_get_pointing():
     """Ensure that the averaging works.
 
-    Note: The expected quaternion is from mastdev during Q26B20 development.
+    Note: The expected quaternion is from mastdev during Q26B21 development.
     This will most likely change again.
     """
     try:
-        pointing = stp.get_pointing(STARTTIME, ENDTIME)
+        pointing = plib.get_pointing(STARTTIME, ENDTIME)
     except ValueError as exception:
         pytest.xfail(reason=str(exception))
 
-    assert np.isclose(
-        pointing.obstime.value, TRANSFORM_KWARGS["pointing"].obstime.value
+    assert np.isclose(pointing.obstime.value, 1757680438.0280416)
+    assert np.allclose(
+        pointing.q, np.array([-0.70264027, -0.09765787, 0.6867813, 0.1584015])
     )
-    assert np.allclose(pointing.q, TRANSFORM_KWARGS["pointing"].q)
 
 
 def test_get_pointing_fail():
     with pytest.raises(ValueError):
-        obstime, q = stp.get_pointing(BADSTARTTIME, BADENDTIME)
+        obstime, q = plib.get_pointing(BADSTARTTIME, BADENDTIME)
 
 
 @pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")
 def test_get_pointing_list():
     """Test pointing collection
 
-    Note: The expected quaternion is from mastdev during Q26B20 development.
+    Note: The expected quaternion is from mastdev during Q26B21 development.
     This will most likely change again.
     """
     try:
-        results = stp.get_pointing(STARTTIME, ENDTIME, reduce_func=stp.all_pointings)
+        results = plib.get_pointing(STARTTIME, ENDTIME, reduce_func=plib.all_pointings)
     except ValueError as exception:
         pytest.xfail(reason=str(exception))
     assert isinstance(results, list)
     assert len(results) > 0
-    assert np.isclose(results[0].q, TRANSFORM_KWARGS["pointing"].q, rtol=1.0e-2).all()
+    assert np.isclose(
+        results[0].q,
+        np.array([-0.70264233, -0.09766397, 0.68678001, 0.15839417]),
+        rtol=1.0e-2,
+    ).all()
     assert STARTTIME <= results[0].obstime <= ENDTIME
 
 
@@ -178,7 +243,7 @@ def test_hv_to_fgs():
     hv = TRANSFORM_KWARGS["gscommanded"]
     fgs_expected = (346.06680318732685, -148.7528870949794)
 
-    fgs = stp.hv_to_fgs("WFI01_FULL", *hv)
+    fgs = olib.hv_to_fgs("WFI01_FULL", *hv)
 
     assert np.allclose(fgs, fgs_expected)
 
@@ -187,23 +252,23 @@ def test_hv_to_fgs():
 def test_mnemonics_chronologically():
     """Test ordering mnemonics chronologically"""
     try:
-        mnemonics = stp.get_mnemonics(STARTTIME, ENDTIME, 60)
+        mnemonics = plib.get_mnemonics(STARTTIME, ENDTIME, 60)
     except ValueError as exception:
         pytest.xfail(reason=str(exception))
-    ordered = stp.mnemonics_chronologically(mnemonics)
+    ordered = plib.mnemonics_chronologically(mnemonics)
 
     assert len(ordered) > 1
 
     first = ordered[0]
     assert isinstance(first[0], Time)
     assert isinstance(first[1], dict)
-    assert len(first[1]) >= len(stp.COARSE_MNEMONICS_QUATERNION_ECI)
+    assert len(first[1]) >= len(plib.COARSE_MNEMONICS)
 
 
 @pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")
 def test_logging(caplog):
     try:
-        stp.get_pointing(STARTTIME, ENDTIME)
+        plib.get_pointing(STARTTIME, ENDTIME)
     except ValueError as exception:
         pytest.xfail(reason=str(exception))
     assert "Determining pointing between observations times" in caplog.text
@@ -220,18 +285,10 @@ def test_mnemonic_list():
             "SCF_AC_SDR_QBJ_2",
             "SCF_AC_SDR_QBJ_3",
             "SCF_AC_SDR_QBJ_4",
-            "SCF_AC_EST_FGS_qbr1",
-            "SCF_AC_EST_FGS_qbr2",
-            "SCF_AC_EST_FGS_qbr3",
-            "SCF_AC_EST_FGS_qbr4",
-            "SCF_AC_FGS_TBL_Qb1",
-            "SCF_AC_FGS_TBL_Qb2",
-            "SCF_AC_FGS_TBL_Qb3",
-            "SCF_AC_FGS_TBL_Qb4",
         )
     )
 
-    assert expected == set(stp.COARSE_MNEMONICS)
+    assert expected == set(plib.COARSE_MNEMONICS)
 
 
 @pytest.mark.parametrize("wcs_type", ["wcsinfo", "vinfo"])
@@ -270,8 +327,8 @@ def test_strict_pointing(science_raw_model, tmp_path):
 
 @pytest.mark.parametrize(
     "matrix",
-    [matrix for matrix in dataclasses.fields(stp.Transforms())],
-    ids=[matrix.name for matrix in dataclasses.fields(stp.Transforms())],
+    [matrix for matrix in dataclasses.fields(tlib.Transforms())],
+    ids=[matrix.name for matrix in dataclasses.fields(tlib.Transforms())],
 )
 def test_transforms(calc_wcs, matrix):
     """Ensure expected calculate of the specified matrix
@@ -294,10 +351,66 @@ def test_transform_serialize(calc_wcs, tmp_path):
 
     path = tmp_path / "transforms.asdf"
     transforms.write_to_asdf(path)
-    from_asdf = stp.Transforms.from_asdf(path)
+    from_asdf = tlib.Transforms.from_asdf(path)
 
-    assert isinstance(from_asdf, stp.Transforms)
+    assert isinstance(from_asdf, tlib.Transforms)
     assert str(transforms) == str(from_asdf)
+
+
+@pytest.mark.parametrize(
+    "attr, expected",
+    [
+        ("meta.guide_star.hv_position", (916.4728835141, -186.8939737044)),
+        ("meta.pointing.dec_v1", -30.177183927606528),
+        ("meta.pointing.pa_aperture", 90.60111674247034),
+        ("meta.pointing.pa_v3", 90.4289479321644),
+        (
+            "meta.pointing.quaternion",
+            [-0.33879082, 0.62326573, -0.36611627, 0.60226181],
+        ),
+        ("meta.pointing.ra_v1", 267.0168676146806),
+        ("meta.pointing.target_dec", -30.604540841887303),
+        ("meta.pointing.target_ra", 266.7250048091743),
+        ("meta.wcsinfo.dec_ref", -30.53927896286344),
+        ("meta.wcsinfo.ra_ref", 266.67803540698276),
+        ("meta.wcsinfo.roll_ref", 90.60111674247034),
+        (
+            "meta.wcsinfo.s_region",
+            "POLYGON ICRS  266.704474362 -30.623991336 266.579827226 -30.560011007 266.651764709 -30.453928832 266.777049827 -30.518088819",
+        ),
+    ],
+)
+def test_update_meta(attr, expected, updated_model):
+    """Ensure that all the expected meta are updated"""
+
+    value = _getattrpath(updated_model, attr)
+    if isinstance(value, (list, tuple, np.ndarray)):
+        assert np.allclose(value, expected)
+    elif isinstance(value, float):
+        assert np.isclose(value, expected)
+    else:
+        assert value == expected
+
+
+@pytest.mark.parametrize(
+    "velocity, is_identity",
+    [
+        ([None, None, None], True),
+        ([0, 0, 0], True),
+        ([2000, 2000, 2000], True),
+        ([-50, 0, 50], False),
+    ],
+)
+def test_velocity_check(velocity, is_identity):
+    """Test velocity check"""
+    m = np.identity(3)
+
+    m_v = tlib.calc_gsapp2gs(m, velocity)
+
+    if is_identity:
+        assert np.array_equal(m_v, m)
+    else:
+        assert not np.array_equal(m_v, m)
 
 
 # ######################
@@ -313,7 +426,7 @@ def calc_wcs(tmp_path_factory):
     t_pars = _make_t_pars(**TRANSFORM_KWARGS)
 
     # Calculate the transforms and WCS information
-    wcsinfo, vinfo, transforms = stp.calc_wcs(t_pars)
+    wcsinfo, vinfo, transforms = wlib.calc_wcs(t_pars)
 
     # Save all for later examination.
     transforms_path = tmp_path_factory.mktemp("transforms")
@@ -346,6 +459,37 @@ def science_raw_model():
     return m
 
 
+@pytest.fixture(scope="module")
+def updated_model(calc_wcs):
+    """Update a model with a orientation calculation"""
+    wcsinfo, vinfo, _, t_pars = calc_wcs
+
+    m = rdm.datamodels.ScienceRawModel.create_fake_data(
+        {
+            "meta": {
+                "exposure": {"start_time": STARTTIME, "end_time": ENDTIME},
+                "pointing": {
+                    "target_aperture": "WFI_CEN",
+                    "target_ra": TARG_RA,
+                    "target_dec": TARG_DEC,
+                },
+                "wcsinfo": {"aperture_name": "WFI02_FULL"},
+            }
+        }
+    )
+    olib.update_meta(m, t_pars, wcsinfo, vinfo, "CALCULATED")
+    return m
+
+
+def _getattrpath(obj, path, default=None):
+    """Retrieve an attribute from its fully qualified path"""
+    attribute, _, rest = path.partition(".")
+    value = getattr(obj, attribute, default)
+    if value is not None and rest:
+        value = _getattrpath(value, rest, default)
+    return value
+
+
 def _make_t_pars(**transform_kwargs):
     """Setup initial Transforms Parameters
 
@@ -355,7 +499,7 @@ def _make_t_pars(**transform_kwargs):
         dict to use to initialize the `TransformParameters` object.
         See `TransformParameters` for more information.`
     """
-    t_pars = stp.TransformParameters(**transform_kwargs)
+    t_pars = tlib.TransformParameters(**transform_kwargs)
 
     # Force MAST service
     t_pars.service_kwargs = {"service": "mast"}
@@ -371,7 +515,7 @@ def _model_to_tmpfile(m, tmp_path, fname="file.asdf"):
     return file_path
 
 
-def _test_transforms(transforms, t_pars, matrix):
+def _test_transforms(transforms, t_pars, matrix, expected_fname="transforms.asdf"):
     """Private function to ensure expected calculate of the specified matrix
 
     Parameters
@@ -382,7 +526,7 @@ def _test_transforms(transforms, t_pars, matrix):
     matrix : str
         The matrix to compare
     """
-    expected_tforms = stp.Transforms.from_asdf(DATA_PATH / "transforms.asdf")
+    expected_tforms = tlib.Transforms.from_asdf(DATA_PATH / expected_fname)
     expected_value = getattr(expected_tforms, matrix)
 
     value = getattr(transforms, matrix)

@@ -1,0 +1,41 @@
+line-length = 88
+
+[lint]
+select = [
+  "S",  # flake8-bandit
+  "B",  # flake8-bugbear
+  "I",  # isort
+  "E4",
+  "E7",
+  "E9",  # pycodestyle
+  "F",  # Pyflakes
+  "UP",  # pyupgrade
+  "RUF",  # Ruff-specific rules
+]
+extend-select = [
+  "NPY",  # Numpy lint
+]
+exclude = [
+  "jdocs",
+  ".tox",
+  ".eggs",
+  "build",
+]
+ignore = [
+  "E741",  # ambiguous variable name
+  "RUF059",  # unused unpacked variable
+]
+
+[lint.extend-per-file-ignores]
+"romancal/associations/__init__.py" = [
+  "E402",
+]
+"romancal/**/tests/**.py" = [
+  "S101"  # Bandit: Use of assert detected (fine in test files)
+]
+"romancal/**/test/**.py" = [
+  "S101"  # Bandit: Use of assert detected (fine in test files)
+]
+"romancal/regtest/**.py" = [
+  "S101"  # Bandit: Use of assert detected (fine in test files)
+]

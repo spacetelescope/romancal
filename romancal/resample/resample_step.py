@@ -6,7 +6,6 @@ from copy import deepcopy
 from typing import TYPE_CHECKING
 
 import asdf
-import numpy as np
 from roman_datamodels import datamodels
 
 from romancal.datamodels.fileio import open_dataset
@@ -67,7 +66,7 @@ class ResampleStep(RomanStep):
         output_wcs = string(default='')  # Custom output WCS.
         resample_on_skycell = boolean(default=True)  # if association contains skycell information use it for the wcs
         in_memory = boolean(default=True)
-        good_bits = string(default='~DO_NOT_USE+NON_SCIENCE')  # The good bits to use for building the resampling mask.
+        good_bits = string(default='~DO_NOT_USE')  # The good bits to use for building the resampling mask.
         include_var_flat = boolean(default=False)  # include var_flat in output image
         propagate_dq = boolean(default=False)  # propagate DQ during resampling
         pixmap_stepsize = integer(default=10)  # step size for computation of the pixel map
@@ -176,11 +175,6 @@ class ResampleStep(RomanStep):
 
     def _final_updates(self, model):
         model.meta.cal_step["resample"] = "COMPLETE"
-
-        # TODO statistics are unknown
-        model.meta.statistics.image_median = np.nan
-        model.meta.statistics.image_rms = np.nan
-        model.meta.statistics.good_pixel_fraction = np.nan
 
     @staticmethod
     def _load_custom_wcs(asdf_wcs_file, output_shape):

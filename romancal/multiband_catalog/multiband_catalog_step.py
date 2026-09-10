@@ -8,16 +8,17 @@ import copy
 import logging
 from typing import TYPE_CHECKING
 
-from roman_datamodels import datamodels
+import numpy as np
+from roman_datamodels import datamodels as rdm
 
 from romancal.datamodels.fileio import open_dataset
-from romancal.multiband_catalog.multiband_catalog import (
+from romancal.multiband_catalog._multiband_catalog import (
+    initialize_catalog_model,
     make_source_injected_library,
     match_recovered_sources,
     multiband_catalog,
 )
-from romancal.source_catalog.save_utils import save_all_results, save_empty_results
-from romancal.source_catalog.utils import get_ee_spline
+from romancal.source_catalog._utils import get_ee_spline
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:
@@ -54,10 +55,25 @@ class MultibandCatalogStep(RomanStep):
         deblend = boolean(default=False)      # deblend sources?
         suffix = string(default='cat')        # Default suffix for output files
         fit_psf = boolean(default=True)       # fit source PSFs for accurate astrometry?
+        psf_match_reference_filter = string(default=None)  # reference filter for PSF matching
         inject_sources = boolean(default=False) # Inject sources into images
+        inject_seed = integer(default=None)   # RNG seed for injected sources
         save_debug_info = boolean(default=False)
                                    # Include image data and other data for testing
+        output_use_model = boolean(default=True)  # When saving use `DataModel.meta.filename`
     """
+
+    def save_model(self, model, **kwargs):
+        if isinstance(model, rdm.MultibandSourceCatalogModel):
+            kwargs["ext"] = "parquet"
+            kwargs["suffix"] = kwargs.get("suffix", self.suffix)
+        elif isinstance(model, rdm.MultibandSegmentationMapModel):
+            kwargs["suffix"] = kwargs.get("suffix", "segm")
+
+        # strip the index since these all have different extensions
+        kwargs.pop("idx", None)
+
+        return super().save_model(model, **kwargs)
 
     def process(self, dataset):
         # All input MosaicImages in the ModelLibrary are assumed to have
@@ -70,45 +86,56 @@ class MultibandCatalogStep(RomanStep):
             example_model = library.borrow(0)
             library.shelve(example_model, modify=False)
 
-        # Initialize the source catalog model, copying the metadata
-        # from the example model. Some of this may be overwritten
-        # during metadata blending.
-        cat_model = datamodels.MultibandSourceCatalogModel.create_minimal(
-            {"meta": example_model.meta}
+        # Determine reference filter: CLI arg > association file > reddest filter
+        if self.psf_match_reference_filter is None:
+            self.psf_match_reference_filter = library.asn.get(
+                "psf_match_reference_filter"
+            )
+
+        # Initialize the source catalog model
+        cat_model = initialize_catalog_model(library, example_model)
+
+        # Initialize the segmentation map model
+        segmentation_model = rdm.MultibandSegmentationMapModel.create_minimal(
+            {"meta": cat_model.meta}
         )
-        cat_model.meta["image"] = {
-            # try to record association name else fall back to example model filename
-            "filename": library.asn.get("table_name", example_model.meta.filename),
-            "file_date": example_model.meta.file_date,
-            # this may be overwritten during metadata blending
-        }
-        cat_model.meta["image_metas"] = []
-        # copy over data_release_id, ideally this will come from the association
-        if "data_release_id" in example_model.meta:
-            cat_model.meta.data_release_id = example_model.meta.data_release_id
+        # carry over image_metas if it exists (since it's not required in the schemas)
+        if image_metas := cat_model.meta.get("image_metas"):
+            segmentation_model.meta.image_metas = image_metas
 
         log.info("Creating ee_fractions model for first image")
         apcorr_ref = self.get_reference_file(example_model, "apcorr")
         ee_spline = get_ee_spline(example_model, apcorr_ref)
 
-        # Define the output filename for the source catalog model
-        try:
-            cat_model.meta.filename = library.asn["products"][0]["name"]
-        except (AttributeError, KeyError):
-            cat_model.meta.filename = "multiband_catalog"
-
         # Set up source injection library and injection catalog
         if self.inject_sources:
-            si_library, si_cat = make_source_injected_library(library)
+            si_library, si_cat = make_source_injected_library(
+                library, seed=self.inject_seed
+            )
 
-        # Create catalog of library images
-        segment_img, cat_model, msg = multiband_catalog(
+        # Create the multiband catalog
+        *results, msg = multiband_catalog(
             self, library, example_model, cat_model, ee_spline
         )
 
-        # The results are empty
-        if msg is not None:
-            return save_empty_results(self, segment_img, cat_model, msg=msg)
+        # Save empty results if there was an error
+        if msg is None:
+            segment_img, cat_model = results
+            segmentation_model.data = segment_img.data.astype(np.uint32)
+
+            # carry over psf_match_reference_filter
+            segmentation_model.meta["psf_match_reference_filter"] = (
+                cat_model.source_catalog.meta["psf_match_reference_filter"]
+            )
+        else:
+            log.error(msg)
+            segment_image_shape, cat_model = results
+            cat_model.source_catalog = cat_model.create_empty_catalog()
+
+            # Set the data and detection image
+            segmentation_model.data = np.zeros(segment_image_shape, np.uint32)
+
+            return cat_model, segmentation_model
 
         # Source Injection
         if self.inject_sources:
@@ -116,15 +143,13 @@ class MultibandCatalogStep(RomanStep):
                 si_example_model = si_library.borrow(0)
                 si_library.shelve(si_example_model, modify=False)
 
-            si_ee_spline = get_ee_spline(si_example_model, apcorr_ref)
-
             # Create catalog of source injected images
             si_segment_img, si_cat_model, _ = multiband_catalog(
                 self,
                 si_library,
                 si_example_model,
                 copy.deepcopy(cat_model),
-                si_ee_spline,
+                ee_spline,
             )
 
             # Match sources
@@ -134,13 +159,14 @@ class MultibandCatalogStep(RomanStep):
 
             # Put the source injected multiband catalog in the model
             cat_model.source_injection_catalog = si_cat_model.source_catalog
-            segment_img.injected_sources = si_cat
-            segment_img.recovered_sources = recovered_sources
+            segmentation_model["injected_sources"] = si_cat
+            segmentation_model["recovered_sources"] = recovered_sources
 
+            # Write data for tests
             if self.save_debug_info:
-                segment_img.si_segment_img = si_segment_img
-                segment_img.si_detection_image = si_segment_img.detection_image
+                segmentation_model["si_data"] = si_segment_img.data.astype(np.uint32)
+                segmentation_model["si_detection_image"] = (
+                    si_segment_img.detection_image
+                )
 
-        return save_all_results(
-            self, segment_img, cat_model, save_debug_info=self.save_debug_info
-        )
+        return cat_model, segmentation_model

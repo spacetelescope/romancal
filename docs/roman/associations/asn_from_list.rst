@@ -8,7 +8,7 @@ Create an association using either the command line tool
 
 Associations
 ^^^^^^^^^^^^
-Refer to TBD for a full description of associations.
+Refer to :ref:`asn-overview` for a full description of associations.
 
 To create an association programmatically, use:
 
@@ -67,4 +67,5 @@ Notes
 ^^^^^
 - The CLI expects a list of filenames as positional arguments.
 - The Python API allows more advanced usage, such as passing (filename, exptype) tuples.
-- The `"data_release_id"` field will always appear immediately after `"program"` in the output ASN metadata for consistency.
+- The ``"data_release_id"`` field will always appear immediately after ``"program"`` in the output ASN metadata for consistency.
+- For multiband catalog associations, prefer :ref:`multiband_asn` which automatically derives the product name and output filename from the input coadd filenames.  The ``--psf-match-reference-filter`` option is available in both tools but is documented under :ref:`multiband_asn`.

@@ -10,7 +10,7 @@ history:
   - !core/extension_metadata-1.0.0
     extension_class: asdf.extension._manifest.ManifestExtension
     extension_uri: asdf://asdf-format.org/core/extensions/core-1.6.0
-    manifest_software: !core/software-1.0.0 {name: asdf_standard, version: 1.4.0}
+    manifest_software: !core/software-1.0.0 {name: asdf_standard, version: 1.5.0}
     software: !core/software-1.0.0 {name: asdf, version: 5.1.0}
 transforms:
   m_b2fgs: !core/ndarray-1.1.0
@@ -27,7 +27,7 @@ transforms:
     - [0.9988119559788253, -0.048293903643685854, -0.006478779817410407]
     datatype: float64
     shape: [3, 3]
-  m_eci2fcs: !core/ndarray-1.1.0
+  m_eci2fgs: !core/ndarray-1.1.0
     data:
     - [-0.8743376671773374, -0.2093559097216648, 0.4378392846584145]
     - [-0.4828189678465469, 0.46665910291991075, -0.7410229671519948]
@@ -50,9 +50,9 @@ transforms:
     shape: [3, 3]
   m_eci2v: !core/ndarray-1.1.0
     data:
-    - [-0.053348122562137536, -0.8552237740727812, -0.5155053747597168]
-    - [-0.01943650717277895, -0.5152536085242754, 0.8568172066177229]
-    - [-0.9983865906317408, 0.05572936926879449, 0.010865219918024582]
+    - [-0.04498896488295479, -0.8633033525478525, -0.5026757390595601]
+    - [0.018682988403392862, 0.5023703147833519, -0.8644505854732071]
+    - [0.998812556477224, -0.04828240346283594, -0.0064719271496198605]
     datatype: float64
     shape: [3, 3]
   m_fgs2gsapp: !core/ndarray-1.1.0

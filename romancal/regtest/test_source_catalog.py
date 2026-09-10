@@ -63,6 +63,7 @@ def fields(catalog):
         "segment_flux_err",  # DMS386 flux uncertainties
         "is_extended",  # DMS376 type of source
         "warning_flags",  # DMS387 dq_flags
+        "dust_ebv",
     ),
 )
 def test_has_field(fields, field):

@@ -19,8 +19,7 @@ from gwcs import coordinate_frames as cf
 from gwcs import wcs
 from roman_datamodels import datamodels as rdm
 
-from romancal.assign_wcs import pointing
-from romancal.assign_wcs.utils import add_s_region
+from romancal.assign_wcs.assign_wcs import add_s_region, v23tosky
 
 if TYPE_CHECKING:
     from collections.abc import Generator
@@ -123,14 +122,17 @@ class TestDescriptionPlugin:
 
 @pytest.fixture(scope="function")
 def create_mock_asn_file():
-    def _create_asn_file(tmp_path: str, members_mapping: dict | None = None) -> str:
+    def _create_asn_file(
+        tmp_path: str | None, members_mapping: dict | None = None
+    ) -> str:
         """
         Create a mock association file with the provided members mapping.
 
         Parameters
         ----------
-        tmp_path : str
+        tmp_path : str or None
             Path to the temporary directory to store the association file.
+            If None return association dictionary.
         members_mapping : list, optional
             Mapping of members to include in the association file (default: None).
 
@@ -175,6 +177,9 @@ def create_mock_asn_file():
                 asn_dict["products"][0]["members"].append(x)
             asn_content = json.dumps(asn_dict)
 
+        if tmp_path is None:
+            return json.loads(asn_content)
+
         asn_file_path = str(tmp_path / "sample_asn.json")
         asn_file = StringIO()
         asn_file.write(asn_content)
@@ -208,7 +213,7 @@ def _create_wcs(input_dm, shift_1=0, shift_2=0):
 
     # create necessary transformations
     distortion = Shift(-shift_1) & Shift(-shift_2)
-    tel2sky = pointing.v23tosky(input_dm)
+    tel2sky = v23tosky(input_dm)
 
     # create required frames
     detector = cf.Frame2D(name="detector", axes_order=(0, 1), unit=(u.pix, u.pix))
@@ -281,6 +286,7 @@ def ignore_metadata_paths():
         "asdf_library",
         "history",
         "roman.meta.ref_file.crds.version",
+        "roman.meta.ref_file.crds.context",
         "roman.meta.calibration_software_version",
         "roman.cal_logs",
         "roman.meta.cal_logs",

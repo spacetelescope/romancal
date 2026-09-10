@@ -1,0 +1,159 @@
+import numpy as np
+from astropy import units as u
+from astropy.modeling.fitting import SplineSplrepFitter
+from astropy.modeling.models import Spline1D
+from roman_datamodels import datamodels
+from roman_datamodels.datamodels import ImageModel, MosaicModel
+
+from romancal.source_catalog._wcs_helpers import pixel_scale_angle_at_skycoord
+
+
+def estimate_pixel_area_sr_from_wcs(wcs, shape):
+    """
+    Estimate image pixel area in steradians at the image center.
+
+    Parameters
+    ----------
+    wcs
+        Model WCS object.
+    shape : tuple[int, int]
+        2D image shape (ny, nx).
+    """
+    ycen = (shape[0] - 1) / 2.0
+    xcen = (shape[1] - 1) / 2.0
+    skycoord = wcs.pixel_to_world(xcen, ycen)
+    _, pixscale, _ = pixel_scale_angle_at_skycoord(skycoord, wcs)
+    return (pixscale**2).to_value(u.sr)
+
+
+def get_pixel_area_sr(model):
+    """
+    Return pixel area in steradians from metadata, or estimate from WCS.
+    """
+    if (
+        "photometry" in model.meta
+        and "pixel_area" in model.meta.photometry
+        and model.meta.photometry.pixel_area is not None
+        and model.meta.photometry.pixel_area > 0
+    ):
+        return float(model.meta.photometry.pixel_area)
+
+    return estimate_pixel_area_sr_from_wcs(model.meta.wcs, model.data.shape)
+
+
+def copy_mosaic_meta(model, cat_model):
+    # TODO some junk values here
+    cat_model.meta.prd_version = "8.8.8"
+    cat_model.meta.sdf_software_version = "7.7.7"
+    cat_model.meta.basic.time_first_mjd = model.meta.coadd_info.time_first.mjd
+    cat_model.meta.basic.time_last_mjd = model.meta.coadd_info.time_last.mjd
+    cat_model.meta.basic.time_mean_mjd = model.meta.coadd_info.time_mean.mjd
+    cat_model.meta.basic.max_exposure_time = model.meta.coadd_info.get(
+        "max_exposure_time", np.nan
+    )
+    cat_model.meta.basic.mean_exposure_time = model.meta.coadd_info.exposure_time
+    cat_model.meta.basic.visit = model.meta.observation.visit
+    cat_model.meta.basic.segment = model.meta.observation.segment
+    cat_model.meta.basic["pass"] = model.meta.observation["pass"]
+    cat_model.meta.basic.program = model.meta.observation.program
+    cat_model.meta.basic.survey = "?"
+
+    # TODO handle optical element with multiple values
+    cat_model.meta.basic.optical_element = model.meta.instrument.optical_element
+
+    cat_model.meta.basic.instrument = "WFI"
+    cat_model.meta.basic.location_name = model.meta.wcsinfo.skycell_name
+    cat_model.meta.basic.product_type = model.meta.product_type
+
+    # TODO can we fill these in?
+    cat_model.meta.photometry.conversion_megajanskys = None
+    cat_model.meta.photometry.conversion_megajanskys_uncertainty = None
+    cat_model.meta.photometry.pixel_area = None
+    return cat_model
+
+
+def get_ee_spline(input_model, apcorr_file):
+    """
+    Create a spline fit to the encircled energy fraction vs. radius data.
+
+    Parameters
+    ----------
+    input_model : `~roman_datamodels.datamodels.ImageModel` or `~roman_datamodels.datamodels.MosaicModel`
+        The input data model.
+
+    apcorr_file : str
+        Path to the aperture correction (apcorr) reference file.
+    """
+
+    optical_element = input_model.meta.instrument.optical_element
+    with datamodels.open(apcorr_file) as ee_ref:
+        ee_fractions = getattr(ee_ref.data, optical_element).ee_fractions
+        ee_radii = getattr(ee_ref.data, optical_element).ee_radii
+
+        # Fit a spline model to the ee_fraction vs radius data so that we
+        # can interpolate the values for arbitrary radii
+        return SplineSplrepFitter()(Spline1D(), ee_radii, ee_fractions)
+
+
+def make_model_mask(model):
+    """
+    Create a boolean mask for bad pixels in an image model.
+
+    A pixel is masked if its data or error value is non-finite, or if
+    its error is non-positive.
+
+    Parameters
+    ----------
+    model : ImageModel or MosaicModel
+        The input data model.
+
+    Returns
+    -------
+    mask : ndarray of bool
+        Boolean array with the same shape as ``model.data``, where
+        True marks bad pixels.
+    """
+    return ~np.isfinite(model.data) | ~np.isfinite(model.err) | (model.err <= 0)
+
+
+def copy_model_arrays(model):
+    """
+    Create a copy of an `ImageModel` or `MosaicModel` with independent
+    ``data`` and ``err`` arrays.
+
+    This function creates a new model instance that shares the metadata
+    with the input model but has independent copies of the data and err
+    arrays. Other arrays (dq, weight) are shared references.
+
+    Parameters
+    ----------
+    model : ImageModel or MosaicModel
+        The input data model to copy.
+
+    Returns
+    -------
+    copied_model : ImageModel or MosaicModel
+        A new model with copied data and err arrays.
+
+    Notes
+    -----
+    The metadata and dq/weight arrays are not copied because they are
+    not modified in source catalog operations.
+    """
+    if isinstance(model, ImageModel):
+        copied_model = ImageModel()
+        copied_model.meta = model.meta
+        copied_model.data = model.data.copy()
+        # cast to float32 so unit manipulations later on don't overflow
+        copied_model.err = model.err.copy().astype("float32")
+        copied_model.dq = model.dq
+    elif isinstance(model, MosaicModel):
+        copied_model = MosaicModel()
+        copied_model.meta = model.meta
+        copied_model.data = model.data.copy()
+        copied_model.err = model.err.copy()
+        copied_model.weight = model.weight
+    else:
+        raise TypeError("model must be an ImageModel or MosaicModel")
+
+    return copied_model

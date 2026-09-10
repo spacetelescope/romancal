@@ -15,13 +15,20 @@ from astropy.stats import mad_std
 from astropy.table import QTable
 from astropy.time import Time
 from photutils.datasets import make_model_image
-from photutils.psf import PSFPhotometry
-from roman_datamodels.datamodels import ImageModel
+from photutils.psf import GriddedPSFModel, ImagePSF
+from roman_datamodels.datamodels import ImageModel, MosaicModel
 
-from romancal.source_catalog import psf
 from romancal.source_catalog.psf import (
-    fit_psf_to_image_model,
+    _azimuthally_average_via_fft,
+    _central_stamp,
+    _create_convolution_kernel,
+    _downsample_by_interpolation,
+    _evaluate_gaussian_fft,
+    _get_jitter_params,
+    _PSFCatalog,
+    add_jitter,
     get_gridded_psf_model,
+    render_stamp,
 )
 
 n_trials = 15
@@ -95,37 +102,35 @@ def add_sources(image_model, psf_model, x_true, y_true, flux_true, background=10
 
 @pytest.mark.parametrize(
     "dx, dy, true_flux",
-    zip(
-        rng.uniform(-1, 1, n_trials),
-        rng.uniform(-1, 1, n_trials),
-        np.geomspace(1_000, 100_000, n_trials),
-        strict=False,
+    list(
+        zip(
+            rng.uniform(-1, 1, n_trials),
+            rng.uniform(-1, 1, n_trials),
+            np.geomspace(1_000, 100_000, n_trials),
+            strict=False,
+        )
     ),
 )
 def test_psf_fit(setup_inputs, dx, dy, true_flux):
     image_model = setup_inputs["image"]
     psf_model = setup_inputs["psf_model"]
+    psf_ref_model = setup_inputs["psf_ref_model_f087"]
     image_model = deepcopy(image_model)
 
     # add synthetic sources to the ImageModel:
     true_x = image_model_shape[0] / 2 + dx
     true_y = image_model_shape[1] / 2 + dy
-    add_sources(image_model, psf_model, true_x, true_y, true_flux)
+    add_sources(image_model, psf_model, true_x, true_y, true_flux, background=0)
     init_data_stddev = np.std(image_model.data)
 
     # fit the PSF to the ImageModel:
-    results_table, photometry = fit_psf_to_image_model(
-        image_model=image_model,
-        photometry_cls=PSFPhotometry,
-        psf_model=psf_model,
-        x_init=true_x,
-        y_init=true_y,
-    )
+    xypos = np.array([[true_x, true_y]])
+    catalog = _PSFCatalog(image_model, psf_ref_model, xypos)
 
     # difference between input and output, normalized by the
     # uncertainty. Has units of sigma:
-    delta_x = np.abs(true_x - results_table["x_fit"]) / results_table["x_err"]
-    delta_y = np.abs(true_y - results_table["y_fit"]) / results_table["y_err"]
+    delta_x = np.abs(true_x - catalog.x_psf.value) / catalog.x_psf_err.value
+    delta_y = np.abs(true_y - catalog.y_psf.value) / catalog.y_psf_err.value
 
     sigma_threshold = 3.5
     assert np.all(delta_x < sigma_threshold)
@@ -142,31 +147,31 @@ def test_psf_fit(setup_inputs, dx, dy, true_flux):
     # centroid err heuristic above is an underestimate, so we scale it up:
     scale_factor_approx = 2
 
-    assert np.all(results_table["x_err"] < scale_factor_approx * approx_centroid_err)
-    assert np.all(results_table["y_err"] < scale_factor_approx * approx_centroid_err)
+    assert np.all(catalog.x_psf_err.value < scale_factor_approx * approx_centroid_err)
+    assert np.all(catalog.y_psf_err.value < scale_factor_approx * approx_centroid_err)
 
 
 # new routines: render_stamp, _get_jitter_params, _evaluate_gaussian_fft, add_jitter
 def test_render_stamp(setup_inputs):
     # some basic tests that we can render a psf
     psf_model = setup_inputs["psf_model"]
-    stamp = psf.render_stamp(2000, 2000, psf_model, 19)
+    stamp = render_stamp(2000, 2000, psf_model, 19)
     assert 0.9 < np.sum(stamp) < 1.1
     assert stamp.shape[0] == stamp.shape[1] == 19
-    stamp = psf.render_stamp(0, 0, psf_model, 19)
+    stamp = render_stamp(0, 0, psf_model, 19)
     assert 0.9 < np.sum(stamp) < 1.1
-    stamp = psf.render_stamp(0, 0, psf_model, 1)
+    stamp = render_stamp(0, 0, psf_model, 1)
     assert np.sum(stamp) < 0.6
     assert stamp.shape[0] == stamp.shape[1] == 1
 
 
 def test_get_jitter_params():
-    res = psf._get_jitter_params({})
+    res = _get_jitter_params({})
     assert res["jitter_major"] > 0
     assert res["jitter_minor"] > 0
     assert np.isfinite(res["jitter_position_angle"])
     meta = {"jitter_major": 4}
-    res = psf._get_jitter_params(meta)
+    res = _get_jitter_params(meta)
     assert res["jitter_major"] == meta["jitter_major"]
 
 
@@ -179,7 +184,7 @@ def rms(stamp, coord):
 def test_evaluate_gaussian_fft():
     param = dict(jitter_major=8, jitter_minor=8, jitter_position_angle=0)
     shape = (19, 19)
-    fft = psf._evaluate_gaussian_fft(param, shape, 0.008)
+    fft = _evaluate_gaussian_fft(param, shape, 0.008)
     stamp = np.fft.fftshift(np.fft.irfft2(fft, s=shape))
     tolerance = 0.01
     assert np.abs(np.sum(stamp) - 1) < tolerance
@@ -189,7 +194,7 @@ def test_evaluate_gaussian_fft():
     assert np.abs(rms(stamp, xx) - 1) < tolerance
     assert np.abs(rms(stamp, yy) - 1) < tolerance
 
-    fft = psf._evaluate_gaussian_fft(param, shape, 0.004)
+    fft = _evaluate_gaussian_fft(param, shape, 0.004)
     stamp = np.fft.fftshift(np.fft.irfft2(fft, s=shape))
     assert np.abs(rms(stamp, xx) - 2) < tolerance
     assert np.abs(rms(stamp, yy) - 2) < tolerance
@@ -197,7 +202,7 @@ def test_evaluate_gaussian_fft():
     # check that the position angle uses the right conventions
     param["jitter_major"] = 24
     param["jitter_minor"] = 8
-    fft = psf._evaluate_gaussian_fft(param, shape, 0.008)
+    fft = _evaluate_gaussian_fft(param, shape, 0.008)
     stamp = np.fft.fftshift(np.fft.irfft2(fft, s=shape))
     assert np.abs(rms(stamp, yy) - 3) < tolerance
     assert np.abs(rms(stamp, xx) - 1) < tolerance
@@ -205,7 +210,7 @@ def test_evaluate_gaussian_fft():
     # make sure we tilt to the right when the position angle
     # is mildly positive
     param["jitter_position_angle"] = 30
-    fft = psf._evaluate_gaussian_fft(param, shape, 0.008)
+    fft = _evaluate_gaussian_fft(param, shape, 0.008)
     stamp = np.fft.fftshift(np.fft.irfft2(fft, s=shape))
     tophalf = np.s_[shape[0] // 2, :]
     assert np.sum((xx * stamp)[tophalf]) / np.sum(stamp[tophalf]) > 0
@@ -227,7 +232,7 @@ def test_add_jitter(setup_inputs):
     img.meta.guide_star.jitter_minor = 16
     img.meta.guide_star.jitter_position_angle = 0
 
-    newstamps = psf.add_jitter(psf_ref_model, img)
+    newstamps = add_jitter(psf_ref_model, img)
     shape = psf_ref_model.psf.shape[-2:]
     npts = 5
     center = np.s_[
@@ -241,7 +246,7 @@ def test_add_jitter(setup_inputs):
     )
     img.meta.guide_star.jitter_major = 0
     img.meta.guide_star.jitter_minor = 0
-    newstamps = psf.add_jitter(psf_ref_model, img)
+    newstamps = add_jitter(psf_ref_model, img)
     assert rms(newstamps[idx][center], xx[center]) < rms(
         psf_ref_model.psf[idx][center], xx[center]
     )
@@ -250,9 +255,9 @@ def test_add_jitter(setup_inputs):
 def test_azimuthally_average_via_fft(setup_inputs):
     psf_ref_model_f087 = setup_inputs["psf_ref_model_f087"]
     img = psf_ref_model_f087.psf[0, 0, 0].copy()
-    img_avg = psf._azimuthally_average_via_fft(img, pixel_scale_ratio=0.5)
-    img_cen = psf.central_stamp(img, size=3)
-    img_avg_cen = psf.central_stamp(img_avg, size=3)
+    img_avg = _azimuthally_average_via_fft(img, pixel_scale_ratio=0.5)
+    img_cen = _central_stamp(img, size=3)
+    img_avg_cen = _central_stamp(img_avg, size=3)
     oldstd = np.std(img_cen / img_cen[::-1, ::-1])
     newstd = np.std(img_avg_cen / img_avg_cen[::-1, ::-1])
     # in my tests oldstd is 0.09 and newstd is <1e-9.
@@ -262,7 +267,7 @@ def test_azimuthally_average_via_fft(setup_inputs):
     grid_x, grid_y = np.mgrid[0:201, 0:201]
     gauss_model = Gaussian2D(1.0, 100, 100, 20, 20)
     gauss = gauss_model(grid_x, grid_y)
-    smoothed = psf._azimuthally_average_via_fft(gauss)
+    smoothed = _azimuthally_average_via_fft(gauss)
     delta = gauss - smoothed
 
     assert np.mean(delta) < 1.0e-6
@@ -278,7 +283,7 @@ def test_downsample_by_interpolation(size):
     xx, yy = np.meshgrid(pts, pts)
     gaussian = np.exp(-((xx / 5) ** 2) / 2 - (yy / 5) ** 2 / 2)
 
-    gaussian_downsample = psf._downsample_by_interpolation(gaussian, downsample=4)
+    gaussian_downsample = _downsample_by_interpolation(gaussian, downsample=4)
     assert gaussian_downsample.shape[0] < gaussian.shape[0] / 4 + 1
 
     def center(img):
@@ -298,13 +303,13 @@ def test_downsample_by_interpolation(size):
 def test_create_convolution_kernel(setup_inputs):
     mod_f087 = setup_inputs["psf_ref_model_f087"]
     mod_f184 = setup_inputs["psf_ref_model_f184"]
-    stamp_f087 = psf.central_stamp(mod_f087.psf[0, 1, 0], 91)
-    stamp_f184 = psf.central_stamp(mod_f184.psf[0, 1, 0], 91)
-    conv_kernel = psf.create_convolution_kernel(stamp_f087, stamp_f184)
+    stamp_f087 = _central_stamp(mod_f087.psf[0, 1, 0], 91)
+    stamp_f184 = _central_stamp(mod_f184.psf[0, 1, 0], 91)
+    conv_kernel = _create_convolution_kernel(stamp_f087, stamp_f184)
     sz = 19
-    diff_noconv = np.sum(psf.central_stamp(stamp_f087 - stamp_f184, sz) ** 2)
+    diff_noconv = np.sum(_central_stamp(stamp_f087 - stamp_f184, sz) ** 2)
     mod_f184_conv = convolve(stamp_f087, conv_kernel)
-    diff_conv = np.sum(psf.central_stamp(mod_f184_conv - stamp_f184, sz) ** 2)
+    diff_conv = np.sum(_central_stamp(mod_f184_conv - stamp_f184, sz) ** 2)
     print(diff_conv, diff_noconv, diff_conv / diff_noconv)
     # FIXME
     # in my tests diff_conv is 1e-5, diff_noconv is 0.008, and the ratio
@@ -314,12 +319,31 @@ def test_create_convolution_kernel(setup_inputs):
 
 def test_central_stamp():
     img = np.zeros((99, 99), dtype="f4")
-    cen = psf.central_stamp(img, 19)
+    cen = _central_stamp(img, 19)
     assert cen.shape[0] == 19
-    cen = psf.central_stamp(img, 20)
+    cen = _central_stamp(img, 20)
     assert cen.shape[0] == 21  # needed to make it bigger to be central
     img = np.zeros((40, 40), dtype="f4")
-    cen = psf.central_stamp(img, 20)
+    cen = _central_stamp(img, 20)
     assert cen.shape[0] == 20
-    cen = psf.central_stamp(img, 21)
+    cen = _central_stamp(img, 21)
     assert cen.shape[0] == 22  # needed to make it bigger to be central
+
+
+def test_psf_model_type(setup_inputs):
+    """ImageModel uses GriddedPSFModel; MosaicModel uses ImagePSF (L3 PSF)."""
+    psf_ref_model = setup_inputs["psf_ref_model_f087"]
+    center = np.array([[image_model_shape[0] / 2, image_model_shape[1] / 2]])
+
+    # L2: ImageModel gets a GriddedPSFModel
+    catalog = _PSFCatalog(setup_inputs["image"], psf_ref_model, center)
+    assert isinstance(catalog.psf_model, GriddedPSFModel)
+
+    # L3: MosaicModel gets an ImagePSF
+    mosaic = MosaicModel.create_fake_data(shape=image_model_shape)
+    mosaic.meta.resample.pixfrac = 1.0
+    mosaic.meta.wcsinfo.pixel_scale = 1.5277777769528157e-05  # 0.055 arcsec
+    mosaic.data = setup_inputs["image"].data
+    mosaic.err = setup_inputs["image"].err
+    catalog2 = _PSFCatalog(mosaic, psf_ref_model, center)
+    assert isinstance(catalog2.psf_model, ImagePSF)

@@ -1,8 +1,9 @@
 from astropy.modeling.models import Mapping
 
+from .assign_wcs import load_wcs
 from .assign_wcs_step import AssignWcsStep
 
-__all__ = ["AssignWcsStep", "_distorted_to_undistorted"]
+__all__ = ["AssignWcsStep", "_distorted_to_undistorted", "load_wcs"]
 
 
 def _distorted_to_undistorted(wcsobj):
