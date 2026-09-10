@@ -20,14 +20,11 @@ logger.addHandler(logging.NullHandler())
 LOGLEVELS = [logging.INFO, logging.DEBUG, olib.DEBUG_FULL]
 
 # Mnemonics needed.
-COARSE_MNEMONICS_QUATERNION_ECI = [f"SCF_AC_SDR_QBJ_{idx + 1}" for idx in range(4)]
-COARSE_MNEMONICS_B2FGS_EST = [f"SCF_AC_EST_FGS_QBR_{idx + 1}" for idx in range(4)]
-COARSE_MNEMONICS = COARSE_MNEMONICS_QUATERNION_ECI + COARSE_MNEMONICS_B2FGS_EST
+COARSE_MNEMONICS = [f"SCF_AC_SDR_QBJ_{idx + 1}" for idx in range(4)]
 
 # Pointing container
 # Attributes are as follows. Except for the observation time, all values
 # are retrieved from the engineering data.
-#    fgs_q        : Quaternion representing orientation of the FGS frame relative to the Observatory frame
 #    obstime      : Time the pointing information refers to.
 #    q            : Quaternion of the FGS.
 Pointing = namedtuple("Pointing", ["fgs_q", "obstime", "q"])
@@ -351,27 +348,13 @@ def mnemonics_to_pointings(ordered_mnemonics):
     for obstime, mnemonics_at_time in ordered_mnemonics:
         # Observatory orientation, required
         try:
-            q = np.array(
-                [mnemonics_at_time[m].value for m in COARSE_MNEMONICS_QUATERNION_ECI]
-            )
+            q = np.array([mnemonics_at_time[m].value for m in COARSE_MNEMONICS])
         except KeyError as exception:
             raise ValueError(
-                f"One or more quaternion mnemonics not in the telemetry {COARSE_MNEMONICS_QUATERNION_ECI}"
+                f"One or more quaternion mnemonics not in the telemetry {COARSE_MNEMONICS}"
             ) from exception
 
-        # B-frame to FGS-frame quaternion. Not required and very oddly has so many backups...
-        fgs_q = None
-        try:
-            fgs_q = np.array(
-                [mnemonics_at_time[m].value for m in COARSE_MNEMONICS_B2FGS_EST]
-            )
-        except KeyError:
-            logger.warning(
-                "One or more of the B-to-FGS quaternion mnemonics are not in the telementry %s",
-                COARSE_MNEMONICS_B2FGS_EST,
-            )
-
-        pointing = Pointing(fgs_q=fgs_q, obstime=obstime, q=q)
+        pointing = Pointing(obstime=obstime, q=q)
         pointings.append(pointing)
 
     return pointings

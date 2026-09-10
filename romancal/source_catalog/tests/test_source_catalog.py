@@ -1,5 +1,6 @@
 from pathlib import Path
 from re import match
+from types import SimpleNamespace
 
 import astropy.units as u
 import numpy as np
@@ -18,10 +19,20 @@ from roman_datamodels.datamodels import (
     SegmentationMapModel,
 )
 
+from romancal.source_catalog._skyvals import compute_skyvals
 from romancal.source_catalog._source_catalog import RomanSourceCatalog
 from romancal.source_catalog.source_catalog_step import SourceCatalogStep
 
 from .helpers import compare_model_and_parquet_metadata
+
+SKYVALS_DTYPE = np.dtype(
+    [
+        ("healpix17", np.int64),
+        ("data", np.float32),
+        ("err", np.float32),
+        ("covfrac", np.float32),
+    ]
+)
 
 
 def make_test_image(err_dtype=np.float16):
@@ -409,6 +420,103 @@ def test_l2_input_model_unchanged(image_model, function_jail):
 
     assert_equal(original_data, image_model.data)
     assert_equal(original_err, image_model.err)
+
+
+def test_l2_segmentation_contains_skyvals(image_model):
+    _, result_segmentation_map = SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=5,
+        npixels=10,
+        save_results=False,
+        fit_psf=False,
+    )
+
+    assert isinstance(result_segmentation_map, SegmentationMapModel)
+    assert "skyvals" in result_segmentation_map
+    assert "healpix11_cov" in result_segmentation_map
+
+    skyvals = result_segmentation_map.skyvals
+    assert skyvals.dtype == SKYVALS_DTYPE
+    assert skyvals.shape[0] > 0
+
+    healpix11_cov = result_segmentation_map.healpix11_cov
+    assert healpix11_cov.ndim == 1
+    assert healpix11_cov.dtype == np.int64
+
+
+def test_l2_segmentation_without_skyvals_when_disabled(image_model):
+    _, result_segmentation_map = SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=5,
+        npixels=10,
+        save_results=False,
+        fit_psf=False,
+        compute_skyvals=False,
+    )
+
+    assert isinstance(result_segmentation_map, SegmentationMapModel)
+    assert "skyvals" not in result_segmentation_map
+    assert "healpix11_cov" not in result_segmentation_map
+
+
+def test_skyvals_coverage_includes_source_pixels(monkeypatch):
+    class WCS:
+        def pixel_to_world_values(self, x, y):
+            return np.asarray(x) * 180.0, np.asarray(y) * 0.0
+
+    input_model = SimpleNamespace(
+        data=np.array([[10.0, 20.0]], dtype=np.float32),
+        err=np.ones((1, 2), dtype=np.float32),
+        meta=SimpleNamespace(wcs=WCS()),
+    )
+    segmentation = np.array([[1, 0]], dtype=np.uint32)
+    bad_pixel_mask = np.zeros((1, 2), dtype=bool)
+
+    monkeypatch.setattr(
+        "romancal.source_catalog._skyvals.get_pixel_area_sr", lambda model: 1.0
+    )
+    skyvals, healpix11_cov = compute_skyvals(input_model, segmentation, bad_pixel_mask)
+
+    assert skyvals.shape == (1,)
+    assert skyvals["data"][0] == 20.0
+    assert healpix11_cov.shape == (2,)
+
+
+def test_l2_skyvals_values_and_covfrac_reasonable(image_model):
+    """
+    Verify skyvals statistics are sensible on a controlled input image.
+    """
+    rng = np.random.default_rng(seed=9)
+    image_model.data = (rng.normal(0, 1, size=image_model.data.shape) + 100.0).astype(
+        np.float32
+    )
+    image_model.err = np.full_like(image_model.data, 3.0, dtype=np.float32)
+
+    _, result_segmentation_map = SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=5,
+        npixels=10,
+        save_results=False,
+        fit_psf=False,
+    )
+
+    skyvals = result_segmentation_map.skyvals
+    covfrac = skyvals["covfrac"]
+    assert skyvals.shape[0] > 0
+    # data medians should recover the injected background offset
+    # (atol=5.0 allows for some variation due to the random noise)
+    np.testing.assert_allclose(np.nanmedian(skyvals["data"]), 100.0, atol=5.0)
+    # covfrac should be bounded in [0, 1]
+    assert np.all(covfrac >= 0.0)
+    assert np.all(covfrac <= 1.0)
+    # at least some healpixels should have near-full coverage
+    assert np.any(covfrac > 0.9)
 
 
 def test_l3_input_model_unchanged(mosaic_model, function_jail):

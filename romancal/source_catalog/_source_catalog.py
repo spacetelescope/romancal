@@ -29,6 +29,7 @@ from romancal.source_catalog._segment import SegmentCatalog
 from romancal.source_catalog._unit_conversion import (
     validate_and_convert_to_flux_density,
 )
+from romancal.source_catalog._utils import get_pixel_area_sr
 from romancal.source_catalog._wcs_helpers import pixel_scale_angle_at_skycoord
 from romancal.source_catalog.psf import _PSFCatalog
 
@@ -256,14 +257,7 @@ class RomanSourceCatalog:
         placeholder (e.g., -999999 sr), the value is calculated from the
         WCS at the center of the image.
         """
-        if (
-            "photometry" in self.model.meta
-            and self.model.meta.photometry.pixel_area > 0
-        ):
-            pixel_area = self.model.meta.photometry.pixel_area * u.sr
-        else:
-            pixel_area = (self._pixel_scale**2).to(u.sr)
-        return pixel_area
+        return get_pixel_area_sr(self.model) * u.sr
 
     @lazyproperty
     def _xypos(self):

@@ -65,10 +65,10 @@ class RefPixStep(RomanStep):
             refpix.run_steps(
                 datamodel,
                 refs,
-                self.remove_offset,
-                self.remove_trends,
-                self.cosine_interpolate,
-                self.fft_interpolate,
+                remove_offset=self.remove_offset,
+                remove_trends=self.remove_trends,
+                cosine_interpolate=self.cosine_interpolate,
+                fft_interpolate=self.fft_interpolate,
             )
             # Update the step status
             datamodel.meta.cal_step["refpix"] = "COMPLETE"
