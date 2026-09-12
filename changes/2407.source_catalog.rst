@@ -1,0 +1,1 @@
+Source catalog reference prefetch now includes ``epsf`` and pre-resolves both north/south ``dustmap`` references for earlier availability checks.
