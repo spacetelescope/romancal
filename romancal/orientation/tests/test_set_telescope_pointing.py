@@ -95,9 +95,6 @@ def test_add_wcs_default(science_raw_model, tmp_path):
         )
 
 
-@pytest.mark.xfail(
-    reason="released pysiaf does not support basepath feature", strict=False
-)
 def test_alternate_siaf(tmp_path_factory):
     """Test alternate siaf"""
     t_pars = _make_t_pars(**TRANSFORM_KWARGS)
@@ -265,7 +262,7 @@ def test_mnemonics_chronologically():
     first = ordered[0]
     assert isinstance(first[0], Time)
     assert isinstance(first[1], dict)
-    assert len(first[1]) >= len(plib.COARSE_MNEMONICS_QUATERNION_ECI)
+    assert len(first[1]) >= len(plib.COARSE_MNEMONICS)
 
 
 @pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")
@@ -288,10 +285,6 @@ def test_mnemonic_list():
             "SCF_AC_SDR_QBJ_2",
             "SCF_AC_SDR_QBJ_3",
             "SCF_AC_SDR_QBJ_4",
-            "SCF_AC_EST_FGS_QBR_1",
-            "SCF_AC_EST_FGS_QBR_2",
-            "SCF_AC_EST_FGS_QBR_3",
-            "SCF_AC_EST_FGS_QBR_4",
         )
     )
 

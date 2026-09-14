@@ -1,0 +1,4 @@
+Added HEALPix-based sky summary arrays to L2 segmentation-map products from
+``source_catalog``. The new ``skyvals`` extension stores per-healpixel
+``healpix17``/``data``/``err``/``covfrac`` values, and ``healpix11_cov``
+stores coarse coverage indices for downstream sky-matching workflows.

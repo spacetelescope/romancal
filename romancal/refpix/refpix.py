@@ -25,50 +25,64 @@ def run_steps(
 ) -> RampModel:
     """
     Organize the steps to run the reference pixel correction.
-    """
 
-    # Read in the data from the datamodels
-    log.debug("Reading data from datamodel into single array")
+    Apart from the offset, the correction is independent between resultants, so
+    the ramp is corrected one resultant at a time. The intermediate channel view
+    and correction arrays are each larger than the ramp itself, so doing this
+    keeps the peak memory usage proportional to a single resultant rather than
+    to the whole ramp.
+    """
 
     if zero_bad_ref_pix:
         _mask_bad_ref_pixels(datamodel)
 
     coeffs = Coefficients.from_ref(refs)
-    standard = StandardView.from_datamodel(datamodel)
 
-    # Remove offset from the data
+    # The offset is fit over all of the resultants, so it has to be accumulated
+    # before any of them are corrected.
+    offset = None
     if remove_offset:
-        standard = standard.remove_offset()
-        log.debug("Removed the general offset from data, to be re-applied later.")
+        offset = StandardView.compute_offset(datamodel.data, datamodel.amp33)
+        log.debug("Computed the general offset of the data, to be re-applied later.")
 
-    # Convert to channel view
-    channel = standard.channels
+    log.debug(
+        "Correcting the data one resultant at a time "
+        f"(remove_trends={remove_trends}, cosine_interpolate={cosine_interpolate}, "
+        f"fft_interpolate={fft_interpolate})."
+    )
 
-    # Remove the boundary trends
-    if remove_trends:
-        channel = channel.remove_trends()
-        log.debug("Removed boundary trends (in time) from data.")
+    for resultant in range(datamodel.data.shape[0]):
+        # Read a single resultant from the datamodel into the standard view
+        standard = StandardView.from_datamodel(datamodel, resultant)
 
-    # Cosine interpolate the the data
-    if cosine_interpolate:
-        channel = channel.cosine_interpolate()
-        log.debug("Cosine interpolated the reference pixels.")
+        # Remove offset from the data
+        if offset is not None:
+            standard.remove_offset(offset)
 
-    # FFT interpolate the data
-    if fft_interpolate:
-        channel = channel.fft_interpolate()
-        log.debug("FFT interpolated the reference pixel pads.")
+        # Convert to channel view
+        channel = standard.channels
 
-    # Perform the reference pixel correction
-    standard = channel.apply_correction(coeffs)
-    log.debug("Applied reference pixel correction")
+        # Remove the boundary trends
+        if remove_trends:
+            channel = channel.remove_trends()
 
-    # Re-apply the offset (if necessary)
-    standard.apply_offset()
-    log.debug("Re-applied the general offset (if removed) to the data.")
+        # Cosine interpolate the the data
+        if cosine_interpolate:
+            channel = channel.cosine_interpolate()
 
-    # Write the data back to the datamodel
-    standard.update(datamodel)
+        # FFT interpolate the data
+        if fft_interpolate:
+            channel = channel.fft_interpolate()
+
+        # Perform the reference pixel correction
+        standard = channel.apply_correction(coeffs)
+
+        # Re-apply the offset (if necessary)
+        standard.apply_offset()
+
+        # Write the resultant back to the datamodel
+        standard.update(datamodel, resultant)
+
     log.debug("Updated the datamodel with the corrected data.")
 
     return datamodel

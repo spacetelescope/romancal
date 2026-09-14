@@ -23,10 +23,10 @@ def test_refpix_step(
     regression = run_steps(
         regression_datamodel,
         regression_ref_pix_ref,
-        remove_offset,
-        remove_trends,
-        cosine_interpolate,
-        fft_interpolate,
+        remove_offset=remove_offset,
+        remove_trends=remove_trends,
+        cosine_interpolate=cosine_interpolate,
+        fft_interpolate=fft_interpolate,
     )
 
     # Run the step

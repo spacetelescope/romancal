@@ -530,11 +530,16 @@ def slopes_uniform_weights(input_model):
 
     # We want the weighted sum over reads.
     if len(input_model.data.shape) == 3:
-        return np.sum(weights[:, None, None] * input_model.data, axis=0)
+        data = input_model.data
     elif len(input_model.data.shape) == 4:
-        return np.sum(weights[:, None, None] * input_model.data[0], axis=0)
+        data = input_model.data[0]
     else:
         raise ValueError("Unexpected shape for input_model.data")
+
+    # einsum rather than sum-of-products so that a ramp sized (and float64)
+    # temporary is never materialized; this is the largest allocation in the
+    # step for ramps with few resultants.
+    return np.einsum("i,ijk->jk", weights, data)
 
 
 def get_pixeldq_flags(groupdq, pixeldq, slopes, err, gain):

@@ -5,10 +5,13 @@ import logging
 import sys
 from collections.abc import Callable
 from math import cos, sin
+from pathlib import Path
 from typing import Any
 
 import asdf
 import numpy as np
+from crds import getreferences
+from crds.exceptions import CrdsError
 from stcal.velocity_aberration import compute_va_effects_vector
 
 from . import _lib as olib
@@ -108,6 +111,10 @@ class TransformParameters:
     allow_default: bool = False
     #: Aperture in use
     aperture: str = ""
+    #: FGS Boresite Adjustment Matrix (BAM) reference file path
+    bam_ref: str | Path | None = None
+    #: Parameters needed for CRDS queries
+    crds_pars: dict | None = None
     #: Default quaternion to use if engineering is not available.
     default_quaternion: tuple | None = None
     #: Commanded position of the guide star in (H, V) space.
@@ -286,21 +293,41 @@ def calc_gsapp2gs(m_eci2gsapp, velocity):
     return m_gsapp2gs
 
 
-def calc_m_b2fgs(fgs_q=None):
-    """Calculate the B-to-FGS frame DCM
+def calc_m_b2fgs(refpath, crds_pars):
+    """Calculate the FGS Boresite Adjustment Matrix (BAM) frame DCM
 
     Parameters
     ----------
-    fgs_q : [float, float, float, float] or None
-        The quaterion representing the B to FGS transformation.
-        If no B-to-FGS quaternion is given, use a pre-launch defined matrix.
-    """
-    if fgs_q is None:
-        logger.warning("No B-to-FGS information is given. Using pre-launch values.")
-        fgs_q = olib.FGS_DEFAULT_QUATERNION
+    refpath : Path-like or None
+        Path to the reference file containing the BAM.
+        If None, retrieve the BAM reference file.
 
-    # Calculate the DCM from the quaterion
-    return calc_quat2matrix(fgs_q)
+    crds_pars : dict or None
+        Parameters necessary for CRDS queries. Usually the model meta is given.
+    """
+    bam_q = None
+    if refpath is None:
+        try:
+            refpath = getreferences(crds_pars, reftypes=["bam"], observatory="roman")[
+                "bam"
+            ]
+        except (CrdsError, TypeError):
+            logger.warning("Unable to retrieve BAM reference")
+            logger.debug("CRDS error", exc_info=True)
+
+    if refpath is not None:
+        logger.info("B-to-FGS quaternion reading from %s", refpath)
+        with asdf.open(refpath) as af:
+            bam_q = af.tree["roman"]["bam_quaternion"]
+
+    # Did we get a BAM quaternion
+    if bam_q is None:
+        logger.warning("No B-to-FGS information is given. Using pre-launch values.")
+        bam_q = olib.BAM_QUATERNION
+
+    # Calculate the DCM from the quaterion.
+    logger.info("B-to-FGS quaternion: %s", bam_q)
+    return calc_quat2matrix(bam_q)
 
 
 def calc_m_fgs2gs(x, y):
@@ -420,7 +447,7 @@ def calc_transforms(t_pars: TransformParameters):
     t.m_eci2b = calc_quat2matrix(t_pars.pointing.q)
 
     # ECI to FGS
-    t.m_b2fgs = calc_m_b2fgs(t_pars.pointing.fgs_q)
+    t.m_b2fgs = calc_m_b2fgs(t_pars.bam_ref, t_pars.crds_pars)
     t.m_eci2fgs = np.dot(t.m_b2fgs, t.m_eci2b)
 
     # FGS to Guide star apparent.
@@ -539,6 +566,9 @@ def t_pars_from_model(model, t_pars):
         Transformation parameters updated with model information.
         Updating is performed in-place.
     """
+    # Gather all parameters for CRDS usage.
+    t_pars.crds_pars = model.get_crds_parameters()
+
     # Instrument details
     t_pars.aperture = model.meta.wcsinfo.aperture_name
     try:
