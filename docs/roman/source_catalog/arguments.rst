@@ -6,18 +6,26 @@ The ``source_catalog`` step has the following arguments:
 * ``--bkg_boxsize``: An integer value giving the background mesh box
   size in pixels
 
-* ``--kernel_fwhm``: A floating-point value giving the Gaussian kernel
-  FWHM in pixels
+* ``--kernel_fwhm``: A floating-point value giving the FWHM in arcsec
+  of the point-source detection template.  The larger templates are
+  angular sizes as well, so the bank searches the same physical scales
+  whatever the pixel scale of the image.
 
-* ``--snr_threshold``: A floating-point value that sets the
-  signal-to-noise ratio (SNR) threshold above the background for source
-  detection.
+* ``--snr_threshold``: A floating-point value giving the detection
+  threshold in sigma.  This is the significance of a template rather
+  than of a single pixel, so the default of 5.0 means that a source is
+  detected where some template's matched filter reaches 5 sigma.
 
 * ``--npixels``: An integer value that sets the minimum number of
-  pixels in a source
+  pixels a source segment must retain to be kept, counting only the
+  unmasked pixels that are positive in the convolved image the moments
+  are measured on
 
 * ``--deblend``: A boolean indicating whether to deblend sources (default
-  is ``False``)
+  is ``True``)
+
+* ``--max_sources``: An integer value giving the maximum number of
+  sources to keep, retaining the most significant; zero means no limit
 
 * ``--suffix``: A string value giving the file name suffix to use for
   the output catalog file (default is ``'cat'``).

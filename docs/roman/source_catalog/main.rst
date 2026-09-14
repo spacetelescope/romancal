@@ -31,27 +31,69 @@ assigns an integer label to each pixel in an image, such that pixels
 with the same label correspond to the same source. Source extraction is
 then performed using the `Photutils segmentation <https://photutils.readthedocs.io/en/latest/user_guide/segmentation.html>`_ tools.
 
-The background-subtracted image is convolved with a Gaussian kernel
-to smooth the noise and enhance the detectability of objects with a
-shape similar to the kernel. The Gaussian kernel is defined by
-the ``kernel_fwhm`` parameter, which specifies the full-width at half-maximum
-(FWHM) of the kernel. The kernel is normalized to have a total
-flux of 1.0.
+We convolve the background-subtracted image with a variety of templates
+corresponding to different sizes of sources, using a matched filter
+approach that provides the optimal SNR for matching sources.  The
+templates are all Gaussians: a point-source template whose FWHM is set
+by the ``kernel_fwhm`` parameter, together with two larger ones standing
+in for galaxies.  Their sizes are angular rather than in pixels, so that
+the same physical scales are searched whatever the pixel scale of the
+image; the default bank is 0.2, 0.6, and 2.4 arcsec FWHM.  Each
+filter is applied with inverse-variance weighting, so it produces
+the maximum-likelihood amplitude of that template divided by its own
+uncertainty: a signal-to-noise ratio image.  These SNR images are further
+normalized by their empirical RMS in order to account for calibration
+errors in the uncertainty maps; these normalizations tend to be around one
+for small kernels and larger for large extended profiles which are more sensitive
+and where leakage of halo light from sources into the background images
+is more prominent.  Masked pixels are used in the SNR images but assigned
+zero weight, so the SNR image
+is still defined where individual pixels are bad; for example, the saturated core
+of a bright star has a well defined value in the SNR image.
 
-Detected sources must consist of a minimum number of connected pixels
-(``npixels``), each exceeding a specified threshold value in
-the convolved image. The threshold level is defined as a per-pixel
-multiple (``snr_threshold``) of the background RMS image.
+Before each convolution a local background is subtracted, estimated at a
+scale set by that template, in order to make the point source SNR image
+less sensitive to the wings of nearby galaxies.  The background is measured
+on the direct image using `Photutils Background2D
+<https://photutils.readthedocs.io/en/latest/api/photutils.background.Background2D.html>`_,
+which takes a sigma-clipped median in boxes four times the template FWHM
+across and then median-filters that mesh over a three-by-three window of
+boxes, so the scale actually removed is about twelve template FWHM.  This
+is the same estimator the step uses to subtract the sky, at a box set by
+the template rather than by ``bkg_boxsize``.  It is
+measured on the pixels rather than on the convolved image because a
+convolution spreads a single corrupt pixel over the whole kernel footprint,
+where a median can no longer reject it.
 
-Overlapping sources are deblended using the `Photutils deblender
+Sources are then found on the per-pixel maximum over the SNR images.
+This maximum is itself an SNR image, recording the best SNR any
+template can offer at each pixel. Pixels above ``snr_threshold`` in the
+max SNR image form the detection footprint, and overlapping sources are
+separated there by the `Photutils deblender
 <https://photutils.readthedocs.io/en/latest/user_guide/segmentation.html
-#source-deblending>`_. The deblending algorithm first applies
-a multi-thresholding approach to identify potentially
-overlapping sources, then uses `watershed segmentation
-<https://en.wikipedia.org/wiki/Watershed_(image_processing)>`_ to
-separate them. For successful deblending, the sources must be separated
-enough that there is a saddle point between them. Currently, the
-``deblend`` keyword must be set to deblend sources.
+#source-deblending>`_, which applies a multi-thresholding approach and
+then `watershed segmentation
+<https://en.wikipedia.org/wiki/Watershed_(image_processing)>`_. For
+successful deblending, sources must be separated enough that there
+is a saddle point between them.  Because we deblend one combined max SNR image,
+rather than each filter separately, every pixel belongs to at most
+one source and we avoid challenges surrounding harmonizing multiple sets
+of overlapping catalog sources detected on different filters.
+
+Each source is then given a segment that extends out to an isophote
+appropriate to the template that achieved the highest SNR for that source.
+The segment derived from the max SNR image is intersected with the isophote
+corresponding to the SNR image for its peak template.  This leads stars
+to keep compact isophotes while galaxies extend to fainter isophotes.
+These intersected segments are then grown by one pixel and accumulated
+onto an overall segmentation image in
+order of decreasing significance.  The first segment to claim a pixel
+(the most significant one) retains it throughout the accumulation.  Any segment left with fewer than
+``npixels`` usable pixels is dropped. The template that detected each
+source and its peak significance are recorded in the catalog as
+``det_template`` and ``det_significance``. Very crowded fields can yield
+more detections than are worth measuring, so ``max_sources`` keeps only
+that many of the most significant.
 
 
 Source Photometry and Properties
