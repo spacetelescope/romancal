@@ -8,7 +8,9 @@ import astropy.units as u
 import numpy as np
 from astropy.coordinates import SkyCoord
 from astropy.modeling import models
+from photutils.segmentation import SegmentationImage
 
+from romancal.source_catalog._segment import SegmentCatalog
 from romancal.source_catalog._wcs_utils import north_angle_at, pixel_area_map
 from romancal.tests.wcs_helpers import create_wcs_object
 
@@ -166,10 +168,6 @@ def test_segment_geometry_tracks_local_pixel_area():
     their reported sizes must differ by the corresponding 5% in linear
     measure, and their pixel-frame sizes must be identical.
     """
-    from photutils.segmentation import SegmentationImage
-
-    from romancal.source_catalog._segment import SegmentCatalog
-
     shape = (60, 120)
     yy, xx = np.mgrid[: shape[0], : shape[1]]
     segm = np.zeros(shape, dtype=int)

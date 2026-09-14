@@ -131,7 +131,7 @@ Surface Brightness to Flux Conversion
 Level 2 and Level 3 pixel values are surface brightnesses, not fluxes.
 Recovering the flux entering a pixel therefore requires multiplying
 its surface brightness by the solid angle of that particular pixel.
-The solid angle is computed directly from the WCS.    Note that the
+The solid angle is computed directly from the WCS. Note that the
 variation in the pixel solid angle for WFI L2 images is of order 2%.
 For L3 coadds the variation in pixel solid angle is much smaller.
 

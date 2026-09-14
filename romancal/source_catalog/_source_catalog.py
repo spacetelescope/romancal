@@ -189,9 +189,6 @@ class RomanSourceCatalog:
             self.l2_to_sb = self.model.meta.photometry.conversion_megajanskys
         else:
             self.l2_to_sb = 1.0
-        self.sb_to_flux = (1.0 * (u.MJy / u.sr) * self._pixel_area_map).to(
-            self.flux_unit
-        )
 
         if self.fit_psf and self.psf_model is None:
             log.error(
@@ -546,12 +543,13 @@ class RomanSourceCatalog:
         Validate that model data arrays have compatible units and
         convert them to ``self.flux_unit`` if needed.
         """
+        sb_to_flux = (self._pixel_area_map * (u.MJy / u.sr)).to(self.flux_unit)
         self.convolved_data = validate_and_convert_to_flux_density(
             self.model,
             self.convolved_data,
             flux_unit=self.flux_unit,
             l2_to_sb=self.l2_to_sb,
-            sb_to_flux=self.sb_to_flux,
+            sb_to_flux=sb_to_flux,
         )
 
     @property

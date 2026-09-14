@@ -41,8 +41,9 @@ class ApertureCatalog:
 
     pixel_area_map : `~astropy.units.Quantity`
         2D array of per-pixel solid angles matching the shape of
-        ``model.data``. Used to convert the annulus background back to
-        a surface brightness.
+        ``model.data``. Used to set the per-source aperture and annulus
+        radii and to convert the annulus background back to a surface
+        brightness.
 
     ee_spline : callable, optional
         Encircled-energy spline mapping aperture radius (pixels) to
@@ -399,7 +400,9 @@ class ApertureCatalog:
                 if subtract_local_bkg:
                     # Subtract the local background measured in the annulus
                     areas = aperture.area_overlap(self.model.data)
-                    values = values - self.aper_bkg_flux[idx] * areas
+                    values = values - (
+                        self.aper_bkg_flux[idx] * self._source_pixel_area[idx] * areas
+                    )
                 flux[i, idx] = getattr(values, "value", values)
                 errors = phot[f"aperture_sum_err_{i}"]
                 flux_err[i, idx] = getattr(errors, "value", errors)

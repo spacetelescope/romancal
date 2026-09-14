@@ -184,3 +184,33 @@ class TestApertureRadiiVaryWithPixelArea:
         sky_radii = radii_pix * np.sqrt(areas.to_value(u.arcsec**2))[np.newaxis, :]
         expected = cat.aperture_radii["circle"].to_value(u.arcsec)[:, np.newaxis]
         assert np.allclose(sky_radii, expected, rtol=1e-6)
+
+
+def test_subtract_local_bkg_recovers_source_flux():
+    """
+    Subtracting the local background must remove a uniform background
+    and leave only the source flux, even where the pixel area varies.
+    """
+    shape = (60, 120)
+    bkg_per_pixel = 10.0
+    source_flux = 50.0
+
+    # Pixel area varies by 4% across the image, so the sources fall in
+    # different radius bins
+    nominal = ((0.11 * u.arcsec) ** 2).to_value(u.sr)
+    area_map = nominal * np.linspace(0.98, 1.02, shape[1])[np.newaxis, :]
+    area_map = np.broadcast_to(area_map, shape) << u.sr
+
+    # Separated by more than the outer annulus radius (~25 pixels)
+    xypos = np.array([[30.0, 30.0], [60.0, 30.0], [90.0, 30.0]])
+    data = np.full(shape, bkg_per_pixel)
+    for x, y in xypos.astype(int):
+        data[y, x] += source_flux
+    model = SimpleNamespace(data=data << u.nJy, err=np.ones(shape) << u.nJy)
+
+    cat = ApertureCatalog(model, xypos, area_map)
+    assert len(cat._radius_bins) > 1
+    cat.calc_aperture_photometry(subtract_local_bkg=True)
+
+    for name in cat.aperture_flux_colnames:
+        assert u.allclose(getattr(cat, name), source_flux * u.nJy, atol=1e-2 * u.nJy)
