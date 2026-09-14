@@ -1,0 +1,2 @@
+Reduce peak memory usage of ramp fitting by not materializing a ramp-sized
+temporary while computing the uniform-weighted slopes.
