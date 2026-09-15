@@ -236,7 +236,23 @@ class SourceCatalogStep(RomanStep):
         if self.forced_segmentation:
             # TODO: improve this so that the moment-based properties are
             # not recomputed from the forced_detection_image
-            forced_detection_image = forced_segmodel.detection_image
+            #
+            # Forced photometry always needs the detection image that was used
+            # to build the forcing segmentation, so shape parameters match the
+            # deep/forcing catalog. SourceCatalogStep and MultibandCatalogStep
+            # both attach this as an extra array on successful segmentation
+            # products. Missing detection_image usually means an older file,
+            # an empty/failed segmentation product, or a hand-built map.
+            try:
+                forced_detection_image = forced_segmodel.detection_image
+            except AttributeError as err:
+                raise ValueError(
+                    "forced_segmentation must include a detection_image array. "
+                    f"{self.forced_segmentation!r} does not; regenerate the "
+                    "segmentation map with SourceCatalogStep or "
+                    "MultibandCatalogStep, or provide a product that includes "
+                    "the original detection image."
+                ) from err
             # record detection image used
             segmentation_model["detection_image"] = forced_detection_image
             forced_catobj = RomanSourceCatalog(

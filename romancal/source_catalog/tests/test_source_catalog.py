@@ -133,6 +133,7 @@ def image_model():
 
 
 def test_forced_catalog(image_model, function_jail, ignore_parquet_metadata_paths):
+    """Purpose: forced photometry succeeds when the forcing segm has detection_image."""
     output_filename = "force_cat.parquet"
     _ = SourceCatalogStep.call(
         image_model,
@@ -168,6 +169,34 @@ def test_forced_catalog(image_model, function_jail, ignore_parquet_metadata_path
     compare_model_and_parquet_metadata(
         image_model, output_filename, ignore_parquet_metadata_paths
     )
+
+
+def test_forced_catalog_requires_detection_image(image_model, function_jail):
+    """Purpose: forced photometry errors clearly if forcing segm lacks detection_image."""
+    _, segm = SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=5,
+        npixels=10,
+        save_results=False,
+    )
+    # Simulate legacy / empty products that only carry the label map.
+    bare_segm = SegmentationMapModel.create_minimal({"meta": segm.meta})
+    bare_segm.data = segm.data.copy()
+    forced_segm_path = Path("no_detection_segm.asdf")
+    bare_segm.save(forced_segm_path)
+
+    with pytest.raises(ValueError, match="must include a detection_image"):
+        SourceCatalogStep.call(
+            image_model,
+            bkg_boxsize=50,
+            kernel_fwhm=2.0,
+            snr_threshold=5,
+            npixels=10,
+            save_results=False,
+            forced_segmentation=str(forced_segm_path),
+        )
 
 
 @pytest.mark.parametrize(
