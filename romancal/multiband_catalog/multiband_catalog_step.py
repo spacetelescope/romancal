@@ -122,6 +122,9 @@ class MultibandCatalogStep(RomanStep):
         if msg is None:
             segment_img, cat_model = results
             segmentation_model.data = segment_img.data.astype(np.uint32)
+            # Persist the detection image so forced photometry can recompute
+            # shape parameters that match the deep/multiband catalog.
+            segmentation_model["detection_image"] = segment_img.detection_image
 
             # carry over psf_match_reference_filter
             segmentation_model.meta["psf_match_reference_filter"] = (
@@ -162,9 +165,8 @@ class MultibandCatalogStep(RomanStep):
             segmentation_model["injected_sources"] = si_cat
             segmentation_model["recovered_sources"] = recovered_sources
 
-            # Write data for tests
+            # Write SI-only debug arrays for tests
             if self.save_debug_info:
-                segmentation_model["detection_image"] = segment_img.detection_image
                 segmentation_model["si_data"] = si_segment_img.data.astype(np.uint32)
                 segmentation_model["si_detection_image"] = (
                     si_segment_img.detection_image
