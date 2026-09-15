@@ -5,7 +5,7 @@ from astropy.modeling.models import Spline1D
 from roman_datamodels import datamodels
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 
-from romancal.source_catalog._wcs_utils import wcs_jacobian
+from romancal.source_catalog._wcs_utils import pixel_area_from_wcs
 
 
 def estimate_pixel_area_sr_from_wcs(wcs, shape):
@@ -21,9 +21,7 @@ def estimate_pixel_area_sr_from_wcs(wcs, shape):
     """
     ycen = (shape[0] - 1) / 2.0
     xcen = (shape[1] - 1) / 2.0
-    jacobian = wcs_jacobian(wcs, np.array(xcen), np.array(ycen))
-    area = np.linalg.norm(np.cross(jacobian[..., 0], jacobian[..., 1]))
-    return (area * u.arcsec**2).to_value(u.sr)
+    return pixel_area_from_wcs(wcs, np.array(xcen), np.array(ycen)).to_value(u.sr)
 
 
 def get_pixel_area_sr(model):

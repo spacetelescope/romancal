@@ -68,6 +68,33 @@ def wcs_jacobian(wcs, x, y):
     return np.stack([d_dx, d_dy], axis=-1)
 
 
+def pixel_area_from_wcs(wcs, x, y):
+    """
+    Compute the on-sky solid angle of the pixels at the given positions.
+
+    The area is that of the parallelogram spanned by the pixel's two
+    edge vectors (see `wcs_jacobian`).
+
+    Parameters
+    ----------
+    wcs : WCS object
+        A world coordinate system transformation mapping pixel to world
+        (longitude, latitude) coordinates in degrees.
+
+    x, y : `~numpy.ndarray`
+        Pixel coordinates, of any common shape.
+
+    Returns
+    -------
+    area : `~astropy.units.Quantity`
+        Array of shape ``x.shape`` giving the solid angle of each pixel
+        in arcsec**2.
+    """
+    jacobian = wcs_jacobian(wcs, x, y)
+    area = np.linalg.norm(np.cross(jacobian[..., 0], jacobian[..., 1]), axis=-1)
+    return area * u.arcsec**2
+
+
 def pixel_area_map(wcs, shape, step=64):
     """
     Compute the on-sky solid angle of every pixel in an image.
@@ -107,8 +134,7 @@ def pixel_area_map(wcs, shape, step=64):
     gx = np.arange(-step, nx + step, step, dtype=float)
     xx, yy = np.meshgrid(gx, gy)
 
-    jacobian = wcs_jacobian(wcs, xx, yy)
-    coarse_area = np.linalg.norm(np.cross(jacobian[..., 0], jacobian[..., 1]), axis=-1)
+    coarse_area = pixel_area_from_wcs(wcs, xx, yy).to_value(u.arcsec**2)
 
     spline = RectBivariateSpline(gy, gx, coarse_area)
     area = spline(np.arange(ny, dtype=float), np.arange(nx, dtype=float))
