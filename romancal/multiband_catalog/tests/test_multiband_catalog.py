@@ -259,7 +259,7 @@ def shared_tests(
         )
         # detection_image is required by forced photometry
         assert hasattr(segm_model, "detection_image")
-        assert segm_model.detection_image.shape == shape
+        assert segm_model.detection_image.shape == segm_model.data.shape
     else:
         assert not catalog_filepath.exists()
         assert not segmentation_map_filepath.exists()
