@@ -1,3 +1,0 @@
-Raise a clear error when ``forced_segmentation`` is missing
-``detection_image``, which forced photometry always requires
-(`#2434 <https://github.com/spacetelescope/romancal/issues/2434>`_).
