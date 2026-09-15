@@ -14,6 +14,7 @@ from roman_datamodels.datamodels import MosaicModel, MultibandSegmentationMapMod
 
 from romancal.datamodels import ModelLibrary
 from romancal.multiband_catalog import MultibandCatalogStep
+from romancal.multiband_catalog._detection_image import make_det_image
 from romancal.multiband_catalog._multiband_catalog import (
     make_source_grid,
     match_recovered_sources,
@@ -321,6 +322,18 @@ def test_multiband_catalog_no_detections(library_model, save_results, function_j
     cat = result.source_catalog
     assert isinstance(cat, Table)
     assert len(cat) == 0
+
+
+def test_make_det_image_nan_data_finite_err(library_model):
+    # NaN data with finite err must be NaN (masked) in the detection
+    # image, not zero
+    with library_model:
+        for model in library_model:
+            model.data[:30, :30] = np.nan
+            library_model.shelve(model)
+    det = make_det_image(library_model, 2.0)
+    assert np.all(np.isnan(det[:30, :30]))
+    assert np.all(np.isfinite(det[30:, 30:]))
 
 
 @pytest.mark.parametrize("save_results", (True, False))
