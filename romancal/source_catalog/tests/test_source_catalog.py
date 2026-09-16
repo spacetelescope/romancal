@@ -421,6 +421,26 @@ def test_l2_input_model_unchanged(image_model, function_jail):
     assert_equal(original_err, image_model.err)
 
 
+def test_kron_nomask_flux(image_model):
+    """
+    ``kron_nomask_flux`` repeats the Kron sum in the same aperture with
+    neighbouring sources left in, so it can only add flux.
+    """
+    cat, _ = SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=0.2,
+        snr_threshold=5,
+        npixels=9,
+        save_results=False,
+        fit_psf=False,
+    )
+    masked = np.asarray(cat.source_catalog["kron_flux"], float)
+    unmasked = np.asarray(cat.source_catalog["kron_nomask_flux"], float)
+    # isolated sources agree to float32 round-off, blended ones gain
+    assert np.all(unmasked > masked - 1e-3 * np.abs(masked))
+
+
 def test_l2_segmentation_contains_skyvals(image_model):
     _, result_segmentation_map = SourceCatalogStep.call(
         image_model,

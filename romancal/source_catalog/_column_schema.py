@@ -59,6 +59,8 @@ class CatalogSchema:
             "segment_flux_err",
             "kron_flux",
             "kron_flux_err",
+            "kron_nomask_flux",
+            "kron_nomask_flux_err",
             "kron_abmag",
             "kron_abmag_err",
         ]
@@ -73,6 +75,8 @@ class CatalogSchema:
             "segment_flux_err",
             "kron_flux",
             "kron_flux_err",
+            "kron_nomask_flux",
+            "kron_nomask_flux_err",
         ]
 
         if self.cat_type in ("prompt", "forced_full", "dr_band"):
@@ -209,6 +213,12 @@ class CatalogSchema:
         dust_colnames = [
             "dust_ebv",
         ]
+        # Columns produced by source detection using the prompt
+        # template bank approach
+        detection_colnames = [
+            "det_template",
+            "det_significance",
+        ]
 
         det_colnames = []
         det_colnames.extend(segm_colnames)
@@ -227,6 +237,8 @@ class CatalogSchema:
             if self.fit_psf:
                 colnames.extend(skypsf_colnames)
             colnames.extend(det_colnames)
+            if self.cat_type == "prompt":
+                colnames.extend(detection_colnames)
             colnames.extend(othershape_colnames)
             colnames.extend(self.flux_colnames)
 

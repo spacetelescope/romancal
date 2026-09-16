@@ -283,15 +283,10 @@ class SourceCatalogStep(RomanStep):
             mask=mask,
             cat_type=cat_type,
             ee_spline=ee_spline,
+            det_template=det_template,
+            det_significance=det_significance,
         )
         cat = catobj.catalog
-
-        if det_template is not None:
-            # which template detected each source, and how significant its
-            # peak was.  Extra columns beyond the schema are carried through
-            # to the output table.
-            cat["det_template"] = det_template
-            cat["det_significance"] = det_significance
 
         if self.forced_segmentation:
             # TODO: improve this so that the moment-based properties are

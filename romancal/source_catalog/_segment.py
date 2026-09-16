@@ -99,6 +99,8 @@ class SegmentCatalog:
         "kron_radius": ("kron_radius",),
         "kron_flux": ("kron_flux",),
         "kron_flux_err": ("kron_flux_err",),
+        "kron_nomask_flux": ("kron_nomask_flux",),
+        "kron_nomask_flux_err": ("kron_nomask_flux_err",),
     }
 
     # Lazy property output names mapped to the upstream photutils
@@ -295,6 +297,15 @@ class SegmentCatalog:
             or pname in needed
             or any(out in needed for out in outputs)
         ]
+
+        # The Kron flux again, but without masking neighbouring sources.
+        # Reading kron_aperture first caches it and the kron_radius behind it
+        # We then set the mask method to "none" and remeasure the photometry.
+        if {"kron_nomask_flux", "kron_nomask_flux_err"}.intersection(photutils_names):
+            _ = segm_cat.kron_aperture
+            segm_cat.aperture_mask_method = "none"
+            segm_cat.kron_photometry(segm_cat.kron_params, name="kron_nomask")
+            segm_cat.aperture_mask_method = "mask"
 
         # Map photutils names to the output catalog names
         name_map = {}
