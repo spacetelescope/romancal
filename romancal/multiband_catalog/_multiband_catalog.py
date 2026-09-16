@@ -11,14 +11,16 @@ import numpy as np
 from astropy import coordinates
 from astropy import units as u
 from astropy.table import join
-from astropy.time import Time
 from roman_datamodels import datamodels
 
 from romancal.datamodels import ModelLibrary
 from romancal.multiband_catalog._background import subtract_background_library
 from romancal.multiband_catalog._catalog_generator import create_filter_catalog
 from romancal.multiband_catalog._detection_image import make_detection_image
-from romancal.multiband_catalog._metadata import blend_image_metadata
+from romancal.multiband_catalog._metadata import (
+    blend_image_metadata,
+    finalize_catalog_metadata,
+)
 from romancal.source_catalog._background import RomanBackground
 from romancal.source_catalog._detection import make_segmentation_image
 from romancal.source_catalog._injection import (
@@ -395,6 +397,7 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
     # Prepare to accumulate filter catalogs and metadata
     time_means = []
     exposure_times = []
+    max_exposure_times = []
     filter_catalogs = {}
     filter_ee_fractions = []
 
@@ -433,16 +436,23 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
             filter_catalogs[filter_name] = result["catalog"]
 
             # Accumulate and blend image metadata
-            blend_image_metadata(model, catalog_model, time_means, exposure_times)
+            blend_image_metadata(
+                model,
+                catalog_model,
+                time_means,
+                exposure_times,
+                max_exposure_times,
+            )
 
             library.shelve(model, modify=False)
 
     # Join all filter catalogs to detection catalog
     detection_catalog = join_filter_catalogs(detection_catalog, filter_catalogs)
 
-    # Finish blending
-    catalog_model.meta.coadd_info.time_mean = Time(time_means).mean()
-    catalog_model.meta.coadd_info.exposure_time = np.mean(exposure_times)
+    # Finish L3→L3 metadata blending (coadd_info means/maxes, optical_element)
+    finalize_catalog_metadata(
+        catalog_model, time_means, exposure_times, max_exposure_times
+    )
 
     # Consolidate and sort ee_fractions
     finalize_ee_fractions(detection_catalog, filter_ee_fractions)
