@@ -14,6 +14,10 @@ permissions: {}
 
 jobs:
   build:
+    # Keep this display name so it matches the required status check in the
+    # branch ruleset (set when the OpenAstronomy reusable workflow was used).
+    # PR #2402 localized the workflow but the ruleset still expects this name.
+    name: Build source and wheel distribution
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
