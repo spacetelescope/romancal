@@ -1,0 +1,4 @@
+Always persist ``detection_image`` on multiband segmentation maps so forced
+photometry can recompute shape parameters that match the deep catalog, and
+raise a clear error when ``forced_segmentation`` is missing ``detection_image``
+(`#2434 <https://github.com/spacetelescope/romancal/issues/2434>`_).

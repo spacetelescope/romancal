@@ -258,6 +258,9 @@ def shared_tests(
             segm_model.meta.get("psf_match_reference_filter")
             == cat.meta["psf_match_reference_filter"]
         )
+        # detection_image is required by forced photometry
+        assert hasattr(segm_model, "detection_image")
+        assert segm_model.detection_image.shape == segm_model.data.shape
     else:
         assert not catalog_filepath.exists()
         assert not segmentation_map_filepath.exists()
@@ -274,7 +277,7 @@ def shared_tests(
 def test_multiband_catalog(
     library_model, fit_psf, snr_threshold, npixels, save_results, function_jail
 ):
-    result, _ = MultibandCatalogStep.call(
+    result, segm = MultibandCatalogStep.call(
         library_model,
         bkg_boxsize=50,
         snr_threshold=snr_threshold,
@@ -287,6 +290,9 @@ def test_multiband_catalog(
     cat = result.source_catalog
     assert isinstance(cat, Table)
     assert len(cat) == 7
+    # Always persist detection_image for forced photometry consumers.
+    assert hasattr(segm, "detection_image")
+    assert segm.detection_image.shape == (101, 101)
 
     shared_tests(result, cat, library_model, save_results, function_jail)
 
@@ -306,6 +312,44 @@ def test_multiband_catalog_populates_dust_ebv(library_model, function_jail):
     assert "dust_ebv" in cat.colnames
     assert len(cat["dust_ebv"]) == len(cat)
     assert cat["dust_ebv"].dtype == np.float32
+
+
+def test_forced_photometry_with_multiband_segmentation(library_model, function_jail):
+    """Purpose: Multiband segm includes detection_image so SourceCatalog forced mode works."""
+    from romancal.source_catalog import SourceCatalogStep
+
+    _, segm = MultibandCatalogStep.call(
+        library_model,
+        bkg_boxsize=50,
+        snr_threshold=3,
+        npixels=10,
+        fit_psf=False,
+        save_results=True,
+        deblend=True,
+    )
+    assert hasattr(segm, "detection_image")
+    segm_path = Path(function_jail / f"{segm.meta.filename}_segm.asdf")
+    assert segm_path.exists()
+
+    with library_model:
+        borrowed = library_model.borrow(0)
+        mosaic = borrowed.copy()
+        library_model.shelve(borrowed, modify=False)
+
+    forced_cat, forced_segm = SourceCatalogStep.call(
+        mosaic,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=3,
+        npixels=10,
+        fit_psf=False,
+        save_results=False,
+        forced_segmentation=str(segm_path),
+    )
+
+    cat = forced_cat.source_catalog
+    assert any("forced_" in name for name in cat.colnames)
+    assert hasattr(forced_segm, "detection_image")
 
 
 @pytest.mark.parametrize("save_results", (True, False))
