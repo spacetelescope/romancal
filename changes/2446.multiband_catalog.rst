@@ -1,0 +1,5 @@
+Fixed L3→L3 metadata blending for multiband source catalogs so multi-filter
+products set top-level ``optical_element`` to ``None``, blend ``coadd_info``
+with min/mean/max rules (including ``max_exposure_time``), and record the
+association name in ``meta.image.filename``
+(`#2425 <https://github.com/spacetelescope/romancal/issues/2425>`_).
