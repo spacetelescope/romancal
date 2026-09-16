@@ -34,6 +34,11 @@ __all__ = ["SourceCatalogStep"]
 
 log = logging.getLogger(__name__)
 
+# Smallest per-pixel uncertainty kept, as a fraction of the image median.
+# Clips implausibly low values that can otherwise cause errors in the
+# FFT source detection convolutions.
+_MIN_ERR_FRACTION = 0.03
+
 
 class SourceCatalogStep(RomanStep):
     """
@@ -178,6 +183,16 @@ class SourceCatalogStep(RomanStep):
             segmentation_model.data = np.zeros(model.data.shape, dtype=np.uint32)
             self._attach_skyvals_if_enabled(input_model, segmentation_model, mask)
             return cat_model, segmentation_model
+
+        # Clip implausibly small errors
+        err_floor = _MIN_ERR_FRACTION * np.median(model.err[~mask])
+        n_floored = int(np.count_nonzero(model.err < err_floor))
+        if n_floored:
+            log.warning(
+                f"Raised {n_floored} pixels with implausibly small "
+                f"uncertainties to err = {err_floor:.4g}"
+            )
+            model.err = np.maximum(model.err, err_floor)
 
         log.info("Calculating and subtracting background")
         # bad pixel mask rather than coverage_mask to keep finite RMS estimates

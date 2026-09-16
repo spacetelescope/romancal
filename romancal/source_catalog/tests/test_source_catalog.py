@@ -127,6 +127,10 @@ def image_model():
         model.meta.cal_step[step_name] = "INCOMPLETE"
     model.meta.cal_logs = []
     data, err = make_test_image()
+    # A blank pixel with an implausibly small uncertainty.  Unfloored, the
+    # weight it carries would wreck the precision of the detection
+    # convolutions and no source in the frame would be found.
+    data[95, 45], err[95, 45] = 0.0, 1e-6 * np.median(err)
     model.data = data
     model.err = err
     model.meta.photometry.conversion_megajanskys = (0.3324 * u.MJy / u.sr).value
