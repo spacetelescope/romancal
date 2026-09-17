@@ -39,7 +39,7 @@ class SkyCells:
     area = 1.7760288493318122e-06
 
     # average diagonal length of a skycell in degrees on the sphere
-    length = 0.107984
+    length = 0.09958726
 
     def __init__(self, indices: NDArray[int], skymap: "SkyMap" = None):
         """
@@ -533,7 +533,7 @@ class ProjectionRegion:
 
     # diagonal length of the longest projection region in degrees on the sphere
     #   max(sc.ProjectionRegion(index).length for index in range(len(sc.SKYMAP.model.projection_regions)))
-    MAX_LENGTH = 0.08174916691321586
+    MAX_LENGTH = 5.70593
 
     def __init__(self, index: int | None, skymap: "SkyMap" = None):
         """
@@ -678,13 +678,16 @@ class ProjectionRegion:
 
     @cached_property
     def length(self) -> float:
-        """diagonal length of the region"""
+        """longest diagonal of the region in degrees"""
         # assume radial against sky background
-        return max(
-            sga.length(
-                self.vectorpoint_corners[index], self.vectorpoint_corners[index + 2]
+        return (
+            max(
+                sga.length(
+                    self.vectorpoint_corners[index], self.vectorpoint_corners[index + 2]
+                )
+                for index in range(len(self.vectorpoint_corners) - 3)
             )
-            for index in range(len(self.vectorpoint_corners) - 3)
+            * 57.29578
         )
 
     @property
