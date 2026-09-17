@@ -95,26 +95,35 @@ class _ImageFootprint:
 
     @cached_property
     def length(self) -> float:
-        """diagonal length of the rectangular footprint"""
+        """longest diagonal of the rectangular footprint in radians"""
         # assume equally-spaced points around the perimeter
         # NOTE: this will produce an incorrect value with no error if the points are not equally spaced
         half_index_length = round(len(self.vectorpoint_vertices) / 2)
-        return max(
-            sga.length(
-                self.vectorpoint_vertices[index],
-                self.vectorpoint_vertices[index + half_index_length],
+        return (
+            max(
+                sga.length(
+                    self.vectorpoint_vertices[index],
+                    self.vectorpoint_vertices[index + half_index_length],
+                )
+                for index in range(
+                    len(self.vectorpoint_vertices) - half_index_length - 1
+                )
             )
-            for index in range(len(self.vectorpoint_vertices) - half_index_length - 1)
+            * 57.29578
         )
 
     @cached_property
     def circumference(self) -> float:
         """circumference of the rectangular footprint"""
-        return sum(
-            sga.length(
-                self.vectorpoint_vertices[index], self.vectorpoint_vertices[index + 1]
+        return (
+            sum(
+                sga.length(
+                    self.vectorpoint_vertices[index],
+                    self.vectorpoint_vertices[index + 1],
+                )
+                for index in range(-1, len(self.vectorpoint_vertices) - 1)
             )
-            for index in range(-1, len(self.vectorpoint_vertices) - 1)
+            * 57.29578
         )
 
     @cached_property
@@ -160,12 +169,12 @@ class _ImageFootprint:
 
     @cached_property
     def possible_intersecting_projregion_distance(self) -> float:
-        """maximum possible distance to the center of an intersecting projection region"""
+        """maximum possible angular distance over the sphere to the center of an intersecting projection region"""
         return (self.length + sc.ProjectionRegion.MAX_LENGTH) / 2.0
 
     @cached_property
     def possible_intersecting_skycell_distance(self) -> float:
-        """maximum possible distance to the center of an intersecting sky cell"""
+        """maximum possible angular distance over the sphere to the center of an intersecting sky cell"""
         return (self.length + sc.SkyCells.length) / 2.0
 
     def __str__(self) -> str:
@@ -206,10 +215,13 @@ def find_skycell_matches(
     intersecting_skycell_indices = []
 
     # query the global k-d tree of projection regions for possible intersection candidates in (normalized) 3D space
+    possible_intersecting_projregion_cartesian_distance = 2 * np.sin(
+        footprint.possible_intersecting_projregion_distance * 1.1 / 2
+    )
     nearby_projregion_indices = np.array(
         skymap.projection_regions_kdtree.query_ball_point(
             footprint.vectorpoint_center,
-            r=footprint.possible_intersecting_projregion_distance * 1.1,
+            r=possible_intersecting_projregion_cartesian_distance,
         )
     )
     nearby_projregion_indices = nearby_projregion_indices[
@@ -220,10 +232,13 @@ def find_skycell_matches(
         projregion = sc.ProjectionRegion(projregion_index)
         if footprint.polygon.intersects_poly(projregion.polygon):
             # query the LOCAL k-d tree of skycells for possible intersection candidates in (normalized) 3D space
+            possible_intersecting_skycell_cartesian_distance = 2 * np.sin(
+                footprint.possible_intersecting_skycell_distance * 1.1 / 2
+            )
             projregion_nearby_skycell_indices = np.array(
                 projregion.skycells.kdtree.query_ball_point(
                     footprint.vectorpoint_center,
-                    r=footprint.possible_intersecting_skycell_distance * 1.1,
+                    r=possible_intersecting_skycell_cartesian_distance,
                 )
             )
 
