@@ -576,9 +576,7 @@ def test_resample_pixel_scale_units(wfi_sca1):
     ],
     ids=["value_error", "key_error"],
 )
-def test_resampledata_init_catches_skycell_lookup_errors(
-    wfi_sca1, monkeypatch, error
-):
+def test_resampledata_init_catches_skycell_lookup_errors(wfi_sca1, monkeypatch, error):
     """Purpose: ValueError/KeyError from skycell lookup fall back to make_output_wcs."""
     input_models = ModelLibrary([wfi_sca1])
     expected_wcs, expected_ps, expected_ratio = make_output_wcs(input_models)
