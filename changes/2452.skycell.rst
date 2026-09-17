@@ -1,0 +1,1 @@
+Cached constructed ``ProjectionRegion`` objects on ``SkyMap`` so ``find_skycell_matches`` reuses region polygons, per-region k-d trees, and cell polygons across calls.
