@@ -648,7 +648,7 @@ class ProjectionRegion:
     @cached_property
     def skycells(self) -> SkyCells:
         """collection of all skycells in this projection region"""
-        return SkyCells(self.skycell_indices)
+        return SkyCells(self.skycell_indices, skymap=self._skymap)
 
     @property
     def radec_corners(
@@ -792,6 +792,7 @@ class SkyMap:
 
     _path: Path | None
     _data: AsdfFile
+    _projection_regions: dict[int, "ProjectionRegion"]
 
     def __init__(self, path: Path | str | None = None):
         """
@@ -804,6 +805,7 @@ class SkyMap:
             path = Path(path)
         self._path = path
         self._data = None
+        self._projection_regions = {}
 
     @property
     def path(self) -> Path | None:
@@ -815,6 +817,9 @@ class SkyMap:
         self._path = path
         # reset data if retrieved
         self._data = None
+        self._projection_regions = {}
+        self.__dict__.pop("skycells", None)
+        self.__dict__.pop("projection_regions_kdtree", None)
 
     @property
     def model(self) -> AsdfFile:
@@ -852,6 +857,13 @@ class SkyMap:
                 )
             )
         )
+
+    def projection_region(self, index: int) -> "ProjectionRegion":
+        """cached projection region at the given index"""
+        index = int(index)  # handle numpy scalar
+        if index not in self._projection_regions:
+            self._projection_regions[index] = ProjectionRegion(index, skymap=self)
+        return self._projection_regions[index]
 
     @property
     def pixel_scale(self) -> float:
