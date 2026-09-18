@@ -225,7 +225,7 @@ def _process_groups(
         ]
         skycell_indices = [idx for rec in file_list for idx in rec.skycell_indices]
         # We only want unique skycell indices
-        skycells = sc.SkyCells(np.unique(skycell_indices))
+        skycells = sc.SKYMAP[np.unique(skycell_indices)]
 
         for skycell_index, skycell_name, skycell_wcs_info in zip(
             skycells.indices, skycells.names, skycells.wcs_infos, strict=True

@@ -58,7 +58,7 @@ def find_intersecting_projregions(
     intersecting_projregion_indices = []
     for projregion_index in nearby_projregion_indices:
         if projregion_index < skymap.projection_regions_kdtree.n:
-            projregion = sc.ProjectionRegion(projregion_index, skymap=skymap)
+            projregion = skymap.projection_region(projregion_index)
             if footprint.polygon.intersects_poly(projregion.polygon):
                 intersecting_projregion_indices.append(projregion_index)
 
@@ -218,7 +218,7 @@ def plot_image_footprint_and_skycells(
         projregion_intersecting_skycells = skycells[
             skycells.projection_regions == projregion_index
         ]
-        projregion = sc.ProjectionRegion(projregion_index, skymap=skymap)
+        projregion = skymap.projection_region(projregion_index)
 
         tangent_vectorpoint = sgv.normalize_vector(
             sgv.lonlat_to_vector(*projregion.radec_tangent)
@@ -232,7 +232,7 @@ def plot_image_footprint_and_skycells(
         plot_projregion(projregion, color="lightgrey")
 
         plot_skycells(
-            sc.SkyCells(projregion.skycell_indices, skymap=skymap),
+            skymap[projregion.skycell_indices],
             tangent_vectorpoint,
             colors="darkgrey",
         )

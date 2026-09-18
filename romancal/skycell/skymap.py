@@ -84,10 +84,7 @@ class SkyCells:
         found_names = skymap.model.skycells["name"][indices]
 
         if len(indices) == len(names):
-            return SkyCells(
-                indices,
-                skymap=skymap,
-            )
+            return skymap[indices]
         else:
             raise KeyError(
                 f"no skycells found with the following name(s) in the currently-loaded skymap: {[name for name in names if name not in found_names]}"
@@ -348,7 +345,7 @@ class SkyCells:
             projregion_index,
             projregion_skycell_indices,
         ) in projregions.items():
-            projregion = ProjectionRegion(projregion_index)
+            projregion = self._skymap.projection_region(projregion_index)
             projregion_x, projregion_y = projregion.wcs.world_to_pixel_values(
                 radec[:, 0], radec[:, 1]
             )
@@ -434,7 +431,7 @@ class SkyCells:
             projregion_index,
             projregion_skycell_indices,
         ) in projregions.items():
-            projregion = ProjectionRegion(projregion_index)
+            projregion = self._skymap.projection_region(projregion_index)
             projregion_points_within = projregion.contains_radec(radec)
             # only continue if any points lie within the projection region
             if np.any(projregion_points_within):
@@ -444,7 +441,7 @@ class SkyCells:
                     projregion_radec[:, 1],
                 )
 
-                projregion_skycells = SkyCells(projregion_skycell_indices)
+                projregion_skycells = self._skymap[projregion_skycell_indices]
                 for projregion_skycell_index, (
                     skycell_name,
                     skycell_x_tangent,
@@ -564,8 +561,10 @@ class ProjectionRegion:
         skymap: SkyMap
             skymap instance; defaults to global SKYMAP (Default value = None)
         """
-        instance = cls(index=data["index"], skymap=skymap)
+        instance = cls(index=data["index"])
         instance._data = data
+        if skymap is not None:
+            instance._skymap = skymap
         return instance
 
     @classmethod
@@ -594,7 +593,7 @@ class ProjectionRegion:
             & (index < skymap.model.projection_regions["skycell_end"])
         ).nonzero()[0]
         if len(projregion_indices) == 1:
-            return cls(projregion_indices[0], skymap=skymap)
+            return skymap.projection_region(projregion_indices[0])
         else:
             msg = (
                 f"skycell index {index} not found in any projection regions"
@@ -648,7 +647,7 @@ class ProjectionRegion:
     @cached_property
     def skycells(self) -> SkyCells:
         """collection of all skycells in this projection region"""
-        return SkyCells(self.skycell_indices)
+        return self._skymap[self.skycell_indices]
 
     @property
     def radec_corners(
@@ -836,7 +835,7 @@ class SkyMap:
     @cached_property
     def skycells(self) -> SkyCells:
         """collection of all skycells in this skymap"""
-        return SkyCells(np.arange(len(self.model.skycells)))
+        return self[np.arange(len(self.model.skycells))]
 
     @cached_property
     def projection_regions_kdtree(self) -> KDTree:
@@ -909,9 +908,15 @@ class SkyMap:
 
         return projregions
 
+    @cached_property
+    def projection_region(self, index: int) -> ProjectionRegion:
+        """`ProjectionRegion` at the given index in the skymap"""
+        return ProjectionRegion(index, skymap=self)
+
+    @cached_property
     def __getitem__(self, indices: int) -> SkyCells:
         """`SkyCells` at the given indices in the sky cells array"""
-        return SkyCells(indices)
+        return SkyCells(indices, skymap=self)
 
     def __str__(self) -> str:
         return f"skymap {self.path}"
