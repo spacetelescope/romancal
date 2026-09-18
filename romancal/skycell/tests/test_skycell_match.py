@@ -457,3 +457,23 @@ def test_projection_region_skycells_use_parent_skymap(fresh_skymap_subset):
     """Test that the ProjectionRegion object uses the parent skymap."""
     region = skymap.ProjectionRegion(0, skymap=fresh_skymap_subset)
     assert region.skycells._skymap is fresh_skymap_subset
+
+
+def test_skymap_path_setter_clears_projection_region_cache(fresh_skymap_subset):
+    """Test that the skymap path setter clears the projection region cache."""
+    subset_path = DATA_DIRECTORY / "skymap_subset.asdf"
+    cached_region = fresh_skymap_subset.projection_region(0)
+    cached_skycells = fresh_skymap_subset.skycells
+    kdtree = fresh_skymap_subset.projection_regions_kdtree
+    assert fresh_skymap_subset._data is not None
+    assert fresh_skymap_subset._projection_regions
+
+    # Set the path to a new skymap
+    fresh_skymap_subset.path = subset_path
+
+    # Check that the cache is cleared
+    assert fresh_skymap_subset._data is None
+    assert fresh_skymap_subset._projection_regions == {}
+    assert fresh_skymap_subset.projection_region(0) is not cached_region
+    assert fresh_skymap_subset.skycells is not cached_skycells
+    assert fresh_skymap_subset.projection_regions_kdtree is not kdtree
