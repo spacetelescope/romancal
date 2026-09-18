@@ -41,6 +41,15 @@ def skymap_subset() -> skymap.SkyMap:
     return skymap.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf")
 
 
+def test_skymap_init_accepts_str_path():
+    """Test that the SkyMap constructor accepts a string path."""
+    subset_path = DATA_DIRECTORY / "skymap_subset.asdf"
+    from_path = skymap.SkyMap(subset_path)
+    from_str = skymap.SkyMap(str(subset_path))
+    assert from_str.path == from_path.path
+    assert isinstance(from_str.path, Path)
+
+
 @pytest.fixture()
 def sample_skycells(skymap_subset) -> skymap.SkyCells:
     return skymap.SkyCells.from_names(SAMPLE_SKYCELL_NAMES, skymap=skymap_subset)
