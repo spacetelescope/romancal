@@ -36,10 +36,9 @@ def wcs_jacobian(wcs, x, y):
 
     Everything about the local pixel geometry follows from these two
     vectors. They span the plane tangent to the sky at that pixel; the
-    norm of their cross product is the pixel's solid angle, and the
-    combination of them that reaches the celestial pole gives the local
-    direction of North.  We use 3D cartesian vectors rather than
-    e.g. angular sky coordinates to avoid any singularities.
+    norm of their cross product is the pixel's solid angle.  We use 3D
+    cartesian vectors rather than e.g. angular sky coordinates to avoid
+    any singularities.
 
     Parameters
     ----------
