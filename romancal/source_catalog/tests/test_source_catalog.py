@@ -8,7 +8,7 @@ import pytest
 from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
 from astropy.time import Time
-from numpy.testing import assert_equal
+from numpy.testing import assert_allclose, assert_equal
 from roman_datamodels.datamodels import (
     ForcedImageSourceCatalogModel,
     ImageModel,
@@ -21,6 +21,7 @@ from roman_datamodels.datamodels import (
 
 from romancal.source_catalog._skyvals import compute_skyvals
 from romancal.source_catalog._source_catalog import RomanSourceCatalog
+from romancal.source_catalog._wcs_utils import pixel_area_map
 from romancal.source_catalog.source_catalog_step import SourceCatalogStep
 
 from .helpers import compare_model_and_parquet_metadata
@@ -165,6 +166,10 @@ def test_forced_catalog(image_model, function_jail, ignore_parquet_metadata_path
         if "forced_" in field:
             has_forced_fields = True
     assert has_forced_fields
+
+    for name in ("x_centroid_err", "y_centroid_win_err", "ra_centroid_err"):
+        assert np.all(np.isfinite(catalog[name]))
+        assert np.all(catalog[name] > 0)
 
     compare_model_and_parquet_metadata(
         image_model, output_filename, ignore_parquet_metadata_paths
@@ -400,9 +405,13 @@ def test_centroid_errors_and_sky_orientation(image_model, function_jail):
             assert np.all(np.isfinite(cat[name]))
             assert np.all(cat[name] > 0)
 
-    # The sky errors are the pixel errors scaled by ~0.1 arcsec / pix
-    ratio = cat["dec_centroid_err"].value / cat["y_centroid_err"].value
-    assert np.all((ratio > 0.05) & (ratio < 0.2))
+    # The total sky error is the total pixel error times the pixel
+    # scale, independent of the WCS rotation
+    wcs = image_model.meta.wcs
+    pixel_scale = np.sqrt(pixel_area_map(wcs, image_model.data.shape).mean())
+    pix_err = np.hypot(cat["x_centroid_err"].value, cat["y_centroid_err"].value)
+    sky_err = np.hypot(cat["ra_centroid_err"].value, cat["dec_centroid_err"].value)
+    assert_allclose(sky_err / pix_err, pixel_scale.to_value(u.arcsec), rtol=1e-3)
 
     assert cat["orientation_sky"].unit == u.deg
     assert cat["orientation_sky"].dtype == np.float32
