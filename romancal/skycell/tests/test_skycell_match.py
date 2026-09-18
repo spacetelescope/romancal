@@ -25,6 +25,7 @@ retain the same index obtained.)
 """
 
 from pathlib import Path
+from unittest import mock
 
 import astropy.coordinates as coord
 import astropy.modeling.models as amm
@@ -418,3 +419,57 @@ def test_match_from_wcs_without_bbox(test_point):
 
     with pytest.raises(ValueError):
         sm.find_skycell_matches(wcsobj, skymap=skymap_subset)
+
+
+@pytest.fixture()
+def fresh_skymap_subset() -> skymap.SkyMap:
+    return skymap.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf")
+
+
+def test_find_skycell_matches_reuses_projection_region(fresh_skymap_subset):
+    """Test that the find_skycell_matches function reuses the ProjectionRegion object."""
+    corners = mk_im_corners(*TEST_POINTS[1], 45, 0.001)
+    constructions = []
+
+    class CountingProjectionRegion(skymap.ProjectionRegion):
+        def __init__(self, *args, **kwargs):
+            constructions.append((args, kwargs))
+            super().__init__(*args, **kwargs)
+
+    with mock.patch.object(sm.sc, "ProjectionRegion", CountingProjectionRegion):
+        first = sm.find_skycell_matches(corners, skymap=fresh_skymap_subset)
+        first_count = len(constructions)
+        second = sm.find_skycell_matches(corners, skymap=fresh_skymap_subset)
+    assert first_count > 0
+    assert len(constructions) == first_count
+    assert second == first
+
+
+def test_projection_region_cache_is_skymap_local(fresh_skymap_subset):
+    """Test that the projection region cache is local to the skymap."""
+    other = skymap.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf")
+    region = fresh_skymap_subset.projection_region(0)
+    assert region is fresh_skymap_subset.projection_region(0)
+    assert region is not other.projection_region(0)
+
+
+def test_projection_region_skycells_use_parent_skymap(fresh_skymap_subset):
+    """Test that the ProjectionRegion object uses the parent skymap."""
+    region = skymap.ProjectionRegion(0, skymap=fresh_skymap_subset)
+    assert region.skycells._skymap is fresh_skymap_subset
+
+
+def test_skymap_path_setter_clears_projection_region_cache(fresh_skymap_subset):
+    """Test that the skymap path setter clears the projection region cache."""
+    subset_path = DATA_DIRECTORY / "skymap_subset.asdf"
+    cached_region = fresh_skymap_subset.projection_region(0)
+    cached_skycells = fresh_skymap_subset.skycells
+    kdtree = fresh_skymap_subset.projection_regions_kdtree
+
+    # Set the path to a new skymap
+    fresh_skymap_subset.path = subset_path
+
+    # Check that the cache is cleared
+    assert fresh_skymap_subset.projection_region(0) is not cached_region
+    assert fresh_skymap_subset.skycells is not cached_skycells
+    assert fresh_skymap_subset.projection_regions_kdtree is not kdtree
