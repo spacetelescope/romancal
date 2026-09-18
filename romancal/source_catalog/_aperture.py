@@ -3,14 +3,17 @@ Module to calculate aperture photometry.
 """
 
 import logging
-import warnings
 
 import numpy as np
 from astropy import units as u
 from astropy.stats import SigmaClip
 from astropy.utils.decorators import lazyproperty
-from astropy.utils.exceptions import AstropyUserWarning
-from photutils.aperture import CircularAnnulus, CircularAperture, aperture_photometry
+from photutils.aperture import (
+    ApertureStats,
+    CircularAnnulus,
+    CircularAperture,
+    aperture_photometry,
+)
 
 from romancal.source_catalog._wcs_utils import pixel_area_at
 
@@ -243,47 +246,28 @@ class ApertureCatalog:
 
         The local background is the sigma-clipped median value in the
         annulus. The background error is the standard error of the
-        median, sqrt(pi / (2 * N)) * std.
+        median. Both are calculated by
+        `~photutils.aperture.ApertureStats`.
         """
         r_in_arcsec, r_out_arcsec = self.ANNULUS_RADII_ARCSEC
-        bkg_aper_masks = [None] * self.xypos_finite.shape[0]
+        n_sources = self.xypos_finite.shape[0]
+        unit = self.model.data.unit
+        sigclip = SigmaClip(sigma=3.0)
+
+        bkg_median = np.full(n_sources, np.nan) << unit
+        bkg_median_err = np.full(n_sources, np.nan) << unit
+
         for idx, scale in self._radius_bins:
             annulus = CircularAnnulus(
                 self.xypos_finite[idx], r_in_arcsec / scale, r_out_arcsec / scale
             )
-            for source, mask in zip(idx, annulus.to_mask(method="center"), strict=True):
-                bkg_aper_masks[source] = mask
-        sigclip = SigmaClip(sigma=3.0)
+            stats = ApertureStats(self.model.data, annulus, sigma_clip=sigclip)
+            bkg_median[idx] = stats.median
+            bkg_median_err[idx] = stats.median_err
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=RuntimeWarning)
-            warnings.simplefilter("ignore", category=AstropyUserWarning)
-
-            unit = self.model.data.unit
-            nvalues = []
-            bkg_median = []
-            bkg_std = []
-            for mask in bkg_aper_masks:
-                bkg_data = mask.get_values(self.model.data)
-                values = sigclip(bkg_data, masked=False)
-                nvalues.append(values.size)
-                med = np.median(values)
-                std = np.std(values)
-                if values.size == 0:
-                    # Handle case where source is completely masked due to
-                    # forced photometry
-                    med <<= unit
-                    std <<= unit
-                bkg_median.append(med)
-                bkg_std.append(std)
-
-            nvalues = np.array(nvalues)
-            pixel_area = self._source_pixel_area
-            bkg_median = u.Quantity(bkg_median) / pixel_area
-            bkg_std = u.Quantity(bkg_std) / pixel_area
-
-            # Standard error of the median
-            bkg_median_err = np.sqrt(np.pi / (2.0 * nvalues)) * bkg_std
+        pixel_area = self._source_pixel_area
+        bkg_median = bkg_median / pixel_area
+        bkg_median_err = bkg_median_err / pixel_area
 
         return bkg_median.astype(np.float32), bkg_median_err.astype(np.float32)
 
