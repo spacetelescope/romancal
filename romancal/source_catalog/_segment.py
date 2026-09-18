@@ -11,7 +11,7 @@ import numpy as np
 from astropy.utils import lazyproperty
 from photutils.segmentation import SourceCatalog
 
-from romancal.source_catalog._wcs_utils import north_angle_at, pixel_area_at
+from romancal.source_catalog._wcs_utils import pixel_area_at
 
 
 class SegmentCatalog:
@@ -78,8 +78,16 @@ class SegmentCatalog:
         "y_centroid": ("y_centroid",),
         "x_centroid_win": ("x_centroid_win",),
         "y_centroid_win": ("y_centroid_win",),
+        "x_centroid_err": ("x_centroid_err",),
+        "y_centroid_err": ("y_centroid_err",),
+        "x_centroid_win_err": ("x_centroid_win_err",),
+        "y_centroid_win_err": ("y_centroid_win_err",),
         "sky_centroid": ("ra_centroid", "dec_centroid"),
         "sky_centroid_win": ("ra_centroid_win", "dec_centroid_win"),
+        "sky_centroid_ra_err": ("ra_centroid_err",),
+        "sky_centroid_dec_err": ("dec_centroid_err",),
+        "sky_centroid_win_ra_err": ("ra_centroid_win_err",),
+        "sky_centroid_win_dec_err": ("dec_centroid_win_err",),
         "bbox_xmin": ("bbox_xmin",),
         "bbox_xmax": ("bbox_xmax",),
         "bbox_ymin": ("bbox_ymin",),
@@ -88,6 +96,7 @@ class SegmentCatalog:
         "semimajor_axis": ("semimajor",),
         "semiminor_axis": ("semiminor",),
         "orientation": ("orientation_pix",),
+        "sky_orientation": ("orientation_sky",),
         "ellipticity": ("ellipticity",),
         "ellipse_cxx": ("cxx",),
         "ellipse_cxy": ("cxy",),
@@ -105,25 +114,9 @@ class SegmentCatalog:
     # properties get computed when only the derived lazy property is
     # requested.
     _lazy_dependencies: ClassVar = {
-        "orientation_sky": ("orientation",),
         "kron_abmag": ("kron_flux", "kron_flux_err"),
         "kron_abmag_err": ("kron_flux", "kron_flux_err"),
     }
-
-    # Placeholder columns (zero-valued) to be added until the proper
-    # values are computed.
-    _pix_placeholder_columns = (
-        "x_centroid_err",
-        "y_centroid_err",
-        "x_centroid_win_err",
-        "y_centroid_win_err",
-    )
-    _sky_placeholder_columns = (
-        "ra_centroid_err",
-        "dec_centroid_err",
-        "ra_centroid_win_err",
-        "dec_centroid_win_err",
-    )
 
     def __init__(
         self,
@@ -162,9 +155,6 @@ class SegmentCatalog:
                 continue
             self.properties.append(name)
 
-        # Add the placeholder attributes
-        self.add_placeholders()
-
     def _is_requested(self, name):
         """
         Whether the given output column name was requested.
@@ -181,8 +171,6 @@ class SegmentCatalog:
         for outputs in self._photutils_to_outputs.values():
             names.extend(outputs)
         names.extend(self._lazyproperties)
-        names.extend(self._pix_placeholder_columns)
-        names.extend(self._sky_placeholder_columns)
         return tuple(names)
 
     @property
@@ -248,20 +236,6 @@ class SegmentCatalog:
         )
 
     @lazyproperty
-    def wcs_angle(self):
-        """
-        The position angle of celestial North at each source position.
-
-        Evaluated per source rather than once at the image center: the
-        distortion rotates the field across a detector, and the
-        convergence of meridians makes a single value badly wrong at
-        high declination and meaningless if the field contains a pole.
-        """
-        return north_angle_at(
-            self.wcs, self.source_cat.x_centroid, self.source_cat.y_centroid
-        )
-
-    @lazyproperty
     def pixel_scale(self):
         """
         The pixel scale in arcseconds at each source position.
@@ -306,8 +280,8 @@ class SegmentCatalog:
         # we compute all properties). ``label`` is always required
         # because it is needed for downstream table joins. We also
         # pull in upstream photutils dependencies for any requested
-        # lazy property (e.g., ``orientation_sky`` depends on
-        # ``orientation``).
+        # lazy property (e.g., ``kron_abmag`` depends on
+        # ``kron_flux``).
         if self._requested_properties is None:
             needed = None
         else:
@@ -331,6 +305,11 @@ class SegmentCatalog:
         name_map["semimajor_axis"] = "semimajor"
         name_map["semiminor_axis"] = "semiminor"
         name_map["orientation"] = "orientation_pix"
+        name_map["sky_orientation"] = "orientation_sky"
+        name_map["sky_centroid_ra_err"] = "ra_centroid_err"
+        name_map["sky_centroid_dec_err"] = "dec_centroid_err"
+        name_map["sky_centroid_win_ra_err"] = "ra_centroid_win_err"
+        name_map["sky_centroid_win_dec_err"] = "dec_centroid_win_err"
         name_map["ellipse_cxx"] = "cxx"
         name_map["ellipse_cxy"] = "cxy"
         name_map["ellipse_cyy"] = "cyy"
@@ -349,6 +328,10 @@ class SegmentCatalog:
                 "y_centroid",
                 "x_centroid_win",
                 "y_centroid_win",
+                "x_centroid_err",
+                "y_centroid_err",
+                "x_centroid_win_err",
+                "y_centroid_win_err",
             ):
                 if not isinstance(value, u.Quantity):
                     value *= u.pix
@@ -402,40 +385,6 @@ class SegmentCatalog:
                 setattr(self, new_name, value)
                 if self._is_requested(new_name):
                     self.properties.append(new_name)
-
-    def add_placeholders(self):
-        """
-        Add placeholder (zero-valued) attributes for columns whose
-        proper values are not yet computed.
-
-        Each placeholder gets its own array so that downstream in-place
-        updates to one column do not silently affect others.
-        """
-        n_labels = self.source_cat.n_labels
-
-        placeholder_groups = (
-            (self._pix_placeholder_columns, u.pix),
-            (self._sky_placeholder_columns, u.arcsec),
-        )
-
-        for columns, unit in placeholder_groups:
-            for name in columns:
-                if not hasattr(self, name):
-                    setattr(self, name, np.zeros(n_labels, dtype=np.float32) << unit)
-
-                if self._is_requested(name) and name not in self.properties:
-                    self.properties.append(name)
-
-    @lazyproperty
-    def orientation_sky(self):
-        """
-        The position angle of the source major axis in degrees measured
-        East of North.
-        """
-        angle = ((180.0 * u.deg) - self.wcs_angle + self.orientation_pix) % (
-            360.0 * u.deg
-        )
-        return angle.astype(np.float32)
 
     @lazyproperty
     def _kron_abmag(self):
