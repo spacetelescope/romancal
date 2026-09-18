@@ -299,20 +299,14 @@ class SegmentCatalog:
             or any(out in needed for out in outputs)
         ]
 
-        # Map photutils names to the output catalog names
-        name_map = {}
-        name_map["area"] = "segment_area"
-        name_map["semimajor_axis"] = "semimajor"
-        name_map["semiminor_axis"] = "semiminor"
-        name_map["orientation"] = "orientation_pix"
-        name_map["sky_orientation"] = "orientation_sky"
-        name_map["sky_centroid_ra_err"] = "ra_centroid_err"
-        name_map["sky_centroid_dec_err"] = "dec_centroid_err"
-        name_map["sky_centroid_win_ra_err"] = "ra_centroid_win_err"
-        name_map["sky_centroid_win_dec_err"] = "dec_centroid_win_err"
-        name_map["ellipse_cxx"] = "cxx"
-        name_map["ellipse_cxy"] = "cxy"
-        name_map["ellipse_cyy"] = "cyy"
+        # Map photutils names to the output catalog names. Properties
+        # with more than one output (e.g., sky_centroid) are split
+        # into their output columns below.
+        name_map = {
+            pname: outputs[0]
+            for pname, outputs in self._photutils_to_outputs.items()
+            if len(outputs) == 1
+        }
 
         # Set the source properties as attributes of this instance
         for name in photutils_names:
