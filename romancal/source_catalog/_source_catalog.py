@@ -35,6 +35,9 @@ from romancal.source_catalog.psf import _PSFCatalog
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
+# The flux density unit of the catalog and of the saved detection image
+DEFAULT_FLUX_UNIT = "nJy"
+
 
 @dataclass(frozen=True)
 class MeasurementStep:
@@ -158,7 +161,7 @@ class RomanSourceCatalog:
         psf_model=None,
         mask=None,
         detection_cat=None,
-        flux_unit="nJy",
+        flux_unit=DEFAULT_FLUX_UNIT,
         cat_type="prompt",
         ee_spline=None,
     ):
