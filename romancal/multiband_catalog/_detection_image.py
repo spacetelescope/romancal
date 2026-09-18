@@ -4,37 +4,13 @@ import warnings
 import numpy as np
 from astropy.convolution import convolve_fft
 from astropy.utils.exceptions import AstropyUserWarning
-from photutils.segmentation import make_2dgaussian_kernel
 
 from romancal.datamodels import ModelLibrary
 from romancal.lib.basic_utils import compute_var_rnoise
+from romancal.source_catalog._detection import make_gaussian_kernel
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
-
-
-def make_gaussian_kernel(fwhm):
-    """
-    Make a normalized 2D circular Gaussian kernel.
-
-    The kernel will have odd sizes in both X and Y, be centered in the
-    central pixel, and normalized to sum to 1.
-
-    Parameters
-    ----------
-    fwhm : float
-        The full-width at half-maximum (FWHM) in pixels of the 2D
-        Gaussian kernel.
-
-    Returns
-    -------
-    kernel : `astropy.convolution.Kernel2D`
-        The output Gaussian kernel.
-    """
-    size = np.ceil(3 * fwhm).astype(int)
-    size = size + 1 if size % 2 == 0 else size  # make size be odd
-    kernel = make_2dgaussian_kernel(fwhm, size=size)  # sums to 1
-    return kernel.array
 
 
 def make_det_image(library, kernel_fwhm):

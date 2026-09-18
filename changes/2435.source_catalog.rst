@@ -1,0 +1,15 @@
+Overhaul source detection in the SourceCatalogStep, broadly aiming to
+improve depth while not damaging purity.  The new approach blends
+matched filter detection using a range of different sized kernels
+and watershed deblending.
+
+The ``kernel_fwhm`` parameter is now given in arcseconds rather than
+pixels, with a new default of 0.2, and the larger detection templates are
+angular sizes as well.  The bank therefore searches the same physical
+scales whatever the pixel scale of the image.
+
+New det_template, det_significance, kron_nomask_flux, kron_nomask_flux_err
+catalog columns.  The first two identify the template that led to the detection
+of each source and its corresponding SNR.  The second two give the
+Kron fluxes without masking regions contaminated by neighbors; kron_flux /
+kron_nomask_flux can be used as a blending estimate.
