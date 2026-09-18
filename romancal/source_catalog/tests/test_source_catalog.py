@@ -8,7 +8,7 @@ import pytest
 from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
 from astropy.time import Time
-from numpy.testing import assert_equal
+from numpy.testing import assert_allclose, assert_equal
 from roman_datamodels.datamodels import (
     ForcedImageSourceCatalogModel,
     ImageModel,
@@ -21,6 +21,9 @@ from roman_datamodels.datamodels import (
 
 from romancal.source_catalog._skyvals import compute_skyvals
 from romancal.source_catalog._source_catalog import RomanSourceCatalog
+from romancal.source_catalog._unit_conversion import (
+    validate_and_convert_to_flux_density,
+)
 from romancal.source_catalog.source_catalog_step import SourceCatalogStep
 
 from .helpers import compare_model_and_parquet_metadata
@@ -169,6 +172,50 @@ def test_forced_catalog(image_model, function_jail, ignore_parquet_metadata_path
     compare_model_and_parquet_metadata(
         image_model, output_filename, ignore_parquet_metadata_paths
     )
+
+
+class TestConvolvedDataUnits:
+    """
+    Test the conversion of convolved data whose units differ from the
+    model data.
+    """
+
+    l2_to_sb = 2.0
+    sb_to_flux = np.full((101, 101), 10.0) * u.nJy
+
+    def convert(self, model, convolved_data):
+        return validate_and_convert_to_flux_density(
+            model,
+            convolved_data,
+            flux_unit=u.nJy,
+            l2_to_sb=self.l2_to_sb,
+            sb_to_flux=self.sb_to_flux,
+        )
+
+    def test_convolved_with_unit(self, image_model):
+        """
+        Convolved data already in flux density units must not be scaled
+        with a unitless model.
+        """
+        data = image_model.data.copy()
+        convolved_data = np.full((101, 101), 5.0, dtype=np.float32) << u.uJy
+        result = self.convert(image_model, convolved_data)
+        assert_allclose(result, 5000.0 * u.nJy)
+        assert_allclose(image_model.data, data * 20.0 * u.nJy, rtol=1e-6)
+
+    def test_model_with_unit(self, image_model):
+        """
+        Unitless convolved data must be converted from Level-2 units
+        when the model is already in flux density units.
+        """
+        image_model["data"] = image_model.data << u.uJy
+        image_model["err"] = image_model.err.astype(np.float32) << u.uJy
+        data = image_model.data.copy()
+        convolved_data = np.full((101, 101), 5.0, dtype=np.float32)
+        result = self.convert(image_model, convolved_data)
+        assert_allclose(result, 100.0 * u.nJy)
+        assert_allclose(image_model.data, data)
+        assert image_model.data.unit == u.nJy
 
 
 def test_forced_catalog_requires_detection_image(image_model, function_jail):
