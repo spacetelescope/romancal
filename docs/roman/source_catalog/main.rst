@@ -82,7 +82,9 @@ The centroid errors (e.g., ``x_centroid_err`` and ``ra_centroid_err``)
 are also calculated by ``SourceCatalog`` by propagating the input error
 array through the centroid calculation. The sky centroid errors are the
 great-circle errors along the Right Ascension and Declination directions
-in arcsec.
+in arcsec. The centroid errors are zero where the input errors are zero.
+They are NaN where the input errors are NaN or where the source is
+completely masked.
 
 For the sizes, only the area of the local pixel is accounted for, not
 its shape. Where pixels are not square, the sky-frame axis lengths carry
