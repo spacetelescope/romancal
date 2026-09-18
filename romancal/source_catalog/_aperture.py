@@ -3,13 +3,11 @@ Module to calculate aperture photometry.
 """
 
 import logging
-import warnings
 
 import numpy as np
 from astropy import units as u
 from astropy.stats import SigmaClip
 from astropy.utils.decorators import lazyproperty
-from astropy.utils.exceptions import AstropyUserWarning
 from photutils.aperture import (
     ApertureStats,
     CircularAnnulus,
@@ -246,38 +244,27 @@ class ApertureCatalog:
         The local background and error estimated using a circular
         annulus aperture.
 
-        The local background is the sigma-clipped median
-        value in the annulus. The background error is the
-        standard error of the median. Both are calculated by
+        The local background is the sigma-clipped median value in the
+        annulus. The background error is the standard error of the
+        median. Both are calculated by
         `~photutils.aperture.ApertureStats`.
         """
         r_in_arcsec, r_out_arcsec = self.ANNULUS_RADII_ARCSEC
         n_sources = self.xypos_finite.shape[0]
-        unit = getattr(self.model.data, "unit", None)
+        unit = self.model.data.unit
         sigclip = SigmaClip(sigma=3.0)
 
-        bkg_median = np.full(n_sources, np.nan)
-        bkg_median_err = np.full(n_sources, np.nan)
+        bkg_median = np.full(n_sources, np.nan) << unit
+        bkg_median_err = np.full(n_sources, np.nan) << unit
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=RuntimeWarning)
-            warnings.simplefilter("ignore", category=AstropyUserWarning)
+        for idx, scale in self._radius_bins:
+            annulus = CircularAnnulus(
+                self.xypos_finite[idx], r_in_arcsec / scale, r_out_arcsec / scale
+            )
+            stats = ApertureStats(self.model.data, annulus, sigma_clip=sigclip)
+            bkg_median[idx] = stats.median
+            bkg_median_err[idx] = stats.median_err
 
-            for idx, scale in self._radius_bins:
-                if idx.size == 0:
-                    continue
-                annulus = CircularAnnulus(
-                    self.xypos_finite[idx], r_in_arcsec / scale, r_out_arcsec / scale
-                )
-                stats = ApertureStats(self.model.data, annulus, sigma_clip=sigclip)
-                median = np.atleast_1d(stats.median)
-                median_err = np.atleast_1d(stats.median_err)
-                bkg_median[idx] = getattr(median, "value", median)
-                bkg_median_err[idx] = getattr(median_err, "value", median_err)
-
-        if unit is not None:
-            bkg_median <<= unit
-            bkg_median_err <<= unit
         pixel_area = self._source_pixel_area
         bkg_median = bkg_median / pixel_area
         bkg_median_err = bkg_median_err / pixel_area
