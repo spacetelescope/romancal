@@ -294,6 +294,9 @@ def test_multiband_catalog(
     cat = result.source_catalog
     assert isinstance(cat, Table)
     assert len(cat) == 7
+    for name in ("x_centroid_err", "y_centroid_win_err", "ra_centroid_err"):
+        assert np.all(cat[name] > 0)
+    assert np.all(np.abs(cat["orientation_sky"]) <= 90 * u.deg)
     # Always persist detection_image for forced photometry consumers.
     assert hasattr(segm, "detection_image")
     assert segm.detection_image.shape == (101, 101)
