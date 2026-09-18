@@ -2,6 +2,7 @@ from pathlib import Path
 from re import match
 from types import SimpleNamespace
 
+import asdf
 import astropy.units as u
 import numpy as np
 import pytest
@@ -9,6 +10,7 @@ from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
 from astropy.time import Time
 from numpy.testing import assert_allclose, assert_equal
+from roman_datamodels import datamodels as rdm
 from roman_datamodels.datamodels import (
     ForcedImageSourceCatalogModel,
     ImageModel,
@@ -169,6 +171,36 @@ def test_forced_catalog(image_model, function_jail, ignore_parquet_metadata_path
             has_forced_fields = True
     assert has_forced_fields
 
+    # The unprefixed columns are measured from the detection image saved
+    # in the forcing segmentation file. The same image is used here, so
+    # they must match the original detection catalog. The centroid
+    # errors depend on the detection image flux scale.
+    detection_catalog = Table.read("source_cat.parquet")
+    assert_equal(catalog["label"], detection_catalog["label"])
+    err_names = [
+        name
+        for name in catalog.colnames
+        if "centroid" in name
+        and name.endswith("_err")
+        and not name.startswith("forced_")
+    ]
+    assert "x_centroid_err" in err_names
+    assert "y_centroid_win_err" in err_names
+    for name in err_names:
+        assert_allclose(catalog[name], detection_catalog[name], rtol=1e-5)
+
+    # The saved detection images are in flux density units and carry
+    # a unit marker so that forced photometry does not convert them again
+    with (
+        rdm.open("source_segm.asdf") as source_segm,
+        rdm.open("force_segm.asdf") as force_segm,
+    ):
+        assert source_segm.detection_image_unit == "nJy"
+        assert force_segm.detection_image_unit == "nJy"
+        expected = np.asarray(source_segm.detection_image)
+        assert_equal(np.asarray(force_segm.detection_image), expected)
+        assert_equal(np.asarray(segmentation_map.detection_image), expected)
+
     compare_model_and_parquet_metadata(
         image_model, output_filename, ignore_parquet_metadata_paths
     )
@@ -216,6 +248,84 @@ class TestConvolvedDataUnits:
         assert_allclose(result, 100.0 * u.nJy)
         assert_allclose(image_model.data, data)
         assert image_model.data.unit == u.nJy
+
+
+def _write_forcing_segm(image_model, filename, *, unit, scale=1.0):
+    """
+    Write a forcing segmentation file with a modified detection image
+    unit key. A `None` unit removes the key.
+    """
+    SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=5,
+        npixels=10,
+        save_results=True,
+        output_file="source_cat.asdf",
+    )
+    with asdf.open("source_segm.asdf", memmap=False, lazy_load=False) as af:
+        roman = af.tree["roman"]
+        roman["detection_image"] = np.asarray(roman["detection_image"]) * scale
+        if unit is None:
+            del roman["detection_image_unit"]
+        else:
+            roman["detection_image_unit"] = unit
+        af.write_to(filename)
+
+
+def _call_forced(image_model, filename):
+    return SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=5,
+        npixels=10,
+        save_results=False,
+        forced_segmentation=filename,
+    )
+
+
+@pytest.mark.parametrize(("unit", "scale"), [("uJy", 1e-3), (None, 1.0)])
+def test_forced_catalog_detection_image_unit(
+    image_model, function_jail, caplog, unit, scale
+):
+    """
+    Test a forcing detection image in an equivalent unit and one from a
+    file without the unit key, which is assumed to be in nJy.
+    """
+    filename = "modified_segm.asdf"
+    _write_forcing_segm(image_model, filename, unit=unit, scale=scale)
+    forced_cat, forced_segm = _call_forced(image_model, filename)
+
+    assert ("Assuming its detection_image is in nJy" in caplog.text) == (unit is None)
+
+    detection_catalog = Table.read("source_cat.parquet")
+    for name in ("x_centroid_err", "y_centroid_win_err"):
+        assert_allclose(
+            forced_cat.source_catalog[name], detection_catalog[name], rtol=1e-5
+        )
+
+    assert forced_segm.detection_image_unit == "nJy"
+    with rdm.open("source_segm.asdf") as source_segm:
+        assert_allclose(
+            forced_segm.detection_image,
+            np.asarray(source_segm.detection_image),
+            rtol=1e-6,
+        )
+
+
+@pytest.mark.parametrize(
+    ("unit", "match"),
+    [("s", "not equivalent to the desired flux unit"), ("bad", "not a valid unit")],
+)
+def test_forced_catalog_invalid_detection_image_unit(
+    image_model, function_jail, unit, match
+):
+    filename = "modified_segm.asdf"
+    _write_forcing_segm(image_model, filename, unit=unit)
+    with pytest.raises(ValueError, match=match):
+        _call_forced(image_model, filename)
 
 
 def test_forced_catalog_requires_detection_image(image_model, function_jail):
