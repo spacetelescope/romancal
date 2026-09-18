@@ -114,17 +114,17 @@ class MultibandCatalogStep(RomanStep):
             )
 
         # Create the multiband catalog
-        *results, msg = multiband_catalog(
+        segment_img, detection_image, cat_model, msg = multiband_catalog(
             self, library, example_model, cat_model, ee_spline
         )
 
         # Save empty results if there was an error
         if msg is None:
-            segment_img, cat_model = results
             segmentation_model.data = segment_img.data.astype(np.uint32)
             # Persist the detection image so forced photometry can recompute
             # shape parameters that match the deep/multiband catalog.
-            segmentation_model["detection_image"] = segment_img.detection_image
+            segmentation_model["detection_image"] = detection_image.value
+            segmentation_model["detection_image_unit"] = str(detection_image.unit)
 
             # carry over psf_match_reference_filter
             segmentation_model.meta["psf_match_reference_filter"] = (
@@ -132,7 +132,7 @@ class MultibandCatalogStep(RomanStep):
             )
         else:
             log.error(msg)
-            segment_image_shape, cat_model = results
+            segment_image_shape = segment_img
             cat_model.source_catalog = cat_model.create_empty_catalog()
 
             # Set the data and detection image
@@ -147,12 +147,14 @@ class MultibandCatalogStep(RomanStep):
                 si_library.shelve(si_example_model, modify=False)
 
             # Create catalog of source injected images
-            si_segment_img, si_cat_model, _ = multiband_catalog(
-                self,
-                si_library,
-                si_example_model,
-                copy.deepcopy(cat_model),
-                ee_spline,
+            si_segment_img, si_detection_image, si_cat_model, si_msg = (
+                multiband_catalog(
+                    self,
+                    si_library,
+                    si_example_model,
+                    copy.deepcopy(cat_model),
+                    ee_spline,
+                )
             )
 
             # Match sources
@@ -166,10 +168,8 @@ class MultibandCatalogStep(RomanStep):
             segmentation_model["recovered_sources"] = recovered_sources
 
             # Write SI-only debug arrays for tests
-            if self.save_debug_info:
+            if self.save_debug_info and si_msg is None:
                 segmentation_model["si_data"] = si_segment_img.data.astype(np.uint32)
-                segmentation_model["si_detection_image"] = (
-                    si_segment_img.detection_image
-                )
+                segmentation_model["si_detection_image"] = si_detection_image.value
 
         return cat_model, segmentation_model
