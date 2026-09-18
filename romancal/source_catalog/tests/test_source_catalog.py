@@ -365,6 +365,54 @@ def test_l3_source_catalog(
         assert np.any(cat["dec"])
 
 
+def test_centroid_errors_and_sky_orientation(image_model, function_jail):
+    """
+    The centroid errors, sky orientation, and annulus background error
+    are calculated by photutils and must be populated with valid values.
+    """
+    result_catalog, _ = SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=3,
+        npixels=10,
+        save_results=False,
+    )
+    cat = result_catalog.source_catalog
+    assert len(cat) > 0
+
+    pix_names = (
+        "x_centroid_err",
+        "y_centroid_err",
+        "x_centroid_win_err",
+        "y_centroid_win_err",
+    )
+    sky_names = (
+        "ra_centroid_err",
+        "dec_centroid_err",
+        "ra_centroid_win_err",
+        "dec_centroid_win_err",
+    )
+    for names, unit in ((pix_names, u.pix), (sky_names, u.arcsec)):
+        for name in names:
+            assert cat[name].unit == unit
+            assert cat[name].dtype == np.float32
+            assert np.all(np.isfinite(cat[name]))
+            assert np.all(cat[name] > 0)
+
+    # The sky errors are the pixel errors scaled by ~0.1 arcsec / pix
+    ratio = cat["dec_centroid_err"].value / cat["y_centroid_err"].value
+    assert np.all((ratio > 0.05) & (ratio < 0.2))
+
+    assert cat["orientation_sky"].unit == u.deg
+    assert cat["orientation_sky"].dtype == np.float32
+    assert np.all(cat["orientation_sky"] > -90)
+    assert np.all(cat["orientation_sky"] <= 90)
+
+    assert cat["aper_bkg_flux_err"].dtype == np.float32
+    assert np.all(cat["aper_bkg_flux_err"] > 0)
+
+
 def test_background(mosaic_model, function_jail):
     """
     Test background fallback when Background2D fails.
