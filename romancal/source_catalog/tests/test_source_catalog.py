@@ -409,6 +409,9 @@ def test_forced_catalog_empty_map_without_detection_image(
     assert not hasattr(forced_segm, "detection_image")
     assert not hasattr(forced_segm, "detection_image_unit")
     assert "returning an empty forced catalog" in caplog.text
+    # Empty L2 products still mark the step complete on ImageModel inputs.
+    if model_fixture == "image_model":
+        assert model.meta.cal_step.source_catalog == "COMPLETE"
 
 
 def test_forced_catalog_empty_map_with_detection_image(image_model, function_jail):
@@ -449,6 +452,7 @@ def test_forced_catalog_empty_map_with_detection_image(image_model, function_jai
     # Empty forced outputs do not propagate the forcing detection_image.
     assert not hasattr(forced_segm, "detection_image")
     assert not hasattr(forced_segm, "detection_image_unit")
+    assert image_model.meta.cal_step.source_catalog == "COMPLETE"
 
 
 @pytest.mark.parametrize(
@@ -501,6 +505,8 @@ def test_l2_source_catalog(
         cat = result_catalog.source_catalog
         assert isinstance(cat, Table)
     assert len(cat) == nsources
+    # Empty and non-empty L2 catalogs both mark the step complete.
+    assert image_model.meta.cal_step.source_catalog == "COMPLETE"
 
     # Check that the ee_fraction_xx entries are in the metadata
     if "aperture_radii" in cat.meta:

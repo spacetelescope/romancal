@@ -217,10 +217,17 @@ class SourceCatalogStep(RomanStep):
 
         Empty products intentionally omit ``detection_image``. Forced
         photometry only needs that array when measuring sources.
+
+        For ``ImageModel`` inputs the step still completed successfully,
+        so ``meta.cal_step.source_catalog`` is marked ``COMPLETE``.
         """
         cat_model.source_catalog = cat_model.create_empty_catalog()
         segmentation_model.data = np.zeros(model.data.shape, dtype=np.uint32)
         self._attach_skyvals_if_enabled(input_model, segmentation_model, mask)
+        # Match the non-empty path: only ImageModel records this cal_step.
+        if isinstance(input_model, datamodels.ImageModel):
+            self.finalize_result(input_model, self._reference_files_used)
+            input_model.meta.cal_step.source_catalog = "COMPLETE"
         return cat_model, segmentation_model
 
     def _load_forced_segmentation(self, mask):
