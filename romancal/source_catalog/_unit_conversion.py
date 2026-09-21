@@ -8,6 +8,7 @@ unit).
 """
 
 import astropy.units as u
+import numpy as np
 from roman_datamodels.datamodels import ImageModel
 
 
@@ -79,14 +80,16 @@ def scale_model_arrays(model, convolved_data, factor, *, unit=None):
         Mutable input model with ``data`` and ``err`` array fields.
 
     convolved_data : array-like or None
-        Optional convolved-data array. Scaled in place when possible.
+        Optional convolved-data array. Scaled in place when possible. It
+        is not scaled again when it shares memory with ``model.data``.
         When a ``unit`` is supplied, the ``<<=`` operator creates a new
         Quantity array if ``convolved_data`` is a plain ndarray, so the
         caller must use the return value of this function rather than
         relying on in-place mutation.
 
-    factor : float or `~astropy.units.Quantity`
-        Multiplicative factor.
+    factor : float, array-like, or `~astropy.units.Quantity`
+        Multiplicative factor. May be a 2D array broadcastable against
+        the model arrays, as when scaling by a per-pixel solid angle.
 
     unit : `~astropy.units.Unit`, optional
         If given, attach this unit to each scaled array using the
@@ -109,7 +112,10 @@ def scale_model_arrays(model, convolved_data, factor, *, unit=None):
             model[attr] <<= unit
 
     if convolved_data is not None:
-        convolved_data *= factor
+        # The convolved data may be the same array as the model data
+        # (e.g., a multiband detection image), which is already scaled
+        if not np.shares_memory(convolved_data, model["data"]):
+            convolved_data *= factor
         if unit is not None:
             # ``<<=`` on a plain ndarray creates a Quantity rather than
             # mutating in place, so we need to return it (if needed)
@@ -160,6 +166,9 @@ def validate_and_convert_to_flux_density(
 
     sb_to_flux : `~astropy.units.Quantity`
         Multiplicative factor converting ``MJy/sr`` to ``flux_unit``.
+        Normally a 2D array of per-pixel solid angles, so that the
+        resulting arrays hold total flux per pixel rather than a
+        surface brightness scaled by a single nominal pixel area.
 
     Returns
     -------
@@ -177,15 +186,21 @@ def validate_and_convert_to_flux_density(
     unit = get_compatible_unit(model.data, model.err)
 
     if unit is None:
-        # No units present - convert to flux density units
+        # No units present - convert to flux density units. Convolved
+        # data that carries its own unit is converted separately below.
+        scale_convolved = get_compatible_unit(convolved_data) is None
+        unitless_convolved = convolved_data if scale_convolved else None
+
         if isinstance(model, ImageModel):
             # Level-2: DN/s -> MJy/sr
-            convolved_data = scale_model_arrays(model, convolved_data, l2_to_sb)
+            unitless_convolved = scale_model_arrays(model, unitless_convolved, l2_to_sb)
 
         # Level-2 or Level-3: MJy/sr -> flux density
-        convolved_data = scale_model_arrays(
-            model, convolved_data, sb_to_flux.value, unit=sb_to_flux.unit
+        unitless_convolved = scale_model_arrays(
+            model, unitless_convolved, sb_to_flux.value, unit=sb_to_flux.unit
         )
+        if scale_convolved:
+            convolved_data = unitless_convolved
     else:
         # Units present - check compatibility and convert
         if not unit.is_equivalent(flux_unit):
@@ -220,7 +235,9 @@ def validate_and_convert_to_flux_density(
                     f"desired flux unit '{flux_unit}'."
                 )
 
-            # Convert to desired flux unit
-            convolved_data = convolved_data.to(flux_unit)
+            # Convert to desired flux unit. Skip when the unit already
+            # matches to avoid copying the array.
+            if conv_unit != flux_unit:
+                convolved_data = convolved_data.to(flux_unit)
 
     return convolved_data

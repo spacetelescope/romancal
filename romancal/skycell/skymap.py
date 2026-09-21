@@ -790,10 +790,10 @@ class SkyMap:
     .. [skymap] `Skymap Tessellation <https://roman-docs.stsci.edu/data-handbook-home/wfi-data-format/skymap-tessellation>`_
     """
 
-    _path: None | Path
+    _path: Path | None
     _data: AsdfFile
 
-    def __init__(self, path: None | Path | str = None):
+    def __init__(self, path: Path | str | None = None):
         """
         Parameters
         ----------
@@ -806,12 +806,12 @@ class SkyMap:
         self._data = None
 
     @property
-    def path(self) -> None | Path:
+    def path(self) -> Path | None:
         """location of skymap reference file on filesystem"""
         return self._path
 
     @path.setter
-    def path(self, path: None | Path):
+    def path(self, path: Path | None):
         self._path = path
         # reset data if retrieved
         self._data = None
@@ -935,7 +935,7 @@ def _ra_in_range(ra: float, low: float, high: float):
 
 def _wcsinfo_to_wcs(
     wcsinfo: dict,
-    bounding_box: None | tuple[tuple[float, float], tuple[float, float]] = None,
+    bounding_box: tuple[tuple[float, float], tuple[float, float]] | None = None,
 ) -> WCS:
     """Create a WCS from the skycell wcsinfo meta
 

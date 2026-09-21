@@ -1,0 +1,5 @@
+Save the multiband detection image in the segmentation map file in flux
+density units with a ``detection_image_unit`` key, without holding a copy
+of the image. Fix the unit conversion of the multiband detection image,
+which was applied twice because the image was used as both the data and
+the convolved data.

@@ -71,7 +71,11 @@ def make_det_image(library, kernel_fwhm):
             wht = sed_weight / var_rnoise  # inverse variance
             wht_sum += np.nan_to_num(wht, copy=False, nan=0.0)
 
-            coverage_mask = np.isnan(model.err)
+            # Mask non-finite data too; otherwise NaN data with finite
+            # err become unmasked zeros in the detection image
+            coverage_mask = (
+                ~np.isfinite(model.data) | ~np.isfinite(model.err) | ~np.isfinite(wht)
+            )
             with warnings.catch_warnings():
                 # Suppress warnings about any NaNs in the data
                 warnings.filterwarnings(action="ignore", category=AstropyUserWarning)

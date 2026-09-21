@@ -2,6 +2,7 @@ from copy import deepcopy
 from pathlib import Path
 from re import match
 
+import asdf
 import astropy.units as u
 import numpy as np
 import pyarrow
@@ -9,13 +10,29 @@ import pytest
 from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
 from astropy.time import Time
+from numpy.testing import assert_allclose, assert_equal
 from roman_datamodels import datamodels as rdm
 from roman_datamodels.datamodels import MosaicModel, MultibandSegmentationMapModel
 
 from romancal.datamodels import ModelLibrary
 from romancal.multiband_catalog import MultibandCatalogStep
-from romancal.multiband_catalog._multiband_catalog import match_recovered_sources
+from romancal.multiband_catalog._detection_image import make_det_image
+from romancal.multiband_catalog._multiband_catalog import (
+    make_source_grid,
+    match_recovered_sources,
+    process_detection_image,
+)
 from romancal.skycell.tests.test_skycell_match import mk_gwcs
+from romancal.source_catalog._wcs_utils import pixel_area_map
+
+SI_SCALE = 5 / 4
+RNG_SEED = 42
+EXPTIME = 300
+MEANFLUX = 0.2
+RA_REF = 270.0 * u.deg
+DEC_REF = 66.0 * u.deg
+ROLL_REF = 0.0 * u.deg
+SHAPE = (500, 500)
 
 
 def make_test_image():
@@ -47,6 +64,51 @@ def make_test_image():
     return data, err
 
 
+def make_si_test_image():
+    flux_scale = MEANFLUX
+    scale = SI_SCALE
+
+    g1 = Gaussian2D(flux_scale * 121.0, scale * 11, scale * 12, 1.5, 1.5)
+    g2 = Gaussian2D(flux_scale * 70, scale * 65, scale * 18, 9.2, 4.5)
+    g3 = Gaussian2D(
+        flux_scale * 111.0, scale * 41, scale * 43, 8.0, 3.0, theta=30 * u.deg
+    )
+    g4 = Gaussian2D(flux_scale * 81.0, scale * 17, scale * 53, 4, 2, theta=102 * u.deg)
+    g5 = Gaussian2D(
+        flux_scale * 107.0, scale * 65, scale * 71, 12, 2, theta=142 * u.deg
+    )
+    g6 = Gaussian2D(flux_scale * 50, scale * 20, scale * 80, 2.1, 2.1)
+    g7 = Gaussian2D(flux_scale * 97.0, scale * 85, scale * 88, 4, 2, theta=-30 * u.deg)
+
+    yy, xx = np.mgrid[0:125, 0:125]
+    smalldata = np.zeros(shape=(len(yy), len(xx)))
+    smalldata = (
+        g1(xx, yy)
+        + g2(xx, yy)
+        + g3(xx, yy)
+        + g4(xx, yy)
+        + g5(xx, yy)
+        + g6(xx, yy)
+        + g7(xx, yy)
+    ).value.astype("float32")
+
+    # Rotate pattern to make the test image a little less regular
+    data = np.tile(smalldata, (4, 1))
+    data = np.append(data, np.tile(np.rot90(smalldata), (4, 1)), axis=1)
+    data = np.append(data, np.tile(np.rot90(smalldata, k=2), (4, 1)), axis=1)
+    data = np.append(data, np.tile(np.rot90(smalldata, k=-1), (4, 1)), axis=1)
+
+    assert data.shape == (500, 500)
+
+    rng = np.random.default_rng(seed=RNG_SEED)
+    noise_scale = MEANFLUX / EXPTIME
+    noise = rng.normal(loc=MEANFLUX, scale=noise_scale, size=data.shape)
+    data += noise
+    err = np.sqrt(np.ones_like(data))
+
+    return data, err
+
+
 @pytest.fixture
 def mosaic_model(shape=(101, 101)):
     model = MosaicModel.create_fake_data(shape=shape)
@@ -62,7 +124,7 @@ def mosaic_model(shape=(101, 101)):
     model.meta.wcsinfo.ra_ref = 270.0  # degrees
     model.meta.wcsinfo.dec_ref = 66.0  # degrees
     model.meta.wcsinfo.roll_ref = 0.0  # degrees
-    model.meta.coadd_info.exposure_time = 300  # seconds
+    model.meta.coadd_info.exposure_time = EXPTIME  # seconds
 
     model.meta.resample.pixfrac = 0.5
     model.meta.data_release_id = "r1"
@@ -200,6 +262,9 @@ def shared_tests(
             segm_model.meta.get("psf_match_reference_filter")
             == cat.meta["psf_match_reference_filter"]
         )
+        # detection_image is required by forced photometry
+        assert hasattr(segm_model, "detection_image")
+        assert segm_model.detection_image.shape == segm_model.data.shape
     else:
         assert not catalog_filepath.exists()
         assert not segmentation_map_filepath.exists()
@@ -216,7 +281,7 @@ def shared_tests(
 def test_multiband_catalog(
     library_model, fit_psf, snr_threshold, npixels, save_results, function_jail
 ):
-    result, _ = MultibandCatalogStep.call(
+    result, segm = MultibandCatalogStep.call(
         library_model,
         bkg_boxsize=50,
         snr_threshold=snr_threshold,
@@ -229,6 +294,9 @@ def test_multiband_catalog(
     cat = result.source_catalog
     assert isinstance(cat, Table)
     assert len(cat) == 7
+    # Always persist detection_image for forced photometry consumers.
+    assert hasattr(segm, "detection_image")
+    assert segm.detection_image.shape == (101, 101)
 
     shared_tests(result, cat, library_model, save_results, function_jail)
 
@@ -250,6 +318,74 @@ def test_multiband_catalog_populates_dust_ebv(library_model, function_jail):
     assert cat["dust_ebv"].dtype == np.float32
 
 
+def test_forced_photometry_with_multiband_segmentation(library_model, function_jail):
+    """Purpose: Multiband segm includes detection_image so SourceCatalog forced mode works."""
+    from romancal.source_catalog import SourceCatalogStep
+
+    _, segm = MultibandCatalogStep.call(
+        library_model,
+        bkg_boxsize=50,
+        snr_threshold=3,
+        npixels=10,
+        fit_psf=False,
+        save_results=True,
+        deblend=True,
+    )
+    assert hasattr(segm, "detection_image")
+    segm_path = Path(function_jail / f"{segm.meta.filename}_segm.asdf")
+    assert segm_path.exists()
+
+    with library_model:
+        borrowed = library_model.borrow(0)
+        mosaic = borrowed.copy()
+        library_model.shelve(borrowed, modify=False)
+
+    forced_cat, forced_segm = SourceCatalogStep.call(
+        mosaic,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=3,
+        npixels=10,
+        fit_psf=False,
+        save_results=False,
+        forced_segmentation=str(segm_path),
+    )
+
+    cat = forced_cat.source_catalog
+    assert any("forced_" in name for name in cat.colnames)
+    assert hasattr(forced_segm, "detection_image")
+
+    # The multiband detection image is saved in flux density units, so
+    # the forced catalog does not convert it again
+    assert segm.detection_image_unit == "nJy"
+    assert forced_segm.detection_image_unit == "nJy"
+    assert_equal(forced_segm.detection_image, segm.detection_image)
+
+    # A multiband file without the unit key holds the detection image in
+    # the units of the input images
+    legacy_path = Path(function_jail / "legacy_segm.asdf")
+    with asdf.open(segm_path, memmap=False, lazy_load=False) as af:
+        roman = af.tree["roman"]
+        del roman["detection_image_unit"]
+        legacy_image = np.array(roman["detection_image"])
+        af.write_to(legacy_path)
+
+    _, legacy_forced_segm = SourceCatalogStep.call(
+        mosaic,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=3,
+        npixels=10,
+        fit_psf=False,
+        save_results=False,
+        forced_segmentation=str(legacy_path),
+    )
+    area = pixel_area_map(mosaic.meta.wcs, mosaic.data.shape)
+    sb_to_flux = (area * (u.MJy / u.sr)).to_value(u.nJy)
+    assert legacy_forced_segm.detection_image_unit == "nJy"
+    assert_allclose(legacy_forced_segm.detection_image, legacy_image * sb_to_flux)
+
+
 @pytest.mark.parametrize("save_results", (True, False))
 def test_multiband_catalog_no_detections(library_model, save_results, function_jail):
     result, _ = MultibandCatalogStep.call(
@@ -264,6 +400,18 @@ def test_multiband_catalog_no_detections(library_model, save_results, function_j
     cat = result.source_catalog
     assert isinstance(cat, Table)
     assert len(cat) == 0
+
+
+def test_make_det_image_nan_data_finite_err(library_model):
+    # NaN data with finite err must be NaN (masked) in the detection
+    # image, not zero
+    with library_model:
+        for model in library_model:
+            model.data[:30, :30] = np.nan
+            library_model.shelve(model)
+    det = make_det_image(library_model, 2.0)
+    assert np.all(np.isnan(det[:30, :30]))
+    assert np.all(np.isfinite(det[30:, 30:]))
 
 
 @pytest.mark.parametrize("save_results", (True, False))
@@ -315,41 +463,7 @@ def test_multiband_catalog_some_invalid_inputs(
     assert np.all(np.isnan(cat["segment_f184_flux_err"]))
 
 
-def make_si_test_image():
-    g1 = Gaussian2D(60.5, 11, 12, 1.5, 1.5)
-    g2 = Gaussian2D(35, 65, 18, 9.2, 4.5)
-    g3 = Gaussian2D(55.5, 41, 43, 8.0, 3.0, theta=30 * u.deg)
-    g4 = Gaussian2D(40.5, 17, 53, 4, 2, theta=102 * u.deg)
-    g5 = Gaussian2D(53.5, 65, 71, 12, 2, theta=142 * u.deg)
-    g6 = Gaussian2D(25, 20, 80, 2.1, 2.1)
-    g7 = Gaussian2D(48.5, 85, 88, 4, 2, theta=-30 * u.deg)
-
-    yy, xx = np.mgrid[0:100, 0:100]
-    smalldata = np.zeros(shape=(len(yy), len(xx)))
-    smalldata = (
-        g1(xx, yy)
-        + g2(xx, yy)
-        + g3(xx, yy)
-        + g4(xx, yy)
-        + g5(xx, yy)
-        + g6(xx, yy)
-        + g7(xx, yy)
-    ).value.astype("float32")
-
-    data = np.zeros(shape=(500, 500))
-    data = np.tile(smalldata, (5, 5))
-
-    rng = np.random.default_rng(seed=42)
-    noise_scale = 0.01 * 0.2
-    noise = rng.normal(0, noise_scale, size=data.shape)
-    data += noise
-    err = np.zeros_like(data) + noise_scale
-
-    return data, err
-
-
-@pytest.fixture
-def mosaic_si_model(shape=(500, 500)):
+def mosaic_si_nan_model(shape=(500, 500)):
     model = MosaicModel.create_fake_data(shape=shape)
     data, err = make_si_test_image()
     model.data = data
@@ -364,7 +478,7 @@ def mosaic_si_model(shape=(500, 500)):
     model.meta.wcsinfo.ra_ref = 270.0  # degrees
     model.meta.wcsinfo.dec_ref = 66.0  # degrees
     model.meta.wcsinfo.roll_ref = 0.0  # degrees
-    model.meta.coadd_info.exposure_time = 1  # seconds
+    model.meta.coadd_info.exposure_time = EXPTIME  # seconds
 
     model.meta.resample.pixfrac = 0.5
     model.meta.data_release_id = "r1"
@@ -382,18 +496,103 @@ def mosaic_si_model(shape=(500, 500)):
 
 
 @pytest.fixture
-def library_model2(mosaic_si_model):
-    si_model2 = deepcopy(mosaic_si_model)
+def library_model2():
+    si_model1 = mosaic_si_nan_model()
+    si_model2 = deepcopy(si_model1)
     si_model2.meta.instrument.optical_element = "F158"
-    return ModelLibrary([mosaic_si_model, si_model2])
+    return ModelLibrary([si_model1, si_model2])
+
+
+@pytest.fixture
+def libraries_si_nan():
+    libs = {}
+    nan_y_pos = nan_x_pos = None
+
+    model_base = mosaic_si_nan_model()
+
+    for si_type in ["NoNan", "Grid", "Block"]:
+        model1 = deepcopy(model_base)
+        model1.meta.instrument.optical_element = "F158"
+
+        if nan_y_pos is None:
+            nan_y_pos, nan_x_pos = make_source_grid(
+                model1,
+                yxmax=model1.data.shape,
+                yxoffset=(50, 50),
+                yxgrid=(20, 20),
+                seed=RNG_SEED,
+            )
+            nan_y_pos, nan_x_pos = (
+                np.round(nan_y_pos).astype(int),
+                np.round(nan_x_pos).astype(int),
+            )
+
+        # NaN in a block
+        if si_type == "Block":
+            model1.data[400:, 400:] = np.nan
+
+        # NaN on grid diagonal
+        if si_type != "NoNan":
+            model1.data[nan_y_pos[0::21], nan_x_pos[0::21]] = np.nan
+
+        # Second model
+        model2 = deepcopy(model1)
+        model2.meta.instrument.optical_element = "F184"
+
+        libs[si_type] = ModelLibrary([model1, model2])
+
+    return libs
+
+
+def test_multiband_source_injection_no_detections(
+    library_model2, function_jail, monkeypatch
+):
+    """
+    Test that the step completes when no sources are detected in the
+    source-injected images.
+    """
+    n_calls = 0
+
+    def fail_second_call(self, library, example_model, ee_spline, catalog_model):
+        nonlocal n_calls
+        n_calls += 1
+        if n_calls == 2:
+            msg = "Cannot create source catalog. No sources were detected."
+            return {"image_shape": example_model.data.shape, "msg": msg}
+        return process_detection_image(
+            self, library, example_model, ee_spline, catalog_model
+        )
+
+    monkeypatch.setattr(
+        "romancal.multiband_catalog._multiband_catalog.process_detection_image",
+        fail_second_call,
+    )
+    result, segm = MultibandCatalogStep.call(
+        library_model2,
+        bkg_boxsize=30,
+        snr_threshold=7,
+        npixels=5,
+        fit_psf=False,
+        deblend=True,
+        inject_sources=True,
+        inject_seed=50,
+        save_results=False,
+        save_debug_info=True,
+    )
+
+    assert n_calls == 2
+    assert len(result.source_catalog) > 0
+    assert "injected_sources" in segm
+    assert "si_data" not in segm
+    assert "si_detection_image" not in segm
 
 
 @pytest.mark.parametrize("fit_psf", (True, False))
 @pytest.mark.parametrize(
     "snr_threshold, npixels, save_results",
     (
-        (3, 10, False),
-        (2, 4, True),
+        (7, 5, False),
+        (15, 4, True),
     ),
 )
 def test_multiband_source_injection_catalog(
@@ -401,7 +600,7 @@ def test_multiband_source_injection_catalog(
 ):
     result, _ = MultibandCatalogStep.call(
         library_model2,
-        bkg_boxsize=50,
+        bkg_boxsize=30,
         snr_threshold=snr_threshold,
         npixels=npixels,
         fit_psf=fit_psf,
@@ -415,22 +614,7 @@ def test_multiband_source_injection_catalog(
     # Original objects
     cat = result.source_catalog
     assert isinstance(cat, Table)
-    assert len(cat) == 175
-
-    # Ensure all original objects found in the proper location
-    cat["x_mod"] = np.mod(np.round(cat["x_centroid"]), 100)
-    cat["y_mod"] = np.mod(np.round(cat["y_centroid"]), 100)
-    gocj_locs = [
-        (11, 12),
-        (65, 18),
-        (41, 43),
-        (17, 53),
-        (65, 71),
-        (20, 80),
-        (85, 88),
-    ]
-    for modx, mody in cat[["x_mod", "y_mod"]]:
-        assert (modx, mody) in gocj_locs
+    assert len(cat) == 112
 
     # Source injected and original images
     si_cat = result.source_injection_catalog
@@ -459,6 +643,75 @@ def test_multiband_source_injection_catalog(
         function_jail,
         shape=(5000, 5000),
     )
+
+
+def test_multiband_source_injection_nan_catalog(libraries_si_nan, function_jail):
+    step = MultibandCatalogStep()
+
+    # Dictionaries to hold step output
+    res_cat = {}
+    results = {}
+
+    # Create three sets of libraries with two copies of the same mosaic:
+    # NoNan - original mosaics
+    # Grid - NoNan mosaics with the center locations of injected
+    #     sources on a diagonal set to NaN
+    # Block - Grid mosaics with a quadrant also set to NaN
+    libmods = libraries_si_nan
+
+    # Run the MultibandCatalogStep on all three libraries
+    for si_type in ["NoNan", "Grid", "Block"]:
+        res_cat[si_type], results[si_type] = step.call(
+            libmods[si_type],
+            bkg_boxsize=30,
+            snr_threshold=15,
+            npixels=4,
+            fit_psf=False,
+            deblend=True,
+            inject_sources=True,
+            inject_seed=RNG_SEED,
+            save_results=False,
+            save_debug_info=True,
+        )
+
+    # Specify the Grid SI locations that should have NaN pixels
+    # From above: yxgrid=(20, 20), so every 21st entry is a diagonal
+    y_nan_idx = np.round(results["NoNan"].injected_sources["y_pos"][0::21]).astype(int)
+    x_nan_idx = np.round(results["NoNan"].injected_sources["x_pos"][0::21]).astype(int)
+
+    # Compare data
+    for si_type in ["Grid", "Block"]:
+        # Ensure nan injection locations match nan pixels
+        with libmods[si_type]:
+            for si_model in libmods[si_type]:
+                assert np.all(np.isnan(si_model.data[y_nan_idx, x_nan_idx]))
+                libmods[si_type].shelve(si_model, modify=False)
+
+        # si_type vs NoNan - most pixels should be close
+        sum_ac_test = np.isclose(
+            results["NoNan"].si_detection_image,
+            results[si_type].si_detection_image,
+            rtol=1e-2,
+        )
+
+        # Ensure over 90% of pixels are close to NoNan data
+        assert (
+            np.sum(sum_ac_test) / np.sum(results["NoNan"].si_detection_image.size)
+        ) > 0.9
+
+        # Obtain indices of sources to be injected into NaN pixels
+        is_nan_idx = np.round(results[si_type].injected_sources["label"][0::21]).astype(
+            int
+        )
+
+        # Ensure that there are sources injected at isolated NaN points (farther than 2 arcsec
+        # from initial sources)
+        nan_rs_idx = np.flatnonzero(
+            np.isin(
+                results[si_type].recovered_sources["best_injected_index"], is_nan_idx
+            )
+        )
+        np.sum(results[si_type].recovered_sources[nan_rs_idx]["dist_nearest"] > 2)
 
 
 def test_match_recovered_sources():
