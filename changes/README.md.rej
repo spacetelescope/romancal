@@ -1,0 +1,27 @@
+diff a/changes/README.md b/changes/README.md	(rejected hunks)
+@@ -2,21 +2,9 @@
+ 
+ This `changes/` directory contains "news fragments": small reStructuredText (`.rst`) files describing a change in a few sentences.
+ When making a release, run `towncrier build --version <VERSION>` to consume existing fragments in `changes/`
+-and insert them as a full changelog entry at the top of `CHANGES.rst` for the released version.
+-
+-News fragment filenames consist of the pull request number and the changelog category (see below).
+-A single change can have more than one news fragment, if it spans multiple categories.
+-
+-## Change Log Categories
++and insert them as a full changelog entry at the top of [`CHANGES.rst`](../CHANGES.rst) for the released version.
+ 
++News fragment filenames consist of the pull request number and the changelog category.
+ Make a news fragment for every relevant category affected by your change.
+-
+-- `<PR#>.breaking.rst`: Add this fragment if your change **breaks public API**, describing what the user needs to change
+-- `<PR#>.feature.rst`
+-- `<PR#>.fix.rst`
+-- `<PR#>.docs.rst`
+-- `<PR#>.other.rst`
+-
+-> [!NOTE]
+-> This README was adapted from a similar one in Astropy (under the terms of the BSD license),
+-> which was in turn adapted from Numpy (MIT license).
++A single change can have more than one news fragment, if it spans multiple categories.
++Categories are listed in [`towncrier.toml`](../towncrier.toml).
