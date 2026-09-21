@@ -2,6 +2,7 @@ from copy import deepcopy
 from pathlib import Path
 from re import match
 
+import asdf
 import astropy.units as u
 import numpy as np
 import pyarrow
@@ -9,6 +10,7 @@ import pytest
 from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
 from astropy.time import Time
+from numpy.testing import assert_allclose, assert_equal
 from roman_datamodels import datamodels as rdm
 from roman_datamodels.datamodels import MosaicModel, MultibandSegmentationMapModel
 
@@ -18,8 +20,10 @@ from romancal.multiband_catalog._detection_image import make_det_image
 from romancal.multiband_catalog._multiband_catalog import (
     make_source_grid,
     match_recovered_sources,
+    process_detection_image,
 )
 from romancal.skycell.tests.test_skycell_match import mk_gwcs
+from romancal.source_catalog._wcs_utils import pixel_area_map
 
 SI_SCALE = 5 / 4
 RNG_SEED = 42
@@ -351,6 +355,36 @@ def test_forced_photometry_with_multiband_segmentation(library_model, function_j
     assert any("forced_" in name for name in cat.colnames)
     assert hasattr(forced_segm, "detection_image")
 
+    # The multiband detection image is saved in flux density units, so
+    # the forced catalog does not convert it again
+    assert segm.detection_image_unit == "nJy"
+    assert forced_segm.detection_image_unit == "nJy"
+    assert_equal(forced_segm.detection_image, segm.detection_image)
+
+    # A multiband file without the unit key holds the detection image in
+    # the units of the input images
+    legacy_path = Path(function_jail / "legacy_segm.asdf")
+    with asdf.open(segm_path, memmap=False, lazy_load=False) as af:
+        roman = af.tree["roman"]
+        del roman["detection_image_unit"]
+        legacy_image = np.array(roman["detection_image"])
+        af.write_to(legacy_path)
+
+    _, legacy_forced_segm = SourceCatalogStep.call(
+        mosaic,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=3,
+        npixels=10,
+        fit_psf=False,
+        save_results=False,
+        forced_segmentation=str(legacy_path),
+    )
+    area = pixel_area_map(mosaic.meta.wcs, mosaic.data.shape)
+    sb_to_flux = (area * (u.MJy / u.sr)).to_value(u.nJy)
+    assert legacy_forced_segm.detection_image_unit == "nJy"
+    assert_allclose(legacy_forced_segm.detection_image, legacy_image * sb_to_flux)
+
 
 @pytest.mark.parametrize("save_results", (True, False))
 def test_multiband_catalog_no_detections(library_model, save_results, function_jail):
@@ -508,6 +542,49 @@ def libraries_si_nan():
         libs[si_type] = ModelLibrary([model1, model2])
 
     return libs
+
+
+def test_multiband_source_injection_no_detections(
+    library_model2, function_jail, monkeypatch
+):
+    """
+    Test that the step completes when no sources are detected in the
+    source-injected images.
+    """
+    n_calls = 0
+
+    def fail_second_call(self, library, example_model, ee_spline, catalog_model):
+        nonlocal n_calls
+        n_calls += 1
+        if n_calls == 2:
+            msg = "Cannot create source catalog. No sources were detected."
+            return {"image_shape": example_model.data.shape, "msg": msg}
+        return process_detection_image(
+            self, library, example_model, ee_spline, catalog_model
+        )
+
+    monkeypatch.setattr(
+        "romancal.multiband_catalog._multiband_catalog.process_detection_image",
+        fail_second_call,
+    )
+    result, segm = MultibandCatalogStep.call(
+        library_model2,
+        bkg_boxsize=30,
+        snr_threshold=7,
+        npixels=5,
+        fit_psf=False,
+        deblend=True,
+        inject_sources=True,
+        inject_seed=50,
+        save_results=False,
+        save_debug_info=True,
+    )
+
+    assert n_calls == 2
+    assert len(result.source_catalog) > 0
+    assert "injected_sources" in segm
+    assert "si_data" not in segm
+    assert "si_detection_image" not in segm
 
 
 @pytest.mark.parametrize("fit_psf", (True, False))
