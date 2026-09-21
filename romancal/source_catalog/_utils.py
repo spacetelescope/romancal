@@ -5,7 +5,7 @@ from astropy.modeling.models import Spline1D
 from roman_datamodels import datamodels
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 
-from romancal.source_catalog._wcs_helpers import pixel_scale_angle_at_skycoord
+from romancal.source_catalog._wcs_utils import pixel_area_from_wcs
 
 
 def estimate_pixel_area_sr_from_wcs(wcs, shape):
@@ -21,9 +21,7 @@ def estimate_pixel_area_sr_from_wcs(wcs, shape):
     """
     ycen = (shape[0] - 1) / 2.0
     xcen = (shape[1] - 1) / 2.0
-    skycoord = wcs.pixel_to_world(xcen, ycen)
-    _, pixscale, _ = pixel_scale_angle_at_skycoord(skycoord, wcs)
-    return (pixscale**2).to_value(u.sr)
+    return pixel_area_from_wcs(wcs, np.array(xcen), np.array(ycen)).to_value(u.sr)
 
 
 def get_pixel_area_sr(model):

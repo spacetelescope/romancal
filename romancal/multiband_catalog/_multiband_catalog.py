@@ -63,17 +63,19 @@ def process_detection_image(self, library, example_model, ee_spline, catalog_mod
 
     Returns
     -------
-    result : dict or tuple
+    result : dict
+        If detection fails, returns a dictionary with keys:
+        - 'image_shape': The shape of the detection image
+        - 'msg': The reason that detection failed
+
         If successful, returns a dictionary with keys:
+        - 'msg': `None`
         - 'detection_model': The detection image model
         - 'mask': The total mask array
         - 'segment_img': The segmentation image
         - 'detection_catobj': The detection RomanSourceCatalog object
         - 'detection_catalog': The detection catalog table
         - 'star_kernel_fwhm': The stellar kernel FWHM
-
-        If detection fails, returns the result of
-        save_empty_results().
     """
     log.info("Creating detection image")
 
@@ -96,7 +98,7 @@ def process_detection_image(self, library, example_model, ee_spline, catalog_mod
             "Cannot create source catalog. All "
             "pixels in the detection image are masked."
         )
-        return detection_image.shape, catalog_model, msg
+        return {"image_shape": detection_image.shape, "msg": msg}
 
     log.info("Calculating background RMS for detection image")
     bkg = RomanBackground(
@@ -120,9 +122,7 @@ def process_detection_image(self, library, example_model, ee_spline, catalog_mod
     # were detected
     if segment_img is None:  # no sources found
         msg = "Cannot create source catalog. No sources were detected."
-        return detection_image.shape, catalog_model, msg
-
-    segment_img.detection_image = detection_image.copy()
+        return {"image_shape": detection_image.shape, "msg": msg}
 
     # Define the detection image model
     detection_model = datamodels.MosaicModel.create_minimal()
@@ -161,6 +161,7 @@ def process_detection_image(self, library, example_model, ee_spline, catalog_mod
     detection_catalog = detection_catobj.catalog
 
     return {
+        "msg": None,
         "detection_model": detection_model,
         "mask": mask,
         "segment_img": segment_img,
@@ -349,8 +350,12 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
 
     Returns
     -------
-    segment_img : `SegmentationImage` or set
-        The segmentation image.
+    segment_img : `SegmentationImage` or tuple
+        The segmentation image. If detection fails, this is the image
+        shape.
+    detection_image : `~astropy.units.Quantity` or `None`
+        The detection image in flux density units. If detection fails,
+        this is `None`.
     catalog_model : `MultibandSourceCatalogModel`
         Updated catalog.
     msg : str (optional)
@@ -369,10 +374,10 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
         self, library, example_model, ee_spline, catalog_model
     )
 
-    # Check if detection failed (step returns save_empty_results)
-    if isinstance(detection_result, tuple):
+    # Check if detection failed
+    if (msg := detection_result["msg"]) is not None:
         log.warning("Detection image processing failed")
-        return detection_result
+        return detection_result["image_shape"], None, catalog_model, msg
 
     # Extract detection results
     segment_img = detection_result["segment_img"]
@@ -450,7 +455,11 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
     # Put the resulting multiband catalog in the model
     catalog_model.source_catalog = detection_catalog
 
-    return segment_img, catalog_model, None
+    # Building the detection catalog converted the detection image to
+    # flux density units in place
+    detection_image = detection_catobj.convolved_data
+
+    return segment_img, detection_image, catalog_model, None
 
 
 def initialize_catalog_model(library, example_model):
