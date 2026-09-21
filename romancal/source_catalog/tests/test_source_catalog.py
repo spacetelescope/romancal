@@ -13,6 +13,7 @@ from numpy.testing import assert_allclose, assert_equal
 from roman_datamodels import datamodels as rdm
 from roman_datamodels.datamodels import (
     ForcedImageSourceCatalogModel,
+    ForcedMosaicSourceCatalogModel,
     ImageModel,
     ImageSourceCatalogModel,
     MosaicModel,
@@ -354,6 +355,89 @@ def test_forced_catalog_requires_detection_image(image_model, function_jail):
             save_results=False,
             forced_segmentation=str(forced_segm_path),
         )
+
+
+@pytest.mark.parametrize(
+    ("model_fixture", "forced_cat_cls", "segm_cls"),
+    [
+        ("image_model", ForcedImageSourceCatalogModel, SegmentationMapModel),
+        ("mosaic_model", ForcedMosaicSourceCatalogModel, MosaicSegmentationMapModel),
+    ],
+)
+def test_forced_catalog_zero_source_prompt(
+    request, model_fixture, forced_cat_cls, segm_cls, function_jail
+):
+    """
+    Purpose: forced photometry on a zero-source single-band prompt catalog
+    returns an empty forced catalog instead of failing (issue 2461).
+    """
+    model = request.getfixturevalue(model_fixture)
+    prompt_cat, prompt_segm = SourceCatalogStep.call(
+        model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=50,
+        npixels=10,
+        fit_psf=False,
+        save_results=True,
+        output_file="prompt_cat.asdf",
+    )
+    assert len(prompt_cat.source_catalog) == 0
+    assert not hasattr(prompt_segm, "detection_image")
+    assert np.all(prompt_segm.data == 0)
+
+    forced_cat, forced_segm = SourceCatalogStep.call(
+        model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=50,
+        npixels=10,
+        fit_psf=False,
+        save_results=False,
+        forced_segmentation="prompt_segm.asdf",
+    )
+    assert isinstance(forced_cat, forced_cat_cls)
+    assert isinstance(forced_segm, segm_cls)
+    assert len(forced_cat.source_catalog) == 0
+    assert np.all(forced_segm.data == 0)
+    assert not hasattr(forced_segm, "detection_image")
+
+
+def test_forced_catalog_zero_labels_with_detection_image(image_model, function_jail):
+    """
+    Purpose: forced photometry with an all-zero label map still succeeds
+    when a detection_image is present.
+    """
+    _, segm = SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=5,
+        npixels=10,
+        fit_psf=False,
+        save_results=True,
+        output_file="source_cat.asdf",
+    )
+    assert hasattr(segm, "detection_image")
+
+    with asdf.open("source_segm.asdf", memmap=False, lazy_load=False) as af:
+        roman = af.tree["roman"]
+        roman["data"] = np.zeros_like(roman["data"])
+        af.write_to("zero_labels_segm.asdf")
+
+    forced_cat, forced_segm = SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=5,
+        npixels=10,
+        fit_psf=False,
+        save_results=False,
+        forced_segmentation="zero_labels_segm.asdf",
+    )
+    assert isinstance(forced_cat, ForcedImageSourceCatalogModel)
+    assert len(forced_cat.source_catalog) == 0
+    assert np.all(forced_segm.data == 0)
 
 
 @pytest.mark.parametrize(

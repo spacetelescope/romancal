@@ -272,6 +272,7 @@ class SourceCatalogStep(RomanStep):
         )
 
         log.info("Detecting sources")
+        forced_detection_image = None
         if not self.forced_segmentation:
             segment_img = make_segmentation_image(
                 detection_image,
@@ -284,24 +285,40 @@ class SourceCatalogStep(RomanStep):
         else:
             with datamodels.open(self.forced_segmentation) as forced_segmodel:
                 # forced_segmodel.data is asdf.tags.core.ndarray.NDArrayType
-                forced_segimg = forced_segmodel.data[...]
-                forced_detection_image = self._read_forced_detection_image(
-                    forced_segmodel
-                )
+                forced_segimg = np.asarray(forced_segmodel.data[...]).copy()
 
-            # Remove fully masked segments
-            unmasked_sources = np.unique(forced_segimg * (mask == 0))
-            fully_masked_sources = set(np.unique(forced_segimg)) - set(unmasked_sources)
-            forced_segimg_mask = np.isin(
-                forced_segimg, np.array(list(fully_masked_sources))
-            )
-            forced_segimg[forced_segimg_mask] = 0
-            segment_img = SegmentationImage(forced_segimg)
+                # Remove fully masked segments
+                unmasked_sources = np.unique(forced_segimg * (mask == 0))
+                fully_masked_sources = set(np.unique(forced_segimg)) - set(
+                    unmasked_sources
+                )
+                if fully_masked_sources:
+                    forced_segimg_mask = np.isin(
+                        forced_segimg, np.array(list(fully_masked_sources))
+                    )
+                    forced_segimg[forced_segimg_mask] = 0
+
+                # Empty forcing maps (e.g. zero-source prompt catalogs) do not
+                # save detection_image. Produce an empty forced catalog instead
+                # of requiring that array or measuring photometry on zero labels.
+                if not np.any(forced_segimg):
+                    segment_img = None
+                else:
+                    forced_detection_image = self._read_forced_detection_image(
+                        forced_segmodel
+                    )
+                    segment_img = SegmentationImage(forced_segimg)
 
         # Return an empty segmentation image and catalog table if no
-        # sources are detected
+        # sources are detected (or the forcing map has no usable labels)
         if segment_img is None:
-            log.error("Cannot create source catalog. No sources were detected.")
+            if self.forced_segmentation:
+                log.error(
+                    "Cannot create source catalog. Forced segmentation "
+                    "contains no sources."
+                )
+            else:
+                log.error("Cannot create source catalog. No sources were detected.")
             cat_model.source_catalog = cat_model.create_empty_catalog()
             segmentation_model.data = np.zeros(model.data.shape, dtype=np.uint32)
             self._attach_skyvals_if_enabled(input_model, segmentation_model, mask)
