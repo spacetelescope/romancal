@@ -329,8 +329,12 @@ def test_forced_catalog_invalid_detection_image_unit(
         _call_forced(image_model, filename)
 
 
-def test_forced_catalog_requires_detection_image(image_model, function_jail):
-    """Purpose: forced photometry errors clearly if forcing segm lacks detection_image."""
+def test_forced_catalog_nonempty_requires_detection_image(image_model, function_jail):
+    """
+    Purpose: a non-empty forcing map without detection_image raises ValueError.
+
+    Contrasts with empty maps, which may omit detection_image.
+    """
     _, segm = SourceCatalogStep.call(
         image_model,
         bkg_boxsize=50,
@@ -339,7 +343,8 @@ def test_forced_catalog_requires_detection_image(image_model, function_jail):
         npixels=10,
         save_results=False,
     )
-    # Simulate legacy / empty products that only carry the label map.
+    assert np.any(segm.data != 0)
+    # Simulate a non-empty product that only carries the label map.
     bare_segm = SegmentationMapModel.create_minimal({"meta": segm.meta})
     bare_segm.data = segm.data.copy()
     forced_segm_path = Path("no_detection_segm.asdf")
@@ -364,12 +369,12 @@ def test_forced_catalog_requires_detection_image(image_model, function_jail):
         ("mosaic_model", ForcedMosaicSourceCatalogModel, MosaicSegmentationMapModel),
     ],
 )
-def test_forced_catalog_zero_source_prompt(
-    request, model_fixture, forced_cat_cls, segm_cls, function_jail
+def test_forced_catalog_empty_map_without_detection_image(
+    request, model_fixture, forced_cat_cls, segm_cls, function_jail, caplog
 ):
     """
-    Purpose: forced photometry on a zero-source single-band prompt catalog
-    returns an empty forced catalog instead of failing (issue 2461).
+    Purpose: empty forcing maps may omit detection_image and still return
+    an empty forced catalog (issue 2461).
     """
     model = request.getfixturevalue(model_fixture)
     prompt_cat, prompt_segm = SourceCatalogStep.call(
@@ -400,13 +405,16 @@ def test_forced_catalog_zero_source_prompt(
     assert isinstance(forced_segm, segm_cls)
     assert len(forced_cat.source_catalog) == 0
     assert np.all(forced_segm.data == 0)
+    # Empty forced outputs omit detection_image by contract.
     assert not hasattr(forced_segm, "detection_image")
+    assert not hasattr(forced_segm, "detection_image_unit")
+    assert "returning an empty forced catalog" in caplog.text
 
 
-def test_forced_catalog_zero_labels_with_detection_image(image_model, function_jail):
+def test_forced_catalog_empty_map_with_detection_image(image_model, function_jail):
     """
-    Purpose: forced photometry with an all-zero label map still succeeds
-    when a detection_image is present.
+    Purpose: an all-zero forcing map succeeds even when detection_image is
+    present; the empty forced output still omits detection_image.
     """
     _, segm = SourceCatalogStep.call(
         image_model,
@@ -438,6 +446,9 @@ def test_forced_catalog_zero_labels_with_detection_image(image_model, function_j
     assert isinstance(forced_cat, ForcedImageSourceCatalogModel)
     assert len(forced_cat.source_catalog) == 0
     assert np.all(forced_segm.data == 0)
+    # Empty forced outputs do not propagate the forcing detection_image.
+    assert not hasattr(forced_segm, "detection_image")
+    assert not hasattr(forced_segm, "detection_image_unit")
 
 
 @pytest.mark.parametrize(

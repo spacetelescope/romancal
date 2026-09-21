@@ -332,7 +332,9 @@ input images.
 
 If the forcing segmentation has no sources (for example, a zero-source
 prompt catalog product that does not include ``detection_image``), forced
-photometry returns an empty catalog instead of failing.
+photometry returns an empty catalog instead of failing. Empty forced
+products also omit ``detection_image`` and ``detection_image_unit``,
+even if those keys were present on the forcing map.
 
 In this mode, the source catalog contains fields with the ``forced``
 prefix, in addition to the fields described above. Fields without the
