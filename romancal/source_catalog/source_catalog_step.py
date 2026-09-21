@@ -7,6 +7,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+import astropy.units as u
 import numpy as np
 from astropy.table import join
 from photutils.segmentation import SegmentationImage
@@ -18,7 +19,10 @@ from romancal.datamodels.fileio import open_dataset
 from romancal.source_catalog._background import RomanBackground
 from romancal.source_catalog._detection import convolve_data, make_segmentation_image
 from romancal.source_catalog._skyvals import compute_skyvals
-from romancal.source_catalog._source_catalog import RomanSourceCatalog
+from romancal.source_catalog._source_catalog import (
+    DEFAULT_FLUX_UNIT,
+    RomanSourceCatalog,
+)
 from romancal.source_catalog._utils import copy_model_arrays, get_ee_spline
 from romancal.source_catalog.psf import add_jitter
 from romancal.stpipe import RomanStep
@@ -116,6 +120,95 @@ class SourceCatalogStep(RomanStep):
 
         return super().save_model(model, **kwargs)
 
+    def _read_forced_detection_image(self, forced_segmodel):
+        """
+        Read the detection image from the forced segmentation model.
+
+        Parameters
+        ----------
+        forced_segmodel : segmentation map model
+            The open model given by ``forced_segmentation``.
+
+        Returns
+        -------
+        result : `~numpy.ndarray` or `~astropy.units.Quantity`
+            The detection image. It is a Quantity when its unit is
+            known, in which case it is already in flux density units.
+            Otherwise it is in the units of the image it was made from.
+
+        Raises
+        ------
+        ValueError
+            If the model has no ``detection_image`` array or its
+            ``detection_image_unit`` is not a valid unit.
+        """
+        # Missing detection_image usually means an older file, an
+        # empty/failed segmentation product, or a hand-built map.
+        try:
+            detection_image = forced_segmodel.detection_image
+        except AttributeError as err:
+            msg = (
+                "forced_segmentation must include a detection_image array. "
+                f"{self.forced_segmentation!r} does not; regenerate the "
+                "segmentation map with SourceCatalogStep or "
+                "MultibandCatalogStep, or provide a product that includes "
+                "the original detection image."
+            )
+            raise ValueError(msg) from err
+
+        # Use a plain ndarray view. The ``<<=`` operator silently leaves
+        # an asdf NDArrayType without a unit.
+        detection_image = np.asarray(detection_image)
+
+        unit = getattr(forced_segmodel, "detection_image_unit", None)
+        if unit is None and not isinstance(
+            forced_segmodel, datamodels.MultibandSegmentationMapModel
+        ):
+            # Files written by SourceCatalogStep before the
+            # detection_image_unit key was added hold a detection image
+            # that was already converted to the catalog flux unit. Older
+            # multiband files hold it in the units of the input images.
+            unit = DEFAULT_FLUX_UNIT
+            log.warning(
+                "%r has no detection_image_unit. Assuming its "
+                "detection_image is in %s.",
+                self.forced_segmentation,
+                unit,
+            )
+
+        if unit is not None:
+            try:
+                unit = u.Unit(unit)
+            except ValueError as err:
+                msg = (
+                    f"The detection_image_unit {unit!r} in "
+                    f"{self.forced_segmentation!r} is not a valid unit."
+                )
+                raise ValueError(msg) from err
+            # This rebinds the name to a Quantity view of the array
+            detection_image <<= unit
+
+        return detection_image
+
+    @staticmethod
+    def _save_detection_image(segmentation_model, catobj):
+        """
+        Save the detection image used by a catalog and its unit.
+
+        Parameters
+        ----------
+        segmentation_model : segmentation map model
+            The output segmentation model.
+
+        catobj : `RomanSourceCatalog`
+            The catalog object. Its catalog must already be built
+            because the detection image is converted to flux density
+            units at that time.
+        """
+        detection_image = catobj.convolved_data
+        segmentation_model["detection_image"] = detection_image.value
+        segmentation_model["detection_image_unit"] = str(detection_image.unit)
+
     def process(self, dataset):
         input_model = open_dataset(dataset, update_version=self.update_version)
 
@@ -188,11 +281,13 @@ class SourceCatalogStep(RomanStep):
                 deblend=self.deblend,
                 mask=mask,
             )
-            segmentation_model["detection_image"] = detection_image
         else:
-            forced_segmodel = datamodels.open(self.forced_segmentation)
-            # forced_segmodel.data is asdf.tags.core.ndarray.NDArrayType
-            forced_segimg = forced_segmodel.data[...]
+            with datamodels.open(self.forced_segmentation) as forced_segmodel:
+                # forced_segmodel.data is asdf.tags.core.ndarray.NDArrayType
+                forced_segimg = forced_segmodel.data[...]
+                forced_detection_image = self._read_forced_detection_image(
+                    forced_segmodel
+                )
 
             # Remove fully masked segments
             unmasked_sources = np.unique(forced_segimg * (mask == 0))
@@ -233,12 +328,17 @@ class SourceCatalogStep(RomanStep):
         )
         cat = catobj.catalog
 
-        if self.forced_segmentation:
+        if not self.forced_segmentation:
+            self._save_detection_image(segmentation_model, catobj)
+        else:
             # TODO: improve this so that the moment-based properties are
             # not recomputed from the forced_detection_image
-            forced_detection_image = forced_segmodel.detection_image
-            # record detection image used
-            segmentation_model["detection_image"] = forced_detection_image
+            #
+            # Forced photometry always needs the detection image that was used
+            # to build the forcing segmentation, so shape parameters match the
+            # deep/forcing catalog. SourceCatalogStep and MultibandCatalogStep
+            # both attach this as an extra array on successful segmentation
+            # products.
             forced_catobj = RomanSourceCatalog(
                 model,
                 cat_model,
@@ -274,6 +374,8 @@ class SourceCatalogStep(RomanStep):
 
             # merge the two forced catalogs
             forced_cat = forced_catobj.catalog
+
+            self._save_detection_image(segmentation_model, forced_catobj)
             forced_cat.meta = None  # redundant with cat.meta
             cat = join(forced_cat, cat, keys="label", join_type="outer")
 

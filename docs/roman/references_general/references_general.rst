@@ -165,6 +165,8 @@ modules will set the value to 'COMPLETE', 'SKIPPED', or 'FAILED'. If the
 pipeline steps are run manually and you skip a step the cal_step will remain
 'INCOMPLETE'.
 
+.. _data_quality_flags:
+
 Data Quality Flags
 ==================
 
@@ -175,6 +177,15 @@ order. The table below lists the allowed DQ flags. Only the first eight entries
 in the table below are relevant to the GROUPDQ array.
 
 .. include:: dq_flags.inc
+
+.. note::
+
+  The DQ flags are defined formally in the Roman code base using enumerations and
+  are made available directly in the :external+roman_datamodels:py:mod:`roman_datamodels.dqflags`
+  package, see
+
+  - :external+roman_datamodels:py:class:`roman_datamodels.dqflags.group`
+  - :external+roman_datamodels:py:class:`roman_datamodels.dqflags.pixel`
 
 Parameter Specification
 =======================

@@ -78,7 +78,7 @@ def test_forced_catalog(rtdata_module, dms_logger):
     rtdata = rtdata_module
     input_deep_segm = "r00001_p_v01001001001001_270p65x70y49_f158_segm.asdf"
     input_shallow_coadd = "r00001_p_e01001001001001_0001_270p65x70y49_f158_coadd.asdf"
-    truth_cat = "r00001_p_v01001001001001_270p65x70y49_f158_cat.parquet"
+    truth_cat = "r00001_p_e01001001001001_0001_270p65x70y49_f158_force_cat.parquet"
     rtdata.get_data(f"WFI/image/{input_deep_segm}")
     rtdata.get_data(f"WFI/image/{input_shallow_coadd}")
     truth_cat = rtdata.get_truth(f"truth/WFI/image/{truth_cat}")
@@ -116,7 +116,7 @@ def test_forced_catalog(rtdata_module, dms_logger):
     )
 
     cattruth = Table.read(truth_cat)
-    assert set(cattruth.dtype.names) == set(cattruth.dtype.names)
+    assert set(cat.dtype.names) == set(cattruth.dtype.names)
     # weak assertion that our truth file must at least have the same
     # catalog fields as the file produced here.  Exactly matching rows
     # would require a lot of okifying things that aren't obviously

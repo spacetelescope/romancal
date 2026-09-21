@@ -1,0 +1,7 @@
+Record the unit of the detection image saved in the segmentation map file
+in a new ``detection_image_unit`` key. The saved image is converted to flux
+density units in place, and forced photometry previously applied the unit
+conversion to it a second time. A segmentation file from an earlier version
+of ``SourceCatalogStep`` lacks the key, so its detection image is assumed
+to be in nJy and a warning is logged. The ``detection_image`` array is no
+longer saved in the segmentation map file when no sources are detected.

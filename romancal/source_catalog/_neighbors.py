@@ -21,7 +21,7 @@ class NNCatalog:
         self.label = label
         self.xypos = xypos
         self.xypos_finite = xypos_finite
-        self.pixel_scale = pixel_scale
+        self.pixel_scale = pixel_scale  # per-source; the pixel area varies
 
         self.nonfinite_mask = ~np.isfinite(xypos).all(axis=1)
 
