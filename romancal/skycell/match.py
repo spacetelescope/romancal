@@ -217,7 +217,7 @@ def find_skycell_matches(
     ]
 
     for projregion_index in nearby_projregion_indices:
-        projregion = sc.ProjectionRegion(projregion_index)
+        projregion = skymap.projection_region(projregion_index)
         if footprint.polygon.intersects_poly(projregion.polygon):
             # query the LOCAL k-d tree of skycells for possible intersection candidates in (normalized) 3D space
             projregion_nearby_skycell_indices = np.array(
@@ -227,15 +227,14 @@ def find_skycell_matches(
                 )
             )
 
-            projregion_nearby_skycells = sc.SkyCells(
+            projregion_nearby_skycells = skymap[
                 np.array(
                     projregion_nearby_skycell_indices[
                         projregion_nearby_skycell_indices != len(projregion.skycells)
                     ]
                 )
-                + projregion.data["skycell_start"],
-                skymap=skymap,
-            )
+                + projregion.data["skycell_start"]
+            ]
 
             # find polygons that intersect the image footprint
             for skycell_index, skycell_polygon in zip(
