@@ -12,13 +12,14 @@ classifiers = [
     "Programming Language :: Python :: 3",
 ]
 dependencies = [
-    "astropy>=6.1.4,<9",
+    "astropy>=7.0,<9",
     "astropy-healpix>=1.1.2",
     "jsonschema>=4.8",
     "numpy>=2.0",
-    "scipy>=1.14.1",
+    "scipy>=1.15.0",
     "requests>=2.26",
-    "photutils>=3.0,<4",
+    # "photutils>=3.1,<4",
+    "photutils@git+https://github.com/astropy/photutils@main",
     "pyarrow>=16.0",
     "pandas>=2.2.2",  # for Table.read(...) support in astropy for parquet files
     # Between the intermediate and build releases we want to keep
