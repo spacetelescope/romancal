@@ -9,10 +9,10 @@ from astropy import units as u
 from astropy.stats import SigmaClip
 from astropy.utils.decorators import lazyproperty
 from photutils.aperture import (
+    AperturePhotometry,
     ApertureStats,
     CircularAnnulus,
     CircularAperture,
-    aperture_photometry,
 )
 
 from romancal.source_catalog._wcs_utils import pixel_area_at
@@ -29,6 +29,10 @@ class ApertureCatalog:
     column pair per radius in `CIRCLE_APERTURE_RADII_ARCSEC`, plus the
     ``aper_bkg_flux`` / ``aper_bkg_flux_err`` columns from a circular
     annulus around each source.
+
+    Pixels assigned to neighboring sources in the segmentation image
+    are excluded from both the circular apertures and the background
+    annulus (see `APERTURE_MASK_METHOD`).
 
     Parameters
     ----------
@@ -47,6 +51,15 @@ class ApertureCatalog:
         ``model.data``. Used to set the per-source aperture and annulus
         radii and to convert the annulus background back to a surface
         brightness.
+
+    segment_img : `~photutils.segmentation.SegmentationImage`
+        A 2D segmentation image, with the same shape as ``model.data``,
+        where sources are labeled by different positive integer values
+        and zero is reserved for the background.
+
+    labels : 1D `~numpy.ndarray`
+        The segmentation label of each source, in the same order as
+        ``xypos_finite``.
 
     ee_spline : callable, optional
         Encircled-energy spline mapping aperture radius (pixels) to
@@ -71,6 +84,11 @@ class ApertureCatalog:
     RADIUS_BIN_TOLERANCE = 1e-4
     MAX_RADIUS_BINS = 64
 
+    # Pixels labeled as a different source in the segmentation image
+    # are excluded from the apertures. This is the same method used
+    # by the segmentation catalog (``aperture_mask_method``).
+    APERTURE_MASK_METHOD = "mask"
+
     @classmethod
     def aperture_flux_colnames_for_radii(cls, radii_arcsec=None):
         """
@@ -89,6 +107,8 @@ class ApertureCatalog:
         model,
         xypos_finite,
         pixel_area_map,
+        segment_img,
+        labels,
         *,
         ee_spline=None,
         requested_properties=None,
@@ -96,6 +116,8 @@ class ApertureCatalog:
         self.model = model
         self.xypos_finite = xypos_finite
         self.pixel_area_map = pixel_area_map
+        self.segment_img = segment_img
+        self.labels = np.asarray(labels)
         self.ee_spline = ee_spline
 
         self.fractions = []
@@ -247,7 +269,8 @@ class ApertureCatalog:
         The local background is the sigma-clipped median value in the
         annulus. The background error is the standard error of the
         median. Both are calculated by
-        `~photutils.aperture.ApertureStats`.
+        `~photutils.aperture.ApertureStats`. Pixels belonging to
+        neighboring sources are excluded from the annulus.
         """
         r_in_arcsec, r_out_arcsec = self.ANNULUS_RADII_ARCSEC
         n_sources = self.xypos_finite.shape[0]
@@ -261,7 +284,14 @@ class ApertureCatalog:
             annulus = CircularAnnulus(
                 self.xypos_finite[idx], r_in_arcsec / scale, r_out_arcsec / scale
             )
-            stats = ApertureStats(self.model.data, annulus, sigma_clip=sigclip)
+            stats = ApertureStats(
+                self.model.data,
+                annulus,
+                sigma_clip=sigclip,
+                segmentation_image=self.segment_img,
+                labels=self.labels[idx],
+                mask_method=self.APERTURE_MASK_METHOD,
+            )
             bkg_median[idx] = stats.median
             bkg_median_err[idx] = stats.median_err
 
@@ -355,13 +385,16 @@ class ApertureCatalog:
         encircled-energy spline is configured, ``ee_fraction_XX``
         attributes are also populated by `calc_ee_fractions`.
 
+        Pixels belonging to neighboring sources in the segmentation
+        image are excluded from each aperture.
+
         Parameters
         ----------
         subtract_local_bkg : bool, optional
             If `True`, subtract the local annulus background
-            (`aper_bkg_flux`) scaled by the geometric overlap of each
-            aperture with the data array before assigning the flux
-            attributes.
+            (`aper_bkg_flux`) scaled by the unmasked overlap area of
+            each aperture with the data array before assigning the
+            flux attributes.
         """
         radii_arcsec = np.array(self.CIRCLE_APERTURE_RADII_ARCSEC)
         n_radii = radii_arcsec.size
@@ -378,17 +411,24 @@ class ApertureCatalog:
                 CircularAperture(self.xypos_finite[idx], radius / scale)
                 for radius in radii_arcsec
             ]
-            phot = aperture_photometry(self.model.data, apertures, error=self.model.err)
-            for i, aperture in enumerate(apertures):
-                values = phot[f"aperture_sum_{i}"]
+            phot = AperturePhotometry(
+                self.model.data,
+                apertures,
+                error=self.model.err,
+                segmentation_image=self.segment_img,
+                labels=self.labels[idx],
+                mask_method=self.APERTURE_MASK_METHOD,
+            )
+            for i in range(n_radii):
+                values = phot.flux[:, i]
                 if subtract_local_bkg:
                     # Subtract the local background measured in the annulus
-                    areas = aperture.area_overlap(self.model.data)
+                    areas = phot.area[:, i].to_value(u.pix**2)
                     values = values - (
                         self.aper_bkg_flux[idx] * self._source_pixel_area[idx] * areas
                     )
                 flux[i, idx] = getattr(values, "value", values)
-                errors = phot[f"aperture_sum_err_{i}"]
+                errors = phot.flux_err[:, i]
                 flux_err[i, idx] = getattr(errors, "value", errors)
 
         for i in range(n_radii):

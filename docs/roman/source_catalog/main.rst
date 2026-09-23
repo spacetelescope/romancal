@@ -95,10 +95,12 @@ quantities and are not corrected at all.
 Circular aperture photometry is performed at several aperture sizes
 (:math:`r` = 0.1, 0.2, 0.4, 0.8, 1.6 arcsec) for each source. These
 radii are converted to pixels using the pixel scale local to each
-source.  Because a single aperture can only be measured at one radius at
+source. Because a single aperture can only be measured at one radius at
 a time, sources are grouped into batches that share a common radius,
 chosen so that no source's aperture radius is wrong by more than about
-one part in :math:`10^{4}`.
+one part in :math:`10^{4}`. Pixels assigned to neighboring sources in
+the segmentation image are excluded from the circular apertures, using
+the same ``"mask"`` aperture mask method as the Kron photometry.
 
 The ``circle_pix`` and ``annulus_pix`` entries in the catalog metadata
 report the mean radius over all sources rather than the exact radius
@@ -165,7 +167,9 @@ inner and outer radius of 2.4 and 2.8 arcsec, respectively, converted to
 pixels using the pixel scale local to each source. The local background
 flux is calculated as the sigma-clipped median value within the annulus,
 divided by the local pixel solid angle, and is
-a surface brightness (nJy/arcsec\ :sup:`2`) rather than a flux. Although
+a surface brightness (nJy/arcsec\ :sup:`2`) rather than a flux. Pixels
+assigned to neighboring sources in the segmentation image are excluded
+from the annulus. Although
 this local background value is included in the source catalog, it is not
 subtracted from any of the measured fluxes.
 
