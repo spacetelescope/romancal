@@ -217,7 +217,8 @@ def find_skycell_matches(
     ]
 
     for projregion_index in nearby_projregion_indices:
-        projregion = sc.ProjectionRegion(projregion_index)
+        # acquire the cached ProjectionRegion
+        projregion = skymap.projection_region(projregion_index)
         if footprint.polygon.intersects_poly(projregion.polygon):
             # query the LOCAL k-d tree of skycells for possible intersection candidates in (normalized) 3D space
             projregion_nearby_skycell_indices = np.array(
@@ -227,23 +228,18 @@ def find_skycell_matches(
                 )
             )
 
-            projregion_nearby_skycells = sc.SkyCells(
-                np.array(
-                    projregion_nearby_skycell_indices[
-                        projregion_nearby_skycell_indices != len(projregion.skycells)
-                    ]
-                )
-                + projregion.data["skycell_start"],
-                skymap=skymap,
-            )
+            # k-d tree indices are local to this region's SkyCells (0 .. n-1)
+            projregion_nearby_skycell_indices = projregion_nearby_skycell_indices[
+                projregion_nearby_skycell_indices != len(projregion.skycells)
+            ]
 
-            # find polygons that intersect the image footprint
-            for skycell_index, skycell_polygon in zip(
-                projregion_nearby_skycells.indices,
-                projregion_nearby_skycells.polygons,
-                strict=True,
-            ):
-                if footprint.polygon.intersects_poly(skycell_polygon):
-                    intersecting_skycell_indices.append(skycell_index)
+            # re-use the region's cached polygons instead of building SkyCells
+            region_polygons = projregion.skycells.polygons.polygons
+            for local_index in projregion_nearby_skycell_indices:
+                if footprint.polygon.intersects_poly(region_polygons[local_index]):
+                    # convert local region index to global skymap skycell index
+                    intersecting_skycell_indices.append(
+                        local_index + projregion.data["skycell_start"]
+                    )
 
     return intersecting_skycell_indices
