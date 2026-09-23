@@ -237,10 +237,11 @@ def test_subtract_local_bkg_recovers_source_flux():
 
 class TestApertureNeighborMasking:
     """
-    Pixels belonging to neighboring sources in the segmentation image
-    must be excluded from the circular apertures and the background
-    annulus, matching the ``aperture_mask_method="mask"`` used by the
-    segmentation catalog.
+    Pixels belonging to neighboring sources in the segmentation
+    image must be excluded from the circular apertures, matching the
+    ``aperture_mask_method="mask"`` used by the segmentation catalog.
+    Pixels belonging to any source, including the target, must be
+    excluded from the background annulus.
     """
 
     pixel_scale = 0.11 * u.arcsec
@@ -287,6 +288,28 @@ class TestApertureNeighborMasking:
         neighbor = (radius >= r_in - 1) & (radius <= r_out + 1) & (xx > 40)
         segm[neighbor] = 2
         data[neighbor] = 100.0
+        model = SimpleNamespace(data=data << u.nJy, err=np.ones(self.shape) << u.nJy)
+        xypos = np.array([[40.0, 40.0]])
+
+        cat = ApertureCatalog(
+            model, xypos, self._uniform_area_map(), SegmentationImage(segm), [1]
+        )
+        assert u.allclose(cat.aper_bkg_flux, 0.0 * cat.aper_bkg_flux.unit)
+
+    def test_target_pixels_excluded_from_annulus_background(self):
+        # The target's own segment extends through the right half of the
+        # annulus with bright pixels. The local background must exclude
+        # them, not just the pixels of other sources.
+        data = np.zeros(self.shape)
+        segm = np.zeros(self.shape, dtype=np.int32)
+        yy, xx = np.mgrid[: self.shape[0], : self.shape[1]]
+        radius = np.hypot(xx - 40, yy - 40)
+        r_out = ApertureCatalog.ANNULUS_RADII_ARCSEC[1] / self.pixel_scale.to_value(
+            u.arcsec
+        )
+        target = (radius <= r_out + 1) & (xx >= 40)
+        segm[target] = 1
+        data[target] = 100.0
         model = SimpleNamespace(data=data << u.nJy, err=np.ones(self.shape) << u.nJy)
         xypos = np.array([[40.0, 40.0]])
 

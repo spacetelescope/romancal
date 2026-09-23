@@ -30,9 +30,10 @@ class ApertureCatalog:
     ``aper_bkg_flux`` / ``aper_bkg_flux_err`` columns from a circular
     annulus around each source.
 
-    Pixels assigned to neighboring sources in the segmentation image
-    are excluded from both the circular apertures and the background
-    annulus (see `APERTURE_MASK_METHOD`).
+    Pixels assigned to neighboring sources in the segmentation image are
+    excluded from the circular apertures (see `APERTURE_MASK_METHOD`).
+    Pixels assigned to any source, including the target, are excluded
+    from the background annulus (see `ANNULUS_MASK_METHOD`).
 
     Parameters
     ----------
@@ -88,6 +89,10 @@ class ApertureCatalog:
     # are excluded from the apertures. This is the same method used
     # by the segmentation catalog (``aperture_mask_method``).
     APERTURE_MASK_METHOD = "mask"
+
+    # Pixels labeled as any source, including the target, are excluded
+    # from the background annulus.
+    ANNULUS_MASK_METHOD = "background_only"
 
     @classmethod
     def aperture_flux_colnames_for_radii(cls, radii_arcsec=None):
@@ -266,11 +271,11 @@ class ApertureCatalog:
         The local background and error estimated using a circular
         annulus aperture.
 
-        The local background is the sigma-clipped median value in the
-        annulus. The background error is the standard error of the
-        median. Both are calculated by
-        `~photutils.aperture.ApertureStats`. Pixels belonging to
-        neighboring sources are excluded from the annulus.
+        The local background is the sigma-clipped median
+        value in the annulus. The background error is the
+        standard error of the median. Both are calculated by
+        `~photutils.aperture.ApertureStats`. Pixels belonging to any
+        source, including the target, are excluded from the annulus.
         """
         r_in_arcsec, r_out_arcsec = self.ANNULUS_RADII_ARCSEC
         n_sources = self.xypos_finite.shape[0]
@@ -289,8 +294,7 @@ class ApertureCatalog:
                 annulus,
                 sigma_clip=sigclip,
                 segmentation_image=self.segment_img,
-                labels=self.labels[idx],
-                mask_method=self.APERTURE_MASK_METHOD,
+                mask_method=self.ANNULUS_MASK_METHOD,
             )
             bkg_median[idx] = stats.median
             bkg_median_err[idx] = stats.median_err
