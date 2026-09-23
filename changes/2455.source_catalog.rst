@@ -2,3 +2,7 @@ Use photutils 3.1 to calculate the centroid error columns (replacing the
 zero-valued placeholders), ``orientation_sky``, and the standard error of the
 annulus background median. ``orientation_sky`` is now in the range (-90, 90]
 degrees instead of [0, 360).
+
+Pixels belonging to neighboring sources in the segmentation image are now
+excluded from the circular aperture photometry and the annulus background,
+using the same ``"mask"`` aperture mask method as the segmentation catalog.
