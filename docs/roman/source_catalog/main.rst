@@ -166,12 +166,12 @@ circular annulus centered on the source. The circular annulus has an
 inner and outer radius of 2.4 and 2.8 arcsec, respectively, converted to
 pixels using the pixel scale local to each source. The local background
 flux is calculated as the sigma-clipped median value within the annulus,
-divided by the local pixel solid angle, and is
-a surface brightness (nJy/arcsec\ :sup:`2`) rather than a flux. Pixels
-assigned to neighboring sources in the segmentation image are excluded
-from the annulus. Although
-this local background value is included in the source catalog, it is not
-subtracted from any of the measured fluxes.
+divided by the local pixel solid angle, and is a surface brightness
+(nJy/arcsec\ :sup:`2`) rather than a flux. Pixels assigned to any
+source in the segmentation image, including the source being measured,
+are excluded from the annulus. Although this local background value is
+included in the source catalog, it is not subtracted from any of the
+measured fluxes.
 
 Each source has a field, `is_extended`, intended to indicate whether the
 source is more extended than expected, were the object a point source.
