@@ -56,12 +56,9 @@ def _blend_models(models, asn_table_name=None, product_name=None):
     cat_model = initialize_catalog_model(library, models[0])
     time_means = []
     exposure_times = []
-    max_exposure_times = []
     for model in models:
-        blend_image_metadata(
-            model, cat_model, time_means, exposure_times, max_exposure_times
-        )
-    finalize_catalog_metadata(cat_model, time_means, exposure_times, max_exposure_times)
+        blend_image_metadata(model, cat_model, time_means, exposure_times)
+    finalize_catalog_metadata(cat_model, time_means, exposure_times)
     return cat_model
 
 

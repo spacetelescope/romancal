@@ -402,7 +402,6 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
     # Prepare to accumulate filter catalogs and metadata
     time_means = []
     exposure_times = []
-    max_exposure_times = []
     filter_catalogs = {}
     filter_ee_fractions = []
 
@@ -446,7 +445,6 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
                 catalog_model,
                 time_means,
                 exposure_times,
-                max_exposure_times,
             )
 
             library.shelve(model, modify=False)
@@ -454,10 +452,8 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
     # Join all filter catalogs to detection catalog
     detection_catalog = join_filter_catalogs(detection_catalog, filter_catalogs)
 
-    # Finish L3→L3 metadata blending (coadd_info means/maxes, optical_element)
-    finalize_catalog_metadata(
-        catalog_model, time_means, exposure_times, max_exposure_times
-    )
+    # Finish L3→L3 metadata blending (coadd_info mean fields)
+    finalize_catalog_metadata(catalog_model, time_means, exposure_times)
 
     # Consolidate and sort ee_fractions
     finalize_ee_fractions(detection_catalog, filter_ee_fractions)
