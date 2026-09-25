@@ -209,17 +209,73 @@ class SourceCatalogStep(RomanStep):
         segmentation_model["detection_image"] = detection_image.value
         segmentation_model["detection_image_unit"] = str(detection_image.unit)
 
+    def _empty_catalog_results(
+        self, cat_model, segmentation_model, input_model, model, mask
+    ):
+        """
+        Build empty catalog and segmentation products.
+
+        Empty products intentionally omit ``detection_image``. Forced
+        photometry only needs that array when measuring sources.
+
+        For ``ImageModel`` inputs the step still completed successfully,
+        so ``meta.cal_step.source_catalog`` is marked ``COMPLETE``.
+        """
+        cat_model.source_catalog = cat_model.create_empty_catalog()
+        segmentation_model.data = np.zeros(model.data.shape, dtype=np.uint32)
+        self._attach_skyvals_if_enabled(input_model, segmentation_model, mask)
+        # Match the non-empty path: only ImageModel records this cal_step.
+        if isinstance(input_model, datamodels.ImageModel):
+            self.finalize_result(input_model, self._reference_files_used)
+            input_model.meta.cal_step.source_catalog = "COMPLETE"
+        return cat_model, segmentation_model
+
+    def _load_forced_segmentation(self, mask):
+        """
+        Load the forcing segmentation map and its detection image.
+
+        Fully masked segments are removed. If no usable labels remain,
+        both return values are `None` and ``detection_image`` is not
+        required. Otherwise the forcing map must include
+        ``detection_image``.
+
+        Parameters
+        ----------
+        mask : 2D `~numpy.ndarray` of bool
+            Bad-pixel mask for the image being cataloged.
+
+        Returns
+        -------
+        segment_img : `~photutils.segmentation.SegmentationImage` or `None`
+            The forcing segmentation, or `None` when empty.
+        forced_detection_image : array-like or `None`
+            Detection image from the forcing product, or `None` when
+            the forcing map is empty.
+        """
+        with datamodels.open(self.forced_segmentation) as forced_segmodel:
+            # forced_segmodel.data is asdf.tags.core.ndarray.NDArrayType
+            forced_segimg = np.asarray(forced_segmodel.data[...]).copy()
+
+            # Remove fully masked segments
+            unmasked_sources = np.unique(forced_segimg * (mask == 0))
+            fully_masked_sources = set(np.unique(forced_segimg)) - set(unmasked_sources)
+            if fully_masked_sources:
+                forced_segimg_mask = np.isin(
+                    forced_segimg, np.array(list(fully_masked_sources))
+                )
+                forced_segimg[forced_segimg_mask] = 0
+
+            # Empty forcing maps (e.g. zero-source prompt catalogs) do not
+            # save detection_image. Produce an empty forced catalog instead
+            # of requiring that array or measuring photometry on zero labels.
+            if not np.any(forced_segimg):
+                return None, None
+
+            forced_detection_image = self._read_forced_detection_image(forced_segmodel)
+            return SegmentationImage(forced_segimg), forced_detection_image
+
     def process(self, dataset):
         input_model = open_dataset(dataset, update_version=self.update_version)
-
-        # get the name of the psf reference file
-        if self.fit_psf:
-            self.ref_file = self.get_reference_file(input_model, "epsf")
-            log.info("Using ePSF reference file: %s", self.ref_file)
-            psf_model = datamodels.open(self.ref_file)
-            psf_model.psf = add_jitter(psf_model, input_model)
-        else:
-            psf_model = None
 
         # Define a boolean mask for pixels to be excluded
         mask = (
@@ -253,10 +309,32 @@ class SourceCatalogStep(RomanStep):
         # pixels are masked
         if np.all(mask):
             log.error("Cannot create source catalog. All pixels are masked.")
-            cat_model.source_catalog = cat_model.create_empty_catalog()
-            segmentation_model.data = np.zeros(model.data.shape, dtype=np.uint32)
-            self._attach_skyvals_if_enabled(input_model, segmentation_model, mask)
-            return cat_model, segmentation_model
+            return self._empty_catalog_results(
+                cat_model, segmentation_model, input_model, model, mask
+            )
+
+        # In forced mode, resolve the forcing map before background and
+        # convolution so empty maps return early without that work.
+        forced_detection_image = None
+        if self.forced_segmentation:
+            segment_img, forced_detection_image = self._load_forced_segmentation(mask)
+            if segment_img is None:
+                log.info(
+                    "Forced segmentation contains no usable sources; "
+                    "returning an empty forced catalog."
+                )
+                return self._empty_catalog_results(
+                    cat_model, segmentation_model, input_model, model, mask
+                )
+
+        # get the name of the psf reference file
+        if self.fit_psf:
+            self.ref_file = self.get_reference_file(input_model, "epsf")
+            log.info("Using ePSF reference file: %s", self.ref_file)
+            psf_model = datamodels.open(self.ref_file)
+            psf_model.psf = add_jitter(psf_model, input_model)
+        else:
+            psf_model = None
 
         log.info("Calculating and subtracting background")
         bkg = RomanBackground(
@@ -281,31 +359,14 @@ class SourceCatalogStep(RomanStep):
                 deblend=self.deblend,
                 mask=mask,
             )
-        else:
-            with datamodels.open(self.forced_segmentation) as forced_segmodel:
-                # forced_segmodel.data is asdf.tags.core.ndarray.NDArrayType
-                forced_segimg = forced_segmodel.data[...]
-                forced_detection_image = self._read_forced_detection_image(
-                    forced_segmodel
+
+            # Return an empty segmentation image and catalog table if no
+            # sources are detected
+            if segment_img is None:
+                log.error("Cannot create source catalog. No sources were detected.")
+                return self._empty_catalog_results(
+                    cat_model, segmentation_model, input_model, model, mask
                 )
-
-            # Remove fully masked segments
-            unmasked_sources = np.unique(forced_segimg * (mask == 0))
-            fully_masked_sources = set(np.unique(forced_segimg)) - set(unmasked_sources)
-            forced_segimg_mask = np.isin(
-                forced_segimg, np.array(list(fully_masked_sources))
-            )
-            forced_segimg[forced_segimg_mask] = 0
-            segment_img = SegmentationImage(forced_segimg)
-
-        # Return an empty segmentation image and catalog table if no
-        # sources are detected
-        if segment_img is None:
-            log.error("Cannot create source catalog. No sources were detected.")
-            cat_model.source_catalog = cat_model.create_empty_catalog()
-            segmentation_model.data = np.zeros(model.data.shape, dtype=np.uint32)
-            self._attach_skyvals_if_enabled(input_model, segmentation_model, mask)
-            return cat_model, segmentation_model
 
         log.info("Creating ee_fractions model")
         apcorr_ref = self.get_reference_file(input_model, "apcorr")
