@@ -262,9 +262,7 @@ def test_skycell_wcs_pixel_to_world(name, either_skymap_subset):
     stored = SkyCoord(*skycell.radec_corners[0].T, unit="deg")
 
     # every stored corner has a computed corner on top of it; which one depends
-    # on the handedness of the skymap. One direction is enough: the four stored
-    # corners are arcminutes apart, so they cannot share a match, and four
-    # distinct matches use up all four computed corners.
+    # on the handedness of the skymap
     separations = stored[:, None].separation(corners[None, :])
     assert_allclose(separations.min(axis=1).to("mas").value, 0, atol=1)
 
