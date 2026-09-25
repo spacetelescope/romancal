@@ -1,13 +1,19 @@
 import os
 import pprint
+import shutil
 from contextlib import chdir
 from pathlib import Path
 
 import asdf
-from ci_watson.artifactory_helpers import (
-    get_bigdata,
-    get_bigdata_root,
-)
+import astropy.table
+import astropy.time
+import deepdiff
+import gwcs
+import numpy as np
+import roman_datamodels as rdm
+from astropy.units import Quantity
+from deepdiff.operator import BaseOperator
+from gwcs.wcstools import grid_from_bounding_box
 
 from romancal.associations._load_asn import load_asn
 from romancal.regtest._differ import Diff, DiffSettings
@@ -18,7 +24,27 @@ from romancal.regtest._differ import Diff, DiffSettings
 ARTIFACTORY_API_KEY_FILE = "/eng/ssb2/keys/svc_rodata.key"
 
 # Define a request timeout in seconds
-TIMEOUT = 30
+TIMEOUT = int(os.environ.get("TEST_BIGDATA_TIMEOUT", 30))
+CHUNK_SIZE = int(os.environ.get("TEST_BIGDATA_CHUNK_SIZE", 16384))
+RETRY_MAX = int(os.environ.get("TEST_BIGDATA_RETRY_MAX", 3))
+RETRY_DELAY = int(os.environ.get("TEST_BIGDATA_RETRY_DELAY", 5))
+
+
+# TODO add retry
+def _download(url, dest, timeout=TIMEOUT, chunk_size=CHUNK_SIZE):
+    """Simple HTTP/HTTPS downloader."""
+    # Optional import: requests is not needed for local big data setup.
+    import requests
+
+    dest = os.path.abspath(dest)
+
+    with requests.get(url, stream=True, timeout=timeout) as r:
+        r.raise_for_status()
+        with open(dest, "w+b") as data:
+            for chunk in r.iter_content(chunk_size=chunk_size):
+                data.write(chunk)
+
+    return dest
 
 
 class RegtestData:
@@ -43,7 +69,7 @@ class RegtestData:
         self._env = env
         self._inputs_root = inputs_root
         self._results_root = results_root
-        self._bigdata_root = get_bigdata_root()
+        self._bigdata_root = os.environ.get("TEST_BIGDATA")
 
         self.docopy = docopy
 
@@ -142,6 +168,22 @@ class RegtestData:
     def bigdata_root(self):
         return self._bigdata_root
 
+    def _get_bigdata(self, path, docopy=True):
+        if not docopy:
+            raise NotImplementedError("docopy False is not supported")
+
+        src = os.path.join(self._bigdata_root, self._inputs_root, self._env, path)
+
+        filename = os.path.basename(src)
+        dest = os.path.abspath(os.path.join(os.curdir, filename))
+
+        if os.path.exists(src):
+            if src == dest:
+                raise OSError(f"Source and destination paths are identical: {src}")
+            shutil.copy2(src, dest)
+        else:
+            _download(src, dest)
+
     # The methods
     def get_data(self, path=None, docopy=None):
         """Copy data from Artifactory remote resource to the CWD
@@ -154,7 +196,7 @@ class RegtestData:
             self.input_remote = path
         if docopy is None:
             docopy = self.docopy
-        self.input = get_bigdata(self._inputs_root, self._env, path, docopy=docopy)
+        self.input = self._get_bigdata(path, docopy=docopy)
         self.input_remote = os.path.join(self._inputs_root, self._env, path)
 
         return self.input
@@ -174,7 +216,7 @@ class RegtestData:
         truth_dir = Path("truth")
         truth_dir.mkdir(exist_ok=True)
         with chdir(truth_dir):
-            self.truth = get_bigdata(self._inputs_root, self._env, path, docopy=docopy)
+            self.truth = self._get_bigdata(path, docopy=docopy)
             self.truth_remote = os.path.join(self._inputs_root, self._env, path)
 
         return self.truth
@@ -209,7 +251,7 @@ class RegtestData:
             docopy = self.docopy
 
         # Get the association JSON file
-        self.input = get_bigdata(self._inputs_root, self._env, path, docopy=docopy)
+        self.input = self._get_bigdata(path, docopy=docopy)
         with open(self.input) as fp:
             asn = load_asn(fp)
             self.asn = asn
@@ -221,9 +263,7 @@ class RegtestData:
                     fullpath = os.path.join(
                         os.path.dirname(self.input_remote), member["expname"]
                     )
-                    get_bigdata(
-                        self._inputs_root, self._env, fullpath, docopy=self.docopy
-                    )
+                    self._get_bigdata(fullpath, docopy=self.docopy)
 
     def to_asdf(self, path):
         tree = eval(str(self))  # noqa: S307
