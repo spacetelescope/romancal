@@ -261,7 +261,7 @@ def prepare_reference_filter(self, library):
         Dictionary with keys:
         - 'ref_filter': The reference filter name (uppercase)
         - 'ref_model': The reference filter model
-        - 'ref_psf_model': The reference PSF model
+        - 'ref_psf_file': The reference PSF model filename
     """
     # Determine reference filter for PSF matching
     if self.psf_match_reference_filter is None:
@@ -291,13 +291,12 @@ def prepare_reference_filter(self, library):
         raise ValueError(msg)
 
     ref_psf_file = self.get_reference_file(ref_model, "epsf")
-    ref_psf_model = datamodels.open(ref_psf_file)
     log.info(f"Using reference PSF: {ref_psf_file}")
 
     return {
         "ref_filter": ref_filter,
         "ref_model": ref_model,
-        "ref_psf_model": ref_psf_model,
+        "ref_psf_file": ref_psf_file,
     }
 
 
@@ -389,7 +388,7 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
     ref_info = prepare_reference_filter(self, library)
     ref_filter = ref_info["ref_filter"]
     ref_model = ref_info["ref_model"]
-    ref_psf_model = ref_info["ref_psf_model"]
+    ref_psf_file = ref_info["ref_psf_file"]
 
     # Record the PSF match reference filter in metadata
     detection_catalog.meta["psf_match_reference_filter"] = ref_filter.upper()
@@ -407,7 +406,7 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
     model_indices = prepare_processing_order(library, ref_filter)
 
     # Create catalogs for each input image
-    with library:
+    with library, datamodels.open(ref_psf_file) as ref_psf_model:
         for model_index in model_indices:
             model = library.borrow(model_index)
             filter_name = model.meta.instrument.optical_element
