@@ -1,6 +1,5 @@
 """
-Local WCS geometry: the pixel solid angle and the direction of celestial
-North, sampled across an image.
+Local WCS geometry. The pixel solid angle is sampled across an image.
 """
 
 import astropy.units as u
@@ -37,10 +36,9 @@ def wcs_jacobian(wcs, x, y):
 
     Everything about the local pixel geometry follows from these two
     vectors. They span the plane tangent to the sky at that pixel; the
-    norm of their cross product is the pixel's solid angle, and the
-    combination of them that reaches the celestial pole gives the local
-    direction of North.  We use 3D cartesian vectors rather than
-    e.g. angular sky coordinates to avoid any singularities.
+    norm of their cross product is the pixel's solid angle.  We use 3D
+    cartesian vectors rather than e.g. angular sky coordinates to avoid
+    any singularities.
 
     Parameters
     ----------
@@ -166,49 +164,3 @@ def pixel_area_at(area_map, x, y):
     x = np.clip(np.round(np.nan_to_num(x)).astype(int), 0, nx - 1)
     y = np.clip(np.round(np.nan_to_num(y)).astype(int), 0, ny - 1)
     return area_map[y, x]
-
-
-def north_angle_at(wcs, x, y):
-    """
-    The position angle of celestial North at each of the given
-    positions.
-
-    The angle is measured counterclockwise from the positive x axis of
-    the detector, matching the convention of the image-center value it
-    replaces and the convention `orientation_sky` expects.
-
-    We use unit vectors on the sphere here to avoid degeneracies
-    at the celestial pole.
-
-    Parameters
-    ----------
-    wcs : WCS object
-        A world coordinate system transformation mapping pixel to world
-        (longitude, latitude) coordinates in degrees.
-
-    x, y : `~numpy.ndarray`
-        Pixel coordinates, of any common shape.
-
-    Returns
-    -------
-    angle : `~astropy.units.Quantity`
-        The position angle of North at each position, in degrees.
-    """
-    # pixel x and y edges in cartesian coordinates
-    jacobian = wcs_jacobian(wcs, np.asarray(x), np.asarray(y))
-
-    pole = np.array([0.0, 0.0, 1.0])[:, np.newaxis]
-    transpose = jacobian.swapaxes(-1, -2)
-
-    # step gives the combination of the edge vectors so that
-    # pole ~ a * edge_x + b * edge_y
-    # this is the least squares solution of J step ~ pole,
-    # given by (JT J) step = JT pole
-    # note: near the pole, most of the pole vector is out of the
-    # plane of the pixel; JT limits to the projection along
-    # the pixel edges so that we're solving only for the in-plane
-    # component
-    step = np.linalg.solve(transpose @ jacobian, transpose @ pole)
-    north_x, north_y = step[..., 0, 0], step[..., 1, 0]
-
-    return (np.degrees(np.arctan2(north_y, north_x)) * u.deg).astype(np.float32)

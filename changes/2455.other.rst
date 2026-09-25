@@ -1,0 +1,2 @@
+Bump the minimum Python version to 3.12, the minimum astropy version to 7.0,
+and the minimum scipy version to 1.15, as required by photutils 3.1.

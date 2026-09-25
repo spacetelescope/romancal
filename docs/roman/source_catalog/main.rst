@@ -69,15 +69,28 @@ and orientation of the major axis.
 The image moments are computed in the pixel frame. Properties that are
 reported in sky units (``semimajor``, ``semiminor``, ``fwhm``,
 ``kron_radius``, ``segment_area``, and ``nn_distance``) are converted
-using the pixel scale local to each source, and ``orientation_sky`` is
-measured from the direction of north local to each source rather than
-from a single direction for the whole image.
+using the pixel scale local to each source.
 
-Only the size and rotation of the local pixel are accounted for, not its
-shape. Where pixels are not square, the sky-frame axis lengths and
-position angle carry a residual error of order the departure from
-squareness (1-3% for Roman). ``ellipticity`` and ``orientation_pix``
-are pixel-frame quantities and are not corrected at all.
+``orientation_sky`` is the position angle of the major axis measured
+from North toward East, in the range (-90, 90] degrees. It is calculated
+by :external+photutils:py:class:`photutils.segmentation.SourceCatalog`,
+which transports the pixel-frame covariance matrix to the sky with the
+WCS Jacobian evaluated at each source. This accounts for the local WCS
+rotation, parity, and distortion.
+
+The centroid errors (e.g., ``x_centroid_err`` and ``ra_centroid_err``)
+are also calculated by ``SourceCatalog`` by propagating the input error
+array through the centroid calculation. The sky centroid errors are the
+great-circle errors along the Right Ascension and Declination directions
+in arcsec. The centroid errors are zero where the input errors are zero.
+They are NaN where the input errors are NaN or where the source is
+completely masked.
+
+For the sizes, only the area of the local pixel is accounted for, not
+its shape. Where pixels are not square, the sky-frame axis lengths carry
+a residual error of order the departure from squareness (1-3% for
+Roman). ``ellipticity`` and ``orientation_pix`` are pixel-frame
+quantities and are not corrected at all.
 
 Circular aperture photometry is performed at several aperture sizes
 (:math:`r` = 0.1, 0.2, 0.4, 0.8, 1.6 arcsec) for each source. These

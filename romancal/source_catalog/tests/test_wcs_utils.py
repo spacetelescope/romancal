@@ -11,7 +11,7 @@ from astropy.modeling import models
 from photutils.segmentation import SegmentationImage
 
 from romancal.source_catalog._segment import SegmentCatalog
-from romancal.source_catalog._wcs_utils import north_angle_at, pixel_area_map
+from romancal.source_catalog._wcs_utils import pixel_area_map
 from romancal.tests.wcs_helpers import create_wcs_object
 
 # Pixel scale in degrees, roughly the WFI native scale
@@ -204,41 +204,3 @@ def test_segment_geometry_tracks_local_pixel_area():
     assert np.isclose(
         (cat.segment_area[1] / cat.segment_area[0]).value, 1.10, rtol=1e-3
     )
-
-
-def test_north_angle_matches_a_tangent_point_reference():
-    """
-    At the tangent point of an undistorted WCS with no rotation, North
-    lies along +y, i.e. at 90 degrees from the +x axis.
-    """
-    shape = (128, 128)
-    wcs = _make_wcs(shape, crval=(30.0, 10.0))
-    # The fiducial is at pixel (0, 0)
-    angle = north_angle_at(wcs, np.array([0.0]), np.array([0.0]))
-    assert u.isclose(angle[0], 90.0 * u.deg, atol=1e-3 * u.deg)
-
-
-def test_north_angle_varies_around_an_enclosed_pole():
-    """
-    The angle to north should vary dramatically among locations in a
-    field centered on the pole.
-    """
-    shape = (256, 256)
-    # Coarse pixels so that the array spans a usable area around the
-    # pole, which the fiducial places at pixel (0, 0)
-    wcs = _make_wcs(shape, pscale=10.0 / 3600.0, crval=(0.0, 90.0))
-
-    n = 32
-    radius = 100.0
-    theta = np.linspace(0, 2 * np.pi, n, endpoint=False)
-    angle = north_angle_at(
-        wcs, radius * np.cos(theta), radius * np.sin(theta)
-    ).to_value(u.deg)
-
-    # The angles must sweep a large angle.
-    spread = np.degrees(np.ptp(np.unwrap(np.radians(angle))))
-    assert spread > 180
-
-    # Every angle must be finite: the forward-only formulation does not
-    # break down near the pole
-    assert np.all(np.isfinite(angle))
