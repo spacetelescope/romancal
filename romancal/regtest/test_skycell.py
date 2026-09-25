@@ -5,6 +5,7 @@ import pytest
 from numpy.testing import assert_allclose
 
 from romancal.skycell import skymap
+from romancal.skycell.tests.test_skycell import assert_corners_on_pixel_corners
 
 # mark all tests in this module
 pytestmark = [pytest.mark.bigdata]
@@ -54,23 +55,13 @@ def test_skycell_wcs_pixel_to_world(name):
 
     wcsobj = skycell.wcs[0]
 
-    # forward transform to RA Dec corners
-    # TODO: the corners in the reference file currently use FITS convention (pixel + 0.5) instead of (pixel - 0.5)
+    # the center pixel falls on the recorded center, whatever the handedness
     assert_allclose_lonlat(
-        np.array(
-            wcsobj(
-                *np.array(
-                    [
-                        (-0.5, -0.5),
-                        (skycell.pixel_shape[0] - 0.5, -0.5),
-                        (skycell.pixel_shape[0] - 0.5, skycell.pixel_shape[1] - 0.5),
-                        (-0.5, skycell.pixel_shape[1] - 0.5),
-                    ]
-                ).T,
-                with_bounding_box=False,
-            )
-        ).T,
-        skycell.radec_corners[0],
+        wcsobj(
+            (skycell.pixel_shape[0] / 2.0) - 0.5,
+            (skycell.pixel_shape[1] / 2.0) - 0.5,
+        ),
+        skycell.radec_centers[0],
         rtol=1e-7,
     )
 
@@ -79,21 +70,8 @@ def test_skycell_wcs_pixel_to_world(name):
 def test_skycell_wcs_world_to_pixel(name):
     skycell = skymap.SkyCells.from_names([name])
 
-    wcsobj = skycell.wcs[0]
-
-    # inverse transform to pixel corners
-    # TODO: the corners in the reference file currently use FITS convention (pixel + 0.5) instead of (pixel - 0.5)
-    assert_allclose(
-        np.array(wcsobj.invert(*skycell.radec_corners.T, with_bounding_box=False)).T,
-        [
-            [
-                (-0.5, -0.5),
-                (skycell.pixel_shape[0] - 0.5, -0.5),
-                (skycell.pixel_shape[0] - 0.5, skycell.pixel_shape[1] - 0.5),
-                (-0.5, skycell.pixel_shape[1] - 0.5),
-            ]
-        ],
-        rtol=1e-5,
+    assert_corners_on_pixel_corners(
+        skycell.wcs[0], skycell.radec_corners[0], skycell.pixel_shape
     )
 
 
