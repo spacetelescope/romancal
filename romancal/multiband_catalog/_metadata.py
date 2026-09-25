@@ -1,9 +1,16 @@
+"""L3→L3 metadata blending for multiband source catalogs."""
+
+from __future__ import annotations
+
 from copy import deepcopy
+
+import numpy as np
+from astropy.time import Time
 
 # Metadata keys to skip when accumulating image metadata
 _SKIP_IMAGE_META_KEYS = {"wcs", "individual_image_meta"}
 
-# Metadata keys to skip when blending metadata
+# Metadata keys to skip when blending metadata (keep first input)
 _SKIP_BLEND_KEYS = {"wcsinfo"}
 
 
@@ -19,13 +26,16 @@ def blend_image_metadata(
 
     This function:
     1. Extracts relevant metadata from the input image model
-    2. Appends it to the catalog's image_meta list
+    2. Appends it to the catalog's image_metas list
     3. Blends metadata values across filters, setting mismatches to None
     4. Handles special cases like coadd_info timing information
     5. Updates file_date to the earliest date
 
-    This function modifies cat_model, time_means, and exposure_times in
-    place.
+    Min/max coadd fields (``time_first``, ``time_last``,
+    ``max_exposure_time``) and ordinary disagree-blend fields (including
+    ``instrument.optical_element``) are updated here. Mean coadd fields are
+    only accumulated; call :func:`finalize_catalog_metadata` after all inputs
+    have been blended to set those finals.
 
     Parameters
     ----------
@@ -69,10 +79,47 @@ def blend_image_metadata(
             cat_model.meta[key]["time_last"] = max(
                 cat_model.meta[key]["time_last"], value["time_last"]
             )
-            time_means.append(value["time_mean"])
-            exposure_times.append(value["exposure_time"])
+            # max-like fields stay in the blender (same pattern as time_last)
+            max_exptime = value.get("max_exposure_time")
+            if max_exptime is not None:
+                current = cat_model.meta[key].get("max_exposure_time")
+                cat_model.meta[key]["max_exposure_time"] = (
+                    float(max_exptime)
+                    if current is None
+                    else float(max(current, max_exptime))
+                )
+            # means are awkward as running blends; accumulate for finalize
+            if value.get("time_mean") is not None:
+                time_means.append(value["time_mean"])
+            if value.get("exposure_time") is not None:
+                exposure_times.append(value["exposure_time"])
         else:
-            # set non-matching metadata values to None
+            # set non-matching metadata values to None (covers optical_element)
             for subkey, subvalue in value.items():
                 if cat_model.meta[key].get(subkey, None) != subvalue:
                     cat_model.meta[key][subkey] = None
+
+
+def finalize_catalog_metadata(cat_model, time_means, exposure_times):
+    """
+    Finalize blended catalog metadata after all L3 inputs are processed.
+
+    Sets coadd_info mean fields from values accumulated during blending.
+    Min/max coadd fields and multi-filter optical_element nulling are handled
+    in :func:`blend_image_metadata`.
+
+    Parameters
+    ----------
+    cat_model : MultibandSourceCatalogModel
+        The multiband catalog model being built (modified in place).
+
+    time_means : list
+        Accumulated mean observation times from input L3 coadds.
+
+    exposure_times : list
+        Accumulated exposure times from input L3 coadds.
+    """
+    if time_means:
+        cat_model.meta.coadd_info.time_mean = Time(time_means).mean()
+    if exposure_times:
+        cat_model.meta.coadd_info.exposure_time = float(np.mean(exposure_times))
