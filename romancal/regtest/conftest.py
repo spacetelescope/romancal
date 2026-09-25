@@ -1,11 +1,9 @@
-import copy
 import getpass
 import json
 import os
 from datetime import datetime
 
 import pytest
-from ci_watson.artifactory_helpers import UPLOAD_SCHEMA
 
 from romancal.regtest.regtestdata import RegtestData
 
@@ -169,23 +167,25 @@ def generate_upload_schema(pattern, target, recursive=False):
     upload_schema : dict
         Dictionary specifying the upload schema
     """
-    recursive = repr(recursive).lower()
+    files = []
+    default = {
+        "recursive": repr(recursive).lower(),
+        # changes from jfrog defaults
+        "props": None,
+        "flat": "true",
+        # matching jfrog defaults
+        "regexp": "false",
+        "explode": "false",
+    }
 
-    if not isinstance(pattern, str):
-        # Populate schema for this test's data
-        upload_schema = {"files": []}
-
-        for p in pattern:
-            temp_schema = copy.deepcopy(UPLOAD_SCHEMA["files"][0])
-            temp_schema.update({"pattern": p, "target": target, "recursive": recursive})
-            upload_schema["files"].append(temp_schema)
+    # Populate schema for this test's data
+    if isinstance(pattern, str):
+        files.append(default | {"pattern": pattern, "target": target})
     else:
-        # Populate schema for this test's data
-        upload_schema = copy.deepcopy(UPLOAD_SCHEMA)
-        upload_schema["files"][0].update(
-            {"pattern": pattern, "target": target, "recursive": recursive}
-        )
-    return upload_schema
+        for p in pattern:
+            files.append(default | {"pattern": p, "target": target})
+
+    return {"files": files}
 
 
 def _rtdata_fixture_implementation(artifactory_repos, envopt, request):
