@@ -34,7 +34,7 @@ def render_psfs(rtdata_module, request, resource_tracker):
     rtdata.output = "psf_render.asdf"
     rtdata.get_truth("truth/WFI/image/psf_render.asdf")
     out = render_psfs_for_filename(input_file)
-    asdf.dump(out, open(rtdata.output, "wb"))
+    asdf.dump(out, rtdata.output)
     return rtdata, out
 
 
