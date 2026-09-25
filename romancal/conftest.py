@@ -18,6 +18,7 @@ from astropy.time import Time
 from gwcs import coordinate_frames as cf
 from gwcs import wcs
 from roman_datamodels import datamodels as rdm
+from stpipe.crds_client import get_context_used
 
 from romancal.assign_wcs.assign_wcs import add_s_region, v23tosky
 
@@ -87,6 +88,24 @@ def pytest_configure(config):
     config.pluginmanager.register(
         TestDescriptionPlugin(terminal_reporter), "testdescription"
     )
+
+
+def pytest_report_header(config):
+    """
+    Add CRDS_CONTEXT to pytest report header.
+
+    Parameters
+    ----------
+    config : pytest.config.Config
+        Pytest configuration object.
+
+    Returns
+    -------
+    str
+        Report header string with CRDS context information.
+    """
+
+    return f"crds_context: {get_context_used('roman')}"
 
 
 class TestDescriptionPlugin:
