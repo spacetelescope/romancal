@@ -10,7 +10,7 @@ from stcal.resample.utils import compute_mean_pixel_area
 from romancal.assign_wcs.assign_wcs import add_s_region
 from romancal.datamodels import ModelLibrary
 from romancal.resample import ResampleStep
-from romancal.resample.resample import make_output_wcs
+from romancal.resample.resample import ResampleData, make_output_wcs
 from romancal.tests.wcs_helpers import create_wcs_object
 
 
@@ -566,3 +566,45 @@ def test_resample_pixel_scale_units(wfi_sca1):
     coords = output_model.meta.wcs.pixel_to_world((100, 100), (100, 101))
     pscale = coords[0].separation(coords[1]).to(u.arcsec).value
     np.testing.assert_allclose(pscale, pixel_scale)
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        ValueError("cannot extract skycell information from an association"),
+        KeyError("missing skycell name"),
+    ],
+    ids=["value_error", "key_error"],
+)
+def test_resampledata_init_catches_skycell_lookup_errors(wfi_sca1, monkeypatch, error):
+    """Purpose: ValueError/KeyError from skycell lookup fall back to make_output_wcs."""
+    input_models = ModelLibrary([wfi_sca1])
+    expected_wcs, expected_ps, expected_ratio = make_output_wcs(input_models)
+
+    def _raise_from_asns(asns):
+        raise error
+
+    monkeypatch.setattr(
+        "romancal.resample.resample.sc.SkyCells.from_asns",
+        _raise_from_asns,
+    )
+
+    resamp = ResampleData(
+        input_models=input_models,
+        output_wcs=None,
+        pixfrac=1.0,
+        kernel="square",
+        fillval="NAN",
+        weight_type="ivm",
+        good_bits="~DO_NOT_USE",
+        enable_ctx=True,
+        enable_var=True,
+        compute_err="from_var",
+        compute_exptime=True,
+        blend_meta=True,
+        resample_on_skycell=True,
+    )
+
+    assert resamp._output_wcs.array_shape == expected_wcs.array_shape
+    np.testing.assert_allclose(resamp._output_pixel_scale, expected_ps)
+    np.testing.assert_allclose(resamp._pixel_scale_ratio, expected_ratio)
