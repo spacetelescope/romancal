@@ -187,6 +187,30 @@ in the table below are relevant to the GROUPDQ array.
   - :external+roman_datamodels:py:class:`roman_datamodels.dqflags.group`
   - :external+roman_datamodels:py:class:`roman_datamodels.dqflags.pixel`
 
+.. _informational_data_quality_flags:
+
+Informational Data Quality Flags
+================================
+
+Science files carry a second pixel-level data quality array alongside the
+one described above: ``dq2``, called ``pixeldq2`` on Level 1 ramps. It has
+the same shape and data type as ``dq``.
+
+``dq2`` holds static, informational flags. Unlike ``dq``, it never changes
+how data are processed: no calibration step consults it, and it is not
+passed to ``stcal`` or used when resampling. A condition that must affect
+processing therefore has to set ``DO_NOT_USE`` in ``dq`` as well, so that
+``dq2`` remains purely descriptive.
+
+The pipeline only passes these flags through. Where a reference file
+supplies a ``dq2`` array, its flags are combined into the science array
+with a bitwise ``or`` in exactly the same way as for ``dq``, and the
+result is carried from Level 1 through to Level 2.
+
+.. note::
+
+  No ``dq2`` flags are defined yet, so the array is currently always zero.
+
 Parameter Specification
 =======================
 

@@ -22,10 +22,12 @@ The actual process consists of the following steps:
 
  - Copy the input product into a RampModel (if it isn't already) for processing
    through pipeline. This will create "pixeldq" and "groupdq" arrays (if they
-   don't already exist).
+   don't already exist), along with an empty "pixeldq2" array (see
+   :ref:`informational_data_quality_flags`).
 
  - Propagate the DQ flags from the reference file DQ array to the science data "PIXELDQ"
-   array using numpy's ``bitwise_or`` function.
+   array using numpy's ``bitwise_or`` function. Any "DQ2" array in the reference
+   file is propagated to "PIXELDQ2" in the same way.
 
  - Flag pixels affected by the guide window readout. All pixels in the columns
    spanned by the guide window are flagged ``GW_AFFECTED_DATA``. The pixels

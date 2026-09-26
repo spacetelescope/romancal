@@ -878,3 +878,28 @@ def test_l2_catalog_propagates_dq_to_image_flags(image_model, function_jail):
     assert not catalog["image_flags2"][clean].any()
     assert (catalog["image_flags"][flagged] == int(pixel.NO_LIN_CORR)).all()
     assert (catalog["image_flags2"][flagged] == 1 << 5).all()
+
+
+def test_l2_catalog_image_flags_never_reports_do_not_use(image_model, function_jail):
+    """DO_NOT_USE pixels are masked before detection, so they never
+    belong to a segment and cannot reach ``image_flags``."""
+    shape = image_model.data.shape
+    image_model.dq = np.zeros(shape, dtype=np.uint32)
+    image_model.dq[shape[0] // 2 :, :] = pixel.DO_NOT_USE | pixel.NO_LIN_CORR
+
+    result_catalog, segmentation = SourceCatalogStep.call(
+        image_model,
+        snr_threshold=0.5,
+        npixels=5,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        save_results=False,
+        fit_psf=False,
+    )
+
+    catalog = result_catalog.source_catalog
+    assert len(catalog) > 0
+    # no flagged pixel survives into a segment, so nothing is collected
+    assert not (segmentation.data[image_model.dq != 0] > 0).any()
+    assert not (catalog["image_flags"] & int(pixel.DO_NOT_USE)).any()
+    assert not catalog["image_flags"].any()

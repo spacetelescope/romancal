@@ -52,6 +52,8 @@ The ASDF file layout is as follows:
 +----------------------+----------+------------+-----------+-------------------------------+
 |  pixeldq             | Required | uint32     | N/A       |  nrows x ncols                |
 +----------------------+----------+------------+-----------+-------------------------------+
+|  pixeldq2            | Optional | uint32     | N/A       |  nrows x ncols                |
++----------------------+----------+------------+-----------+-------------------------------+
 |  groupdq             | Required | uint8      | N/A       |  nresultants x nrows x ncols  |
 +----------------------+----------+------------+-----------+-------------------------------+
 |  err                 | Required | float32    | DN        |  nresultants x nrows x ncols  |
@@ -72,6 +74,8 @@ The ASDF file layout is as follows:
    axis.
  - pixeldq: 2-D data array containing DQ flags that apply to all groups and all resultants
    for a given pixel (e.g. a hot pixel is hot in all groups and resultants).
+ - pixeldq2: 2-D data array of the same shape and type as pixeldq, containing the
+   informational DQ flags described in :ref:`informational_data_quality_flags`.
  - groupdq: 3-D data array containing DQ flags that pertain to individual reads within an
    exposure, such as the point at which a pixel becomes saturated within a given exposure.
  - err: 3-D data array containing uncertainty estimates.
@@ -104,6 +108,8 @@ The calibrated products are the result of an average over all integrations (``ca
 +----------------------+----------+------------+---------------------------+-------------------------------+
 |  dq                  | Required | uint32     | N/A                       |  nrows x ncols                |
 +----------------------+----------+------------+---------------------------+-------------------------------+
+|  dq2                 | Optional | uint32     | N/A                       |  nrows x ncols                |
++----------------------+----------+------------+---------------------------+-------------------------------+
 |  err                 | Required | float32    | e\ :sup:`-`/ s            |  nrows x ncols                |
 +----------------------+----------+------------+---------------------------+-------------------------------+
 |  var_poisson         | Required | float32    | (e\ :sup:`-`/ s)\ :sup:`2`|  nrows x ncols                |
@@ -128,6 +134,8 @@ The calibrated products are the result of an average over all integrations (``ca
    These values are based on the combined VAR_POISSON and VAR_RNOISE data (see below),
    given as standard deviation.
  - dq: 2-D data array containing DQ flags for each pixel.
+ - dq2: 2-D data array of the same shape and type as dq, containing the informational
+   DQ flags described in :ref:`informational_data_quality_flags`.
  - var_poisson: 2-D data array containing the variance estimate for each pixel,
    based on Poisson noise only.
  - var_rnoise: 2-D data array containing the variance estimate for each pixel,

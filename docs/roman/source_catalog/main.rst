@@ -223,10 +223,18 @@ The ``warning_flags`` column contains the following bit flags:
   * Level 3: sources whose rounded centroid pixel is not finite or has a
     weight of 0
 
-The ``image_flags`` column contains the following bit flags:
+The ``image_flags`` column contains the bitwise ``or`` of the ``dq`` flags
+of every pixel in the source segment, using the flags listed in
+:ref:`data_quality_flags`. Pixels with ``DO_NOT_USE`` set are masked
+before sources are detected, so they never belong to a segment: the
+column summarizes the flags of the pixels that were actually used, and
+never itself reports ``DO_NOT_USE``. It is zero when none of those pixels
+was flagged, and for Level 3 products, which carry no ``dq`` array.
 
-- 0 : Good
-- 1 : One or more pixels in the source segment was flagged
+The ``image_flags2`` column contains the corresponding bitwise ``or`` of
+the ``dq2`` flags, described in :ref:`informational_data_quality_flags`,
+over those same pixels. No ``dq2`` flags are defined yet, so this column
+is currently always zero.
 
 The ``psf_flags`` column contains the following bit flags defined by the
 :external+photutils:py:class:`photutils.psf.PSFPhotometry` class:
