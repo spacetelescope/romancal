@@ -5,8 +5,8 @@ There may be multiple dq arrays (dq, dq2), in which case all of these
 should be ORed into the models.  This module manages the handling of
 these arrays.
 
-dq2 arrays are never constructed dynamically by the pipeline and are
-only passed along via reference files.
+dq2 arrays are always created, zero-filled when absent, but the pipeline
+never sets any of their bits; those only arrive from reference files.
 """
 
 import numpy as np
@@ -32,10 +32,9 @@ def _dq_names(model):
 def _ensure_dq2(model):
     """Return ``model``'s dq2 array, creating an empty one if needed.
 
-    Files written before dq2 existed, and reference files that do not carry
-    one, simply lack the array.  Rather than requiring every consumer to
-    guard against that, materialize an all-zero array so that "no flags
-    recorded" and "array absent" look the same downstream.
+    Files written before dq2 existed simply lack the array.  Materialize
+    an all-zero one so that "no flags recorded" and "array absent" look
+    the same downstream, rather than making every consumer guard.
 
     Models with no pixel-level data quality array at all, such as the L1
     ``ScienceRawModel``, have nothing for dq2 to accompany and raise
@@ -46,8 +45,7 @@ def _ensure_dq2(model):
         return model[dq2_name]
     if dq_name not in model:
         raise TypeError(
-            f"{type(model).__name__} has no {dq_name} array for {dq2_name} "
-            f"to accompany"
+            f"{type(model).__name__} has no {dq_name} array for {dq2_name} to accompany"
         )
     model[dq2_name] = np.zeros(model[dq_name].shape, dtype=model[dq_name].dtype)
     return model[dq2_name]
