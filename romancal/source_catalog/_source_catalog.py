@@ -431,10 +431,10 @@ class RomanSourceCatalog:
     @lazyproperty
     def image_flags2(self):
         """
-        Informational data quality bit flag.
+        Extra data quality bit flag.
 
         The ``dq2`` counterpart of `image_flags`.  Non-zero if a pixel
-        within the segment carried an informational flag in one of the
+        within the segment was flagged in ``dq2`` in one of the
         input images.
         """
         return self._segment_flags(self.model.get("dq2", None))
