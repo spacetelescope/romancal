@@ -1,9 +1,8 @@
 Add a second pixel data quality array ``dq2`` (``pixeldq2`` on ramps)
 alongside the existing ``dq``, carrying extra data quality flags. A new
-``update_dq`` helper combines
-reference file ``dq`` and ``dq2`` into the science model, inferring reference
-pixel border trimming from the array shapes. The array is created empty by
-``dq_init``, carried through ramp fitting, and populated into the new
-``image_flags2`` source catalog column.  This is in preparation for reference
-files to eventually include ``dq2`` bits; today they do not, and ``dq2`` is
-currently always zero.
+``update_dq`` helper combines reference file ``dq`` and ``dq2`` into the
+science model, inferring reference pixel border trimming from the array
+shapes. The array is created empty by ``dq_init``, carried through ramp
+fitting, and populated into the new ``image_flags2`` source catalog column.
+Reference files that supply no ``dq2`` array leave ``dq2`` zero, so this
+does not by itself change how any data are processed.
