@@ -20,6 +20,7 @@ from roman_datamodels.datamodels import (
     MosaicSourceCatalogModel,
     SegmentationMapModel,
 )
+from roman_datamodels.dqflags import pixel
 
 from romancal.source_catalog._skyvals import compute_skyvals
 from romancal.source_catalog._source_catalog import RomanSourceCatalog
@@ -840,3 +841,48 @@ def test_dust_ebv_property_returns_nan_on_failure(monkeypatch):
     assert result.dtype == np.float32
     assert result.shape == (3,)
     assert np.all(np.isnan(result))
+
+
+def test_l2_catalog_propagates_dq_to_image_flags(image_model, function_jail):
+    """image_flags/image_flags2 collect DQ bits over each source segment."""
+    image_model.dq = np.zeros(image_model.data.shape, dtype=np.uint32)
+    image_model["dq2"] = np.zeros(image_model.data.shape, dtype=np.uint32)
+    # flag every pixel so that each detected source picks the bits up
+    image_model.dq[:] = pixel.NO_LIN_CORR
+    image_model.dq2[:] = 1 << 5
+
+    result_catalog, _ = SourceCatalogStep.call(
+        image_model,
+        snr_threshold=0.5,
+        npixels=5,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        save_results=False,
+        fit_psf=False,
+    )
+
+    catalog = result_catalog.source_catalog
+    assert len(catalog) > 0
+    assert (catalog["image_flags"] & int(pixel.NO_LIN_CORR)).all()
+    assert (catalog["image_flags2"] == 1 << 5).all()
+
+
+def test_l2_catalog_image_flags_zero_without_dq_bits(image_model, function_jail):
+    """A clean DQ array leaves both flag columns zero."""
+    image_model.dq = np.zeros(image_model.data.shape, dtype=np.uint32)
+    image_model.pop("dq2", None)
+
+    result_catalog, _ = SourceCatalogStep.call(
+        image_model,
+        snr_threshold=0.5,
+        npixels=5,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        save_results=False,
+        fit_psf=False,
+    )
+
+    catalog = result_catalog.source_catalog
+    assert len(catalog) > 0
+    assert not catalog["image_flags"].any()
+    assert not catalog["image_flags2"].any()

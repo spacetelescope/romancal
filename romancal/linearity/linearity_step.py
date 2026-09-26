@@ -13,6 +13,7 @@ from roman_datamodels.dqflags import group, pixel
 from stcal.linearity.linearity import linearity_correction
 
 from romancal.datamodels.fileio import open_dataset
+from romancal.lib.dqutils import update_dq
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:
@@ -136,6 +137,13 @@ class LinearityStep(RomanStep):
 
             input_model.data = new_data[0, :, :, :]
             input_model.pixeldq = new_pdq
+
+            # stcal has already or-ed the forward linearity reference dq
+            # into pixeldq; repeat it here so that dq2 is picked up as
+            # well.  Bitwise or is idempotent.  The inverse linearity
+            # reference is expected to carry identical flags and is not
+            # combined separately.
+            update_dq(input_model, lin_model)
 
         # FIXME: force all values in array to be at least vaguely sane.
         # This should not happen for good linearity corrections and linearity

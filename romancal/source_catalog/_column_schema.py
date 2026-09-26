@@ -201,6 +201,7 @@ class CatalogSchema:
         flag_columns = [
             "warning_flags",
             "image_flags",
+            "image_flags2",
         ]
         psf_flags_colnames = [
             "psf_flags",

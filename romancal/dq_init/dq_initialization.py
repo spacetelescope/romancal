@@ -7,6 +7,8 @@ from astropy.time import Time
 from roman_datamodels.datamodels import FpsModel, RampModel, ScienceRawModel, TvacModel
 from roman_datamodels.dqflags import pixel
 
+from romancal.lib.dqutils import DQ2_DTYPE, update_dq
+
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
@@ -64,6 +66,7 @@ def to_ramp_model(model):
     shape = model.data.shape
     ramp_model.data = model.data.astype(np.float32)
     ramp_model.pixeldq = np.zeros(shape[1:], dtype=np.uint32)
+    ramp_model.pixeldq2 = np.zeros(shape[1:], dtype=DQ2_DTYPE)
 
     # check if the input model has a resultantdq from SDF
     if hasattr(ramp_model, "resultantdq"):
@@ -150,7 +153,7 @@ def do_dqinit(model, mask, expand_gw_flagging=0):
     output_model.amp33 -= data_encoding_offset
 
     if mask is not None and output_model.pixeldq.shape == mask.dq.shape:
-        output_model.pixeldq |= mask.dq
+        update_dq(output_model, mask)
         output_model.meta.cal_step.dq_init = "COMPLETE"
     else:
         log.warning("Mask data array is None or not the same shape as the science data")

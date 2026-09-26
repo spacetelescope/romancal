@@ -20,6 +20,7 @@ from roman_datamodels.dqflags import pixel
 from scipy.ndimage import map_coordinates
 
 from romancal import __version__ as romancal_version
+from romancal.lib.dqutils import DQ2_DTYPE
 from romancal.skycell import skymap
 from romancal.source_catalog._aperture import ApertureCatalog
 from romancal.source_catalog._column_schema import CatalogSchema
@@ -388,15 +389,56 @@ class RomanSourceCatalog:
 
         return flags
 
+    def _segment_flags(self, dq):
+        """
+        Bitwise-or a pixel-level DQ array over each source segment.
+
+        Parameters
+        ----------
+        dq : `numpy.ndarray` or None
+            Pixel-level data quality array matching the segmentation image,
+            or None if the model has no such array.
+
+        Returns
+        -------
+        `numpy.ndarray`
+            Per-source flags as ``int32``.  All zero if ``dq`` is None.
+        """
+        flags = np.zeros(self.n_sources, dtype=DQ2_DTYPE)
+        if dq is None:
+            return flags.view(np.int32)
+
+        labels = self.segment_img.data.ravel()
+        inside = labels > 0
+        # segment_img.labels is sorted, so searchsorted maps each labeled
+        # pixel onto its row in the output catalog
+        index = np.searchsorted(self.segment_img.labels, labels[inside])
+        np.bitwise_or.at(flags, index, dq.ravel()[inside].astype(DQ2_DTYPE))
+
+        # the catalog columns are signed; reinterpret rather than cast so
+        # that a set bit 31 cannot raise or change the bit pattern
+        return flags.view(np.int32)
+
     @lazyproperty
     def image_flags(self):
         """
         Data quality bit flag.
 
         Non-zero if a pixel within the segment was flagged in one of the
+        input images.  L3 mosaics have no DQ array and are always zero.
+        """
+        return self._segment_flags(self.model.get("dq", None))
+
+    @lazyproperty
+    def image_flags2(self):
+        """
+        Informational data quality bit flag.
+
+        The ``dq2`` counterpart of `image_flags`.  Non-zero if a pixel
+        within the segment carried an informational flag in one of the
         input images.
         """
-        return np.zeros(self.n_sources, dtype=np.int32)
+        return self._segment_flags(self.model.get("dq2", None))
 
     @lazyproperty
     def dust_ebv(self):
@@ -768,7 +810,11 @@ class RomanSourceCatalog:
         for column in self.column_names:
             catalog[column] = getattr(self, column)
             definition = self.cat_model.get_column_definition(column)
-            catalog[column].info.description = definition["description"]
+            if definition is None:
+                # columns not (yet) declared in rad have no description
+                log.debug("No schema definition found for column %s", column)
+            else:
+                catalog[column].info.description = definition["description"]
         self.update_metadata()
         catalog.meta.update(self.meta)
 
