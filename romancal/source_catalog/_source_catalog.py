@@ -811,7 +811,7 @@ class RomanSourceCatalog:
             definition = self.cat_model.get_column_definition(column)
             if definition is None:
                 # columns not (yet) declared in rad have no description
-                log.debug("No schema definition found for column %s", column)
+                log.warning("No schema definition found for column %s", column)
             else:
                 catalog[column].info.description = definition["description"]
         self.update_metadata()
