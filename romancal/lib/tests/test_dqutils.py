@@ -74,13 +74,12 @@ def test_update_dq_creates_empty_dq2(reference):
     assert not model.dq2.any()
 
 
-def test_update_dq_ignores_models_without_dq():
-    """Models with no pixel-level dq, such as L1, are left alone."""
+def test_update_dq_rejects_models_without_dq():
+    """Models with no pixel-level dq, such as L1, have nothing to update."""
     model = rdm.ScienceRawModel.create_fake_data(shape=(3, *SHAPE))
 
-    update_dq(model, make_ref())
-
-    assert "dq2" not in model
+    with pytest.raises(TypeError, match="no dq array"):
+        update_dq(model, make_ref())
 
 
 def test_update_dq_trims_only_untrimmed_references():

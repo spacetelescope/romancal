@@ -38,13 +38,17 @@ def _ensure_dq2(model):
     recorded" and "array absent" look the same downstream.
 
     Models with no pixel-level data quality array at all, such as the L1
-    ``ScienceRawModel``, are left alone and return None.
+    ``ScienceRawModel``, have nothing for dq2 to accompany and raise
+    `TypeError`.
     """
     dq_name, dq2_name = _dq_names(model)
     if dq2_name in model:
         return model[dq2_name]
     if dq_name not in model:
-        return None
+        raise TypeError(
+            f"{type(model).__name__} has no {dq_name} array for {dq2_name} "
+            f"to accompany"
+        )
     model[dq2_name] = np.zeros(model[dq_name].shape, dtype=model[dq_name].dtype)
     return model[dq2_name]
 
@@ -90,8 +94,7 @@ def update_dq(model, reference):
         Reference model supplying the flags.
     """
     dq_name, dq2_name = _dq_names(model)
-    if _ensure_dq2(model) is None:
-        return
+    _ensure_dq2(model)
 
     for target_name, ref_name in ((dq_name, "dq"), (dq2_name, "dq2")):
         if ref_name not in reference:
