@@ -46,8 +46,7 @@ def _ensure_dq2(model):
         return model[dq2_name]
     if dq_name not in model:
         raise TypeError(
-            f"{type(model).__name__} has no {dq_name} array for {dq2_name} "
-            f"to accompany"
+            f"{type(model).__name__} has no {dq_name} array for {dq2_name} to accompany"
         )
     model[dq2_name] = np.zeros(model[dq_name].shape, dtype=model[dq_name].dtype)
     return model[dq2_name]
