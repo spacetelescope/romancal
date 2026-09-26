@@ -17,6 +17,7 @@ from stcal.ramp_fitting.likely_fit import likely_ramp_fit
 from stcal.ramp_fitting.ols_cas22 import Parameter, Variance
 
 from romancal.datamodels.fileio import open_dataset
+from romancal.lib.dqutils import update_dq
 from romancal.stpipe import RomanStep
 
 SQRT2 = np.sqrt(2)
@@ -71,6 +72,10 @@ class RampFitStep(RomanStep):
         readnoise_model = rdm.open(readnoise_filename, mode="r")
         log.info("Using GAIN reference file: %s", gain_filename)
         gain_model = rdm.open(gain_filename, mode="r")
+
+        # Propagate any dq bits, should they exist
+        update_dq(input_model, readnoise_model)
+        update_dq(input_model, gain_model)
 
         # Do the fitting based on the algorithm selected.
         algorithm = self.algorithm.lower()
