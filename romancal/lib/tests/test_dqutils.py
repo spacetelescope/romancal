@@ -75,7 +75,7 @@ def test_update_dq_creates_empty_dq2(reference):
 
 
 def test_update_dq_ignores_models_without_dq():
-    """Migration runs on every model type, including L1 with no pixel dq."""
+    """Models with no pixel-level dq, such as L1, are left alone."""
     model = rdm.ScienceRawModel.create_fake_data(shape=(3, *SHAPE))
 
     update_dq(model, make_ref())
