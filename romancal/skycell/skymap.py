@@ -296,6 +296,7 @@ class SkyCells:
                     (-0.5, self.pixel_shape[0] - 0.5),
                     (-0.5, self.pixel_shape[1] - 0.5),
                 ),
+                vparity=self._skymap.vparity,
             )
             for wcs_info in self.wcs_infos
         ]
@@ -743,6 +744,7 @@ class ProjectionRegion:
                 (-0.5, self.pixel_shape[0] - 0.5),
                 (-0.5, self.pixel_shape[1] - 0.5),
             ),
+            vparity=self._skymap.vparity,
         )
         wcsobj.array_shape = self.pixel_shape
         return wcsobj
@@ -864,6 +866,45 @@ class SkyMap:
         """number of pixels per skycell"""
         return self.model.meta.nxy_skycell, self.model.meta.nxy_skycell
 
+    @cached_property
+    def vparity(self) -> int:
+        """vparity of the pixel grids defined by this skymap
+
+        Old reference files used a non-conventional vparity = +1 convention
+        (ra increases to the right), while new reference files use a
+        vparity = -1 convention (ra increases to the left).  This convention
+        is not recorded explicitly in the reference file, but can be
+        determined by comparing x_tangent with the location of the skycell
+        relative to the reference point.
+
+        This function determines which convention applies by finding
+        which parity puts the center pixel
+        of a skycell on that skycell's recorded center; the wrong parity
+        misses by at least 500 arcseconds, for any skycell whose tangent
+        point does not fall at its center.
+        """
+        center = (self.pixel_shape[0] - 1) / 2
+
+        # a skycell centered on the tangent point is identical under either
+        # parity; consecutive skycells differ in `x_tangent`, so at most one
+        # of the first two can be centered
+        index = 0 if self.model.skycells["x_tangent"][0] != center else 1
+        skycell = SkyCells(np.array([index]), skymap=self)
+
+        # if `x_tangent` is in the flipped convention, this WCS is the right
+        # one and puts the center pixel on the recorded center
+        wcsobj = _wcsinfo_to_wcs(skycell.wcs_infos[0], vparity=-1)
+        separation = coordinates.SkyCoord(
+            *wcsobj(center, center), unit=u.deg
+        ).separation(coordinates.SkyCoord(*skycell.radec_centers[0], unit=u.deg))
+
+        vparity = -1 if separation < 1 * u.arcsec else 1
+        log.info(
+            f"skymap at {self.path} uses vparity={vparity:+d} "
+            f"({'standard' if vparity == -1 else 'mirror-image'} handedness)"
+        )
+        return vparity
+
     def projection_regions_containing(
         self, radec: NDArray[float]
     ) -> dict[int, list[int]]:
@@ -936,6 +977,7 @@ def _ra_in_range(ra: float, low: float, high: float):
 def _wcsinfo_to_wcs(
     wcsinfo: dict,
     bounding_box: tuple[tuple[float, float], tuple[float, float]] | None = None,
+    vparity: int = 1,
 ) -> WCS:
     """Create a WCS from the skycell wcsinfo meta
 
@@ -947,6 +989,12 @@ def _wcsinfo_to_wcs(
     bounding_box : None or 4-tuple
         The bounding box in detector/pixel space. Form of input is:
         ((x_left, x_right), (y_bottom, y_top))
+
+    vparity : int
+        Parity of the pixel x axis: +1 puts right ascension increasing with
+        x (mirror image), -1 the usual orientation with right ascension
+        increasing to the left. Ignored if `wcsinfo` supplies an explicit
+        `rotation_matrix`. See `SkyMap.vparity`.
 
     Returns
     -------
@@ -971,7 +1019,7 @@ def _wcsinfo_to_wcs(
                     )
                 ),
                 v3i_yangle=0.0,
-                vparity=1,
+                vparity=vparity,
             ),
             (2, 2),
         )

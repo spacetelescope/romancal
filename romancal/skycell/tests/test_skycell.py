@@ -4,6 +4,8 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+import roman_datamodels
+from astropy.coordinates import SkyCoord
 from numpy.testing import assert_allclose
 
 from romancal.skycell import skymap
@@ -32,6 +34,55 @@ def assert_allclose_lonlat(actual: np.ndarray, desired: np.ndarray, rtol=1e-7, a
     assert_allclose(actual, desired)
 
 
+def assert_corners_on_pixel_corners(
+    wcsobj, radec_corners: np.ndarray, pixel_shape: tuple[int, int]
+):
+    """the stored corners of a skycell lie on the corners of its pixel grid
+
+    Which corner goes with which is not checked; that depends on the handedness
+    of the skymap. See `skymap.SkyMap.vparity`.
+    """
+    pixels = np.array(wcsobj.invert(*radec_corners.T, with_bounding_box=False)).T
+    expected = np.array(
+        [
+            (-0.5, -0.5),
+            (pixel_shape[0] - 0.5, -0.5),
+            (pixel_shape[0] - 0.5, pixel_shape[1] - 0.5),
+            (-0.5, pixel_shape[1] - 0.5),
+        ]
+    )
+
+    def sorted_rows(xy: np.ndarray) -> np.ndarray:
+        # round the sort keys; the inverse transform is not exact, so nominally
+        # equal coordinates would otherwise order arbitrarily
+        # by construction passing test means we are getting
+        # numbers like (-0.5, -0.5) or (N - 0.5, N - 0.5)
+        # so the rounding just has to be good enough to get us to that
+        # level
+        keys = np.round(xy, 3)
+        return xy[np.lexsort((keys[:, 1], keys[:, 0]))]
+
+    assert_allclose(sorted_rows(pixels), sorted_rows(expected), atol=1e-4)
+
+
+def sky_handedness(wcsobj, x: float, y: float, delta: float = 1.0) -> float:
+    """determinant of d(east, north)/d(x, y), positive for a mirror image
+
+    Local, so it is meaningful for skycells near a pole, where right ascension
+    along a pixel row is not monotonic.
+    """
+    ra, dec = wcsobj(x, y, with_bounding_box=False)
+    cos_dec = np.cos(np.deg2rad(dec))
+
+    def offset(dx: float, dy: float) -> tuple[float, float]:
+        ra_offset, dec_offset = wcsobj(x + dx, y + dy, with_bounding_box=False)
+        east = (((ra_offset - ra + 180) % 360) - 180) * cos_dec
+        return east, dec_offset - dec
+
+    (east_x, north_x), (east_y, north_y) = offset(delta, 0), offset(0, delta)
+    return east_x * north_y - east_y * north_x
+
+
 @pytest.fixture(scope="module")
 def skymap_subset() -> skymap.SkyMap:
     """
@@ -39,6 +90,33 @@ def skymap_subset() -> skymap.SkyMap:
     to run without access to the full skymap from CRDS.
     """
     return skymap.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf")
+
+
+@pytest.fixture(scope="module")
+def mirrored_skymap_subset(tmp_path_factory) -> skymap.SkyMap:
+    """
+    the same subset with `x_tangent` mirrored within each skycell, standing in
+    for a future skymap delivery in the standard handedness
+    """
+    model = roman_datamodels.open(DATA_DIRECTORY / "skymap_subset.asdf")
+    skycells = np.array(model.skycells)
+    skycells["x_tangent"] = model.meta.nxy_skycell - 1 - skycells["x_tangent"]
+    model.skycells = skycells
+
+    path = tmp_path_factory.mktemp("skymap") / "skymap_subset_mirrored.asdf"
+    model.save(path)
+    return skymap.SkyMap(path)
+
+
+@pytest.fixture(params=["delivered", "mirrored"])
+def either_skymap_subset(
+    request, skymap_subset, mirrored_skymap_subset
+) -> skymap.SkyMap:
+    """both handedness conventions, which the WCS tests below are blind to"""
+    return {
+        "delivered": skymap_subset,
+        "mirrored": mirrored_skymap_subset,
+    }[request.param]
 
 
 @pytest.fixture()
@@ -161,57 +239,46 @@ def test_projregion_from_skycell(skymap_subset):
 
 
 @pytest.mark.parametrize("name", SAMPLE_SKYCELL_NAMES)
-def test_skycell_wcs_pixel_to_world(name, skymap_subset):
-    skycell = skymap.SkyCells.from_names([name], skymap=skymap_subset)
+def test_skycell_wcs_pixel_to_world(name, either_skymap_subset):
+    skycell = skymap.SkyCells.from_names([name], skymap=either_skymap_subset)
 
     wcsobj = skycell.wcs[0]
 
-    # forward transform to radec corners
-    # TODO: the corners in the reference file currently use FITS convention (pixel + 0.5) instead of (pixel - 0.5)
-    assert_allclose_lonlat(
-        np.array(
-            wcsobj(
-                *np.array(
-                    [
-                        (-0.5, -0.5),
-                        (skycell.pixel_shape[0] - 0.5, -0.5),
-                        (skycell.pixel_shape[0] - 0.5, skycell.pixel_shape[1] - 0.5),
-                        (-0.5, skycell.pixel_shape[1] - 0.5),
-                    ]
-                ).T,
-                with_bounding_box=False,
-            )
-        ).T,
-        skycell.radec_corners[0],
-        rtol=1e-7,
+    # forward transform of the pixel corners covers the stored corners
+    corners = SkyCoord(
+        *wcsobj(
+            *np.array(
+                [
+                    (-0.5, -0.5),
+                    (skycell.pixel_shape[0] - 0.5, -0.5),
+                    (skycell.pixel_shape[0] - 0.5, skycell.pixel_shape[1] - 0.5),
+                    (-0.5, skycell.pixel_shape[1] - 0.5),
+                ]
+            ).T,
+            with_bounding_box=False,
+        ),
+        unit="deg",
+    )
+    stored = SkyCoord(*skycell.radec_corners[0].T, unit="deg")
+
+    # every stored corner has a computed corner on top of it; which one depends
+    # on the handedness of the skymap
+    separations = stored[:, None].separation(corners[None, :])
+    assert_allclose(separations.min(axis=1).to("mas").value, 0, atol=1)
+
+
+@pytest.mark.parametrize("name", SAMPLE_SKYCELL_NAMES)
+def test_skycell_wcs_world_to_pixel(name, either_skymap_subset):
+    skycell = skymap.SkyCells.from_names([name], skymap=either_skymap_subset)
+
+    assert_corners_on_pixel_corners(
+        skycell.wcs[0], skycell.radec_corners[0], skycell.pixel_shape
     )
 
 
 @pytest.mark.parametrize("name", SAMPLE_SKYCELL_NAMES)
-def test_skycell_wcs_world_to_pixel(name, skymap_subset):
-    skycell = skymap.SkyCells.from_names([name], skymap=skymap_subset)
-
-    wcsobj = skycell.wcs[0]
-
-    # inverse transform to pixel corners
-    # TODO: the corners in the reference file currently use FITS convention (pixel + 0.5) instead of (pixel - 0.5)
-    assert_allclose(
-        np.array(wcsobj.invert(*skycell.radec_corners.T, with_bounding_box=False)).T,
-        [
-            [
-                (-0.5, -0.5),
-                (skycell.pixel_shape[0] - 0.5, -0.5),
-                (skycell.pixel_shape[0] - 0.5, skycell.pixel_shape[1] - 0.5),
-                (-0.5, skycell.pixel_shape[1] - 0.5),
-            ]
-        ],
-        rtol=1e-5,
-    )
-
-
-@pytest.mark.parametrize("name", SAMPLE_SKYCELL_NAMES)
-def test_skycell_wcsinfo(name, skymap_subset):
-    skycell = skymap.SkyCells.from_names([name], skymap=skymap_subset)
+def test_skycell_wcsinfo(name, either_skymap_subset):
+    skycell = skymap.SkyCells.from_names([name], skymap=either_skymap_subset)
 
     wcsobj = skycell.wcs[0]
     wcs_info = skycell.wcs_infos[0]
@@ -225,26 +292,44 @@ def test_skycell_wcsinfo(name, skymap_subset):
         rtol=1e-7,
     )
 
-    assert_allclose_lonlat(
-        np.array(
-            wcsobj(
-                *np.array(
-                    [
-                        (-0.5, -0.5),
-                        (wcs_info["nx"] - 0.5, -0.5),
-                        (
-                            wcs_info["nx"] - 0.5,
-                            wcs_info["ny"] - 0.5,
-                        ),
-                        (-0.5, wcs_info["ny"] - 0.5),
-                    ]
-                ).T,
-                with_bounding_box=False,
-            )
-        ).T,
-        skycell.radec_corners[0],
-        rtol=1e-7,
+    assert_corners_on_pixel_corners(
+        wcsobj, skycell.radec_corners[0], (wcs_info["nx"], wcs_info["ny"])
     )
+
+
+def test_skymap_vparity(skymap_subset, mirrored_skymap_subset):
+    """the handedness of a skymap follows from its `x_tangent` values"""
+
+    assert skymap_subset.vparity == 1
+    assert mirrored_skymap_subset.vparity == -1
+
+
+@pytest.mark.parametrize("name", SAMPLE_SKYCELL_NAMES)
+def test_skycell_wcs_mirrored_skymap(name, skymap_subset, mirrored_skymap_subset):
+    """a mirrored skymap gives the same skycell, flipped in x"""
+
+    delivered = skymap.SkyCells.from_names([name], skymap=skymap_subset)
+    mirrored = skymap.SkyCells.from_names([name], skymap=mirrored_skymap_subset)
+
+    nx, ny = delivered.pixel_shape
+    x, y = np.meshgrid(np.linspace(0, nx - 1, 4), np.linspace(0, ny - 1, 4))
+    x, y = x.ravel(), y.ravel()
+
+    assert_allclose_lonlat(
+        np.array(mirrored.wcs[0](nx - 1 - x, y, with_bounding_box=False)),
+        np.array(delivered.wcs[0](x, y, with_bounding_box=False)),
+    )
+
+    # the footprint is unchanged, so the stored corners still apply
+    assert_allclose(mirrored.radec_corners, delivered.radec_corners)
+    assert_corners_on_pixel_corners(
+        mirrored.wcs[0], mirrored.radec_corners[0], mirrored.pixel_shape
+    )
+
+    # right ascension increases to the left, unlike in the delivered skymap
+    center = ((nx - 1) / 2, (ny - 1) / 2)
+    assert sky_handedness(delivered.wcs[0], *center) > 0
+    assert sky_handedness(mirrored.wcs[0], *center) < 0
 
 
 def test_skycells(skymap_subset):
