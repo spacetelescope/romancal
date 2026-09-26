@@ -9,6 +9,7 @@ import pytest
 from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
 from astropy.time import Time
+from astropy.utils.decorators import lazyproperty
 from numpy.testing import assert_allclose, assert_equal
 from roman_datamodels import datamodels as rdm
 from roman_datamodels.datamodels import (
@@ -131,6 +132,10 @@ def image_model():
         model.meta.cal_step[step_name] = "INCOMPLETE"
     model.meta.cal_logs = []
     data, err = make_test_image()
+    # A blank pixel with an implausibly small uncertainty.  Unfloored, the
+    # weight it carries would wreck the precision of the detection
+    # convolutions and no source in the frame would be found.
+    data[95, 45], err[95, 45] = 0.0, 1e-6 * np.median(err)
     model.data = data
     model.err = err
     model.meta.photometry.conversion_megajanskys = (0.3324 * u.MJy / u.sr).value
@@ -143,7 +148,7 @@ def test_forced_catalog(image_model, function_jail, ignore_parquet_metadata_path
     _ = SourceCatalogStep.call(
         image_model,
         bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
         save_results=True,
@@ -152,7 +157,7 @@ def test_forced_catalog(image_model, function_jail, ignore_parquet_metadata_path
     result_force, segmentation_map = SourceCatalogStep.call(
         image_model,
         bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
         save_results=True,
@@ -359,13 +364,10 @@ def test_forced_catalog_requires_detection_image(image_model, function_jail):
 @pytest.mark.parametrize(
     "snr_threshold, npixels, nsources, save_results",
     (
-        (3, 10, 7, True),
-        (3, 50, 5, False),
-        (10, 10, 7, False),
-        (20, 10, 5, False),
-        (25, 10, 3, False),
-        (35, 10, 1, False),
-        (50, 10, 0, False),
+        # ``snr_threshold`` is the peak significance of the matched filter,
+        # in sigma; the fixture plants seven sources.
+        (5, 9, 7, True),
+        (5000, 9, 0, False),
     ),
 )
 def test_l2_source_catalog(
@@ -384,7 +386,7 @@ def test_l2_source_catalog(
     result_catalog, result_segmentation_map = SourceCatalogStep.call(
         image_model,
         bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        kernel_fwhm=0.2,
         snr_threshold=snr_threshold,
         npixels=npixels,
         save_results=save_results,
@@ -440,13 +442,10 @@ def test_l2_source_catalog(
 @pytest.mark.parametrize(
     "snr_threshold, npixels, nsources, save_results",
     (
-        (3, 10, 7, True),
-        (3, 50, 5, False),
-        (10, 10, 7, False),
-        (20, 10, 5, False),
-        (25, 10, 3, False),
-        (35, 10, 1, False),
-        (50, 10, 0, False),
+        # ``snr_threshold`` is the peak significance of the matched filter,
+        # in sigma; the fixture plants seven sources.
+        (5, 9, 7, True),
+        (5000, 9, 0, False),
     ),
 )
 def test_l3_source_catalog(
@@ -467,7 +466,7 @@ def test_l3_source_catalog(
     result_catalog, result_segmentation_map = SourceCatalogStep.call(
         mosaic_model,
         bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        kernel_fwhm=0.2,
         snr_threshold=snr_threshold,
         npixels=npixels,
         save_results=save_results,
@@ -529,7 +528,7 @@ def test_background(mosaic_model, function_jail):
     result_catalog, _ = SourceCatalogStep.call(
         mosaic_model,
         bkg_boxsize=1000,
-        kernel_fwhm=2.0,
+        kernel_fwhm=0.2,
         snr_threshold=3,
         npixels=25,
         fit_psf=False,
@@ -547,7 +546,7 @@ def test_source_catalog_populates_dust_ebv(model_fixture, request, function_jail
     result_catalog, _ = SourceCatalogStep.call(
         model,
         bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        kernel_fwhm=0.2,
         snr_threshold=3,
         npixels=10,
         save_results=False,
@@ -572,7 +571,7 @@ def test_nested_metadata_propagated_to_catalog_and_segmentation(
     result_catalog, result_segmentation_map = SourceCatalogStep.call(
         image_model,
         bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
         save_results=False,
@@ -599,7 +598,7 @@ def test_l2_input_model_unchanged(image_model, function_jail):
         snr_threshold=0.5,
         npixels=5,
         bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        kernel_fwhm=0.2,
         save_results=False,
         fit_psf=False,
     )
@@ -608,11 +607,31 @@ def test_l2_input_model_unchanged(image_model, function_jail):
     assert_equal(original_err, image_model.err)
 
 
+def test_kron_nomask_flux(image_model):
+    """
+    ``kron_nomask_flux`` repeats the Kron sum in the same aperture with
+    neighbouring sources left in, so it can only add flux.
+    """
+    cat, _ = SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=0.2,
+        snr_threshold=5,
+        npixels=9,
+        save_results=False,
+        fit_psf=False,
+    )
+    masked = np.asarray(cat.source_catalog["kron_flux"], float)
+    unmasked = np.asarray(cat.source_catalog["kron_nomask_flux"], float)
+    # isolated sources agree to float32 round-off, blended ones gain
+    assert np.all(unmasked > masked - 1e-3 * np.abs(masked))
+
+
 def test_l2_segmentation_contains_skyvals(image_model):
     _, result_segmentation_map = SourceCatalogStep.call(
         image_model,
         bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
         save_results=False,
@@ -636,7 +655,7 @@ def test_l2_segmentation_without_skyvals_when_disabled(image_model):
     _, result_segmentation_map = SourceCatalogStep.call(
         image_model,
         bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
         save_results=False,
@@ -685,7 +704,7 @@ def test_l2_skyvals_values_and_covfrac_reasonable(image_model):
     _, result_segmentation_map = SourceCatalogStep.call(
         image_model,
         bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
         save_results=False,
@@ -718,7 +737,7 @@ def test_l3_input_model_unchanged(mosaic_model, function_jail):
         snr_threshold=0.5,
         npixels=5,
         bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        kernel_fwhm=0.2,
         save_results=False,
         fit_psf=False,
     )
@@ -749,7 +768,7 @@ def test_psf_photometry(function_jail, image_model):
     result_catalog, _ = SourceCatalogStep.call(
         image_model,
         bkg_boxsize=20,
-        kernel_fwhm=2.0,
+        kernel_fwhm=0.2,
         snr_threshold=3,
         npixels=10,
         save_results=False,
@@ -773,6 +792,33 @@ def test_psf_photometry(function_jail, image_model):
             assert not np.any(np.isnan(cat[colname]))  # and contains no nans
 
 
+def test_nonfinite_centroid_does_not_stop_the_step(
+    function_jail, image_model, monkeypatch
+):
+    """Verify that a source with a garbage guess won't crash the pipeline."""
+    real = RomanSourceCatalog._xypos.fget
+
+    @lazyproperty
+    def one_nan(self):
+        xypos = real(self).copy()
+        xypos[0] = np.nan
+        return xypos
+
+    monkeypatch.setattr(RomanSourceCatalog, "_xypos", one_nan)
+
+    result_catalog, _ = SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=20,
+        kernel_fwhm=0.2,
+        snr_threshold=3,
+        npixels=10,
+        save_results=False,
+    )
+    cat = result_catalog.source_catalog
+    assert np.isnan(cat["x_psf"][0])
+    assert np.all(np.isfinite(cat["x_psf"][1:]))
+
+
 @pytest.mark.parametrize("fit_psf", [True, False])
 def test_do_psf_photometry_column_names(function_jail, image_model, fit_psf):
     """
@@ -782,7 +828,7 @@ def test_do_psf_photometry_column_names(function_jail, image_model, fit_psf):
     result_catalog, _ = SourceCatalogStep.call(
         image_model,
         bkg_boxsize=20,
-        kernel_fwhm=2.0,
+        kernel_fwhm=0.2,
         snr_threshold=3,
         npixels=10,
         save_results=False,

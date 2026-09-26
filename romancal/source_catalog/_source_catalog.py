@@ -98,8 +98,8 @@ class RomanSourceCatalog:
         measurements. The image is assumed to be background subtracted.
 
     kernel_fwhm : float
-        The full-width at half-maximum (FWHM) of the DAOFind 2D Gaussian
-        kernel. This kernel is used to calculate the DAOFind sharpness
+        The full-width at half-maximum (FWHM), in pixels, of the DAOFind
+        2D Gaussian kernel. This kernel is used to calculate the DAOFind sharpness
         and roundness properties. DAOFind uses a special kernel that
         sums to zero.
 
@@ -164,6 +164,8 @@ class RomanSourceCatalog:
         flux_unit=DEFAULT_FLUX_UNIT,
         cat_type="prompt",
         ee_spline=None,
+        det_template=None,
+        det_significance=None,
     ):
         if not isinstance(model, ImageModel | MosaicModel):
             raise ValueError("The input model must be an ImageModel or MosaicModel.")
@@ -181,6 +183,8 @@ class RomanSourceCatalog:
         self.flux_unit = u.Unit(self.flux_unit_str)
         self.cat_type = cat_type
         self.ee_spline = ee_spline
+        self.det_template = det_template
+        self.det_significance = det_significance
 
         self.n_sources = len(segment_img.labels)
         self.wcs = self.model.meta.wcs
@@ -600,10 +604,14 @@ class RomanSourceCatalog:
         )
 
     def _make_psf_cat(self):
+        # ``_xypos_finite`` is row-for-row ``_xypos`` with any non-finite
+        # entry replaced by -1000.  A position off the image is handled
+        # without crashing: photutils returns NaN and sets the source's
+        # flags.  A non-finite position raises.
         return _PSFCatalog(
             self.model,
             self.psf_model,
-            self._xypos,
+            self._xypos_finite,
             self.mask,
             requested_properties=self.column_names,
         )
@@ -765,10 +773,21 @@ class RomanSourceCatalog:
             `~astropy.units.Quantity`.
         """
         catalog = QTable()
+        undefined = []
         for column in self.column_names:
             catalog[column] = getattr(self, column)
+            # Skip descriptions for unrecognized columns
             definition = self.cat_model.get_column_definition(column)
-            catalog[column].info.description = definition["description"]
+            if definition is None:
+                undefined.append(column)
+            else:
+                catalog[column].info.description = definition["description"]
+        if undefined:
+            log.warning(
+                f"No catalog schema definition for {', '.join(undefined)}; "
+                "these columns are written without a description and should "
+                "be added to the schema."
+            )
         self.update_metadata()
         catalog.meta.update(self.meta)
 
