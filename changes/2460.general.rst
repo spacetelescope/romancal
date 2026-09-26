@@ -1,7 +1,8 @@
 Add a second, informational pixel data quality array ``dq2`` (``pixeldq2`` on
-ramps) alongside the existing ``dq``. A new ``romancal.lib.dqutils.update_dq``
-helper combines reference file ``dq`` and ``dq2`` into the science model,
-inferring reference pixel border trimming from the array shapes. The array is
-created empty by ``dq_init``, carried through ramp fitting, and populated into
-the new ``image_flags2`` source catalog column. No flag bits are assigned yet,
-so ``dq2`` is currently always zero.
+ramps) alongside the existing ``dq``. A new ``update_dq`` helper combines
+reference file ``dq`` and ``dq2`` into the science model, inferring reference
+pixel border trimming from the array shapes. The array is created empty by
+``dq_init``, carried through ramp fitting, and populated into the new
+``image_flags2`` source catalog column.  This is in preparation for reference
+files to eventually include ``dq2`` bits; today they do not, and ``dq2`` is
+currently always zero.

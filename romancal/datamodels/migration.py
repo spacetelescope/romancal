@@ -3,7 +3,7 @@ import warnings
 from astropy.time import Time
 from roman_datamodels.datamodels import ImageModel, ScienceRawModel
 
-from romancal.lib.dqutils import ensure_dq2
+from romancal.lib.dqutils import _ensure_dq2
 
 __all__ = ["update_model_version"]
 
@@ -73,8 +73,9 @@ def update_model_version(model, *, close_on_update=False):
                 setattr(updated_model.meta.ref_file, new_file, "?")
 
     # old files predate dq2; give them an empty one so that consumers do
-    # not have to distinguish "no flags" from "array absent"
-    ensure_dq2(updated_model)
+    # not have to distinguish "no flags" from "array absent".  L1 files
+    # carry no pixel-level dq at all and are left alone.
+    _ensure_dq2(updated_model)
     if close_on_update:
         model.close()
 

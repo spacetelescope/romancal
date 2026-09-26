@@ -107,9 +107,8 @@ def _apply_flat_field(science, flat, include_var_flat=False):
         # Add var_flat contribution to err
         science.err = np.sqrt(science.err**2 + var_flat)
 
-    # Combine the science and flat DQ arrays.  The reference flags go
-    # through update_dq so that dq2 is carried along; the NO_FLAT_FIELD
-    # bits derived above are not part of the reference and are added
-    # separately.
+    # Combine the science and flat DQ arrays.
+    # The NO_FLAT_FIELD bits derived above are not part of the reference
+    # and are added separately.
     update_dq(science, flat)
     science.dq = np.bitwise_or(science.dq, flat_bad).astype(science.dq.dtype)

@@ -75,7 +75,7 @@ def flag_saturation(input_model, ref_model, n_pix_grow_sat=0, backup=0):
     input_model.pixeldq = pdq_new[0, :]
 
     # stcal has already or-ed the reference dq into pixeldq; repeat it here
-    # so that dq2 is picked up as well.  Bitwise or is idempotent.
+    # so that dq2 is picked up as well.
     update_dq(input_model, ref_model)
 
     # back saturation flagging up some frames to be safe since if the

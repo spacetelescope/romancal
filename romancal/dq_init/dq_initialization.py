@@ -7,7 +7,7 @@ from astropy.time import Time
 from roman_datamodels.datamodels import FpsModel, RampModel, ScienceRawModel, TvacModel
 from roman_datamodels.dqflags import pixel
 
-from romancal.lib.dqutils import DQ2_DTYPE, update_dq
+from romancal.lib.dqutils import update_dq
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -66,7 +66,7 @@ def to_ramp_model(model):
     shape = model.data.shape
     ramp_model.data = model.data.astype(np.float32)
     ramp_model.pixeldq = np.zeros(shape[1:], dtype=np.uint32)
-    ramp_model.pixeldq2 = np.zeros(shape[1:], dtype=DQ2_DTYPE)
+    ramp_model.pixeldq2 = np.zeros(shape[1:], dtype=np.uint32)
 
     # check if the input model has a resultantdq from SDF
     if hasattr(ramp_model, "resultantdq"):

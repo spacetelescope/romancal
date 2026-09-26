@@ -20,7 +20,6 @@ from roman_datamodels.dqflags import pixel
 from scipy.ndimage import map_coordinates
 
 from romancal import __version__ as romancal_version
-from romancal.lib.dqutils import DQ2_DTYPE
 from romancal.skycell import skymap
 from romancal.source_catalog._aperture import ApertureCatalog
 from romancal.source_catalog._column_schema import CatalogSchema
@@ -404,16 +403,16 @@ class RomanSourceCatalog:
         `numpy.ndarray`
             Per-source flags as ``int32``.  All zero if ``dq`` is None.
         """
-        flags = np.zeros(self.n_sources, dtype=DQ2_DTYPE)
+        flags = np.zeros(self.n_sources, dtype=np.uint32)
         if dq is None:
             return flags.view(np.int32)
 
         labels = self.segment_img.data.ravel()
-        inside = labels > 0
+        m = labels > 0
         # segment_img.labels is sorted, so searchsorted maps each labeled
         # pixel onto its row in the output catalog
-        index = np.searchsorted(self.segment_img.labels, labels[inside])
-        np.bitwise_or.at(flags, index, dq.ravel()[inside].astype(DQ2_DTYPE))
+        index = np.searchsorted(self.segment_img.labels, labels[m])
+        np.bitwise_or.at(flags, index, dq.ravel()[m].astype(np.uint32))
 
         # the catalog columns are signed; reinterpret rather than cast so
         # that a set bit 31 cannot raise or change the bit pattern
@@ -425,7 +424,7 @@ class RomanSourceCatalog:
         Data quality bit flag.
 
         Non-zero if a pixel within the segment was flagged in one of the
-        input images.  L3 mosaics have no DQ array and are always zero.
+        input images.  Zero for models that carry no ``dq`` array.
         """
         return self._segment_flags(self.model.get("dq", None))
 
