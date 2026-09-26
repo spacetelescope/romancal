@@ -121,7 +121,7 @@ def copy_model_arrays(model):
 
     This function creates a new model instance that shares the metadata
     with the input model but has independent copies of the data and err
-    arrays. Other arrays (dq, weight) are shared references.
+    arrays. Other arrays (dq, dq2, weight) are shared references.
 
     Parameters
     ----------
@@ -135,7 +135,7 @@ def copy_model_arrays(model):
 
     Notes
     -----
-    The metadata and dq/weight arrays are not copied because they are
+    The metadata and dq/dq2/weight arrays are not copied because they are
     not modified in source catalog operations.
     """
     if isinstance(model, ImageModel):
@@ -145,6 +145,8 @@ def copy_model_arrays(model):
         # cast to float32 so unit manipulations later on don't overflow
         copied_model.err = model.err.copy().astype("float32")
         copied_model.dq = model.dq
+        if "dq2" in model:
+            copied_model["dq2"] = model.dq2
     elif isinstance(model, MosaicModel):
         copied_model = MosaicModel()
         copied_model.meta = model.meta

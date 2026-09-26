@@ -6,6 +6,8 @@ import numpy as np
 from roman_datamodels.dqflags import pixel
 from stcal.saturation.saturation import flag_saturated_pixels
 
+from romancal.lib.dqutils import update_dq
+
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
@@ -71,6 +73,10 @@ def flag_saturation(input_model, ref_model, n_pix_grow_sat=0, backup=0):
 
     # Save the NO_SAT_CHECK flags in the output PIXELDQ array
     input_model.pixeldq = pdq_new[0, :]
+
+    # stcal has already or-ed the reference dq into pixeldq; repeat it here
+    # so that dq2 is picked up as well.
+    update_dq(input_model, ref_model)
 
     # back saturation flagging up some frames to be safe since if the
     # non-linearity curve is sharp enough

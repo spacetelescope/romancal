@@ -17,6 +17,7 @@ from stcal.ramp_fitting.likely_fit import likely_ramp_fit
 from stcal.ramp_fitting.ols_cas22 import Parameter, Variance
 
 from romancal.datamodels.fileio import open_dataset
+from romancal.lib.dqutils import update_dq
 from romancal.stpipe import RomanStep
 
 SQRT2 = np.sqrt(2)
@@ -71,6 +72,10 @@ class RampFitStep(RomanStep):
         readnoise_model = rdm.open(readnoise_filename, mode="r")
         log.info("Using GAIN reference file: %s", gain_filename)
         gain_model = rdm.open(gain_filename, mode="r")
+
+        # Propagate any dq bits, should they exist
+        update_dq(input_model, readnoise_model)
+        update_dq(input_model, gain_model)
 
         # Do the fitting based on the algorithm selected.
         algorithm = self.algorithm.lower()
@@ -475,6 +480,13 @@ def _create_image_model(input_model, image_info, include_var_rnoise=False):
         im.dq = image_info["dq"][4:-4, 4:-4].copy()
     else:
         im.dq = np.zeros(im.data.shape, dtype="u4")
+
+    # pixeldq2 is not touched by ramp fitting, so carry it across the
+    # L1 to L2 rename unchanged.  Older ramps predate dq2 and simply lack it.
+    if "pixeldq2" in input_model:
+        im.dq2 = input_model.pixeldq2[4:-4, 4:-4].copy()
+    else:
+        im.dq2 = np.zeros(im.data.shape, dtype="u4")
 
     im.err = image_info["err"][4:-4, 4:-4].copy().astype("float16")
     im.var_poisson = image_info["var_poisson"][4:-4, 4:-4].copy().astype("float16")

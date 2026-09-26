@@ -388,15 +388,56 @@ class RomanSourceCatalog:
 
         return flags
 
+    def _segment_flags(self, dq):
+        """
+        Bitwise-or a pixel-level DQ array over each source segment.
+
+        Parameters
+        ----------
+        dq : `numpy.ndarray` or None
+            Pixel-level data quality array matching the segmentation image,
+            or None if the model has no such array.
+
+        Returns
+        -------
+        `numpy.ndarray`
+            Per-source flags as ``int32``.  All zero if ``dq`` is None.
+        """
+        flags = np.zeros(self.n_sources, dtype=np.uint32)
+        if dq is None:
+            return flags.view(np.int32)
+
+        labels = self.segment_img.data.ravel()
+        m = labels > 0
+        # segment_img.labels is sorted, so searchsorted maps each labeled
+        # pixel onto its row in the output catalog
+        index = np.searchsorted(self.segment_img.labels, labels[m])
+        np.bitwise_or.at(flags, index, dq.ravel()[m].astype(np.uint32))
+
+        # the catalog columns are signed; reinterpret rather than cast so
+        # that a set bit 31 cannot raise or change the bit pattern
+        return flags.view(np.int32)
+
     @lazyproperty
     def image_flags(self):
         """
         Data quality bit flag.
 
         Non-zero if a pixel within the segment was flagged in one of the
+        input images.  Zero for models that carry no ``dq`` array.
+        """
+        return self._segment_flags(self.model.get("dq", None))
+
+    @lazyproperty
+    def image_flags2(self):
+        """
+        Extra data quality bit flag.
+
+        The ``dq2`` counterpart of `image_flags`.  Non-zero if a pixel
+        within the segment was flagged in ``dq2`` in one of the
         input images.
         """
-        return np.zeros(self.n_sources, dtype=np.int32)
+        return self._segment_flags(self.model.get("dq2", None))
 
     @lazyproperty
     def dust_ebv(self):
@@ -768,7 +809,11 @@ class RomanSourceCatalog:
         for column in self.column_names:
             catalog[column] = getattr(self, column)
             definition = self.cat_model.get_column_definition(column)
-            catalog[column].info.description = definition["description"]
+            if definition is None:
+                # columns not (yet) declared in rad have no description
+                log.warning("No schema definition found for column %s", column)
+            else:
+                catalog[column].info.description = definition["description"]
         self.update_metadata()
         catalog.meta.update(self.meta)
 

@@ -187,6 +187,20 @@ in the table below are relevant to the GROUPDQ array.
   - :external+roman_datamodels:py:class:`roman_datamodels.dqflags.group`
   - :external+roman_datamodels:py:class:`roman_datamodels.dqflags.pixel`
 
+.. _extra_data_quality_flags:
+
+Extra Data Quality Flags
+========================
+
+Science files may carry additional pixel-level data quality arrays alongside
+``dq``; in particular, ``dq2`` (or equivalently ``pixeldq2`` in ramp models).
+These have the same shape and data type as ``dq``.
+
+Data quality information in ``dq2`` is propagated from reference files
+used in the various steps of the exposure level pipeline; if these reference
+files have a ``dq2`` array, it will be bitwise "or"ed into the science ``dq2``
+array.  The pipeline never does more than propagate these bits along.
+
 Parameter Specification
 =======================
 
