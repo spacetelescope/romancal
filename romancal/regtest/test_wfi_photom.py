@@ -42,34 +42,35 @@ def test_absolute_photometric_calibration(
     with resource_tracker.track(log=request):
         RomanStep.from_cmdline(args)
 
-    photom_out = rdm.open(rtdata.output)
+    with rdm.open(rtdata.output) as photom_out:
+        dms_logger.info(
+            "DMS140 MSG: Photom step recorded as complete? :"
+            f" {photom_out.meta.cal_step.photom == 'COMPLETE'}"
+        )
+        assert photom_out.meta.cal_step.photom == "COMPLETE"
 
-    dms_logger.info(
-        "DMS140 MSG: Photom step recorded as complete? :"
-        f" {photom_out.meta.cal_step.photom == 'COMPLETE'}"
-    )
-    assert photom_out.meta.cal_step.photom == "COMPLETE"
+        # check for reasonable values of conversion_megajansky,
+        # pixel_area, and uncertainty
+        photometry = photom_out.meta.photometry
+        conv = photometry.conversion_megajanskys
+        conv_ok = 0.5 < conv < 1.0
+        dms_logger.info(
+            f"DMS140 MSG: Photom megajansky conversion calculated? : {conv_ok}"
+        )
+        assert conv_ok, f"conversion_megajanskys = {conv}"
 
-    # check for reasonable values of conversion_megajansky,
-    # pixel_area, and uncertainty
-    photometry = photom_out.meta.photometry
-    conv = photometry.conversion_megajanskys
-    conv_ok = 0.5 < conv < 1.0
-    dms_logger.info(f"DMS140 MSG: Photom megajansky conversion calculated? : {conv_ok}")
-    assert conv_ok, f"conversion_megajanskys = {conv}"
+        # nominal WFI pixel is 0.11 arcsec, or ~2.84e-13 sr
+        area = photometry.pixel_area
+        area_ok = 2.5e-13 < area < 3.2e-13
+        dms_logger.info(f"DMS140 MSG: Pixel area in steradians calculated? : {area_ok}")
+        assert area_ok, f"pixel_area = {area}"
 
-    # nominal WFI pixel is 0.11 arcsec, or ~2.84e-13 sr
-    area = photometry.pixel_area
-    area_ok = 2.5e-13 < area < 3.2e-13
-    dms_logger.info(f"DMS140 MSG: Pixel area in steradians calculated? : {area_ok}")
-    assert area_ok, f"pixel_area = {area}"
-
-    unc = photometry.conversion_megajanskys_uncertainty
-    unc_ok = 0 < unc < 0.2 * conv
-    dms_logger.info(
-        f"DMS140 MSG: Photom megajansky conversion uncertainty calculated? : {unc_ok}"
-    )
-    assert unc_ok, f"conversion_megajanskys_uncertainty = {unc}"
+        unc = photometry.conversion_megajanskys_uncertainty
+        unc_ok = 0 < unc < 0.2 * conv
+        dms_logger.info(
+            f"DMS140 MSG: Photom megajansky conversion uncertainty calculated? : {unc_ok}"
+        )
+        assert unc_ok, f"conversion_megajanskys_uncertainty = {unc}"
 
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     dms_logger.info(
