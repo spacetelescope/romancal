@@ -46,20 +46,6 @@ from romancal.source_catalog._detection import (
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
-# Template bank.  Every template is a Gaussian; these are the FWHM of the
-# larger ones, standing in for galaxies.  The PSF template comes first and
-# is sized by the step's ``kernel_fwhm``, so the default bank is 0.2, 0.6
-# and 2.4 arcsec.  The sizes are angular rather than in pixels so that the
-# same physical scales are searched whatever the pixel scale: an L3 coadd
-# at 0.055 arcsec/pixel spreads a galaxy over twice as many pixels as the
-# L2 image at 0.11 that went into it.
-#
-# The spacing is logarithmic.  A source falling between two rungs is worst
-# off at their geometric mean, where a template mismatched in width by a
-# factor r keeps 2r / (1 + r^2) of the SNR: 87 percent across the first
-# gap of three, 80 percent across the second of four.  The tighter gap is
-# at the bottom because that is where the small faint galaxies are.
-_TEMPLATE_FWHM = (0.6, 2.4)  # arcsec
 
 # Kernel box size for the templates, in units of the template FWHM.  The
 # kernel only has to reach the template's wings, so a few FWHM is enough.
@@ -95,13 +81,17 @@ _DEBLEND_CONTRAST = 0.001
 _SEGMENT_DILATE = 1
 
 
-def _template_fwhms(kernel_fwhm, pixel_scale):
+def _template_fwhms(kernel_fwhm, template_fwhm, pixel_scale):
     """Template FWHMs in pixels, PSF first.
 
-    ``kernel_fwhm`` and the bank are in arcsec; ``pixel_scale`` is in
-    arcsec per pixel.
+    ``kernel_fwhm`` and ``template_fwhm`` are in arcsec; ``pixel_scale``
+    is in arcsec per pixel.  ``template_fwhm`` gives the templates larger
+    than the PSF; an empty sequence leaves only the PSF.
     """
-    return tuple(f / pixel_scale for f in (float(kernel_fwhm), *_TEMPLATE_FWHM))
+    return tuple(
+        f / pixel_scale
+        for f in (float(kernel_fwhm), *(float(b) for b in template_fwhm))
+    )
 
 
 def _clip_for_detection(data, err, mask=None):
@@ -151,7 +141,9 @@ def _bkg_box_size(fwhm):
     return max(math.ceil(_BKG_BOX_FACTOR * fwhm), 1)
 
 
-def make_template_snr_images(data, err, kernel_fwhm, pixel_scale, mask=None):
+def make_template_snr_images(
+    data, err, kernel_fwhm, template_fwhm, pixel_scale, mask=None
+):
     """
     Compute a matched-filter significance image for each template.
 
@@ -163,6 +155,9 @@ def make_template_snr_images(data, err, kernel_fwhm, pixel_scale, mask=None):
         Per-pixel uncertainty.
     kernel_fwhm : float
         FWHM of the PSF template, in arcsec.
+    template_fwhm : sequence of float
+        FWHM in arcsec of the templates larger than the PSF.  An empty
+        sequence leaves only the PSF template.
     pixel_scale : float
         Pixel scale in arcsec per pixel, used to put the template bank on
         the pixel grid.
@@ -194,7 +189,7 @@ def make_template_snr_images(data, err, kernel_fwhm, pixel_scale, mask=None):
         )
 
     snr_images = []
-    for fwhm in _template_fwhms(kernel_fwhm, pixel_scale):
+    for fwhm in _template_fwhms(kernel_fwhm, template_fwhm, pixel_scale):
         kernel = make_gaussian_kernel(fwhm, size_factor=_TEMPLATE_SIZE_FACTOR)
         if kernel.shape[0] > min(data.shape):
             # The kernel is wider than the image, so it is all boundary.
@@ -461,6 +456,7 @@ def make_segmentation_image_template(
     snr_threshold,
     n_pixels,
     kernel_fwhm,
+    template_fwhm,
     pixel_scale,
     deblend=True,
     mask=None,
@@ -484,6 +480,9 @@ def make_segmentation_image_template(
         dilation, not to the deblended children of the maximum image.
     kernel_fwhm : float
         FWHM of the PSF template, in arcsec.
+    template_fwhm : sequence of float
+        FWHM in arcsec of the templates larger than the PSF.  An empty
+        sequence leaves only the PSF template.
     pixel_scale : float
         Pixel scale in arcsec per pixel.
     deblend : bool, optional
@@ -508,7 +507,7 @@ def make_segmentation_image_template(
         Peak significance of each source, in sigma.
     """
     snr_images, conv_psf = make_template_snr_images(
-        data, err, kernel_fwhm, pixel_scale, mask=mask
+        data, err, kernel_fwhm, template_fwhm, pixel_scale, mask=mask
     )
     if not snr_images:
         # Nothing in the bank fits the image; already logged.

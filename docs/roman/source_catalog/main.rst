@@ -35,10 +35,14 @@ We convolve the background-subtracted image with a variety of templates
 corresponding to different sizes of sources, using a matched filter
 approach that provides the optimal SNR for matching sources.  The
 templates are all Gaussians: a point-source template whose FWHM is set
-by the ``kernel_fwhm`` parameter, together with two larger ones standing
-in for galaxies.  Their sizes are angular rather than in pixels, so that
-the same physical scales are searched whatever the pixel scale of the
-image; the default bank is 0.2, 0.6, and 2.4 arcsec FWHM.  Each
+by the ``kernel_fwhm`` parameter, together with larger ones standing in
+for galaxies, whose FWHM are set by the ``template_fwhm`` parameter.
+Their sizes are angular rather than in pixels, so that the same physical
+scales are searched whatever the pixel scale of the image; the default
+bank is 0.2, 0.6, and 2.4 arcsec FWHM.  ``template_fwhm`` takes any
+number of sizes, and an empty list detects with the PSF alone.  The
+default spacing is logarithmic, tighter at the small end where the faint
+galaxies are.  Each
 filter is applied with inverse-variance weighting, so it produces
 the maximum-likelihood amplitude of that template divided by its own
 uncertainty: a signal-to-noise ratio image.  These SNR images are further

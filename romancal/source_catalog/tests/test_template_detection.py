@@ -20,6 +20,10 @@ from romancal.source_catalog._template_detection import (
     make_segmentation_image_template,
 )
 
+# The bank these tests exercise.  A list rather than a tuple, matching what
+# the step spec hands the detection code.
+TEST_TEMPLATE_FWHM = [0.6, 2.4]
+
 
 @pytest.fixture
 def wide_image():
@@ -50,6 +54,7 @@ def _detect(data, err, mask=None, **kwargs):
         snr_threshold=5.0,
         n_pixels=9,
         kernel_fwhm=0.2,
+        template_fwhm=TEST_TEMPLATE_FWHM,
         pixel_scale=0.1,
         deblend=True,
         mask=mask,
@@ -66,9 +71,11 @@ def test_background_box_tracks_the_template():
     removed is about three boxes; the factor of four here is what makes that
     ~12 FWHM.
     """
-    boxes = [_bkg_box_size(f) for f in _template_fwhms(0.2, 0.1)]
+    boxes = [_bkg_box_size(f) for f in _template_fwhms(0.2, TEST_TEMPLATE_FWHM, 0.1)]
     assert boxes == sorted(boxes)  # wider templates, wider background
-    for fwhm, box in zip(_template_fwhms(0.2, 0.1), boxes, strict=True):
+    for fwhm, box in zip(
+        _template_fwhms(0.2, TEST_TEMPLATE_FWHM, 0.1), boxes, strict=True
+    ):
         assert 3 * box == pytest.approx(12 * fwhm, rel=0.05)
         # never larger than the kernel, which must already fit the image
         assert (
@@ -79,7 +86,7 @@ def test_background_box_tracks_the_template():
 
 def test_kernels_only_reach_the_wings():
     """Kernels are sized for the template, not for a background box."""
-    for fwhm in _template_fwhms(0.2, 0.1):
+    for fwhm in _template_fwhms(0.2, TEST_TEMPLATE_FWHM, 0.1):
         kernel = make_gaussian_kernel(fwhm, size_factor=_TEMPLATE_SIZE_FACTOR)
         assert kernel.shape[0] <= 4 * fwhm + 2
         assert kernel.sum() == pytest.approx(1.0, abs=1e-6)
@@ -117,7 +124,9 @@ def test_detects_sources_of_each_size(wide_image):
     assert len(template_index) == segment_img.n_labels
     assert len(significance) == segment_img.n_labels
     assert np.all(significance >= 5.0)  # the threshold is the floor
-    assert len(_template_fwhms(0.2, 0.1)) == 3
+    assert len(_template_fwhms(0.2, TEST_TEMPLATE_FWHM, 0.1)) == 1 + len(
+        TEST_TEMPLATE_FWHM
+    )
 
     # the point source and the large galaxy are not assigned the same template
     labels = np.asarray(segment_img.data)
@@ -207,6 +216,7 @@ def test_no_template_fits_returns_no_sources():
         snr_threshold=5.0,
         n_pixels=9,
         kernel_fwhm=0.2,
+        template_fwhm=TEST_TEMPLATE_FWHM,
         pixel_scale=0.1,
         deblend=True,
     )

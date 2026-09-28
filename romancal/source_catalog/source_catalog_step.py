@@ -63,9 +63,12 @@ class SourceCatalogStep(RomanStep):
 
     kernel_fwhm : float, optional
         Full-width-at-half-maximum, in arcsec, of the Gaussian smoothing
-        kernel used for source detection.  The larger templates in the
-        detection bank are angular sizes too, so the same physical scales
-        are searched whatever the pixel scale of the image.
+        kernel used for source detection, corresponding to the PSF scale.
+
+    template_fwhm : list of float, optional
+        Full-width-at-half-maximum, in arcsec, of the detection templates
+        larger than the PSF, which stand in for galaxies.  Together with
+        ``kernel_fwhm`` these make up the template bank.
 
     snr_threshold : float, optional
         Detection threshold in sigma.  This is the significance of a
@@ -103,6 +106,7 @@ class SourceCatalogStep(RomanStep):
     spec = """
         bkg_boxsize = integer(default=1000)   # background mesh box size in pixels
         kernel_fwhm = float(default=0.2)      # Gaussian kernel FWHM in arcsec
+        template_fwhm = float_list(default=list(0.6, 2.4))  # extra template FWHM in arcsec
         snr_threshold = float(default=5.0)    # detection threshold in sigma
         npixels = integer(default=9)          # min usable pixels in a final segment
         deblend = boolean(default=True)       # deblend sources?
@@ -320,6 +324,7 @@ class SourceCatalogStep(RomanStep):
                 snr_threshold=self.snr_threshold,
                 n_pixels=self.npixels,
                 kernel_fwhm=self.kernel_fwhm,
+                template_fwhm=self.template_fwhm,
                 pixel_scale=pixel_scale,
                 deblend=self.deblend,
                 mask=mask,
