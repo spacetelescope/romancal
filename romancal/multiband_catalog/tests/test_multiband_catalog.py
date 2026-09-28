@@ -646,8 +646,6 @@ def test_multiband_source_injection_catalog(
 
 
 def test_multiband_source_injection_nan_catalog(libraries_si_nan, function_jail):
-    step = MultibandCatalogStep()
-
     # Dictionaries to hold step output
     res_cat = {}
     results = {}
@@ -661,7 +659,7 @@ def test_multiband_source_injection_nan_catalog(libraries_si_nan, function_jail)
 
     # Run the MultibandCatalogStep on all three libraries
     for si_type in ["NoNan", "Grid", "Block"]:
-        res_cat[si_type], results[si_type] = step.call(
+        res_cat[si_type], results[si_type] = MultibandCatalogStep.call(
             libmods[si_type],
             bkg_boxsize=30,
             snr_threshold=15,

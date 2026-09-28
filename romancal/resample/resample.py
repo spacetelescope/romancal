@@ -254,7 +254,7 @@ class ResampleData(Resample):
                 )
                 log.info("Resampling to skycell wcs")
                 output_wcs = {"wcs": skycell.wcs[0]}
-            except ValueError as err:
+            except (ValueError, KeyError) as err:
                 log.warning(f"Unable to compute skycell from input association: {err}")
                 log.warning("Computing output wcs from all input wcses")
 
