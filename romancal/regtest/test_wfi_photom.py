@@ -1,7 +1,5 @@
 """Regression tests for the photom step of the Roman pipeline"""
 
-import math
-
 import pytest
 import roman_datamodels as rdm
 
@@ -34,18 +32,13 @@ def test_absolute_photometric_calibration(
 
     dms_logger.info(f"DMS140 MSG: Image data file: {rtdata.input.rsplit('/', 1)[1]}")
 
-    # Note: if any of the following tests fail, check for a different
-    # photom match from CRDS. Values come from roman_wfi_photom_0034.asdf
-
     # Test PhotomStep
     output = "r0000101001001001001_0001_wfi01_f158_photom.asdf"
     rtdata.output = output
+    # Fetch the truth before any assertions so that okify files can
+    # be generated
+    rtdata.get_truth(f"truth/WFI/image/{output}")
     args = ["romancal.step.PhotomStep", rtdata.input]
-    dms_logger.info(
-        "DMS140 MSG: Running photometric conversion step."
-        " The first ERROR is expected, due to extra CRDS parameters"
-        " not having been implemented yet."
-    )
     with resource_tracker.track(log=request):
         RomanStep.from_cmdline(args)
 
@@ -57,55 +50,27 @@ def test_absolute_photometric_calibration(
     )
     assert photom_out.meta.cal_step.photom == "COMPLETE"
 
-    convval = 0.73678
-    dms_logger.info(
-        "DMS140 MSG: Photom megajansky conversion calculated? : "
-        + str(
-            math.isclose(
-                photom_out.meta.photometry.conversion_megajanskys,
-                convval,
-                abs_tol=0.0001,
-            )
-        )
-    )
-    assert math.isclose(
-        photom_out.meta.photometry.conversion_megajanskys, convval, abs_tol=0.0001
-    )
+    # check for reasonable values of conversion_megajansky,
+    # pixel_area, and uncertainty
+    photometry = photom_out.meta.photometry
+    conv = photometry.conversion_megajanskys
+    conv_ok = 0.5 < conv < 1.0
+    dms_logger.info(f"DMS140 MSG: Photom megajansky conversion calculated? : {conv_ok}")
+    assert conv_ok, f"conversion_megajanskys = {conv}"
 
-    dms_logger.info(
-        "DMS140 MSG: Pixel area in steradians calculated? : "
-        + str(
-            math.isclose(
-                photom_out.meta.photometry.pixel_area,
-                2.8083e-13,
-                abs_tol=1.0e-17,
-            )
-        )
-    )
-    assert math.isclose(
-        photom_out.meta.photometry.pixel_area,
-        2.8083e-13,
-        abs_tol=1.0e-17,
-    )
+    # nominal WFI pixel is 0.11 arcsec, or ~2.84e-13 sr
+    area = photometry.pixel_area
+    area_ok = 2.5e-13 < area < 3.2e-13
+    dms_logger.info(f"DMS140 MSG: Pixel area in steradians calculated? : {area_ok}")
+    assert area_ok, f"pixel_area = {area}"
 
-    uncval = 0.02866405
+    unc = photometry.conversion_megajanskys_uncertainty
+    unc_ok = 0 < unc < 0.2 * conv
     dms_logger.info(
-        "DMS140 MSG: Photom megajansky conversion uncertainty calculated? : "
-        + str(
-            math.isclose(
-                photom_out.meta.photometry.conversion_megajanskys_uncertainty,
-                uncval,
-                abs_tol=1.0e-6,
-            )
-        )
+        f"DMS140 MSG: Photom megajansky conversion uncertainty calculated? : {unc_ok}"
     )
-    assert math.isclose(
-        photom_out.meta.photometry.conversion_megajanskys_uncertainty,
-        uncval,
-        abs_tol=1.0e-6,
-    )
+    assert unc_ok, f"conversion_megajanskys_uncertainty = {unc}"
 
-    rtdata.get_truth(f"truth/WFI/image/{output}")
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     dms_logger.info(
         "DMS140 MSG: Was the proper absolute photometry calibrated image data produced?"

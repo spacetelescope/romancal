@@ -127,12 +127,10 @@ include = ["romancal*"]
 
 [tool.pytest]
 minversion = "9.0"
+testpaths = ["docs", "romancal"]
 norecursedirs = [
     "docs/_build",
     "romancal/scripts",
-    ".tox",
-    ".eggs",
-    "build",
 ]
 filterwarnings = [
     "error::ResourceWarning",
