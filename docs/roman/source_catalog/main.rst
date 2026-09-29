@@ -118,7 +118,16 @@ by setting the ``fit_psf`` keyword. Enabling this option fits a model
 PSF to each source to measure its position and flux. The PSF model is
 generated using reference files on CRDS. PSF photometry is performed
 using the :external+photutils:py:class:`photutils.psf.PSFPhotometry`
-class.
+class. The fitted position of each source is constrained to lie within
+2.5 pixels of its centroid along each axis. A fit that ends at this limit
+has bit 32 set in the ``psf_flags`` column.
+
+In practice, bits 8 and 32 of ``psf_flags`` are set almost exclusively
+for extended sources, whose light profiles the PSF model cannot
+describe. They mark PSF measurements that are not meaningful for that
+source rather than a failure of the fit, and sources with either bit
+set are nearly always also flagged by ``is_extended``. Fits of isolated
+point sources end well inside the limit.
 
 For Level 2 data, a gridded PSF model is generated for each individual
 detector using the reference files in CRDS. These PSF models account
