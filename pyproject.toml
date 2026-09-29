@@ -127,12 +127,10 @@ include = ["romancal*"]
 
 [tool.pytest]
 minversion = "9.0"
+testpaths = ["docs", "romancal"]
 norecursedirs = [
     "docs/_build",
     "romancal/scripts",
-    ".tox",
-    ".eggs",
-    "build",
 ]
 filterwarnings = [
     "error::ResourceWarning",
@@ -172,6 +170,8 @@ omit = [
     "*/romancal/regtest/test*",
     "*/romancal/*/tests/*",
     "*/docs/*",
+    "*.rmap",
+    "*.pmap",
 ]
 
 [tool.coverage.report]
@@ -182,6 +182,10 @@ exclude_lines = [
     "raise AssertionError",
     "raise NotImplementedError",
     "if __name__ == \"__main__\":",
+]
+omit = [
+    "*.rmap",
+    "*.pmap",
 ]
 
 [tool.cibuildwheel.macos]
