@@ -502,9 +502,7 @@ def _create_image_model(input_model, image_info, include_var_rnoise=False):
     slopes_alt = slopes_uniform_weights(input_model)
 
     # Add this to the optimal-weighted slopes to get the uniform-weighted slopes
-    im.dumo = (slopes_alt[4:-4, 4:-4] - np.nan_to_num(im.data, nan=0)).astype(
-        "float16"
-    )
+    im.dumo = (slopes_alt[4:-4, 4:-4] - np.nan_to_num(im.data, nan=0)).astype("float16")
 
     return im
 
