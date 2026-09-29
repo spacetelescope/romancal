@@ -1,0 +1,5 @@
+Constrain the PSF-fit positions to lie within 2.5 pixels of the source
+centroids, which stops the PSF model from drifting across extended
+sources without converging and speeds up the PSF photometry. A fit that
+ends at the limit has bit 32 set in ``psf_flags``. Like bit 8, it is set
+almost exclusively for extended sources.
