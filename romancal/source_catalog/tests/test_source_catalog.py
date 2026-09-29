@@ -13,6 +13,7 @@ from numpy.testing import assert_allclose, assert_equal
 from roman_datamodels import datamodels as rdm
 from roman_datamodels.datamodels import (
     ForcedImageSourceCatalogModel,
+    ForcedMosaicSourceCatalogModel,
     ImageModel,
     ImageSourceCatalogModel,
     MosaicModel,
@@ -328,8 +329,12 @@ def test_forced_catalog_invalid_detection_image_unit(
         _call_forced(image_model, filename)
 
 
-def test_forced_catalog_requires_detection_image(image_model, function_jail):
-    """Purpose: forced photometry errors clearly if forcing segm lacks detection_image."""
+def test_forced_catalog_nonempty_requires_detection_image(image_model, function_jail):
+    """
+    Purpose: a non-empty forcing map without detection_image raises ValueError.
+
+    Contrasts with empty maps, which may omit detection_image.
+    """
     _, segm = SourceCatalogStep.call(
         image_model,
         bkg_boxsize=50,
@@ -338,7 +343,8 @@ def test_forced_catalog_requires_detection_image(image_model, function_jail):
         npixels=10,
         save_results=False,
     )
-    # Simulate legacy / empty products that only carry the label map.
+    assert np.any(segm.data != 0)
+    # Simulate a non-empty product that only carries the label map.
     bare_segm = SegmentationMapModel.create_minimal({"meta": segm.meta})
     bare_segm.data = segm.data.copy()
     forced_segm_path = Path("no_detection_segm.asdf")
@@ -354,6 +360,99 @@ def test_forced_catalog_requires_detection_image(image_model, function_jail):
             save_results=False,
             forced_segmentation=str(forced_segm_path),
         )
+
+
+@pytest.mark.parametrize(
+    ("model_fixture", "forced_cat_cls", "segm_cls"),
+    [
+        ("image_model", ForcedImageSourceCatalogModel, SegmentationMapModel),
+        ("mosaic_model", ForcedMosaicSourceCatalogModel, MosaicSegmentationMapModel),
+    ],
+)
+def test_forced_catalog_empty_map_without_detection_image(
+    request, model_fixture, forced_cat_cls, segm_cls, function_jail, caplog
+):
+    """
+    Purpose: empty forcing maps may omit detection_image and still return
+    an empty forced catalog (issue 2461).
+    """
+    model = request.getfixturevalue(model_fixture)
+    prompt_cat, prompt_segm = SourceCatalogStep.call(
+        model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=50,
+        npixels=10,
+        fit_psf=False,
+        save_results=True,
+        output_file="prompt_cat.asdf",
+    )
+    assert len(prompt_cat.source_catalog) == 0
+    assert not hasattr(prompt_segm, "detection_image")
+    assert np.all(prompt_segm.data == 0)
+
+    forced_cat, forced_segm = SourceCatalogStep.call(
+        model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=50,
+        npixels=10,
+        fit_psf=False,
+        save_results=False,
+        forced_segmentation="prompt_segm.asdf",
+    )
+    assert isinstance(forced_cat, forced_cat_cls)
+    assert isinstance(forced_segm, segm_cls)
+    assert len(forced_cat.source_catalog) == 0
+    assert np.all(forced_segm.data == 0)
+    # Empty forced outputs omit detection_image by contract.
+    assert not hasattr(forced_segm, "detection_image")
+    assert not hasattr(forced_segm, "detection_image_unit")
+    assert "returning an empty forced catalog" in caplog.text
+    # Empty L2 products still mark the step complete on ImageModel inputs.
+    if model_fixture == "image_model":
+        assert model.meta.cal_step.source_catalog == "COMPLETE"
+
+
+def test_forced_catalog_empty_map_with_detection_image(image_model, function_jail):
+    """
+    Purpose: an all-zero forcing map succeeds even when detection_image is
+    present; the empty forced output still omits detection_image.
+    """
+    _, segm = SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=5,
+        npixels=10,
+        fit_psf=False,
+        save_results=True,
+        output_file="source_cat.asdf",
+    )
+    assert hasattr(segm, "detection_image")
+
+    with asdf.open("source_segm.asdf", memmap=False, lazy_load=False) as af:
+        roman = af.tree["roman"]
+        roman["data"] = np.zeros_like(roman["data"])
+        af.write_to("zero_labels_segm.asdf")
+
+    forced_cat, forced_segm = SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=5,
+        npixels=10,
+        fit_psf=False,
+        save_results=False,
+        forced_segmentation="zero_labels_segm.asdf",
+    )
+    assert isinstance(forced_cat, ForcedImageSourceCatalogModel)
+    assert len(forced_cat.source_catalog) == 0
+    assert np.all(forced_segm.data == 0)
+    # Empty forced outputs do not propagate the forcing detection_image.
+    assert not hasattr(forced_segm, "detection_image")
+    assert not hasattr(forced_segm, "detection_image_unit")
+    assert image_model.meta.cal_step.source_catalog == "COMPLETE"
 
 
 @pytest.mark.parametrize(
@@ -406,6 +505,8 @@ def test_l2_source_catalog(
         cat = result_catalog.source_catalog
         assert isinstance(cat, Table)
     assert len(cat) == nsources
+    # Empty and non-empty L2 catalogs both mark the step complete.
+    assert image_model.meta.cal_step.source_catalog == "COMPLETE"
 
     # Check that the ee_fraction_xx entries are in the metadata
     if "aperture_radii" in cat.meta:
