@@ -2,8 +2,8 @@
 
 import numpy as np
 import pytest
-from astropy.table import Table
 import roman_datamodels as rdm
+from astropy.table import Table
 
 from romancal.stpipe import RomanStep
 
@@ -37,6 +37,7 @@ fieldlist = [
     "kron_f213m_flux",  # DMS539
     "dust_ebv",  # dust extinction values
 ]
+
 
 def compare_table(table1, table2):
     assert set(table1.dtype.names) == set(table2.dtype.names)
@@ -157,13 +158,12 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request, dms_logger)
 
     # Ensure segm file has the same contents
     assert sorted(segm_mod.keys()) == sorted(segmtruth.keys())
-    assert segm_mod['detection_image_unit'] == segmtruth['detection_image_unit']
+    assert segm_mod["detection_image_unit"] == segmtruth["detection_image_unit"]
 
     # Ensure that all segm numpy components are close
-    for colname in ['data', 'detection_image']:
+    for colname in ["data", "detection_image"]:
         assert np.allclose(segm_mod[colname], segmtruth[colname])
 
     # Ensure segm catalogs contain the same categories of the same types with the same units
-    for tabname in ['injected_sources', 'recovered_sources']:
+    for tabname in ["injected_sources", "recovered_sources"]:
         compare_table(segm_mod[tabname], segmtruth[tabname])
-
