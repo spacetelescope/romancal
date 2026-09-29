@@ -102,6 +102,7 @@ class RampFitStep(RomanStep):
                 readnoise_model,
                 gain_model,
                 include_var_rnoise=self.include_var_rnoise,
+                use_jump=self.use_ramp_jump_detection,
                 record_jumps=self.record_jumps,
                 jump_kw=jump_kw,
             )
@@ -220,6 +221,7 @@ def likely(
     gain_model,
     rejection_threshold=4.5,
     include_var_rnoise=False,
+    use_jump=True,
     record_jumps=True,
     jump_kw=None,
 ):
@@ -241,6 +243,9 @@ def likely(
 
     include_var_rnoise : bool
         if True, include var_rnoise estimates in the output data model
+
+    use_jump : bool
+        If True, perform likelihood-based jump detection during ramp fitting.
 
     record_jumps : bool
         if True, record which resultant each jump was flagged in as a
@@ -278,7 +283,11 @@ def likely(
     # stcal's likely_fit expects CDS read noise (sqrt(2) * per-read noise);
     # the Roman readnoise reference stores per-read noise, so convert here.
     image_info, _, _ = likely_ramp_fit(
-        input_model, readnoise_model.data * SQRT2, gain_model.data, jump_data=jump_data
+        input_model,
+        readnoise_model.data * SQRT2,
+        gain_model.data,
+        jump_data=jump_data,
+        skip_jump_detect=not use_jump,
     )
 
     # Flag pixels that have only a single resultant.
@@ -493,7 +502,9 @@ def _create_image_model(input_model, image_info, include_var_rnoise=False):
     slopes_alt = slopes_uniform_weights(input_model)
 
     # Add this to the optimal-weighted slopes to get the uniform-weighted slopes
-    im.dumo = (slopes_alt[4:-4, 4:-4] - im.data).astype("float16")
+    im.dumo = (slopes_alt[4:-4, 4:-4] - np.nan_to_num(im.data, nan=0)).astype(
+        "float16"
+    )
 
     return im
 
