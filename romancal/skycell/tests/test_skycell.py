@@ -4,6 +4,8 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+import spherical_geometry.polygon as sgp
+import spherical_geometry.vector as sgv
 from numpy.testing import assert_allclose
 
 from romancal.skycell import skymap
@@ -262,8 +264,53 @@ def test_skycells(skymap_subset):
 
 
 def test_skycells_cores_containing_center(sample_skycells):
-    assert np.all(sample_skycells.containing(sample_skycells.radec_centers))
-    assert sample_skycells.cores_containing(sample_skycells.radec_centers) != {}
+    # each skycell contains its own center, in its core...
+    own_center = {
+        index.item(): [position]
+        for position, index in enumerate(sample_skycells.indices)
+    }
+    containing = sample_skycells.containing(sample_skycells.radec_centers)
+    assert all(
+        set(own_center[index]) <= set(points) for index, points in containing.items()
+    )
+    assert containing.keys() == own_center.keys()
+    # ...unless the center overhangs its projection region's bounds, as for
+    # 135p90x25y49, and belongs to a skycell core in the neighboring region
+    cores_containing = sample_skycells.cores_containing(sample_skycells.radec_centers)
+    assert all(
+        own_center[index] == points for index, points in cores_containing.items()
+    )
+    assert len(cores_containing) == len(own_center) - 1
+
+
+def test_skycells_containing(skymap_subset):
+    skycells = skymap.SkyCells(
+        np.arange(skymap_subset.model.projection_regions[-1]["skycell_end"]),
+        skymap=skymap_subset,
+    )
+    rng = np.random.default_rng(3)
+    # around projection regions 0 and 1, including their edges
+    radec = np.stack(
+        [rng.uniform(-25, 25, 200) % 360, rng.uniform(84.4, 90, 200)], axis=1
+    )
+
+    containing = skycells.containing(radec)
+
+    for point, (ra, dec) in enumerate(radec):
+        found = {index for index, points in containing.items() if point in points}
+        # a skycell containing the point has its center within 0.055 degrees
+        nearby = np.nonzero(
+            np.sum(skycells.vectorpoint_centers * sgv.lonlat_to_vector(ra, dec), axis=1)
+            > np.cos(np.radians(0.06))
+        )[0]
+        assert found == {
+            index.item()
+            for index in nearby
+            if sgp.SingleSphericalPolygon(
+                skycells.vectorpoint_corners[index],
+                skycells.vectorpoint_centers[index],
+            ).contains_lonlat(ra, dec)
+        }
 
 
 @pytest.mark.parametrize(

@@ -321,73 +321,53 @@ class SkyCells:
         radec = np.array(radec)
         if radec.ndim == 1:
             radec = np.expand_dims(radec, axis=0)
-
-        projregion_indices, skycell_projregion_index_indices = np.unique(
-            self.projection_regions,
-            return_inverse=True,
-        )
-
-        projregions: dict[int, list[int]] = {
-            projregion_index.item(0): [] for projregion_index in projregion_indices
-        }
-        for skycell_projregion_index_index, skycell_index in zip(
-            skycell_projregion_index_indices, self.indices, strict=True
-        ):
-            projregions[projregion_indices[skycell_projregion_index_index]].append(
-                skycell_index
-            )
+        vectorpoints = np.stack(sgv.lonlat_to_vector(radec[:, 0], radec[:, 1]), axis=1)
 
         skycells: dict[int, list[int]] = {}
-        for (
-            projregion_index,
-            projregion_skycell_indices,
-        ) in projregions.items():
-            projregion = ProjectionRegion(projregion_index)
-            projregion_x, projregion_y = projregion.wcs.world_to_pixel_values(
-                radec[:, 0], radec[:, 1]
+        for projregion_index in np.unique(self.projection_regions):
+            projregion = ProjectionRegion(projregion_index, skymap=self._skymap)
+            # only points that could lie in a skycell of this projection region;
+            # this also excludes points behind the tangent plane
+            point_indices = (
+                np.sum(
+                    vectorpoints
+                    * self._skymap._projection_region_vectorpoints[projregion_index],
+                    axis=1,
+                )
+                >= np.cos(self._skymap._projection_region_radii[projregion_index])
+            ).nonzero()[0]
+            if len(point_indices) == 0:
+                continue
+
+            # skycells extend beyond the bounding box of the projection region
+            projregion_x, projregion_y = projregion.wcs.invert(
+                radec[point_indices, 0],
+                radec[point_indices, 1],
+                with_bounding_box=False,
             )
 
-            for skycell_projregion_index, (
-                skycell_x_tangent,
-                skycell_y_tangent,
-            ) in enumerate(
-                self._skymap.model.skycells[projregion_skycell_indices][
-                    ["x_tangent", "y_tangent"]
-                ]
-            ):
-                skycell_point_indices = (
-                    (
-                        projregion_x
-                        >= projregion.xy_tangent[0]
-                        - skycell_x_tangent
-                        - self.pixel_shape[0]
-                    )
-                    & (
-                        projregion_x
-                        < projregion.xy_tangent[0]
-                        - skycell_x_tangent
-                        + self.pixel_shape[0]
-                    )
-                    & (
-                        projregion_y
-                        >= projregion.xy_tangent[1]
-                        - skycell_y_tangent
-                        - self.pixel_shape[1]
-                    )
-                    & (
-                        projregion_y
-                        < projregion.xy_tangent[1]
-                        - skycell_y_tangent
-                        + self.pixel_shape[1]
-                    )
-                ).nonzero()[0]
-                if len(skycell_point_indices) > 0:
-                    skycell_index = (
-                        skycell_projregion_index + projregion.data["skycell_start"]
-                    )
-                    if skycell_index not in skycells:
-                        skycells[skycell_index] = []
-                    skycells[skycell_index].extend(skycell_point_indices)
+            projregion_skycells = SkyCells(
+                self.indices[self.projection_regions == projregion_index],
+                skymap=self._skymap,
+            )
+            # pixel coordinates of each point (rows) in each skycell (columns)
+            skycell_x = projregion_x[:, None] - (
+                projregion.data["x_tangent"] - projregion_skycells.data["x_tangent"]
+            )
+            skycell_y = projregion_y[:, None] - (
+                projregion.data["y_tangent"] - projregion_skycells.data["y_tangent"]
+            )
+            contains = (
+                (-0.5 <= skycell_x)
+                & (skycell_x < self.pixel_shape[0] - 0.5)
+                & (-0.5 <= skycell_y)
+                & (skycell_y < self.pixel_shape[1] - 0.5)
+            )
+
+            for column in np.any(contains, axis=0).nonzero()[0]:
+                skycells[projregion_skycells.indices[column].item()] = point_indices[
+                    contains[:, column]
+                ].tolist()
         return skycells
 
     def cores_containing(self, radec: NDArray[np.float64]) -> dict[int, list[int]]:
