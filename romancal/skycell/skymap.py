@@ -743,10 +743,8 @@ class SkyMap:
 
     @cached_property
     def skycells(self) -> SkyCells:
-        """collection of all skycells in the projection regions of this skymap"""
-        return SkyCells(
-            np.arange(self.model.projection_regions[-1]["skycell_end"]), skymap=self
-        )
+        """collection of all skycells in this skymap"""
+        return SkyCells(np.arange(len(self.model.skycells)), skymap=self)
 
     @cached_property
     def projection_regions_kdtree(self) -> KDTree:
