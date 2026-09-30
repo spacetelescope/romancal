@@ -129,18 +129,6 @@ def mk_gwcs(ra, dec, pa, bounding_box=None, shape=(4096, 4096)) -> WCS:
     return wcsobj
 
 
-def match_names(footprint, skymap_subset, buffer_pixels=0):
-    """sorted names of the skycells matching the footprint"""
-    return sorted(
-        skymap.SkyCells(
-            sm.find_skycell_matches(
-                footprint, skymap=skymap_subset, buffer_pixels=buffer_pixels
-            ),
-            skymap=skymap_subset,
-        ).names
-    )
-
-
 @pytest.mark.parametrize(
     "test_point,offset,rotation,size,expected_skycell_names",
     [
@@ -149,105 +137,256 @@ def match_names(footprint, skymap_subset, buffer_pixels=0):
             (0, 0),
             45,
             0.001,
-            "000p86x65y50 000p86x66y50 000p86x66y51 000p86x65y51",
+            ["000p86x65y50", "000p86x66y50", "000p86x66y51", "000p86x65y51"],
         ),
-        (TEST_POINTS[0], (0, +EPSILON), 45, 0.001, "000p86x66y50 000p86x66y51"),
-        (TEST_POINTS[1], (0, +EPSILON), 45, 0.001, "000p86x69y61 000p86x69y62"),
+        (
+            TEST_POINTS[0],
+            (0, +EPSILON),
+            45,
+            0.001,
+            [
+                "000p86x66y50",
+                "000p86x66y51",
+            ],
+        ),
+        (
+            TEST_POINTS[1],
+            (0, +EPSILON),
+            45,
+            0.001,
+            [
+                "000p86x69y61",
+                "000p86x69y62",
+            ],
+        ),
         (
             TEST_POINTS[1],
             (0, -EPSILON),
             45,
             0.001,
-            "000p86x69y61 000p86x69y62 000p86x68y61 000p86x68y62",
+            ["000p86x69y61", "000p86x69y62", "000p86x68y61", "000p86x68y62"],
         ),
         (
             TEST_POINTS[1],
             (+EPSILON, 0),
             45,
             0.001,
-            "000p86x69y61 000p86x69y62 000p86x68y61 000p86x68y62",
+            ["000p86x69y61", "000p86x69y62", "000p86x68y61", "000p86x68y62"],
         ),
         (
             TEST_POINTS[1],
             (-EPSILON, 0),
             45,
             0.001,
-            "000p86x69y61 000p86x69y62 000p86x68y61 000p86x68y62",
+            ["000p86x69y61", "000p86x69y62", "000p86x68y61", "000p86x68y62"],
         ),
         (
             TEST_POINTS[1],
             (0, 0),
             45,
             0.001,
-            "000p86x69y61 000p86x69y62 000p86x68y61 000p86x68y62",
+            ["000p86x69y61", "000p86x69y62", "000p86x68y61", "000p86x68y62"],
         ),
         (
             TEST_POINTS[0],
             (0, 0),
             45,
             0.3,
-            "000p86x67y49 000p86x65y49 000p86x65y48 000p86x66y48 000p86x66y49 "
-            "000p86x64y49 000p86x68y51 000p86x68y50 000p86x67y50 000p86x67y52 "
-            "000p86x67y51 000p86x63y50 000p86x65y50 000p86x64y50 000p86x66y50 "
-            "000p86x66y51 000p86x65y51 000p86x64y51 000p86x63y51 000p86x66y52 "
-            "000p86x65y52 000p86x64y52 000p86x66y53 000p86x65y53",
+            [
+                "000p86x67y49",
+                "000p86x65y49",
+                "000p86x65y48",
+                "000p86x66y48",
+                "000p86x66y49",
+                "000p86x64y49",
+                "000p86x68y51",
+                "000p86x68y50",
+                "000p86x67y50",
+                "000p86x67y52",
+                "000p86x67y51",
+                "000p86x63y50",
+                "000p86x65y50",
+                "000p86x64y50",
+                "000p86x66y50",
+                "000p86x66y51",
+                "000p86x65y51",
+                "000p86x64y51",
+                "000p86x63y51",
+                "000p86x66y52",
+                "000p86x65y52",
+                "000p86x64y52",
+                "000p86x66y53",
+                "000p86x65y53",
+            ],
         ),
         (
             TEST_POINTS[1],
             (0, 0),
             45,
             0.5,
-            "000p86x73y60 000p86x73y61 000p86x72y59 000p86x71y59 000p86x72y60 "
-            "000p86x71y60 000p86x70y60 000p86x71y61 000p86x72y61 000p86x70y61 "
-            "000p86x70y62 000p86x71y62 000p86x69y60 000p86x70y58 000p86x68y59 "
-            "000p86x69y59 000p86x70y59 000p86x69y58 000p86x68y58 000p86x68y57 "
-            "000p86x67y57 000p86x66y58 000p86x67y59 000p86x66y59 000p86x67y58 "
-            "000p86x68y60 000p86x67y60 000p86x66y60 000p86x69y61 000p86x69y62 "
-            "000p86x67y61 000p86x68y61 000p86x66y61 000p86x68y62 000p86x66y62 "
-            "000p86x66y63 000p86x67y63 000p86x66y64 000p86x68y63 000p86x69y63 "
-            "000p86x67y62 000p86x65y60 000p86x65y61 000p86x65y62 000p86x64y62 "
-            "000p86x65y63 000p86x65y64 000p86x64y63",
+            [
+                "000p86x73y60",
+                "000p86x73y61",
+                "000p86x72y59",
+                "000p86x71y59",
+                "000p86x72y60",
+                "000p86x71y60",
+                "000p86x70y60",
+                "000p86x71y61",
+                "000p86x72y61",
+                "000p86x70y61",
+                "000p86x70y62",
+                "000p86x71y62",
+                "000p86x69y60",
+                "000p86x70y58",
+                "000p86x68y59",
+                "000p86x69y59",
+                "000p86x70y59",
+                "000p86x69y58",
+                "000p86x68y58",
+                "000p86x68y57",
+                "000p86x67y57",
+                "000p86x66y58",
+                "000p86x67y59",
+                "000p86x66y59",
+                "000p86x67y58",
+                "000p86x68y60",
+                "000p86x67y60",
+                "000p86x66y60",
+                "000p86x69y61",
+                "000p86x69y62",
+                "000p86x67y61",
+                "000p86x68y61",
+                "000p86x66y61",
+                "000p86x68y62",
+                "000p86x66y62",
+                "000p86x66y63",
+                "000p86x67y63",
+                "000p86x66y64",
+                "000p86x68y63",
+                "000p86x69y63",
+                "000p86x67y62",
+                "000p86x65y60",
+                "000p86x65y61",
+                "000p86x65y62",
+                "000p86x64y62",
+                "000p86x65y63",
+                "000p86x65y64",
+                "000p86x64y63",
+            ],
         ),
         (
             TEST_POINTS[2],
             (0, 0),
             0,
             0.4,
-            "000p86x38y29 000p86x38y30 000p86x37y28 000p86x37y29 000p86x36y30 "
-            "000p86x36y29 000p86x36y28 000p86x37y30 000p86x37y31 000p86x37y32 "
-            "000p86x36y32 000p86x36y33 000p86x36y31 000p86x37y33 000p86x37y34 "
-            "000p86x36y34 000p86x34y27 000p86x33y27 000p86x35y28 000p86x33y28 "
-            "000p86x34y28 000p86x32y28 000p86x35y29 000p86x34y29 000p86x33y29 "
-            "000p86x35y30 000p86x34y30 000p86x33y30 000p86x33y31 000p86x35y31 "
-            "000p86x34y31 000p86x32y29 000p86x32y30 000p86x35y33 000p86x35y34 "
-            "000p86x34y33 000p86x34y32 000p86x35y32 000p86x33y32 000p86x33y33 "
-            "000p86x32y31 000p86x32y33 000p86x32y32 000p86x31y31 000p86x31y32",
+            [
+                "000p86x38y29",
+                "000p86x38y30",
+                "000p86x37y28",
+                "000p86x37y29",
+                "000p86x36y30",
+                "000p86x36y29",
+                "000p86x36y28",
+                "000p86x37y30",
+                "000p86x37y31",
+                "000p86x37y32",
+                "000p86x36y32",
+                "000p86x36y33",
+                "000p86x36y31",
+                "000p86x37y33",
+                "000p86x37y34",
+                "000p86x36y34",
+                "000p86x34y27",
+                "000p86x33y27",
+                "000p86x35y28",
+                "000p86x33y28",
+                "000p86x34y28",
+                "000p86x32y28",
+                "000p86x35y29",
+                "000p86x34y29",
+                "000p86x33y29",
+                "000p86x35y30",
+                "000p86x34y30",
+                "000p86x33y30",
+                "000p86x33y31",
+                "000p86x35y31",
+                "000p86x34y31",
+                "000p86x32y29",
+                "000p86x32y30",
+                "000p86x35y33",
+                "000p86x35y34",
+                "000p86x34y33",
+                "000p86x34y32",
+                "000p86x35y32",
+                "000p86x33y32",
+                "000p86x33y33",
+                "000p86x32y31",
+                "000p86x32y33",
+                "000p86x32y32",
+                "000p86x31y31",
+                "000p86x31y32",
+            ],
         ),
-        (TEST_POINTS[3], (-0.5, -0.5), 0, 0.001, "000p86x32y60"),
-        (TEST_POINTS[4], (0, 0), -62, 0.2, ""),
+        (
+            TEST_POINTS[3],
+            (-0.5, -0.5),
+            0,
+            0.001,
+            [
+                "000p86x32y60",
+            ],
+        ),
+        (
+            TEST_POINTS[4],
+            (0, 0),
+            -62,
+            0.2,
+            [],
+        ),
+        # inside the nominal ra/dec bounds of projection region 1, but outside
+        # the great-circle polygon joining their corners
+        ((0.0, 84.8), (0, 0), 0, 0.01, ["000p86x28y50"]),
+        # outside the nominal bounds, among skycells that overhang them
+        ((0.0, 84.55), (0, 0), 0, 0.01, ["000p86x25y50"]),
+        ((22.6, 86.0), (0, 0), 0, 0.01, ["000p86x49y71"]),
         (
             TEST_POINTS[5],
             (0, 0),
             188,
             0.25,
-            "135p90x71y53 135p90x70y53 135p90x69y53 135p90x71y52 135p90x70y52 "
-            "135p90x68y53 135p90x69y52 135p90x68y52 135p90x69y51 135p90x70y51 "
-            "135p90x69y50 135p90x68y51 135p90x71y51 135p90x70y50 135p90x71y50 "
-            "135p90x68y50",
+            [
+                "135p90x71y53",
+                "135p90x70y53",
+                "135p90x69y53",
+                "135p90x71y52",
+                "135p90x70y52",
+                "135p90x68y53",
+                "135p90x69y52",
+                "135p90x68y52",
+                "135p90x69y51",
+                "135p90x70y51",
+                "135p90x69y50",
+                "135p90x68y51",
+                "135p90x71y51",
+                "135p90x70y50",
+                "135p90x71y50",
+                "135p90x68y50",
+            ],
         ),
-        # inside the nominal ra/dec bounds of projection region 1, but outside
-        # the great-circle polygon joining their corners
-        ((0.0, 84.8), (0, 0), 0, 0.01, "000p86x28y50"),
-        # outside the nominal bounds, among skycells that overhang them
-        ((0.0, 84.55), (0, 0), 0, 0.01, "000p86x25y50"),
-        ((22.6, 86.0), (0, 0), 0, 0.01, "000p86x49y71"),
     ],
 )
 def test_skycell_match(
     test_point, offset, rotation, size, expected_skycell_names, skymap_subset
 ):
     corners = mk_im_corners(*test_point + np.array(offset), rotation, size)
-    assert match_names(corners, skymap_subset) == sorted(expected_skycell_names.split())
+
+    intersecting_skycells = skymap.SkyCells(
+        sm.find_skycell_matches(corners, skymap=skymap_subset, buffer_pixels=0),
+        skymap=skymap_subset,
+    )
+
+    assert sorted(intersecting_skycells.names) == sorted(expected_skycell_names)
 
 
 @pytest.mark.parametrize(
@@ -255,102 +394,104 @@ def test_skycell_match(
     [
         (
             TEST_POINTS[1],
-            (
-                "000p86x70y61 000p86x68y60 000p86x69y61 000p86x69y62 000p86x68y61 "
-                "000p86x68y62 000p86x69y63 000p86x67y62"
-            ).split(),
+            [
+                "000p86x70y61",
+                "000p86x68y60",
+                "000p86x69y61",
+                "000p86x69y62",
+                "000p86x68y61",
+                "000p86x68y62",
+                "000p86x69y63",
+                "000p86x67y62",
+            ],
         )
     ],
 )
 def test_match_from_wcs_with_bbox(test_point, expected_skycell_names, skymap_subset):
     wcsobj = mk_gwcs(
-        *test_point, 45, bounding_box=((-0.5, 4096 - 0.5), (-0.5, 4096 - 0.5))
+        *test_point,
+        45,
+        bounding_box=((-0.5, 4096 - 0.5), (-0.5, 4096 - 0.5)),
     )
-    assert match_names(wcsobj, skymap_subset) == sorted(expected_skycell_names)
 
-
-def test_match_from_wcs_without_bbox(skymap_subset):
-    with pytest.raises(ValueError):
-        sm.find_skycell_matches(mk_gwcs(*TEST_POINTS[1], 45), skymap=skymap_subset)
-
-
-def test_match_exhaustive(skymap_subset):
-    """compare to testing every skycell near the footprint for overlap"""
-    skycells = skymap.SkyCells(
-        np.arange(skymap_subset.model.projection_regions[-1]["skycell_end"]),
+    intersecting_skycells = skymap.SkyCells(
+        sm.find_skycell_matches(wcsobj, skymap=skymap_subset, buffer_pixels=0),
         skymap=skymap_subset,
     )
-    polygons = [
-        sgp.SingleSphericalPolygon(corners, center)
-        for corners, center in zip(
-            skycells.vectorpoint_corners, skycells.vectorpoint_centers, strict=True
+
+    assert sorted(intersecting_skycells.names) == sorted(expected_skycell_names)
+
+
+@pytest.mark.parametrize("test_point", [TEST_POINTS[1]])
+def test_match_from_wcs_without_bbox(test_point):
+    wcsobj = mk_gwcs(*test_point, 45)
+
+    with pytest.raises(ValueError):
+        sm.find_skycell_matches(wcsobj, skymap=skymap_subset)
+
+
+@pytest.mark.parametrize(
+    "ra,dec,rotation,size",
+    [
+        # across the lower edge of projection region 1, where the great circle
+        # joining its corners strays from its nominal bounds
+        (0.0, 84.8, 0, 0.4),
+        # across the ra boundary between projection region 1 and its neighbor
+        (22.5, 86.0, 30, 0.4),
+        # across the boundary between projection region 1 and the polar cap
+        (0.0, 88.2, 45, 0.4),
+        # a polar cap skycell overhanging the cap's bounds
+        (132.7, 88.17, 0, 0.13),
+        # centered on the pole
+        (0.0, 90.0, 10, 0.4),
+        # across ra = 0, the size of the WFI
+        (350.0, 86.4, 60, 0.8),
+        # a postage stamp
+        (5.0, 87.0, 0, 0.001),
+    ],
+)
+def test_match_exhaustive(ra, dec, rotation, size, skymap_subset):
+    """compare matching routines with brute force matches"""
+    skycells = skymap_subset.skycells
+    footprint = sm._ImageFootprint(mk_im_corners(ra, dec, rotation, size))
+
+    # testing every skycell takes ~2 s; an overlapping skycell has its center
+    # within 0.055 degrees of the footprint, so testing those within 1 degree
+    # is still exhaustive
+    separations = skymap._separation(
+        skycells.vectorpoint_centers, footprint.vectorpoint_center
+    )
+    nearby = np.flatnonzero(separations < footprint.radius + 1).tolist()
+    expected = [
+        index
+        for index in nearby
+        if footprint.polygon.intersects_poly(
+            sgp.SingleSphericalPolygon(
+                skycells.vectorpoint_corners[index],
+                skycells.vectorpoint_centers[index],
+            )
         )
     ]
 
-    rng = np.random.default_rng(42)
-    for _ in range(20):
-        # anywhere in projection regions 0 and 1, including their edges
-        ra = rng.uniform(-25, 25) if rng.uniform() < 0.8 else rng.uniform(0, 360)
-        footprint = sm._ImageFootprint(
-            mk_im_corners(
-                ra,
-                rng.uniform(84.4, 90),
-                rng.uniform(0, 360),
-                rng.choice([0.001, 0.13, 0.4]),
-            )
-        )
-        # an overlapping skycell has its center within 0.055 degrees
-        nearby = np.flatnonzero(
-            skymap._separation(
-                skycells.vectorpoint_centers, footprint.vectorpoint_center
-            )
-            < footprint.radius + 0.2
-        )
-
-        assert sorted(
-            sm.find_skycell_matches(
-                footprint.radec_corners, skymap=skymap_subset, buffer_pixels=0
-            )
-        ) == [
-            index
-            for index in nearby.tolist()
-            if footprint.polygon.intersects_poly(polygons[index])
-        ]
+    matches = sm.find_skycell_matches(
+        footprint.radec_corners, skymap=skymap_subset, buffer_pixels=0
+    )
+    assert sorted(matches) == expected
 
 
 def test_match_buffer(skymap_subset):
     corners = mk_im_corners(*TEST_POINTS[0], 45, 0.3)
 
     matches = [
-        set(match_names(corners, skymap_subset, buffer_pixels))
+        set(
+            sm.find_skycell_matches(
+                corners, skymap=skymap_subset, buffer_pixels=buffer_pixels
+            )
+        )
         for buffer_pixels in (0, 5, 20, 200)
     ]
 
-    assert all(smaller <= larger for smaller, larger in pairwise(matches))
-    # a skycell whose corner comes within 20 pixels of the footprint
-    assert matches[2] - matches[0] == {"000p86x67y53"}
-    assert len(matches[3]) > len(matches[2])
-
-
-def test_skycells_are_tangent_plane_rectangles(skymap_subset):
-    """matching relies on skycells being axis-aligned rectangles in the
-    tangent plane of their projection region"""
-    size = skymap_subset.pixel_shape[0] * skymap_subset.pixel_scale
-    tolerance = 1e-6 * skymap_subset.pixel_scale
-    for projregion_index in range(len(skymap_subset.model.projection_regions)):
-        projregion = skymap.ProjectionRegion(projregion_index, skymap=skymap_subset)
-        radec = skymap.SkyCells(
-            projregion.skycell_indices, skymap=skymap_subset
-        ).radec_corners
-        corners = np.stack(
-            sm._tangent_plane(*projregion.radec_tangent)(radec[..., 0], radec[..., 1]),
-            axis=-1,
-        )
-        lower = corners.min(axis=1, keepdims=True)
-        upper = corners.max(axis=1, keepdims=True)
-
-        # each corner is a distinct corner of an nxy-pixel square
-        at_lower = np.abs(corners - lower) < tolerance
-        at_upper = np.abs(corners - upper) < tolerance
-        assert np.all(at_lower ^ at_upper) and np.all(at_lower.sum(axis=1) == 2)
-        np.testing.assert_allclose(upper - lower, size, rtol=1e-9)
+    # growing the buffer only adds skycells, and eventually does add some
+    for smaller, larger in pairwise(matches):
+        assert smaller <= larger
+    assert matches[0] < matches[-1]

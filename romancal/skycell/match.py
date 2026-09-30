@@ -16,8 +16,9 @@ matching conservative: at worst a few extra skycells are selected.  A
 non-convex footprint is replaced by its convex hull, which is conservative in
 the same way.
 
-Currently this assumes that the sky projected borders of all calibrated L2
-images are great circles; the buffer is meant to cover the difference.
+This assumes that the sky projected borders of all calibrated L2
+images are great circles.  The extra buffer handles the deviation from
+great circles.
 """
 
 import logging
@@ -55,7 +56,9 @@ class _ImageFootprint:
 
     @classmethod
     def from_wcs(cls, wcs: WCS) -> "_ImageFootprint":
-        """create an image footprint from the corners of a GWCS object (and image shape, if no bounding box is present)
+        """create an image footprint from the corners of a GWCS object
+
+        Also uses image shape, if no bounding box is present
 
         Parameters
         ----------
@@ -206,12 +209,16 @@ def _intersects(
     """
     projection = _tangent_plane(*projregion.radec_tangent)
 
+    # footprint vertices in the tangent plane: (vertex, x or y)
     polygon = np.stack(projection(*footprint.radec_corners.T), axis=-1)
     if not np.all(np.isfinite(polygon)):
         raise ValueError("footprint is too large to project onto a tangent plane")
-    # the convex hull, in order around its perimeter, covers a non-convex footprint
+
+    # take the convex hull to simplify overlap logic; practically most
+    # footprints will be convex anyway.  Its vertices are in order around it.
     polygon = polygon[ConvexHull(polygon).vertices]
 
+    # skycell corners in the tangent plane: (skycell, corner, x or y)
     rectangles = np.stack(
         projection(skycells.radec_corners[..., 0], skycells.radec_corners[..., 1]),
         axis=-1,
@@ -219,16 +226,19 @@ def _intersects(
     # grow each rectangle by moving its corners away from its center
     centers = rectangles.mean(axis=1, keepdims=True)
     rectangles = rectangles + buffer * np.sign(rectangles - centers)
+    # (skycell, x or y): the (left, bottom) and (right, top) of each rectangle
     lower, upper = rectangles.min(axis=1), rectangles.max(axis=1)
 
     # A rectangle and a convex polygon are disjoint if and only if the line
     # along one of their edges separates them.  First, the rectangle edges:
-    separated = np.any(
-        (lower > polygon.max(axis=0)) | (upper < polygon.min(axis=0)), axis=1
-    )
+    # is the whole polygon left of the rectangle's left edge, or below its
+    # bottom edge, or right of its right edge, or above its top edge?
+    polygon_lower, polygon_upper = polygon.min(axis=0), polygon.max(axis=0)
+    beyond_edge = (polygon_upper < lower) | (polygon_lower > upper)
+    separated = np.any(beyond_edge, axis=1)
 
-    # then the polygon edges: all rectangle corners lie strictly on the other
-    # side of the edge from the polygon
+    # then the polygon edges: do all rectangle corners lie strictly on the
+    # other side of the edge from the polygon?
     def side(start, end, points):
         """which side of the line from `start` to `end` each point lies on"""
         edge, offset = end - start, points - start

@@ -233,7 +233,6 @@ class SkyCells:
     @cached_property
     def projection_regions(self) -> NDArray[int]:
         """index of projection region containing each sky cell"""
-        # the skycells of each projection region are contiguous and in order
         projection_regions = self._skymap.model.projection_regions
         return projection_regions["index"][
             np.searchsorted(
@@ -353,8 +352,7 @@ class SkyCells:
                 # each point belongs to the one projection region whose bounds contain it
                 in_projregion = projregion.contains_radec(radec)
             else:
-                # points that could lie in a skycell of this projection region;
-                # this also excludes points behind its tangent plane
+                # find points that could lie in a skycell of this projection region
                 separation = _separation(
                     vectorpoints,
                     self._skymap._projection_region_vectorpoints[projregion_index],
@@ -556,7 +554,7 @@ class ProjectionRegion:
     @cached_property
     def skycells(self) -> SkyCells:
         """collection of all skycells in this projection region"""
-        return SkyCells(self.skycell_indices)
+        return SkyCells(self.skycell_indices, skymap=self._skymap)
 
     @property
     def radec_corners(
@@ -745,8 +743,10 @@ class SkyMap:
 
     @cached_property
     def skycells(self) -> SkyCells:
-        """collection of all skycells in this skymap"""
-        return SkyCells(np.arange(len(self.model.skycells)))
+        """collection of all skycells in the projection regions of this skymap"""
+        return SkyCells(
+            np.arange(self.model.projection_regions[-1]["skycell_end"]), skymap=self
+        )
 
     @cached_property
     def projection_regions_kdtree(self) -> KDTree:
@@ -780,12 +780,10 @@ class SkyMap:
     def _projection_region_radii(self) -> NDArray[float]:
         """largest angular distance in degrees from each projection region's tangent point to any of its skycells
 
-        Skycells may extend beyond the ra/dec bounds of their projection region,
-        so the radius is computed from the skycells themselves.  Each
-        skycell's tangent point gives the offset of its pixel grid from the
-        projection region's tangent point; the farthest point of a skycell is
-        the corner farthest from that tangent point, and gnomonic projection
-        maps a distance r in the tangent plane to an angle arctan(r).
+        We compute this by looking at the xtangent / ytangent of the centers
+        of each skycell, adding the number of pixels over two, taking the hypotenuse,
+        and finding the maximum.  arctan converts from distance in the
+        tangent plane to angle on the sphere.
         """
         nxy = self.pixel_shape[0]
         center = (nxy - 1) / 2
@@ -845,7 +843,7 @@ class SkyMap:
         ) in self.model.projection_regions[
             ["index", "ra_min", "ra_max", "dec_min", "dec_max"]
         ]:
-            # each point SHOULD only be contained by a single projection region
+            # each point should be contained by a single projection region
             contained_point_indices = (
                 _ra_in_range(
                     radec[:, 0],
@@ -878,8 +876,6 @@ def _vectorpoints(radec: NDArray[float]) -> NDArray[float]:
 
 def _separation(vectorpoints: NDArray[float], vectorpoint: NDArray[float]):
     """angular distance in degrees between unit vectors"""
-    # from the chord length, which unlike the dot product stays precise at
-    # small separations
     chord = np.linalg.norm(vectorpoints - vectorpoint, axis=-1)
     return np.degrees(2 * np.arcsin(np.minimum(chord / 2, 1)))
 
