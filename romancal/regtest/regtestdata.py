@@ -245,7 +245,24 @@ class RegtestData:
             return cls(**af.tree)
 
 
-class NDArrayTypeOperator(BaseOperator):
+class ExcludePathsOperator(BaseOperator):
+    """
+    Operator that does not match nodes at excluded paths.
+
+    DeepDiff runs custom operators before checking exclude_paths, so
+    without this operators would still compare (and could fail on)
+    ignored nodes.
+    """
+
+    def __init__(self, exclude_paths=None, **kwargs):
+        super().__init__(**kwargs)
+        self.exclude_paths = set(exclude_paths or [])
+
+    def match(self, level):
+        return super().match(level) and level.path() not in self.exclude_paths
+
+
+class NDArrayTypeOperator(ExcludePathsOperator):
     def __init__(self, rtol=1e-05, atol=1e-08, equal_nan=True, **kwargs):
         super().__init__(**kwargs)
         self.rtol = rtol
@@ -275,9 +292,17 @@ class NDArrayTypeOperator(BaseOperator):
                     difference["column_values"] = column_differences
             return difference
         if not difference:  # only compare if shapes and dtypes match
-            if not np.allclose(
-                a, b, rtol=self.rtol, atol=self.atol, equal_nan=self.equal_nan
-            ):
+            try:
+                close = np.allclose(
+                    a, b, rtol=self.rtol, atol=self.atol, equal_nan=self.equal_nan
+                )
+            except TypeError:
+                # non-numeric (e.g. string) arrays must match exactly
+                n_diffs = np.count_nonzero(a != b)
+                if n_diffs:
+                    difference["n_diffs"] = n_diffs
+                return difference
+            if not close:
                 abs_diff = np.abs(a - b)
                 index = np.unravel_index(np.nanargmax(abs_diff), a.shape)
                 difference["worst_abs_diff"] = {
@@ -320,27 +345,28 @@ class TableOperator(NDArrayTypeOperator):
         a = level.t1.as_array()
         b = level.t2.as_array()
         difference = self._compare_arrays(a, b)
-        # also compare meta  for tables
-        if level.t1.meta != level.t2.meta:
-            meta_difference = deepdiff.DeepDiff(
-                level.t1.meta,
-                level.t2.meta,
-                ignore_nan_inequality=self.equal_nan,
-                math_epsilon=self.atol,
-                exclude_paths=[
-                    "root['date']",
-                    "root['version']",
-                ],
-                # creation date sometimes stored here
-            )
-            if meta_difference:
-                difference["metas_differ"] = meta_difference
+        # also compare meta for tables; meta may contain arrays, so
+        # let DeepDiff handle it rather than comparing with !=
+        meta_difference = deepdiff.DeepDiff(
+            level.t1.meta,
+            level.t2.meta,
+            ignore_nan_inequality=self.equal_nan,
+            math_epsilon=self.atol,
+            exclude_paths=[
+                "root['date']",
+                "root['version']",
+                "root['versions']",
+            ],
+            # creation date sometimes stored here
+        )
+        if meta_difference:
+            difference["metas_differ"] = meta_difference
         if difference:
             diff_instance.custom_report_result("tables_differ", level, difference)
         return True
 
 
-class TimeOperator(BaseOperator):
+class TimeOperator(ExcludePathsOperator):
     def give_up_diffing(self, level, diff_instance):
         if level.t1 != level.t2:
             diff_instance.custom_report_result(
@@ -466,10 +492,19 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
             atol,
             equal_nan,
             types=[asdf.tags.core.NDArrayType, np.ndarray],
+            exclude_paths=exclude_paths,
         ),
-        TimeOperator(types=[astropy.time.Time]),
-        TableOperator(rtol, atol, equal_nan, types=[astropy.table.Table]),
-        WCSOperator(rtol, atol, equal_nan, types=[gwcs.WCS]),
+        TimeOperator(types=[astropy.time.Time], exclude_paths=exclude_paths),
+        TableOperator(
+            rtol,
+            atol,
+            equal_nan,
+            types=[astropy.table.Table],
+            exclude_paths=exclude_paths,
+        ),
+        WCSOperator(
+            rtol, atol, equal_nan, types=[gwcs.WCS], exclude_paths=exclude_paths
+        ),
     ]
     with asdf.open(result) as af0:
         with asdf.config_context() as cfg:
