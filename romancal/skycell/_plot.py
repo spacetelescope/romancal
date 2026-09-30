@@ -5,7 +5,6 @@ matplotlib dependency is optional.
 """
 
 import numpy as np
-import spherical_geometry.vector as sgv
 from numpy.typing import NDArray
 
 import romancal.skycell.match as sm
@@ -22,10 +21,10 @@ __all__ = [
     "plot_image_footprint_and_skycells",
     "plot_projregion",
     "plot_skycells",
-    "veccoords_to_tangent_plane",
+    "radec_to_tangent_plane",
 ]
 
-RAD_TO_ARCSEC = 180.0 / np.pi * 3600.0
+DEG_TO_ARCSEC = 3600.0
 
 
 def find_intersecting_projregions(
@@ -58,28 +57,32 @@ def find_intersecting_projregions(
     return np.unique(skycells.projection_regions).tolist()
 
 
-def veccoords_to_tangent_plane(
-    vertices: list[tuple[float, float, float]],
-    tangent_vectorpoint: tuple[float, float, float],
+def radec_to_tangent_plane(
+    radec: NDArray[float], radec_tangent: tuple[float, float]
 ) -> NDArray[float]:
-    """Convert the spherical geometry vectors to tangent plane coordinates
-    in arcseconds. This algorithm is not precise, but should be good
-    enough for now (and besides, the goal here is visualizaion, not
-    ultra-precision). This also breaks down numerically very near the
-    poles.
-    """
+    """Project (..., 2) right ascension and declination onto the plane tangent
+    to the sky at `radec_tangent`, as (..., 2) offsets in arcseconds.
 
-    # First compute the tangent plane axis vectors.
-    x_axis = sgv.normalize_vector(np.cross([0, 0, 1], tangent_vectorpoint))
-    y_axis = sgv.normalize_vector(
-        np.array([0, 0, 1])
-        - np.array(tangent_vectorpoint)
-        * np.dot(np.array([0, 0, 1]), np.array(tangent_vectorpoint))
-    )
-    avertices = np.vstack(vertices).T
-    x_coords = np.dot(x_axis, avertices) * RAD_TO_ARCSEC
-    y_coords = np.dot(y_axis, avertices) * RAD_TO_ARCSEC
-    return np.stack([x_coords, y_coords], axis=1)
+    This is the gnomonic projection used by the skymap, so skycell edges and
+    other great circles are straight lines.
+    """
+    radec = np.asarray(radec)
+    x, y = sm._tangent_plane(*radec_tangent)(radec[..., 0], radec[..., 1])
+    return np.stack((x, y), axis=-1) * DEG_TO_ARCSEC
+
+
+def _closed(points: NDArray[float]) -> NDArray[float]:
+    """repeat the first of the given (..., N, 2) points at the end"""
+    return np.concatenate([points, points[..., :1, :]], axis=-2)
+
+
+def _per_skycell(values, count: int) -> list:
+    """one value per skycell, from nothing, a single value, or one per skycell"""
+    if values is None or isinstance(values, str):
+        return [values] * count
+    if len(values) == 1:
+        return list(values) * count
+    return list(values)
 
 
 def plot_field(corners: NDArray[float], id: str = "", fill=None, color=None, axis=None):
@@ -91,26 +94,37 @@ def plot_field(corners: NDArray[float], id: str = "", fill=None, color=None, axi
 def plot_projregion(
     projregion: sc.ProjectionRegion, color=None, label: bool = True, axis=None
 ):
+    """plot the nominal right ascension and declination bounds of a projection region"""
     if axis is None:
         axis = plt
 
-    tangent_vectorpoint = sgv.normalize_vector(
-        sgv.lonlat_to_vector(*projregion.radec_tangent)
-    )
-    corners = projregion.vectorpoint_corners
-    corners = np.concatenate([corners, corners[0, :].reshape((1, 3))], axis=0)
-    corners_tangentplane = veccoords_to_tangent_plane(
-        corners,
-        tangent_vectorpoint,
-    )
+    ra_min, dec_min, ra_max, dec_max = projregion.radec_bounds
+    if ra_max <= ra_min:
+        ra_max += 360
+    ra = np.linspace(ra_min, ra_max, 100)
+    dec = np.linspace(dec_min, dec_max, 100)
+    if projregion.is_polar:
+        # a polar cap is bounded by a single circle of declination
+        cap_dec = dec_min if dec_max == 90 else dec_max
+        boundary = np.stack((ra, np.full_like(ra, cap_dec)), axis=-1)
+    else:
+        # lines of constant declination are curved in the tangent plane
+        boundary = np.concatenate(
+            [
+                np.stack((ra, np.full_like(ra, dec_min)), axis=-1),
+                np.stack((np.full_like(dec, ra_max), dec), axis=-1),
+                np.stack((ra[::-1], np.full_like(ra, dec_max)), axis=-1),
+                np.stack((np.full_like(dec, ra_min), dec[::-1]), axis=-1),
+            ]
+        )
+    boundary = radec_to_tangent_plane(_closed(boundary), projregion.radec_tangent)
 
-    axis.plot(corners_tangentplane[:, 0], corners_tangentplane[:, 1], color=color)
+    axis.plot(boundary[:, 0], boundary[:, 1], color=color)
 
     if label:
-        center = np.mean(corners_tangentplane[:-1], axis=0)
         axis.annotate(
             f"proj{projregion.index}",
-            center,
+            (0, 0),
             va="center",
             ha="center",
             size=10,
@@ -120,56 +134,36 @@ def plot_projregion(
 
 def plot_skycells(
     skycells: sc.SkyCells,
-    tangent_vectorpoint: tuple[float, float, float],
+    radec_tangent: tuple[float, float],
     colors=None,
     labels: list[str] | None = None,
     annotations: list[str] | None = None,
     axis=None,
 ):
+    """plot the outlines of skycells on the plane tangent at `radec_tangent`
+
+    `colors` and `labels` may be a single value, or one per skycell.
+    """
     if axis is None:
         axis = plt
 
-    for index, corners in enumerate(skycells.vectorpoint_corners):
-        if not colors:
-            color = None
-        if isinstance(colors, str):
-            color = colors
-        elif len(colors) == 1:
-            color = colors[0]
-        else:
-            color = colors[index]
+    colors = _per_skycell(colors, len(skycells))
+    labels = _per_skycell(labels, len(skycells))
+    outlines = radec_to_tangent_plane(_closed(skycells.radec_corners), radec_tangent)
 
-        if not labels:
-            label = None
-        if isinstance(labels, str):
-            label = labels
-        elif len(labels) == 1:
-            label = labels[0]
-        else:
-            label = labels[index]
-
-        corners = np.concat([corners, corners[0, :].reshape((1, 3))], axis=0)
-        corners_tangentplane = veccoords_to_tangent_plane(
-            corners,
-            tangent_vectorpoint,
-        )
-
+    for index, outline in enumerate(outlines):
         axis.plot(
-            corners_tangentplane[:, 0],
-            corners_tangentplane[:, 1],
-            color=color,
-            label=label,
+            outline[:, 0], outline[:, 1], color=colors[index], label=labels[index]
         )
 
         if annotations:
-            center = np.mean(corners_tangentplane[:-1], axis=0)
             axis.annotate(
-                annotations,
-                center,
+                annotations[index],
+                np.mean(outline[:-1], axis=0),
                 va="center",
                 ha="center",
                 size=10,
-                color=color,
+                color=colors[index],
             )
 
 
@@ -177,17 +171,25 @@ def plot_image_footprint_and_skycells(
     footprint: list[tuple[float, float]] | sm._ImageFootprint,
     skycells: sc.SkyCells,
     skymap: sc.SkyMap = None,
-) -> list[tuple[Axis, tuple[float, float, float]]]:
+) -> list[tuple[Axis, tuple[float, float]]]:
     """This plots a list of skycell footprints against the image footprint.
 
-    Both the touched skycells as well as nearby skycells are plotted.
+    Both the touched skycells as well as nearby skycells are plotted, on the
+    tangent plane of each projection region with skycells that intersect the
+    footprint.
 
     Parameters
     ----------
     footprint : list | sm._ImageFootprint :
         sequence of points (ra, dec) or an `_ImageFootprint` object
+    skycells : sc.SkyCells :
+        skycells to highlight, usually those that intersect the footprint
     skymap : sc.SkyMap :
         skymap instance; defaults to global SKYMAP (Default value = None)
+
+    Returns
+    -------
+    the axis for each projection region, with its tangent point
     """
 
     if not isinstance(footprint, sm._ImageFootprint):
@@ -202,46 +204,44 @@ def plot_image_footprint_and_skycells(
     )
     axes = []
     for projregion_index in intersecting_projregion_indices:
-        figure = plt.figure()
-        figure.gca().invert_xaxis()
+        projregion = sc.ProjectionRegion(projregion_index, skymap=skymap)
+        radec_tangent = projregion.radec_tangent
+
+        figure, axis = plt.subplots(1, 1)
         figure.suptitle(f"projection region {projregion_index}")
-        axis = figure.subplots(1, 1)
+        # east to the left, as on the sky
+        axis.invert_xaxis()
+        axis.set_aspect("equal")
         axis.plot(0, 0, "+", markersize=10)
 
-        projregion_intersecting_skycells = skycells[
-            skycells.projection_regions == projregion_index
-        ]
-        projregion = sc.ProjectionRegion(projregion_index, skymap=skymap)
+        plot_projregion(projregion, color="tab:blue", axis=axis)
 
-        tangent_vectorpoint = sgv.normalize_vector(
-            sgv.lonlat_to_vector(*projregion.radec_tangent)
+        plot_skycells(projregion.skycells, radec_tangent, colors="darkgrey", axis=axis)
+
+        projregion_intersecting_skycells = sc.SkyCells(
+            skycells.indices[skycells.projection_regions == projregion_index],
+            skymap=skymap,
         )
-        image_corners_tangentplane = veccoords_to_tangent_plane(
-            footprint.vectorpoint_vertices,
-            tangent_vectorpoint,
-        )
-        plot_field(image_corners_tangentplane, fill="lightgrey", color="black")
-
-        plot_projregion(projregion, color="lightgrey")
-
-        plot_skycells(
-            sc.SkyCells(projregion.skycell_indices, skymap=skymap),
-            tangent_vectorpoint,
-            colors="darkgrey",
-        )
-
         plot_skycells(
             projregion_intersecting_skycells,
-            tangent_vectorpoint,
+            radec_tangent,
             colors="red",
             annotations=projregion_intersecting_skycells.names,
+            axis=axis,
         )
 
-        axis.set_xlabel("Offset from nearest tangent point in arcsec")
-        axis.set_ylabel("Offset from nearest tangent point in arcsec")
+        plot_field(
+            radec_to_tangent_plane(footprint.radec_corners, radec_tangent),
+            fill="lightgrey",
+            color="black",
+            axis=axis,
+        )
 
-        axis.set_title(f"tangent point radec {np.array(projregion.radec_tangent)}")
+        axis.set_xlabel("Offset from tangent point in arcsec")
+        axis.set_ylabel("Offset from tangent point in arcsec")
 
-        axes.append((axis, tangent_vectorpoint))
+        axis.set_title(f"tangent point radec {np.array(radec_tangent)}")
+
+        axes.append((axis, radec_tangent))
 
     return axes
