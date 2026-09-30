@@ -503,3 +503,28 @@ def test_match_buffer(skymap_subset):
         np.array(sorted(matches[2] - matches[0])), skymap=skymap_subset
     ).names == ["000p86x67y53"]
     assert len(matches[3]) > len(matches[2])
+
+
+def test_skycells_are_tangent_plane_rectangles(skymap_subset):
+    """matching relies on skycells being axis-aligned rectangles in the tangent plane of their projection region"""
+    nxy = skymap_subset.pixel_shape[0]
+    pixel_scale = np.radians(skymap_subset.pixel_scale)
+    for projregion_index in range(len(skymap_subset.model.projection_regions)):
+        projregion = skymap.ProjectionRegion(projregion_index, skymap=skymap_subset)
+        skycells = skymap.SkyCells(projregion.skycell_indices, skymap=skymap_subset)
+        corners = sm._gnomonic(
+            sm._vectorpoints(skycells.radec_corners),
+            sm._tangent_plane_basis(*projregion.radec_tangent),
+        )
+        lower = corners.min(axis=1, keepdims=True)
+        upper = corners.max(axis=1, keepdims=True)
+
+        # every corner lies on a corner of the bounding rectangle...
+        assert np.all(
+            np.minimum(np.abs(corners - lower), np.abs(corners - upper))
+            < 1e-6 * pixel_scale
+        )
+        # ...all four of them...
+        assert np.all(np.sum(np.abs(corners - lower) < 1e-6 * pixel_scale, axis=1) == 2)
+        # ...and the rectangle is nxy pixels on a side
+        np.testing.assert_allclose(upper - lower, nxy * pixel_scale, rtol=1e-9)

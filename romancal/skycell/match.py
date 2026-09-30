@@ -7,11 +7,14 @@ Matching proceeds in three steps:
    judged by the angular distance between their centers;
 2. within those regions, keep skycells whose centers could lie close enough
    to the footprint to overlap it;
-3. test the remaining skycells for overlap exactly.
+3. test the remaining skycells for overlap exactly, in the tangent plane of
+   their projection region.
 
 Each skycell is grown by a small buffer before the exact test, so that a
 skycell is kept if it comes within the buffer of the footprint.  This makes
-matching conservative: at worst a few extra skycells are selected.
+matching conservative: at worst a few extra skycells are selected.  A
+non-convex footprint is replaced by its convex hull, which is conservative in
+the same way.
 
 Currently this assumes that the sky projected borders of all calibrated L2
 images are great circles; the buffer is meant to cover the difference.
@@ -25,6 +28,7 @@ import spherical_geometry.polygon as sgp
 import spherical_geometry.vector as sgv
 from gwcs import WCS
 from numpy.typing import NDArray
+from scipy.spatial import ConvexHull
 
 import romancal.skycell.skymap as sc
 
@@ -171,7 +175,9 @@ def find_skycell_matches(
 
         # 3. skycells that intersect the footprint
         intersecting_skycell_indices.extend(
-            skycells.indices[_intersects(footprint, skycells, buffer)].tolist()
+            skycells.indices[
+                _intersects(footprint, skycells, projregion, buffer)
+            ].tolist()
         )
 
     return intersecting_skycell_indices
@@ -187,27 +193,64 @@ def _separation(vectorpoints: NDArray[float], vectorpoint: NDArray[float]):
     return np.arccos(np.clip(np.sum(vectorpoints * vectorpoint, axis=-1), -1, 1))
 
 
-def _intersects(
-    footprint: _ImageFootprint, skycells: sc.SkyCells, buffer: float
-) -> NDArray[bool]:
-    """whether each skycell, grown by `buffer` radians, intersects the footprint"""
-    centers = _vectorpoints(skycells.radec_centers)[:, None, :]
-    corners = _vectorpoints(skycells.radec_corners)
-    if buffer > 0:
-        # move each corner away from the skycell center; moving the corners of
-        # a square by buffer * sqrt(2) moves its edges out by buffer
-        cos_angle = np.clip(np.sum(corners * centers, axis=-1, keepdims=True), -1, 1)
-        direction = corners - cos_angle * centers
-        direction /= np.linalg.norm(direction, axis=-1, keepdims=True)
-        angle = np.arccos(cos_angle) + buffer * np.sqrt(2)
-        corners = np.cos(angle) * centers + np.sin(angle) * direction
-
+def _tangent_plane_basis(ra: float, dec: float) -> NDArray[float]:
+    """east, north, and outward unit vectors (rows) at the given point on the sphere"""
+    ra, dec = np.radians(ra), np.radians(dec)
     return np.array(
-        [
-            footprint.polygon.intersects_poly(
-                sgp.SingleSphericalPolygon(points=points, inside=center)
-            )
-            for points, center in zip(corners, centers[:, 0], strict=True)
-        ],
-        dtype=bool,
+        (
+            (-np.sin(ra), np.cos(ra), 0),
+            (-np.sin(dec) * np.cos(ra), -np.sin(dec) * np.sin(ra), np.cos(dec)),
+            (np.cos(dec) * np.cos(ra), np.cos(dec) * np.sin(ra), np.sin(dec)),
+        )
     )
+
+
+def _gnomonic(vectorpoints: NDArray[float], basis: NDArray[float]) -> NDArray[float]:
+    """gnomonic projection of (..., 3) unit vectors to (..., 2) points in the plane tangent at `basis[2]`"""
+    projected = np.einsum("...j,ij->...i", vectorpoints, basis)
+    if np.any(projected[..., 2] <= 0):
+        raise ValueError("footprint is too large to project onto a tangent plane")
+    return projected[..., :2] / projected[..., 2:]
+
+
+def _intersects(
+    footprint: _ImageFootprint,
+    skycells: sc.SkyCells,
+    projregion: sc.ProjectionRegion,
+    buffer: float,
+) -> NDArray[bool]:
+    """whether each skycell, grown by `buffer` radians, intersects the footprint
+
+    The skymap is a gnomonic tessellation: in the tangent plane of its
+    projection region every skycell is a rectangle aligned with the axes, and
+    the great-circle edges of the footprint are straight lines.  The test is
+    therefore whether a convex polygon and each of a set of rectangles have
+    no separating axis.  A skymap for which the skycells are not axis-aligned
+    rectangles would make this test incorrect; see
+    ``test_skycells_are_tangent_plane_rectangles``.
+    """
+    basis = _tangent_plane_basis(*projregion.radec_tangent)
+
+    # the convex hull is counterclockwise, and covers a non-convex footprint
+    polygon = _gnomonic(footprint.vectorpoint_vertices, basis)
+    polygon = polygon[ConvexHull(polygon).vertices]
+
+    corners = _gnomonic(_vectorpoints(skycells.radec_corners), basis)
+    lower = corners.min(axis=1) - buffer
+    upper = corners.max(axis=1) + buffer
+
+    # not separated along the axes of the rectangles
+    intersects = np.all(
+        (lower <= polygon.max(axis=0)) & (upper >= polygon.min(axis=0)), axis=1
+    )
+
+    # not separated along the outward normal of any polygon edge
+    edges = np.roll(polygon, -1, axis=0) - polygon
+    normals = np.stack((edges[:, 1], -edges[:, 0]), axis=-1)
+    offsets = np.sum(normals * polygon, axis=-1)
+    nearest = np.minimum(
+        lower[:, None, 0] * normals[:, 0], upper[:, None, 0] * normals[:, 0]
+    ) + np.minimum(lower[:, None, 1] * normals[:, 1], upper[:, None, 1] * normals[:, 1])
+    intersects &= np.all(nearest <= offsets, axis=1)
+
+    return intersects
