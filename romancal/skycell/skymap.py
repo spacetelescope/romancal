@@ -345,6 +345,7 @@ class SkyCells:
         lower = margin - 0.5
         upper = self.pixel_shape[0] - margin - 0.5
 
+        vectorpoints = _vectorpoints(radec)
         skycells: dict[int, list[int]] = {}
         for projregion_index in np.unique(self.projection_regions):
             projregion = ProjectionRegion(projregion_index, skymap=self._skymap)
@@ -355,7 +356,7 @@ class SkyCells:
                 # points that could lie in a skycell of this projection region;
                 # this also excludes points behind its tangent plane
                 separation = _separation(
-                    _vectorpoints(radec),
+                    vectorpoints,
                     self._skymap._projection_region_vectorpoints[projregion_index],
                 )
                 in_projregion = (
