@@ -26,6 +26,7 @@ from functools import cached_property
 import numpy as np
 import spherical_geometry.polygon as sgp
 import spherical_geometry.vector as sgv
+from astropy.modeling import Model, models
 from gwcs import WCS
 from numpy.typing import NDArray
 from scipy.spatial import ConvexHull
@@ -84,7 +85,7 @@ class _ImageFootprint:
     @cached_property
     def vectorpoint_vertices(self) -> NDArray[float]:
         """vertices in 3D Cartesian space on the unit sphere"""
-        return np.stack(sgv.lonlat_to_vector(*self.radec_corners.T), axis=1)
+        return sc._vectorpoints(self.radec_corners)
 
     @cached_property
     def vectorpoint_center(self) -> NDArray[float]:
@@ -93,9 +94,9 @@ class _ImageFootprint:
 
     @cached_property
     def radius(self) -> float:
-        """largest angular distance in radians from the center to any point in the footprint"""
+        """largest angular distance in degrees from the center to any point in the footprint"""
         # the farthest point of a small spherical polygon is one of its vertices
-        return _separation(self.vectorpoint_vertices, self.vectorpoint_center).max()
+        return sc._separation(self.vectorpoint_vertices, self.vectorpoint_center).max()
 
     @cached_property
     def polygon(self) -> sgp.SingleSphericalPolygon:
@@ -145,19 +146,20 @@ def find_skycell_matches(
     if skymap is None:
         skymap = sc.SKYMAP
 
-    pixel_scale = np.radians(skymap.pixel_scale)
-    buffer = buffer_pixels * pixel_scale
-    # gnomonic projection does not stretch angles, so no point in a skycell is
+    # all angles in degrees
+    buffer = buffer_pixels * skymap.pixel_scale
+    # tangent plane projection shrinks angles, so no point in a skycell is
     # farther from its center than half the diagonal of its pixel grid
-    skycell_radius = skymap.pixel_shape[0] / np.sqrt(2) * pixel_scale
+    skycell_radius = skymap.pixel_shape[0] / np.sqrt(2) * skymap.pixel_scale
 
     # 1. projection regions whose skycells could reach the footprint
-    nearby_projregion_indices = np.nonzero(
-        _separation(
-            skymap._projection_region_vectorpoints, footprint.vectorpoint_center
-        )
+    projregion_separations = sc._separation(
+        skymap._projection_region_vectorpoints, footprint.vectorpoint_center
+    )
+    nearby_projregion_indices = np.flatnonzero(
+        projregion_separations
         <= skymap._projection_region_radii + footprint.radius + buffer
-    )[0]
+    )
 
     intersecting_skycell_indices = []
     for projregion_index in nearby_projregion_indices:
@@ -165,12 +167,10 @@ def find_skycell_matches(
 
         # 2. skycells in this region whose centers are near the footprint
         skycells = sc.SkyCells(projregion.skycell_indices, skymap=skymap)
-        nearby = (
-            _separation(
-                _vectorpoints(skycells.radec_centers), footprint.vectorpoint_center
-            )
-            <= footprint.radius + skycell_radius + buffer
+        skycell_separations = sc._separation(
+            sc._vectorpoints(skycells.radec_centers), footprint.vectorpoint_center
         )
+        nearby = skycell_separations <= footprint.radius + skycell_radius + buffer
         skycells = sc.SkyCells(skycells.indices[nearby], skymap=skymap)
 
         # 3. skycells that intersect the footprint
@@ -183,34 +183,9 @@ def find_skycell_matches(
     return intersecting_skycell_indices
 
 
-def _vectorpoints(radec: NDArray[float]) -> NDArray[float]:
-    """convert (..., 2) right ascension and declination to (..., 3) unit vectors"""
-    return np.stack(sgv.lonlat_to_vector(radec[..., 0], radec[..., 1]), axis=-1)
-
-
-def _separation(vectorpoints: NDArray[float], vectorpoint: NDArray[float]):
-    """angular distance in radians between unit vectors"""
-    return np.arccos(np.clip(np.sum(vectorpoints * vectorpoint, axis=-1), -1, 1))
-
-
-def _tangent_plane_basis(ra: float, dec: float) -> NDArray[float]:
-    """east, north, and outward unit vectors (rows) at the given point on the sphere"""
-    ra, dec = np.radians(ra), np.radians(dec)
-    return np.array(
-        (
-            (-np.sin(ra), np.cos(ra), 0),
-            (-np.sin(dec) * np.cos(ra), -np.sin(dec) * np.sin(ra), np.cos(dec)),
-            (np.cos(dec) * np.cos(ra), np.cos(dec) * np.sin(ra), np.sin(dec)),
-        )
-    )
-
-
-def _gnomonic(vectorpoints: NDArray[float], basis: NDArray[float]) -> NDArray[float]:
-    """gnomonic projection of (..., 3) unit vectors to (..., 2) points in the plane tangent at `basis[2]`"""
-    projected = np.einsum("...j,ij->...i", vectorpoints, basis)
-    if np.any(projected[..., 2] <= 0):
-        raise ValueError("footprint is too large to project onto a tangent plane")
-    return projected[..., :2] / projected[..., 2:]
+def _tangent_plane(ra: float, dec: float) -> Model:
+    """gnomonic (tangent plane) projection at the given point, in degrees"""
+    return models.RotateCelestial2Native(ra, dec, 180) | models.Sky2Pix_TAN()
 
 
 def _intersects(
@@ -219,38 +194,48 @@ def _intersects(
     projregion: sc.ProjectionRegion,
     buffer: float,
 ) -> NDArray[bool]:
-    """whether each skycell, grown by `buffer` radians, intersects the footprint
+    """whether each skycell, grown by `buffer` degrees, intersects the footprint
 
-    The skymap is a gnomonic tessellation: in the tangent plane of its
-    projection region every skycell is a rectangle aligned with the axes, and
-    the great-circle edges of the footprint are straight lines.  The test is
-    therefore whether a convex polygon and each of a set of rectangles have
-    no separating axis.  A skymap for which the skycells are not axis-aligned
-    rectangles would make this test incorrect; see
-    ``test_skycells_are_tangent_plane_rectangles``.
+    This routine takes advantage of the fact that the skycell tessellation
+    has straight line boundaries in the tangent plane projections of each
+    projection region, and that the great circle edges of the image footprint
+    correspond to straight lines in the tangent plane projection.
+
+    Because of this we can test for overlap using 2D polygons without
+    spherical geometry.
     """
-    basis = _tangent_plane_basis(*projregion.radec_tangent)
+    projection = _tangent_plane(*projregion.radec_tangent)
 
-    # the convex hull is counterclockwise, and covers a non-convex footprint
-    polygon = _gnomonic(footprint.vectorpoint_vertices, basis)
+    polygon = np.stack(projection(*footprint.radec_corners.T), axis=-1)
+    if not np.all(np.isfinite(polygon)):
+        raise ValueError("footprint is too large to project onto a tangent plane")
+    # the convex hull, in order around its perimeter, covers a non-convex footprint
     polygon = polygon[ConvexHull(polygon).vertices]
 
-    corners = _gnomonic(_vectorpoints(skycells.radec_corners), basis)
-    lower = corners.min(axis=1) - buffer
-    upper = corners.max(axis=1) + buffer
+    rectangles = np.stack(
+        projection(skycells.radec_corners[..., 0], skycells.radec_corners[..., 1]),
+        axis=-1,
+    )
+    # grow each rectangle by moving its corners away from its center
+    centers = rectangles.mean(axis=1, keepdims=True)
+    rectangles = rectangles + buffer * np.sign(rectangles - centers)
+    lower, upper = rectangles.min(axis=1), rectangles.max(axis=1)
 
-    # not separated along the axes of the rectangles
-    intersects = np.all(
-        (lower <= polygon.max(axis=0)) & (upper >= polygon.min(axis=0)), axis=1
+    # A rectangle and a convex polygon are disjoint if and only if the line
+    # along one of their edges separates them.  First, the rectangle edges:
+    separated = np.any(
+        (lower > polygon.max(axis=0)) | (upper < polygon.min(axis=0)), axis=1
     )
 
-    # not separated along the outward normal of any polygon edge
-    edges = np.roll(polygon, -1, axis=0) - polygon
-    normals = np.stack((edges[:, 1], -edges[:, 0]), axis=-1)
-    offsets = np.sum(normals * polygon, axis=-1)
-    nearest = np.minimum(
-        lower[:, None, 0] * normals[:, 0], upper[:, None, 0] * normals[:, 0]
-    ) + np.minimum(lower[:, None, 1] * normals[:, 1], upper[:, None, 1] * normals[:, 1])
-    intersects &= np.all(nearest <= offsets, axis=1)
+    # then the polygon edges: all rectangle corners lie strictly on the other
+    # side of the edge from the polygon
+    def side(start, end, points):
+        """which side of the line from `start` to `end` each point lies on"""
+        edge, offset = end - start, points - start
+        return np.sign(edge[0] * offset[..., 1] - edge[1] * offset[..., 0])
 
-    return intersects
+    for start, end in zip(polygon, np.roll(polygon, -1, axis=0), strict=True):
+        polygon_side = side(start, end, polygon.mean(axis=0))
+        separated |= np.all(side(start, end, rectangles) == -polygon_side, axis=1)
+
+    return ~separated
