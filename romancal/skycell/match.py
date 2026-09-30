@@ -229,23 +229,20 @@ def _intersects(
     # (skycell, x or y): the (left, bottom) and (right, top) of each rectangle
     lower, upper = rectangles.min(axis=1), rectangles.max(axis=1)
 
-    # A rectangle and a convex polygon are disjoint if and only if the line
-    # along one of their edges separates them.  First, the rectangle edges:
-    # is the whole polygon left of the rectangle's left edge, or below its
-    # bottom edge, or right of its right edge, or above its top edge?
+    # check to see if the polygon is completely past one of the edges of the rectangle
     polygon_lower, polygon_upper = polygon.min(axis=0), polygon.max(axis=0)
     beyond_edge = (polygon_upper < lower) | (polygon_lower > upper)
     separated = np.any(beyond_edge, axis=1)
 
-    # then the polygon edges: do all rectangle corners lie strictly on the
-    # other side of the edge from the polygon?
+    # check to see if the rectangle is completely past one of the edges of the polygon
     def side(start, end, points):
         """which side of the line from `start` to `end` each point lies on"""
         edge, offset = end - start, points - start
         return np.sign(edge[0] * offset[..., 1] - edge[1] * offset[..., 0])
 
+    polygon_center = polygon.mean(axis=0)
     for start, end in zip(polygon, np.roll(polygon, -1, axis=0), strict=True):
-        polygon_side = side(start, end, polygon.mean(axis=0))
+        polygon_side = side(start, end, polygon_center)
         separated |= np.all(side(start, end, rectangles) == -polygon_side, axis=1)
 
     return ~separated

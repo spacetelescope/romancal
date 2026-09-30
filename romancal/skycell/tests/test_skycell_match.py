@@ -455,9 +455,6 @@ def test_match_exhaustive(ra, dec, rotation, size, skymap_subset):
     skycells = skymap_subset.skycells
     footprint = sm._ImageFootprint(mk_im_corners(ra, dec, rotation, size))
 
-    # testing every skycell takes ~2 s; an overlapping skycell has its center
-    # within 0.055 degrees of the footprint, so testing those within 1 degree
-    # is still exhaustive
     separations = skymap._separation(
         skycells.vectorpoint_centers, footprint.vectorpoint_center
     )
