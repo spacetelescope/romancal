@@ -32,7 +32,7 @@ def find_intersecting_projregions(
     footprint: sm._ImageFootprint,
     skymap: sc.SkyMap = None,
 ) -> list[int]:
-    """Out of all projection regions, find ones that intersect the given image footprint
+    """Out of all projection regions, find ones with skycells that intersect the given image footprint
 
     Parameters
     ----------
@@ -49,20 +49,13 @@ def find_intersecting_projregions(
     if skymap is None:
         skymap = sc.SKYMAP
 
-    # find the closest projection regions to the image center
-    nearby_projregion_indices = skymap.projection_regions_kdtree.query_ball_point(
-        footprint.vectorpoint_center,
-        r=footprint.possible_intersecting_projregion_distance * 1.1,
+    skycells = sc.SkyCells(
+        np.array(
+            sm.find_skycell_matches(footprint.radec_corners, skymap=skymap), dtype=int
+        ),
+        skymap=skymap,
     )
-
-    intersecting_projregion_indices = []
-    for projregion_index in nearby_projregion_indices:
-        if projregion_index < skymap.projection_regions_kdtree.n:
-            projregion = sc.ProjectionRegion(projregion_index, skymap=skymap)
-            if footprint.polygon.intersects_poly(projregion.polygon):
-                intersecting_projregion_indices.append(projregion_index)
-
-    return intersecting_projregion_indices
+    return np.unique(skycells.projection_regions).tolist()
 
 
 def veccoords_to_tangent_plane(

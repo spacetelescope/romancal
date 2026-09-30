@@ -24,6 +24,7 @@ of its columns so that subsets of the table selected to reduce the filesize stil
 retain the same index obtained.)
 """
 
+from itertools import pairwise
 from pathlib import Path
 
 import astropy.coordinates as coord
@@ -31,6 +32,7 @@ import astropy.modeling.models as amm
 import astropy.units as u
 import numpy as np
 import pytest
+import spherical_geometry.polygon as sgp
 import spherical_geometry.vector as sgv
 from gwcs import WCS, coordinate_frames
 
@@ -374,7 +376,8 @@ def test_skycell_match(
     corners = mk_im_corners(*test_point + np.array(offset), rotation, size)
 
     intersecting_skycells = skymap.SkyCells(
-        sm.find_skycell_matches(corners, skymap=skymap_subset), skymap=skymap_subset
+        sm.find_skycell_matches(corners, skymap=skymap_subset, buffer_pixels=0),
+        skymap=skymap_subset,
     )
 
     assert sorted(intersecting_skycells.names) == sorted(expected_skycell_names)
@@ -406,7 +409,8 @@ def test_match_from_wcs_with_bbox(test_point, expected_skycell_names, skymap_sub
     )
 
     intersecting_skycells = skymap.SkyCells(
-        sm.find_skycell_matches(wcsobj, skymap=skymap_subset), skymap=skymap_subset
+        sm.find_skycell_matches(wcsobj, skymap=skymap_subset, buffer_pixels=0),
+        skymap=skymap_subset,
     )
 
     assert sorted(intersecting_skycells.names) == sorted(expected_skycell_names)
@@ -418,3 +422,84 @@ def test_match_from_wcs_without_bbox(test_point):
 
     with pytest.raises(ValueError):
         sm.find_skycell_matches(wcsobj, skymap=skymap_subset)
+
+
+def exhaustive_skycell_matches(corners, skymap_subset):
+    """test every skycell near the footprint for overlap, without prefilters"""
+    footprint = sm._ImageFootprint(corners)
+    skycells = skymap.SkyCells(
+        np.arange(len(skymap_subset.model.skycells)), skymap=skymap_subset
+    )
+    # generous: any overlapping skycell center is within ~0.055 deg
+    nearby = np.nonzero(
+        sm._separation(skycells.vectorpoint_centers, footprint.vectorpoint_center)
+        < footprint.radius + np.radians(0.2)
+    )[0]
+    return sorted(
+        int(index)
+        for index in nearby
+        if footprint.polygon.intersects_poly(
+            sgp.SingleSphericalPolygon(
+                skycells.vectorpoint_corners[index],
+                skycells.vectorpoint_centers[index],
+            )
+        )
+    )
+
+
+@pytest.mark.parametrize(
+    "radec,expected_skycell_names",
+    [
+        # inside the nominal ra/dec bounds of projection region 1, but outside
+        # the great-circle polygon joining their corners
+        ((0.0, 84.8), ["000p86x28y50"]),
+        # outside the nominal bounds, among skycells that overhang them
+        ((0.0, 84.55), ["000p86x25y50"]),
+        ((22.6, 86.0), ["000p86x49y71"]),
+    ],
+)
+def test_match_projection_region_edges(radec, expected_skycell_names, skymap_subset):
+    corners = mk_im_corners(*radec, 0, 0.01)
+
+    intersecting_skycells = skymap.SkyCells(
+        sm.find_skycell_matches(corners, skymap=skymap_subset, buffer_pixels=0),
+        skymap=skymap_subset,
+    )
+
+    assert sorted(intersecting_skycells.names) == expected_skycell_names
+
+
+def test_match_exhaustive(skymap_subset):
+    rng = np.random.default_rng(42)
+    for _ in range(20):
+        # anywhere in projection regions 0 and 1, including their edges
+        ra = rng.uniform(-25, 25) if rng.uniform() < 0.8 else rng.uniform(0, 360)
+        dec = rng.uniform(84.4, 90)
+        corners = mk_im_corners(
+            ra, dec, rng.uniform(0, 360), rng.choice([0.001, 0.13, 0.4])
+        )
+
+        assert sorted(
+            sm.find_skycell_matches(corners, skymap=skymap_subset, buffer_pixels=0)
+        ) == exhaustive_skycell_matches(corners, skymap_subset)
+
+
+def test_match_buffer(skymap_subset):
+    corners = mk_im_corners(*TEST_POINTS[0], 45, 0.3)
+
+    matches = [
+        set(
+            sm.find_skycell_matches(
+                corners, skymap=skymap_subset, buffer_pixels=buffer_pixels
+            )
+        )
+        for buffer_pixels in (0, 5, 20, 200)
+    ]
+
+    for smaller, larger in pairwise(matches):
+        assert smaller <= larger
+    # a skycell whose corner comes within 20 pixels of the footprint
+    assert skymap.SkyCells(
+        np.array(sorted(matches[2] - matches[0])), skymap=skymap_subset
+    ).names == ["000p86x67y53"]
+    assert len(matches[3]) > len(matches[2])

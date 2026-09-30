@@ -815,6 +815,8 @@ class SkyMap:
         self._path = path
         # reset data if retrieved
         self._data = None
+        self.__dict__.pop("_projection_region_vectorpoints", None)
+        self.__dict__.pop("_projection_region_radii", None)
 
     @property
     def model(self) -> AsdfFile:
@@ -851,6 +853,47 @@ class SkyMap:
                     axis=1,
                 )
             )
+        )
+
+    @cached_property
+    def _projection_region_vectorpoints(self) -> NDArray[float]:
+        """tangent points of all projection regions in 3D Cartesian space on the unit sphere (Nx3 array of floats)"""
+        return np.stack(
+            sgv.lonlat_to_vector(
+                self.model.projection_regions["ra_tangent"],
+                self.model.projection_regions["dec_tangent"],
+            ),
+            axis=1,
+        )
+
+    @cached_property
+    def _projection_region_radii(self) -> NDArray[float]:
+        """largest angular distance in radians from each projection region's tangent point to any of its skycells
+
+        Skycells overhang the nominal ra/dec bounds of their projection region,
+        so the radius is computed from the skycells themselves.  Each
+        skycell's tangent point gives the offset of its pixel grid from the
+        projection region's tangent point; the farthest point of a skycell is
+        the corner farthest from that tangent point, and gnomonic projection
+        maps a distance r in the tangent plane to an angle arctan(r).
+        """
+        nxy = self.pixel_shape[0]
+        center = (nxy - 1) / 2
+        skycells = self.model.skycells
+        distances = np.hypot(
+            np.abs(skycells["x_tangent"] - center) + nxy / 2,
+            np.abs(skycells["y_tangent"] - center) + nxy / 2,
+        )
+        return np.arctan(
+            np.array(
+                [
+                    distances[start:end].max()
+                    for start, end in self.model.projection_regions[
+                        ["skycell_start", "skycell_end"]
+                    ]
+                ]
+            )
+            * np.radians(self.pixel_scale)
         )
 
     @property
