@@ -292,17 +292,15 @@ class NDArrayTypeOperator(ExcludePathsOperator):
                     difference["column_values"] = column_differences
             return difference
         if not difference:  # only compare if shapes and dtypes match
-            try:
-                close = np.allclose(
-                    a, b, rtol=self.rtol, atol=self.atol, equal_nan=self.equal_nan
-                )
-            except TypeError:
-                # non-numeric (e.g. string) arrays must match exactly
+            if not np.issubdtype(a.dtype, np.number):
+                # non-numeric (e.g. string, bool) arrays must match exactly
                 n_diffs = np.count_nonzero(a != b)
                 if n_diffs:
                     difference["n_diffs"] = n_diffs
                 return difference
-            if not close:
+            if not np.allclose(
+                a, b, rtol=self.rtol, atol=self.atol, equal_nan=self.equal_nan
+            ):
                 abs_diff = np.abs(a - b)
                 index = np.unravel_index(np.nanargmax(abs_diff), a.shape)
                 difference["worst_abs_diff"] = {
