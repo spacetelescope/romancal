@@ -201,6 +201,11 @@ used in the various steps of the exposure level pipeline; if these reference
 files have a ``dq2`` array, it will be bitwise "or"ed into the science ``dq2``
 array.  The pipeline never does more than propagate these bits along.
 
+Unlike ``dq``, there are no ``dq2`` counterparts of the
+``dq_border_ref_pix_<position>`` arrays.  Any ``dq2`` flags on the border
+reference pixels are present in ``pixeldq2`` but are discarded when the
+border is trimmed during ramp fitting.
+
 Parameter Specification
 =======================
 
