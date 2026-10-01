@@ -62,6 +62,36 @@ def test_update(old_model, latest_model, vfs_value, wp_bool):
     assert not new_model.meta.exposure.hga_move
 
 
+def test_update_adds_dq2(old_model):
+    old_model.pop("dq2", None)
+    with pytest.warns(MigrationWarning, match="empty dq2 array"):
+        new_model = update_model_version(old_model)
+    assert new_model.dq2.shape == old_model.dq.shape
+    assert new_model.dq2.dtype == old_model.dq.dtype
+    assert not new_model.dq2.any()
+    assert "dq2" not in old_model
+
+
+def test_update_adds_pixeldq2():
+    old_ramp = rdm.RampModel.create_fake_data(
+        tag="asdf://stsci.edu/datamodels/roman/tags/ramp-1.4.0"
+    )
+    old_ramp.pop("pixeldq2", None)
+    with pytest.warns(MigrationWarning, match="empty pixeldq2 array"):
+        new_ramp = update_model_version(old_ramp)
+    assert new_ramp.pixeldq2.shape == old_ramp.pixeldq.shape
+    assert new_ramp.pixeldq2.dtype == old_ramp.pixeldq.dtype
+    assert not new_ramp.pixeldq2.any()
+
+
+def test_update_keeps_existing_dq2(old_model):
+    old_model["dq2"] = old_model.dq + 4
+    with pytest.warns(MigrationWarning) as record:
+        new_model = update_model_version(old_model)
+    assert not any("dq2" in str(w.message) for w in record)
+    assert (new_model.dq2 == 4).all()
+
+
 def test_L3_update(old_L3_model, latest_L3_model):
     old_L3_model.meta.psf_match_reference_filter = "f158"
     new_L3_model = update_model_version(old_L3_model)

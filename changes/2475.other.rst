@@ -3,6 +3,8 @@ alongside the existing ``dq``, carrying extra data quality flags. A new
 ``update_dq`` helper combines reference file ``dq`` and ``dq2`` into the
 science model, inferring reference pixel border trimming from the array
 shapes. The array is created empty by ``dq_init`` and carried through ramp
-fitting.
-Reference files that supply no ``dq2`` array leave ``dq2`` zero, so this
-does not by itself change how any data are processed.
+fitting. Reference files that supply no ``dq2`` array leave ``dq2`` zero,
+so this does not by itself change how any data are processed. Files that
+predate ``dq2`` gain an empty array, with a ``MigrationWarning``, either
+through ``update_version`` or when a step first propagates reference
+file flags into them.

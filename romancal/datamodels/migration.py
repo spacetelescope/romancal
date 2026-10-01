@@ -1,7 +1,8 @@
 import warnings
 
+import numpy as np
 from astropy.time import Time
-from roman_datamodels.datamodels import ImageModel, ScienceRawModel
+from roman_datamodels.datamodels import ImageModel, RampModel, ScienceRawModel
 
 __all__ = ["update_model_version"]
 
@@ -62,6 +63,21 @@ def update_model_version(model, *, close_on_update=False):
         updated_model.meta.psf_match_reference_filter = (
             updated_model.meta.psf_match_reference_filter.upper()
         )
+
+    # old files (<B24) lack dq2 / pixeldq2
+    for model_type, dq_name, dq2_name in (
+        (ImageModel, "dq", "dq2"),
+        (RampModel, "pixeldq", "pixeldq2"),
+    ):
+        if isinstance(model, model_type) and dq_name in model and dq2_name not in model:
+            warnings.warn(
+                f"Migration is adding an empty {dq2_name} array. Any "
+                f"{dq2_name} flags from reference files used by steps "
+                "that have already run are not included.",
+                MigrationWarning,
+                stacklevel=2,
+            )
+            updated_model[dq2_name] = np.zeros_like(model[dq_name])
 
     new_ref_files = ["darkdecaysignal", "integralnonlinearity", "inverselinearity"]
     ref_file = model.meta.get("ref_file", None)
