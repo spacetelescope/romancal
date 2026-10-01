@@ -4,7 +4,7 @@ from stpipe.library import AbstractModelLibrary, NoGroupID
 
 from romancal.associations import AssociationNotValidError, load_asn
 
-from .migration import update_model_version
+from .migration import _error_on_downgrade, update_model_version
 
 __all__ = ["ModelLibrary"]
 
@@ -22,7 +22,9 @@ class ModelLibrary(AbstractModelLibrary):
 
     def _datamodels_open(self, filename, **kwargs):
         update_version = kwargs.pop("update_version", False)
-        model = datamodels_open(filename, **kwargs)
+        downgrade_unknown_version = kwargs.pop("downgrade_unknown_version", False)
+        with _error_on_downgrade(not downgrade_unknown_version):
+            model = datamodels_open(filename, **kwargs)
         if not update_version:
             return model
         updated_model = update_model_version(model, close_on_update=True)

@@ -1,13 +1,32 @@
+import contextlib
 import warnings
 
 from astropy.time import Time
-from roman_datamodels.datamodels import ImageModel, ScienceRawModel
+from roman_datamodels.datamodels import DowngradeWarning, ImageModel, ScienceRawModel
 
 __all__ = ["update_model_version"]
 
 
 class MigrationWarning(UserWarning):
     """A potentially incorrect migration was performed"""
+
+
+@contextlib.contextmanager
+def _error_on_downgrade(error):
+    """
+    Context to optionally convert DowngradeWarning into an error.
+
+    Parameters
+    ----------
+    error : bool
+        If true, turn DowngradeWarnings into errors.
+    """
+    if error:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DowngradeWarning)
+            yield
+    else:
+        yield
 
 
 def update_model_version(model, *, close_on_update=False):
