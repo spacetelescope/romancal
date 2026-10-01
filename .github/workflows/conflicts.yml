@@ -23,4 +23,3 @@ jobs:
           persist-credentials: false
       # from https://serverfault.com/a/829314
       - run: find . -type f -name "*.rej" -exec false {} +
-
