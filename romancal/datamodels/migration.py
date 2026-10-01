@@ -71,9 +71,7 @@ def update_model_version(model, *, close_on_update=False):
     ):
         if isinstance(model, model_type) and dq_name in model and dq2_name not in model:
             warnings.warn(
-                f"Migration is adding an empty {dq2_name} array. Any "
-                f"{dq2_name} flags from reference files used by steps "
-                "that have already run are not included.",
+                f"Migration is adding an empty {dq2_name} array.",
                 MigrationWarning,
                 stacklevel=2,
             )

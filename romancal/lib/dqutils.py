@@ -36,12 +36,8 @@ def _dq_names(model):
 def _ensure_dq2(model):
     """Return ``model``'s dq2 array, creating an empty one if needed.
 
-    Files written before dq2 existed simply lack the array.  Materialize
-    an all-zero one so that "no flags recorded" and "array absent" look
-    the same downstream, rather than making every consumer guard.  A
-    `~romancal.datamodels.migration.MigrationWarning` is issued, since
-    any dq2 flags from reference files used by earlier steps are missing
-    from the new array.
+    Files written before dq2 existed simply lack the array.  If an empty
+    array is added, we issue a MigrationWarning.
 
     Models with no pixel-level data quality array at all, such as the L1
     ``ScienceRawModel``, have nothing for dq2 to accompany and raise
@@ -55,9 +51,7 @@ def _ensure_dq2(model):
             f"{type(model).__name__} has no {dq_name} array for {dq2_name} to accompany"
         )
     warnings.warn(
-        f"{type(model).__name__} has no {dq2_name} array; adding an empty "
-        f"one. Any {dq2_name} flags from reference files used by steps "
-        "that have already run are not included.",
+        f"{type(model).__name__} has no {dq2_name} array; adding an empty one.",
         MigrationWarning,
         stacklevel=3,
     )
