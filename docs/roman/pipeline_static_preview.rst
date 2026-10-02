@@ -54,6 +54,13 @@ default options to the static preview requirements.
 	  -h, --help  show this help message and exit
 	  --compass   draw a north arrow on the image
 
+The color stretch defaults to the central 90% of pixel values (from the 5th to the
+95th percentile); pass ``--percentile`` before ``INPUT`` to change it.
+
+.. code-block:: shell
+
+	roman_static_preview --percentile 99 input.asdf output.png preview 1080 1080
+
 Examples
 --------
 
