@@ -14,6 +14,7 @@ from astropy.modeling.models import Gaussian2D
 from astropy.stats import mad_std
 from astropy.table import QTable
 from astropy.time import Time
+from numpy.testing import assert_allclose
 from photutils.datasets import make_model_image
 from photutils.psf import GriddedPSFModel, ImagePSF
 from roman_datamodels.datamodels import ImageModel, MosaicModel
@@ -152,6 +153,38 @@ def test_psf_fit(setup_inputs, dx, dy, true_flux):
 
 
 # new routines: render_stamp, _get_jitter_params, _evaluate_gaussian_fft, add_jitter
+def test_psf_fit_position_bounds(setup_inputs):
+    """
+    The fitted position must stay within 2.5 pixels of the initial
+    position along each axis, and a fit that ends at the bound must be
+    flagged.
+    """
+    image_model = deepcopy(setup_inputs["image"])
+    psf_model = setup_inputs["psf_model"]
+    psf_ref_model = setup_inputs["psf_ref_model_f087"]
+
+    true_x = image_model_shape[0] / 2 + 0.2
+    true_y = image_model_shape[1] / 2 - 0.3
+    add_sources(image_model, psf_model, true_x, true_y, 100_000, background=0)
+
+    # The first initial position is close to the star. The second is 3
+    # pixels away in x, so the fit moves toward the star until it is
+    # stopped by the bound. A star much farther away falls outside the
+    # fit region and the fit does not reach it.
+    xy_bounds = 2.5
+    offset = 3.0
+    near_bound_flag = 32
+    for x_init, at_bound in ((true_x + 0.3, False), (true_x + offset, True)):
+        catalog = _PSFCatalog(image_model, psf_ref_model, np.array([[x_init, true_y]]))
+        shift = catalog.x_psf.value[0] - x_init
+        assert np.abs(shift) <= xy_bounds + 1e-6
+        assert bool(catalog.psf_flags[0] & near_bound_flag) == at_bound
+        if at_bound:
+            assert_allclose(shift, -xy_bounds, atol=1e-3)
+        else:
+            assert_allclose(catalog.x_psf.value[0], true_x, atol=0.05)
+
+
 def test_render_stamp(setup_inputs):
     # some basic tests that we can render a psf
     psf_model = setup_inputs["psf_model"]
