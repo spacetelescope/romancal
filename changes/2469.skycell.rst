@@ -1,0 +1,3 @@
+Infer the handedness of skycell WCSes from the skymap reference file, so that
+skycells adopt the standard orientation (right ascension increasing to the
+left) as soon as a skymap with mirrored ``x_tangent`` values is delivered.
