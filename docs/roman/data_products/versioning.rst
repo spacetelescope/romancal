@@ -3,7 +3,7 @@
 Versioning
 ----------
 
-ASDF data products are highly versioned, allowing for careful tracking of datamodel changes over time. With each new version of romancal it is expected that the versions of datamodels will advance. The changes for each new version may be minor, or may have significant impact on scientific analysis. Processing files from several versions requires understanding how the file contents differ and what options romancal provides for handling different versions of files.
+Roman ASDF data products are highly versioned, allowing for careful tracking of datamodel changes over time. With each new version of romancal it is expected that the versions of datamodels will advance. The changes for each new version may be minor, or may have significant impact on scientific analysis. Processing files from several versions requires understanding how the file contents differ and what options romancal provides for handling different versions of files.
 
 .. _data_products_backwards_compatibility:
 
