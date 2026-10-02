@@ -93,13 +93,13 @@ Downgrade Version
 
 It is highly recommended to use data files that were produced with the
 same version of romancal. Users should be familiar with the risks
-associated with attempting `data_products_forward_compatibilty`.To allow romancal to
+associated with attempting :ref:`data_products_forward_compatibility`.To allow romancal to
 attempt processing files from a later version ``downgrade_version``
 can be enabled. As the old version has no knowledge of the changes that
 led to the file produced by the later version there are only simple
 checks that can be performed. Verifying the validity of the results is
 left largely to the user with some guidance provided on the
-`data_products_forward_compatibility` page.
+:ref:`data_products_forward_compatibility` page.
 
 ::
 
