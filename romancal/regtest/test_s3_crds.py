@@ -5,6 +5,8 @@ import pytest
 from romancal.pipeline.exposure_pipeline import ExposurePipeline
 from romancal.pipeline.mosaic_pipeline import MosaicPipeline
 
+pytest.importorskip("awscli", reason="crds[aws] dependencies are needed for s3 tests")
+
 pytestmark = pytest.mark.bigdata
 
 
