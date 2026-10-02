@@ -52,6 +52,7 @@ class FluxStep(RomanStep):
         input_models, dataset_type = open_dataset(
             dataset,
             update_version=self.update_version,
+            downgrade_version=self.downgrade_version,
             return_type=True,
             as_library=True,
         )

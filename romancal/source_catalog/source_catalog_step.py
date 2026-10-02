@@ -288,7 +288,11 @@ class SourceCatalogStep(RomanStep):
             yield None
 
     def process(self, dataset):
-        input_model = open_dataset(dataset, update_version=self.update_version)
+        input_model = open_dataset(
+            dataset,
+            update_version=self.update_version,
+            downgrade_version=self.downgrade_version,
+        )
 
         # Define a boolean mask for pixels to be excluded
         mask = (

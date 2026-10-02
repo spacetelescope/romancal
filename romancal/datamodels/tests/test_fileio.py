@@ -2,6 +2,7 @@ import json
 import os
 from contextlib import nullcontext
 
+import asdf
 import pytest
 import roman_datamodels.datamodels as rdm
 
@@ -158,3 +159,57 @@ def test_update_version(request, update_version, as_library, dataset):
         assert tag_version > OLD_TAG_VERSION
     else:
         assert tag_version == OLD_TAG_VERSION
+
+
+@pytest.mark.parametrize("init_type", ["filename", "filename_list", "asn", "library"])
+@pytest.mark.parametrize("downgrade_version", [True, False])
+@pytest.mark.parametrize("as_library", [True, False])
+def test_downgrade_version(init_type, downgrade_version, as_library, tmp_path):
+    filename = tmp_path / "test.asdf"
+
+    model = rdm.ImageModel.create_fake_data()
+    model.meta.filename = filename.name
+
+    # modify to have a newer tag
+    base_tag, tag_version = asdf.versioning.split_tag_version(model.tag)
+    new_tag = asdf.versioning.join_tag_version(base_tag, tag_version.next_minor())
+    asdf.AsdfFile({"roman": asdf.tagged.TaggedDict(dict(model), new_tag)}).write_to(
+        filename
+    )
+
+    asn = {
+        "products": [
+            {
+                "members": [
+                    {
+                        "expname": str(filename),
+                        "exptype": "science",
+                        "group_id": 0,
+                    }
+                ]
+            }
+        ],
+    }
+
+    # configure init
+    if init_type == "filename":
+        init = filename
+    elif init_type == "filename_list":
+        init = [filename]
+    elif init_type == "library":
+        init = ModelLibrary(asn)
+    else:  # "asn"
+        init = tmp_path / "asn.json"
+        with init.open("w") as f:
+            json.dump(asn, f)
+
+    ctx = pytest.warns if downgrade_version else pytest.raises
+
+    with pytest.warns(asdf.exceptions.AsdfConversionWarning), ctx(rdm.DowngradeWarning):
+        dataset = open_dataset(
+            init, downgrade_version=downgrade_version, as_library=as_library
+        )
+        if isinstance(dataset, ModelLibrary):
+            with dataset as lib:
+                model = lib.borrow(0)
+                lib.shelve(model, modify=False)

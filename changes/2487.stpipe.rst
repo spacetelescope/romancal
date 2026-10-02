@@ -1,0 +1,1 @@
+Added ``downgrade_version`` parameter to all steps. When enabled, romancal will attempt to convert newer-than-known files to the latest known version. This option can succeed and produce incorrect results and should only be used when the differences between versions is well understood. A safer option is upgrading to a newer version of romancal.

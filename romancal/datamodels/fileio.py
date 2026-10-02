@@ -4,7 +4,7 @@ import roman_datamodels.datamodels as rdm
 
 from . import filetype
 from .library import ModelLibrary
-from .migration import update_model_version
+from .migration import _error_on_downgrade, update_model_version
 
 __all__ = ["open_dataset"]
 
@@ -13,6 +13,7 @@ def open_dataset(
     dataset,
     *,
     update_version=False,
+    downgrade_version=False,
     return_type=False,
     as_library=False,
     open_kwargs=None,
@@ -36,6 +37,9 @@ def open_dataset(
 
     update_version : bool, optional
         Update the dataset to the newest DataModel (tag) version.
+
+    downgrade_version : bool, optional
+        Process newer (unknown tag) DataModels as the newest known version.
 
     return_type : bool, optional
         Also return the input dataset type (as returned by filetype.check).
@@ -72,10 +76,16 @@ def open_dataset(
 
         case "ModelLibrary":
             dataset._datamodels_open_kwargs["update_version"] = update_version
+            dataset._datamodels_open_kwargs["downgrade_version"] = downgrade_version
             result = dataset
 
         case "asn":
-            result = ModelLibrary(dataset, update_version=update_version, **open_kwargs)
+            result = ModelLibrary(
+                dataset,
+                update_version=update_version,
+                downgrade_version=downgrade_version,
+                **open_kwargs,
+            )
 
         case "asdf":
             if open_kwargs.pop("on_disk", None) is not None:
@@ -83,7 +93,8 @@ def open_dataset(
                     "on_disk is only supported for associations, ignoring on_disk",
                     stacklevel=2,
                 )
-            model = rdm.open(dataset, **open_kwargs)
+            with _error_on_downgrade(not downgrade_version):
+                model = rdm.open(dataset, **open_kwargs)
             if update_version:
                 result = update_model_version(model, close_on_update=True)
             else:
@@ -101,10 +112,20 @@ def open_dataset(
                 )
             else:
                 kwargs = open_kwargs
-            result = ModelLibrary(dataset, update_version=update_version, **kwargs)
+            result = ModelLibrary(
+                dataset,
+                update_version=update_version,
+                downgrade_version=downgrade_version,
+                **kwargs,
+            )
 
     if as_library and isinstance(result, rdm.DataModel):
-        result = ModelLibrary([result], update_version=update_version, **open_kwargs)
+        result = ModelLibrary(
+            [result],
+            update_version=update_version,
+            downgrade_version=downgrade_version,
+            **open_kwargs,
+        )
 
     if return_type:
         return result, dataset_type
