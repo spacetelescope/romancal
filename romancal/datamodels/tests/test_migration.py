@@ -60,6 +60,18 @@ def test_update(old_model, latest_model, vfs_value, wp_bool):
     assert new_model.tag == latest_model.tag
     assert new_model.meta.observation.wfi_parallel == wp_bool
     assert not new_model.meta.exposure.hga_move
+    assert new_model.dq2.shape == old_model.dq.shape
+    assert not new_model.dq2.any()
+
+
+def test_ramp_update():
+    old_ramp = rdm.RampModel.create_fake_data(
+        tag="asdf://stsci.edu/datamodels/roman/tags/ramp-1.4.0"
+    )
+    with pytest.warns(MigrationWarning, match="pixeldq2"):
+        new_ramp = update_model_version(old_ramp)
+    assert new_ramp.pixeldq2.shape == old_ramp.pixeldq.shape
+    assert not new_ramp.pixeldq2.any()
 
 
 def test_L3_update(old_L3_model, latest_L3_model):
