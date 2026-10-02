@@ -778,10 +778,12 @@ class SkyMap:
     def _projection_region_radii(self) -> NDArray[float]:
         """largest angular distance in degrees from each projection region's tangent point to any of its skycells
 
-        We compute this by looking at the xtangent / ytangent of the centers
-        of each skycell, adding the number of pixels over two, taking the hypotenuse,
-        and finding the maximum.  arctan converts from distance in the
-        tangent plane to angle on the sphere.
+        We compute this from x_tangent / y_tangent, the location of the
+        projection region's tangent point in the pixel frame of each skycell:
+        take its distance from the skycell's center along each axis, add half
+        the size of the skycell to reach the far edge, take the hypotenuse,
+        and find the maximum over the region's skycells.  arctan converts from
+        distance in the tangent plane to angle on the sphere.
         """
         nxy = self.pixel_shape[0]
         center = (nxy - 1) / 2

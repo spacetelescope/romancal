@@ -134,10 +134,10 @@ def find_skycell_matches(
     buffer_pixels : float | None :
         also match sky cells that come within this many skycell pixels of the
         image footprint, to allow for image edges that are not great circles.
-        By default, 1/300 of the radius of the footprint plus one pixel, which
-        is about 20 pixels for a WFI detector; this was measured to cover the
-        departure of the edges of the WFI detectors from a great circle with
-        a 2x margin.  (Default value = None)
+        The default of None uses 1/300 of the radius of the footprint plus one
+        skycell pixel, which is about 20 skycell pixels for a WFI detector.
+        This was measured to cover the departure of the edges of the WFI
+        detectors from a great circle with a 2x margin.
 
     Returns
     -------
