@@ -81,6 +81,7 @@ class MosaicPipeline(RomanPipeline):
         library = open_dataset(
             dataset,
             update_version=self.update_version,
+            downgrade_version=self.downgrade_version,
             as_library=True,
             open_kwargs={"on_disk": self.on_disk},
         )
