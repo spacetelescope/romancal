@@ -22,8 +22,8 @@ class ModelLibrary(AbstractModelLibrary):
 
     def _datamodels_open(self, filename, **kwargs):
         update_version = kwargs.pop("update_version", False)
-        downgrade_unknown_version = kwargs.pop("downgrade_unknown_version", False)
-        with _error_on_downgrade(not downgrade_unknown_version):
+        downgrade_version = kwargs.pop("downgrade_version", False)
+        with _error_on_downgrade(not downgrade_version):
             model = datamodels_open(filename, **kwargs)
         if not update_version:
             return model

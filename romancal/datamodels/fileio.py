@@ -13,7 +13,7 @@ def open_dataset(
     dataset,
     *,
     update_version=False,
-    downgrade_unknown_version=False,
+    downgrade_version=False,
     return_type=False,
     as_library=False,
     open_kwargs=None,
@@ -38,7 +38,7 @@ def open_dataset(
     update_version : bool, optional
         Update the dataset to the newest DataModel (tag) version.
 
-    downgrade_unknown_version : bool, optional
+    downgrade_version : bool, optional
         Process newer (unknown tag) DataModels as the newest known version.
 
     return_type : bool, optional
@@ -76,16 +76,14 @@ def open_dataset(
 
         case "ModelLibrary":
             dataset._datamodels_open_kwargs["update_version"] = update_version
-            dataset._datamodels_open_kwargs["downgrade_unknown_version"] = (
-                downgrade_unknown_version
-            )
+            dataset._datamodels_open_kwargs["downgrade_version"] = downgrade_version
             result = dataset
 
         case "asn":
             result = ModelLibrary(
                 dataset,
                 update_version=update_version,
-                downgrade_unknown_version=downgrade_unknown_version,
+                downgrade_version=downgrade_version,
                 **open_kwargs,
             )
 
@@ -95,7 +93,7 @@ def open_dataset(
                     "on_disk is only supported for associations, ignoring on_disk",
                     stacklevel=2,
                 )
-            with _error_on_downgrade(not downgrade_unknown_version):
+            with _error_on_downgrade(not downgrade_version):
                 model = rdm.open(dataset, **open_kwargs)
             if update_version:
                 result = update_model_version(model, close_on_update=True)
@@ -117,7 +115,7 @@ def open_dataset(
             result = ModelLibrary(
                 dataset,
                 update_version=update_version,
-                downgrade_unknown_version=downgrade_unknown_version,
+                downgrade_version=downgrade_version,
                 **kwargs,
             )
 
@@ -125,7 +123,7 @@ def open_dataset(
         result = ModelLibrary(
             [result],
             update_version=update_version,
-            downgrade_unknown_version=downgrade_unknown_version,
+            downgrade_version=downgrade_version,
             **open_kwargs,
         )
 
