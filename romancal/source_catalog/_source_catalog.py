@@ -305,7 +305,7 @@ class RomanSourceCatalog:
             core_indices = core_indices[this_cell_idx]
             in_core[core_indices] = True
 
-        projection_idx = sc.projection_regions[0]
+        projection_idx = int(sc.projection_regions[0])
         pattern = r"x(\d+)y(\d+)"
         match = re.search(pattern, skycell_name)
         if not match:

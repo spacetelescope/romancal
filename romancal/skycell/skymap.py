@@ -238,7 +238,7 @@ class SkyCells:
             np.searchsorted(
                 projection_regions["skycell_end"], self.indices, side="right"
             )
-        ]
+        ].astype(np.int64)
 
     @property
     def wcs_infos(self) -> list[dict[str, float | str]]:

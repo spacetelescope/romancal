@@ -135,6 +135,8 @@ def test_projregion_from_skycell(skymap_subset):
     projregion1 = skymap.ProjectionRegion(1, skymap=skymap_subset)
 
     assert len(skycell.projection_regions) == 1
+    # source catalogs pack this into 64-bit source ids
+    assert skycell.projection_regions.dtype == np.int64
     assert skycell.projection_regions[0] == projregion0.index  # this calls CRDS!
 
     assert (
