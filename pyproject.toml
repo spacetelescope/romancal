@@ -29,7 +29,7 @@ dependencies = [
     "roman_datamodels@git+https://github.com/braingram/roman_datamodels@downgrade",
     "romanisim>=0.14,<0.16",
     # "romanisim@git+https://github.com/spacetelescope/romanisim@main",
-    "asdf>=4.1.0,<6",
+    "asdf>=5.1.0,<6",
     "crds>=13.2.7,<15",
     "drizzle>=2.2.0,<2.3.0",
     "gwcs>=1.0.1,<2",
