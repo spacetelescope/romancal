@@ -61,6 +61,7 @@ class OutlierDetectionStep(RomanStep):
         library = open_dataset(
             dataset,
             update_version=self.update_version,
+            downgrade_version=self.downgrade_version,
             as_library=True,
             open_kwargs={"on_disk": not self.in_memory},
         )

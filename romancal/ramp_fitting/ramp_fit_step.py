@@ -62,7 +62,11 @@ class RampFitStep(RomanStep):
     reference_file_types: ClassVar = ["readnoise", "gain"]
 
     def process(self, dataset):
-        input_model = open_dataset(dataset, update_version=self.update_version)
+        input_model = open_dataset(
+            dataset,
+            update_version=self.update_version,
+            downgrade_version=self.downgrade_version,
+        )
 
         # Retrieve reference info
         readnoise_filename = self.get_reference_file(input_model, "readnoise")

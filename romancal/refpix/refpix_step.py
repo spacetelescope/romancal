@@ -46,7 +46,11 @@ class RefPixStep(RomanStep):
 
         # open the input data model
         log.debug(f"Opening the science data: {dataset}")
-        datamodel = open_dataset(dataset, update_version=self.update_version)
+        datamodel = open_dataset(
+            dataset,
+            update_version=self.update_version,
+            downgrade_version=self.downgrade_version,
+        )
 
         # Get the reference file
         ref_file = self.get_reference_file(datamodel, "refpix")

@@ -78,7 +78,10 @@ class TweakRegStep(RomanStep):
 
     def process(self, dataset):
         images = open_dataset(
-            dataset, update_version=self.update_version, as_library=True
+            dataset,
+            update_version=self.update_version,
+            downgrade_version=self.downgrade_version,
+            as_library=True,
         )
 
         if not images:

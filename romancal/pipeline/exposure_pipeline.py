@@ -96,6 +96,7 @@ class ExposurePipeline(RomanPipeline):
         lib, input_type = open_dataset(
             dataset,
             update_version=self.update_version,
+            downgrade_version=self.downgrade_version,
             return_type=True,
             as_library=True,
             open_kwargs={"on_disk": self.on_disk},

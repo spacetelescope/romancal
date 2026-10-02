@@ -53,7 +53,11 @@ class DQInitStep(RomanStep):
             result roman datamodel
         """
         # Open datamodel
-        input_model = open_dataset(dataset, update_version=self.update_version)
+        input_model = open_dataset(
+            dataset,
+            update_version=self.update_version,
+            downgrade_version=self.downgrade_version,
+        )
 
         # Get reference file path
         reference_file_name = self.get_reference_file(input_model, "mask")
