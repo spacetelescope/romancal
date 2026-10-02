@@ -2,8 +2,8 @@
 
 import numpy as np
 import pytest
+import roman_datamodels as rdm
 from astropy.table import Table
-from roman_datamodels.datamodels import MultibandSegmentationMapModel
 
 from romancal.stpipe import RomanStep
 
@@ -39,10 +39,21 @@ fieldlist = [
 ]
 
 
+def compare_table(table1, table2):
+    assert set(table1.dtype.names) == set(table2.dtype.names)
+    for colname in table1.colnames:
+        col = table1[colname]
+        coltruth = table2[colname]
+
+        assert col.dtype == coltruth.dtype
+        assert col.unit == coltruth.unit
+
+
 def test_multiband_catalog(rtdata_module, resource_tracker, request, dms_logger):
     rtdata = rtdata_module
     inputasnfn = "r00001_p_v01001001001001_270p65x70y49_asn.json"
     outputfn = "r00001_p_v01001001001001_270p65x70y49_cat.parquet"
+    segmfn = outputfn.replace("_cat.parquet", "_segm.asdf")
     rtdata.get_asn(f"WFI/image/{inputasnfn}")
     rtdata.output = outputfn
     rtdata.input = inputasnfn
@@ -71,7 +82,11 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request, dms_logger)
 
     # DMS 393: multiband catalog uses both PSF-like and extend-source-like
     # kernels
-    assert set(cat.dtype.names) == set(cattruth.dtype.names)
+
+    # Ensure output catalogs contain the same categories of the
+    # same types with the same units
+    compare_table(cat, cattruth)
+
     # weak assertion that our truth file must at least have the same
     # catalog fields as the file produced here.  Exactly matching rows
     # would require a lot of okifying things that aren't obviously
@@ -87,9 +102,7 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request, dms_logger)
 
     # DMS 396: Ensure the segmentation image contains
     # both injected_sources and recovered_sources
-    segm_mod = MultibandSegmentationMapModel(
-        outputfn.replace("_cat.parquet", "_segm.asdf")
-    )
+    segm_mod = rdm.open(segmfn)
     assert "injected_sources" in segm_mod
     assert "recovered_sources" in segm_mod
 
@@ -136,3 +149,21 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request, dms_logger)
         "DMS540: PSF matching convolution kernels successfully constructed "
         "and used for each filter pair."
     )
+
+    # Segment data output tests
+    # Load segm truth file
+    rtdata.output = segmfn
+    rtdata.get_truth(f"truth/WFI/image/{segmfn}")
+    segmtruth = rdm.open(f"truth/{segmfn}")
+
+    # Ensure segm file has the same contents
+    assert sorted(segm_mod.keys()) == sorted(segmtruth.keys())
+    assert segm_mod["detection_image_unit"] == segmtruth["detection_image_unit"]
+
+    # Ensure that all segm numpy components are close
+    for colname in ["data", "detection_image"]:
+        assert np.allclose(segm_mod[colname], segmtruth[colname])
+
+    # Ensure segm catalogs contain the same categories of the same types with the same units
+    for tabname in ["injected_sources", "recovered_sources"]:
+        compare_table(segm_mod[tabname], segmtruth[tabname])
