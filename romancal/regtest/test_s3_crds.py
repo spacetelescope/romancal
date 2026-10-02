@@ -1,6 +1,7 @@
 import crds.config
 import crds.utils
 import pytest
+from roman_datamodels import datamodels as rdm
 
 from romancal.pipeline.exposure_pipeline import ExposurePipeline
 from romancal.pipeline.mosaic_pipeline import MosaicPipeline
@@ -51,15 +52,15 @@ def test_s3_elp(s3_crds, rtdata):
     rtdata.input = input_data
 
     # Test Pipeline
-    ExposurePipeline.call(rtdata.input)
+    result = ExposurePipeline.call(rtdata.input)
 
     # no truth comparison here since the context may differ
-    # TODO do some basic checks
+    assert isinstance(result, rdm.ImageModel)
 
 
 def test_s3_mos(s3_crds, rtdata):
     rtdata.get_asn("WFI/image/L3_regtest_asn.json")
-    MosaicPipeline.call(rtdata.input)
+    result, *_ = MosaicPipeline.call(rtdata.input)
 
     # no truth comparison here since the context may differ
-    # TODO do some basic checks
+    assert isinstance(result, rdm.MosaicModel)
