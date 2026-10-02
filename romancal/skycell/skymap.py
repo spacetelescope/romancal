@@ -879,16 +879,17 @@ def _separation(vectorpoints: NDArray[float], vectorpoint: NDArray[float]):
 
 
 def _ra_in_range(ra: float, low: float, high: float):
-    """whether the given longitude lies within the given min and max range, handling wrapping"""
+    """whether the given longitude lies within the range [low, high), handling wrapping"""
     ra = ra % 360
     low = low % 360
     high = high % 360
     if high == low:
-        high = 360.0
+        # the full circle
+        return np.ones(np.shape(ra), dtype=bool)
     if low <= high:
-        return (ra >= low) & (ra <= high)
+        return (ra >= low) & (ra < high)
     else:
-        return (ra >= low) | (ra <= high)
+        return (ra >= low) | (ra < high)
 
 
 def _wcsinfo_to_wcs(

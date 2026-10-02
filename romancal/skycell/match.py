@@ -119,7 +119,7 @@ class _ImageFootprint:
 def find_skycell_matches(
     image_corners: list[tuple[float, float]] | NDArray[float] | WCS,
     skymap: sc.SkyMap = None,
-    buffer_pixels: float = 20,
+    buffer_pixels: float | None = None,
 ) -> list[int]:
     """Find sky cells overlapping the provided image footprint
 
@@ -131,10 +131,13 @@ def find_skycell_matches(
         A GWCS instance must have `.bounding_box` or `.pixel_shape` attribute defined.
     skymap : sc.SkyMap :
         skymap instance; defaults to global SKYMAP (Default value = None)
-    buffer_pixels : float :
+    buffer_pixels : float | None :
         also match sky cells that come within this many skycell pixels of the
-        image footprint, to allow for distortion of the image edges
-        (Default value = 20)
+        image footprint, to allow for image edges that are not great circles.
+        By default, 1/300 of the radius of the footprint plus one pixel, which
+        is about 20 pixels for a WFI detector; this was measured to cover the
+        departure of the edges of the WFI detectors from a great circle with
+        a 2x margin.  (Default value = None)
 
     Returns
     -------
@@ -150,7 +153,10 @@ def find_skycell_matches(
         skymap = sc.SKYMAP
 
     # all angles in degrees
-    buffer = buffer_pixels * skymap.pixel_scale
+    if buffer_pixels is None:
+        buffer = footprint.radius / 300 + skymap.pixel_scale
+    else:
+        buffer = buffer_pixels * skymap.pixel_scale
     # tangent plane projection shrinks angles, so no point in a skycell is
     # farther from its center than half the diagonal of its pixel grid
     skycell_radius = skymap.pixel_shape[0] / np.sqrt(2) * skymap.pixel_scale

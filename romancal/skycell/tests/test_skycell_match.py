@@ -492,3 +492,24 @@ def test_match_buffer(skymap_subset):
     for smaller, larger in pairwise(matches):
         assert smaller <= larger
     assert matches[0] < matches[-1]
+
+
+def test_match_default_buffer(skymap_subset):
+    """the default buffer grows with the footprint"""
+    skycell = skymap.SkyCells.from_names(["000p86x50y65"], skymap=skymap_subset)
+    index = skycell.indices[0]
+
+    def matches(size, **kwargs):
+        """whether the skycell matches a square footprint of the given size in
+        pixels that ends 10 pixels short of the skycell's left edge"""
+        x = np.array([-10.5 - size, -10.5, -10.5, -10.5 - size])
+        y = 2500 + np.array([-size, -size, size, size]) / 2
+        corners = np.stack(skycell.wcs[0](x, y, with_bounding_box=False), axis=-1)
+        return index in sm.find_skycell_matches(corners, skymap=skymap_subset, **kwargs)
+
+    # too far for a postage stamp, unless the buffer is as large as the gap
+    assert not matches(10)
+    assert matches(10, buffer_pixels=20)
+    # close enough for an image the size of a WFI detector
+    assert not matches(8000, buffer_pixels=0)
+    assert matches(8000)

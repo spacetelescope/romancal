@@ -325,3 +325,12 @@ def test_skycells_cores_containing_pole(skymap_subset):
         assert skymap_subset.skycells.cores_containing([ra, 90.0]) == {
             int(pole_skycell.indices[0]): [0]
         }
+
+
+def test_ra_in_range():
+    # the upper bound is exclusive, so adjacent ranges share no points
+    ra = np.array([337.5, 0.0, 22.5])
+    assert skymap._ra_in_range(ra, 337.5, 22.5).tolist() == [True, True, False]
+    assert skymap._ra_in_range(ra, 22.5, 67.5).tolist() == [False, False, True]
+    # the full circle contains everything, including values that wrap to 360
+    assert np.all(skymap._ra_in_range(np.array([0.0, 360.0, -1e-20]), 0.0, 360.0))
