@@ -85,3 +85,23 @@ and is supported by all steps and pipelines.
 
     $ strun roman_elp r0008308002010007027_0019_wfi01_uncal.asdf
         --update_version=True
+
+.. _intro_downgrade_version:
+
+Downgrade Version
+^^^^^^^^^^^^^^^^^
+
+It is highly recommended to use data files that were produced with the
+same version of romancal. Users should be familiar with the risks
+associated with attempting `data_products_forward_compatibilty`.To allow romancal to
+attempt processing files from a later version ``downgrade_version``
+can be enabled. As the old version has no knowledge of the changes that
+led to the file produced by the later version there are only simple
+checks that can be performed. Verifying the validity of the results is
+left largely to the user with some guidance provided on the
+`data_products_forward_compatibility` page.
+
+::
+
+    $ strun roman_elp r0008308002010007027_0019_wfi01_uncal.asdf
+        --downgrade_version=True

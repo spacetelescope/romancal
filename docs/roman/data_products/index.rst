@@ -10,3 +10,4 @@ Data Products Information
    file_naming.rst
    product_types.rst
    science_products.rst
+   versioning.rst
