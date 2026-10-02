@@ -5,6 +5,7 @@ Module for the source catalog step.
 from __future__ import annotations
 
 import logging
+from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
 import astropy.units as u
@@ -209,17 +210,85 @@ class SourceCatalogStep(RomanStep):
         segmentation_model["detection_image"] = detection_image.value
         segmentation_model["detection_image_unit"] = str(detection_image.unit)
 
-    def process(self, dataset):
-        input_model = open_dataset(dataset, update_version=self.update_version)
+    def _empty_catalog_results(
+        self, cat_model, segmentation_model, input_model, model, mask
+    ):
+        """
+        Build empty catalog and segmentation products.
 
-        # get the name of the psf reference file
+        Empty products intentionally omit ``detection_image``. Forced
+        photometry only needs that array when measuring sources.
+
+        For ``ImageModel`` inputs the step still completed successfully,
+        so ``meta.cal_step.source_catalog`` is marked ``COMPLETE``.
+        """
+        cat_model.source_catalog = cat_model.create_empty_catalog()
+        segmentation_model.data = np.zeros(model.data.shape, dtype=np.uint32)
+        self._attach_skyvals_if_enabled(input_model, segmentation_model, mask)
+        # Match the non-empty path: only ImageModel records this cal_step.
+        if isinstance(input_model, datamodels.ImageModel):
+            self.finalize_result(input_model, self._reference_files_used)
+            input_model.meta.cal_step.source_catalog = "COMPLETE"
+        return cat_model, segmentation_model
+
+    def _load_forced_segmentation(self, mask):
+        """
+        Load the forcing segmentation map and its detection image.
+
+        Fully masked segments are removed. If no usable labels remain,
+        both return values are `None` and ``detection_image`` is not
+        required. Otherwise the forcing map must include
+        ``detection_image``.
+
+        Parameters
+        ----------
+        mask : 2D `~numpy.ndarray` of bool
+            Bad-pixel mask for the image being cataloged.
+
+        Returns
+        -------
+        segment_img : `~photutils.segmentation.SegmentationImage` or `None`
+            The forcing segmentation, or `None` when empty.
+        forced_detection_image : array-like or `None`
+            Detection image from the forcing product, or `None` when
+            the forcing map is empty.
+        """
+        with datamodels.open(self.forced_segmentation) as forced_segmodel:
+            # forced_segmodel.data is asdf.tags.core.ndarray.NDArrayType
+            forced_segimg = np.asarray(forced_segmodel.data[...]).copy()
+
+            # Remove fully masked segments
+            unmasked_sources = np.unique(forced_segimg * (mask == 0))
+            fully_masked_sources = set(np.unique(forced_segimg)) - set(unmasked_sources)
+            if fully_masked_sources:
+                forced_segimg_mask = np.isin(
+                    forced_segimg, np.array(list(fully_masked_sources))
+                )
+                forced_segimg[forced_segimg_mask] = 0
+
+            # Empty forcing maps (e.g. zero-source prompt catalogs) do not
+            # save detection_image. Produce an empty forced catalog instead
+            # of requiring that array or measuring photometry on zero labels.
+            if not np.any(forced_segimg):
+                return None, None
+
+            forced_detection_image = self._read_forced_detection_image(forced_segmodel)
+            return SegmentationImage(forced_segimg), forced_detection_image
+
+    @contextmanager
+    def _open_psf_model(self, input_model):
+        """Context to open the epsf reference file or None if fit_psf is not enabled."""
         if self.fit_psf:
             self.ref_file = self.get_reference_file(input_model, "epsf")
             log.info("Using ePSF reference file: %s", self.ref_file)
-            psf_model = datamodels.open(self.ref_file)
-            psf_model.psf = add_jitter(psf_model, input_model)
+            with datamodels.open(self.ref_file) as psf_model:
+                psf_model.psf = add_jitter(psf_model, input_model)
+                yield psf_model
         else:
-            psf_model = None
+            yield None
+
+    def process(self, dataset):
+        input_model = open_dataset(dataset, update_version=self.update_version)
 
         # Define a boolean mask for pixels to be excluded
         mask = (
@@ -253,145 +322,143 @@ class SourceCatalogStep(RomanStep):
         # pixels are masked
         if np.all(mask):
             log.error("Cannot create source catalog. All pixels are masked.")
-            cat_model.source_catalog = cat_model.create_empty_catalog()
-            segmentation_model.data = np.zeros(model.data.shape, dtype=np.uint32)
-            self._attach_skyvals_if_enabled(input_model, segmentation_model, mask)
-            return cat_model, segmentation_model
-
-        log.info("Calculating and subtracting background")
-        bkg = RomanBackground(
-            model.data,
-            box_size=self.bkg_boxsize,
-            coverage_mask=mask,
-        )
-        model.data -= bkg.background
-
-        log.info("Creating detection image")
-        detection_image = convolve_data(
-            model.data, kernel_fwhm=self.kernel_fwhm, mask=mask
-        )
-
-        log.info("Detecting sources")
-        if not self.forced_segmentation:
-            segment_img = make_segmentation_image(
-                detection_image,
-                snr_threshold=self.snr_threshold,
-                n_pixels=self.npixels,
-                bkg_rms=bkg.background_rms,
-                deblend=self.deblend,
-                mask=mask,
+            return self._empty_catalog_results(
+                cat_model, segmentation_model, input_model, model, mask
             )
-        else:
-            with datamodels.open(self.forced_segmentation) as forced_segmodel:
-                # forced_segmodel.data is asdf.tags.core.ndarray.NDArrayType
-                forced_segimg = forced_segmodel.data[...]
-                forced_detection_image = self._read_forced_detection_image(
-                    forced_segmodel
+
+        # In forced mode, resolve the forcing map before background and
+        # convolution so empty maps return early without that work.
+        forced_detection_image = None
+        if self.forced_segmentation:
+            segment_img, forced_detection_image = self._load_forced_segmentation(mask)
+            if segment_img is None:
+                log.info(
+                    "Forced segmentation contains no usable sources; "
+                    "returning an empty forced catalog."
+                )
+                return self._empty_catalog_results(
+                    cat_model, segmentation_model, input_model, model, mask
                 )
 
-            # Remove fully masked segments
-            unmasked_sources = np.unique(forced_segimg * (mask == 0))
-            fully_masked_sources = set(np.unique(forced_segimg)) - set(unmasked_sources)
-            forced_segimg_mask = np.isin(
-                forced_segimg, np.array(list(fully_masked_sources))
+        # get the name of the psf reference file
+        with self._open_psf_model(input_model) as psf_model:
+            log.info("Calculating and subtracting background")
+            bkg = RomanBackground(
+                model.data,
+                box_size=self.bkg_boxsize,
+                coverage_mask=mask,
             )
-            forced_segimg[forced_segimg_mask] = 0
-            segment_img = SegmentationImage(forced_segimg)
+            model.data -= bkg.background
 
-        # Return an empty segmentation image and catalog table if no
-        # sources are detected
-        if segment_img is None:
-            log.error("Cannot create source catalog. No sources were detected.")
-            cat_model.source_catalog = cat_model.create_empty_catalog()
-            segmentation_model.data = np.zeros(model.data.shape, dtype=np.uint32)
-            self._attach_skyvals_if_enabled(input_model, segmentation_model, mask)
-            return cat_model, segmentation_model
+            log.info("Creating detection image")
+            detection_image = convolve_data(
+                model.data, kernel_fwhm=self.kernel_fwhm, mask=mask
+            )
 
-        log.info("Creating ee_fractions model")
-        apcorr_ref = self.get_reference_file(input_model, "apcorr")
-        ee_spline = get_ee_spline(input_model, apcorr_ref)
+            log.info("Detecting sources")
+            if not self.forced_segmentation:
+                segment_img = make_segmentation_image(
+                    detection_image,
+                    snr_threshold=self.snr_threshold,
+                    n_pixels=self.npixels,
+                    bkg_rms=bkg.background_rms,
+                    deblend=self.deblend,
+                    mask=mask,
+                )
 
-        log.info("Creating source catalog")
-        cat_type = "prompt" if not self.forced_segmentation else "forced_det"
-        fit_psf = self.fit_psf & (not self.forced_segmentation)  # skip when forced
-        catobj = RomanSourceCatalog(
-            model,
-            cat_model,
-            segment_img,
-            detection_image,
-            self.kernel_fwhm,
-            fit_psf=fit_psf,
-            psf_model=psf_model,
-            mask=mask,
-            cat_type=cat_type,
-            ee_spline=ee_spline,
-        )
-        cat = catobj.catalog
+                # Return an empty segmentation image and catalog table if no
+                # sources are detected
+                if segment_img is None:
+                    log.error("Cannot create source catalog. No sources were detected.")
+                    return self._empty_catalog_results(
+                        cat_model, segmentation_model, input_model, model, mask
+                    )
 
-        if not self.forced_segmentation:
-            self._save_detection_image(segmentation_model, catobj)
-        else:
-            # TODO: improve this so that the moment-based properties are
-            # not recomputed from the forced_detection_image
-            #
-            # Forced photometry always needs the detection image that was used
-            # to build the forcing segmentation, so shape parameters match the
-            # deep/forcing catalog. SourceCatalogStep and MultibandCatalogStep
-            # both attach this as an extra array on successful segmentation
-            # products.
-            forced_catobj = RomanSourceCatalog(
+            log.info("Creating ee_fractions model")
+            apcorr_ref = self.get_reference_file(input_model, "apcorr")
+            ee_spline = get_ee_spline(input_model, apcorr_ref)
+
+            log.info("Creating source catalog")
+            cat_type = "prompt" if not self.forced_segmentation else "forced_det"
+            fit_psf = self.fit_psf & (not self.forced_segmentation)  # skip when forced
+            catobj = RomanSourceCatalog(
                 model,
                 cat_model,
                 segment_img,
-                forced_detection_image,
+                detection_image,
                 self.kernel_fwhm,
-                fit_psf=self.fit_psf,
+                fit_psf=fit_psf,
                 psf_model=psf_model,
                 mask=mask,
-                cat_type="forced_full",
+                cat_type=cat_type,
                 ee_spline=ee_spline,
             )
+            cat = catobj.catalog
 
-            # We have two catalogs, both using the same segmentation
-            # image. We want:
-            # - the original shape parameters computed from
-            #   the forced detection image.  These are needed to
-            #   describe where we have computed the forced photometry.
-            #   These keep their original names to match up with the deep
-            #   catalog used for forcing.
-            # - the newly measured fluxes and flags and sharpness
-            #   / roundness from the direct image; these give the new fluxes
-            #   at these locations
-            #   These gain a forced_ prefix.
-            # - the shapes measured from the new detection image.  These
-            #   seem to me to have less value but are explicitly called out in
-            #   a requirement, and it's not crazy to compute new centroids and
-            #   moments.
-            #   These gain a forced_prefix.
-            # At the end of the day you get a whole new catalog with the forced_
-            # prefix, plus some shape parameters that duplicate values in the
-            # original catalog used for forcing.
+            if not self.forced_segmentation:
+                self._save_detection_image(segmentation_model, catobj)
+            else:
+                # TODO: improve this so that the moment-based properties are
+                # not recomputed from the forced_detection_image
+                #
+                # Forced photometry always needs the detection image that was used
+                # to build the forcing segmentation, so shape parameters match the
+                # deep/forcing catalog. SourceCatalogStep and MultibandCatalogStep
+                # both attach this as an extra array on successful segmentation
+                # products.
+                forced_catobj = RomanSourceCatalog(
+                    model,
+                    cat_model,
+                    segment_img,
+                    forced_detection_image,
+                    self.kernel_fwhm,
+                    fit_psf=self.fit_psf,
+                    psf_model=psf_model,
+                    mask=mask,
+                    cat_type="forced_full",
+                    ee_spline=ee_spline,
+                )
 
-            # merge the two forced catalogs
-            forced_cat = forced_catobj.catalog
+                # We have two catalogs, both using the same segmentation
+                # image. We want:
+                # - the original shape parameters computed from
+                #   the forced detection image.  These are needed to
+                #   describe where we have computed the forced photometry.
+                #   These keep their original names to match up with the deep
+                #   catalog used for forcing.
+                # - the newly measured fluxes and flags and sharpness
+                #   / roundness from the direct image; these give the new fluxes
+                #   at these locations
+                #   These gain a forced_ prefix.
+                # - the shapes measured from the new detection image.  These
+                #   seem to me to have less value but are explicitly called out in
+                #   a requirement, and it's not crazy to compute new centroids and
+                #   moments.
+                #   These gain a forced_prefix.
+                # At the end of the day you get a whole new catalog with the forced_
+                # prefix, plus some shape parameters that duplicate values in the
+                # original catalog used for forcing.
 
-            self._save_detection_image(segmentation_model, forced_catobj)
-            forced_cat.meta = None  # redundant with cat.meta
-            cat = join(forced_cat, cat, keys="label", join_type="outer")
+                # merge the two forced catalogs
+                forced_cat = forced_catobj.catalog
 
-        # Put the resulting catalog table in the catalog model
-        cat_model.source_catalog = cat
+                self._save_detection_image(segmentation_model, forced_catobj)
+                forced_cat.meta = None  # redundant with cat.meta
+                cat = join(forced_cat, cat, keys="label", join_type="outer")
 
-        # Set the data and detection image
-        segmentation_model.data = segment_img.data.astype(np.uint32)
-        self._attach_skyvals_if_enabled(input_model, segmentation_model, mask)
-        # we update the input_model here to note that source_catalog finished
-        # only for ImageModel as L3 doesn't have cal_step.source_catalog
-        # and was not previously recorded
-        if isinstance(input_model, datamodels.ImageModel):
-            self.finalize_result(input_model, self._reference_files_used)
-            input_model.meta.cal_step.source_catalog = "COMPLETE"
-        return cat_model, segmentation_model
+            # Put the resulting catalog table in the catalog model
+            cat_model.source_catalog = cat
+
+            # Set the data and detection image
+            segmentation_model.data = segment_img.data.astype(np.uint32)
+            self._attach_skyvals_if_enabled(input_model, segmentation_model, mask)
+            # we update the input_model here to note that source_catalog finished
+            # only for ImageModel as L3 doesn't have cal_step.source_catalog
+            # and was not previously recorded
+            if isinstance(input_model, datamodels.ImageModel):
+                self.finalize_result(input_model, self._reference_files_used)
+                input_model.meta.cal_step.source_catalog = "COMPLETE"
+            return cat_model, segmentation_model
 
     def _make_catalog_and_segmentation_models(self, model):
         if isinstance(model, ImageModel):
