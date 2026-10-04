@@ -156,24 +156,11 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request, dms_logger,
     rtdata.get_truth(f"truth/WFI/image/{segmfn}")
     segmtruth = rdm.open(f"truth/{segmfn}")
 
-    # Ensure segm file has the same contents
-    assert sorted(segm_mod.keys()) == sorted(segmtruth.keys())
-    assert segm_mod['detection_image_unit'] == segmtruth['detection_image_unit']
-
-    # Ensure that all segm numpy components are close
-    for colname in ['data', 'detection_image']:
-        assert np.allclose(segm_mod[colname], segmtruth[colname])
-
-
+    # Ensure segm file contents are close (minus the tables)
     ignore_asdf_paths['ignore'].append('roman.injected_sources')
     ignore_asdf_paths['ignore'].append('roman.recovered_sources')
-    ignore_asdf_paths['ignore'].append('roman.detection_image_unit')
-    print(f"\nXXXX ignore_asdf_paths = {ignore_asdf_paths}")
-    print(f"\nXXX sorted(segm_mod.keys()) = {sorted(segm_mod.keys())}")
-    # Ensure segm file contents are close (minus the tables)
     compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
 
     # Ensure segm tables contain the same categories of the same types with the same units
     for tabname in ['injected_sources', 'recovered_sources']:
         compare_table(segm_mod[tabname], segmtruth[tabname])
-
