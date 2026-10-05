@@ -159,7 +159,8 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request, dms_logger,
     # Ensure segm file contents are close (minus the tables)
     ignore_asdf_paths['ignore'].append('roman.injected_sources')
     ignore_asdf_paths['ignore'].append('roman.recovered_sources')
-    compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
+    assert diff.identical, diff.report()
 
     # Ensure segm tables contain the same categories of the same types with the same units
     for tabname in ['injected_sources', 'recovered_sources']:
