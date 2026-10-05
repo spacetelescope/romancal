@@ -16,8 +16,16 @@ def tmp_cache(tmp_path_factory):
     yield tmp_path_factory.mktemp("crds")
 
 
+def log_contains_s3(model):
+    for line in model.meta.cal_logs:
+        if "s3://stpubdata" in line:
+            return True
+    return False
+
+
 @pytest.fixture
 def s3_crds(tmp_cache, monkeypatch):
+    # patch the download plugin?
     old_state = crds.config.get_crds_state()
     crds.utils.clear_function_caches()
     # this reproduces configuration from the crds_s3_set script and from crds tests
@@ -52,10 +60,11 @@ def test_s3_elp(s3_crds, rtdata):
     rtdata.input = input_data
 
     # Test Pipeline
-    result = ExposurePipeline.call(rtdata.input)
+    result, *_ = ExposurePipeline.call(rtdata.input)
 
     # no truth comparison here since the context may differ
     assert isinstance(result, rdm.ImageModel)
+    assert log_contains_s3(result)
 
 
 def test_s3_mos(s3_crds, rtdata):
@@ -64,3 +73,4 @@ def test_s3_mos(s3_crds, rtdata):
 
     # no truth comparison here since the context may differ
     assert isinstance(result, rdm.MosaicModel)
+    assert log_contains_s3(result)
