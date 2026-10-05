@@ -15,6 +15,6 @@ if __name__ == "__main__":
     ].copy()
 
     skymap_subset.skycells = skymap.SKYMAP.model.skycells[
-        : skymap_subset.projection_regions[-1]["skycell_end"] + 1
+        : skymap_subset.projection_regions[-1]["skycell_end"]
     ].copy()
     skymap_subset.save(DATA_DIRECTORY / "skymap_subset.asdf")

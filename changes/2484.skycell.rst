@@ -1,0 +1,3 @@
+Improve skycell matching speed and correctness; skycells extending beyond their
+projection region's bounds are no longer missed, and each point on the sky
+belongs to exactly one skycell core.
