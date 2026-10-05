@@ -2,8 +2,8 @@
 
 import numpy as np
 import pytest
-from astropy.table import Table
 import roman_datamodels as rdm
+from astropy.table import Table
 
 from romancal.regtest.regtestdata import compare_asdf
 from romancal.stpipe import RomanStep
@@ -39,6 +39,7 @@ fieldlist = [
     "dust_ebv",  # dust extinction values
 ]
 
+
 def compare_table(table1, table2):
     assert set(table1.dtype.names) == set(table2.dtype.names)
     for colname in table1.colnames:
@@ -49,7 +50,9 @@ def compare_table(table1, table2):
         assert col.unit == coltruth.unit
 
 
-def test_multiband_catalog(rtdata_module, resource_tracker, request, dms_logger, ignore_asdf_paths):
+def test_multiband_catalog(
+    rtdata_module, resource_tracker, request, dms_logger, ignore_asdf_paths
+):
     rtdata = rtdata_module
     inputasnfn = "r00001_p_v01001001001001_270p65x70y49_asn.json"
     outputfn = "r00001_p_v01001001001001_270p65x70y49_cat.parquet"
@@ -157,11 +160,11 @@ def test_multiband_catalog(rtdata_module, resource_tracker, request, dms_logger,
     segmtruth = rdm.open(f"truth/{segmfn}")
 
     # Ensure segm file contents are close (minus the tables)
-    ignore_asdf_paths['ignore'].append('roman.injected_sources')
-    ignore_asdf_paths['ignore'].append('roman.recovered_sources')
+    ignore_asdf_paths["ignore"].append("roman.injected_sources")
+    ignore_asdf_paths["ignore"].append("roman.recovered_sources")
     diff = compare_asdf(rtdata.output, rtdata.truth, **ignore_asdf_paths)
     assert diff.identical, diff.report()
 
     # Ensure segm tables contain the same categories of the same types with the same units
-    for tabname in ['injected_sources', 'recovered_sources']:
+    for tabname in ["injected_sources", "recovered_sources"]:
         compare_table(segm_mod[tabname], segmtruth[tabname])
