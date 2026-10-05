@@ -9,13 +9,13 @@ dq2 arrays are always created, zero-filled when absent, but the pipeline
 never sets any of their bits; those only arrive from reference files.
 """
 
-import warnings
+import logging
 
 import numpy as np
 
-from romancal.datamodels.migration import MigrationWarning
-
 __all__ = ["update_dq"]
+
+log = logging.getLogger(__name__)
 
 #: Width of the reference pixel border trimmed from the science array
 #: during ramp fitting.
@@ -36,8 +36,7 @@ def _dq_names(model):
 def _ensure_dq2(model):
     """Return ``model``'s dq2 array, creating an empty one if needed.
 
-    Files written before dq2 existed simply lack the array.  If an empty
-    array is added, we issue a MigrationWarning.
+    Files written before dq2 existed simply lack the array.
 
     Models with no pixel-level data quality array at all, such as the L1
     ``ScienceRawModel``, have nothing for dq2 to accompany and raise
@@ -50,11 +49,7 @@ def _ensure_dq2(model):
         raise TypeError(
             f"{type(model).__name__} has no {dq_name} array for {dq2_name} to accompany"
         )
-    warnings.warn(
-        f"{type(model).__name__} has no {dq2_name} array; adding an empty one.",
-        MigrationWarning,
-        stacklevel=3,
-    )
+    log.info(f"{type(model).__name__} has no {dq2_name} array; adding an empty one.")
     model[dq2_name] = np.zeros(model[dq_name].shape, dtype=model[dq_name].dtype)
     return model[dq2_name]
 
@@ -86,9 +81,7 @@ def update_dq(model, reference):
 
     Both dq and dq2 are or-ed in when the reference provides them;
     references that carry neither leave ``model`` unchanged apart from
-    ensuring that dq2 exists.  ``model`` is updated in place.  If dq2
-    has to be created, a
-    `~romancal.datamodels.migration.MigrationWarning` is issued.
+    ensuring that dq2 exists.  ``model`` is updated in place.
 
     The reference pixel border is trimmed from the reference arrays when
     needed, inferred from the array shapes.

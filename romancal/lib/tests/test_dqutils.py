@@ -1,12 +1,9 @@
 """Tests for the data quality propagation helpers."""
 
-import warnings
-
 import numpy as np
 import pytest
 import roman_datamodels.datamodels as rdm
 
-from romancal.datamodels.migration import MigrationWarning
 from romancal.lib.dqutils import update_dq
 
 SHAPE = (16, 16)
@@ -50,8 +47,7 @@ def test_update_dq_uses_ramp_array_names():
     model.pixeldq = np.zeros(SHAPE, dtype=np.uint32)
     model.pop("pixeldq2", None)
 
-    with pytest.warns(MigrationWarning, match="no pixeldq2 array"):
-        update_dq(model, make_ref(dq=5, dq2=9))
+    update_dq(model, make_ref(dq=5, dq2=9))
 
     assert (model.pixeldq == 5).all()
     assert (model.pixeldq2 == 9).all()
@@ -70,21 +66,12 @@ def test_update_dq_creates_empty_dq2(reference):
         reference = rdm.GainRefModel.create_fake_data(shape=SHAPE)
         assert "dq" not in reference
 
-    with pytest.warns(MigrationWarning, match="no dq2 array"):
-        update_dq(model, reference)
+    update_dq(model, reference)
 
     assert (model.dq == 5).all()
     assert model.dq2.shape == SHAPE
     assert model.dq2.dtype == np.uint32
     assert not model.dq2.any()
-
-
-def test_update_dq_existing_dq2_does_not_warn():
-    model = make_image(dq2=0)
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("error", MigrationWarning)
-        update_dq(model, make_ref(dq=5))
 
 
 def test_update_dq_rejects_models_without_dq():
