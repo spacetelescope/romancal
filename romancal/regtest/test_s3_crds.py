@@ -1,3 +1,5 @@
+import logging
+
 import crds.config
 import crds.utils
 import pytest
@@ -16,9 +18,9 @@ def tmp_cache(tmp_path_factory):
     yield tmp_path_factory.mktemp("crds")
 
 
-def log_contains_s3(model):
-    for line in model.meta.cal_logs:
-        if "s3://stpubdata" in line:
+def log_contains_s3(caplog):
+    for record in caplog.records:
+        if "s3://stpubdata" in record.message:
             return True
     return False
 
@@ -54,7 +56,8 @@ def s3_crds(tmp_cache, monkeypatch):
     crds.utils.clear_function_caches()
 
 
-def test_s3_elp(s3_crds, rtdata):
+def test_s3_elp(s3_crds, rtdata, caplog):
+    caplog.set_level(logging.INFO)
     input_data = "r0000101001001001001_0001_wfi01_f158_uncal.asdf"
     rtdata.get_data(f"WFI/image/{input_data}")
     rtdata.input = input_data
@@ -64,13 +67,14 @@ def test_s3_elp(s3_crds, rtdata):
 
     # no truth comparison here since the context may differ
     assert isinstance(result, rdm.ImageModel)
-    assert log_contains_s3(result)
+    assert log_contains_s3(caplog)
 
 
-def test_s3_mos(s3_crds, rtdata):
+def test_s3_mos(s3_crds, rtdata, caplog):
+    caplog.set_level(logging.INFO)
     rtdata.get_asn("WFI/image/L3_regtest_asn.json")
     result, *_ = MosaicPipeline.call(rtdata.input)
 
     # no truth comparison here since the context may differ
     assert isinstance(result, rdm.MosaicModel)
-    assert log_contains_s3(result)
+    assert log_contains_s3(caplog)
