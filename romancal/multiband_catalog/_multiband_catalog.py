@@ -11,14 +11,16 @@ import numpy as np
 from astropy import coordinates
 from astropy import units as u
 from astropy.table import join
-from astropy.time import Time
 from roman_datamodels import datamodels
 
 from romancal.datamodels import ModelLibrary
 from romancal.multiband_catalog._background import subtract_background_library
 from romancal.multiband_catalog._catalog_generator import create_filter_catalog
 from romancal.multiband_catalog._detection_image import make_detection_image
-from romancal.multiband_catalog._metadata import blend_image_metadata
+from romancal.multiband_catalog._metadata import (
+    blend_image_metadata,
+    finalize_catalog_metadata,
+)
 from romancal.source_catalog._background import RomanBackground
 from romancal.source_catalog._detection import make_segmentation_image
 from romancal.source_catalog._injection import (
@@ -261,7 +263,7 @@ def prepare_reference_filter(self, library):
         Dictionary with keys:
         - 'ref_filter': The reference filter name (uppercase)
         - 'ref_model': The reference filter model
-        - 'ref_psf_model': The reference PSF model
+        - 'ref_psf_file': The reference PSF model filename
     """
     # Determine reference filter for PSF matching
     if self.psf_match_reference_filter is None:
@@ -291,13 +293,12 @@ def prepare_reference_filter(self, library):
         raise ValueError(msg)
 
     ref_psf_file = self.get_reference_file(ref_model, "epsf")
-    ref_psf_model = datamodels.open(ref_psf_file)
     log.info(f"Using reference PSF: {ref_psf_file}")
 
     return {
         "ref_filter": ref_filter,
         "ref_model": ref_model,
-        "ref_psf_model": ref_psf_model,
+        "ref_psf_file": ref_psf_file,
     }
 
 
@@ -389,7 +390,7 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
     ref_info = prepare_reference_filter(self, library)
     ref_filter = ref_info["ref_filter"]
     ref_model = ref_info["ref_model"]
-    ref_psf_model = ref_info["ref_psf_model"]
+    ref_psf_file = ref_info["ref_psf_file"]
 
     # Record the PSF match reference filter in metadata
     detection_catalog.meta["psf_match_reference_filter"] = ref_filter.upper()
@@ -407,7 +408,7 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
     model_indices = prepare_processing_order(library, ref_filter)
 
     # Create catalogs for each input image
-    with library:
+    with library, datamodels.open(ref_psf_file) as ref_psf_model:
         for model_index in model_indices:
             model = library.borrow(model_index)
             filter_name = model.meta.instrument.optical_element
@@ -438,16 +439,20 @@ def multiband_catalog(self, library, example_model, catalog_model, ee_spline):
             filter_catalogs[filter_name] = result["catalog"]
 
             # Accumulate and blend image metadata
-            blend_image_metadata(model, catalog_model, time_means, exposure_times)
+            blend_image_metadata(
+                model,
+                catalog_model,
+                time_means,
+                exposure_times,
+            )
 
             library.shelve(model, modify=False)
 
     # Join all filter catalogs to detection catalog
     detection_catalog = join_filter_catalogs(detection_catalog, filter_catalogs)
 
-    # Finish blending
-    catalog_model.meta.coadd_info.time_mean = Time(time_means).mean()
-    catalog_model.meta.coadd_info.exposure_time = np.mean(exposure_times)
+    # Finish L3→L3 metadata blending (coadd_info mean fields)
+    finalize_catalog_metadata(catalog_model, time_means, exposure_times)
 
     # Consolidate and sort ee_fractions
     finalize_ee_fractions(detection_catalog, filter_ee_fractions)
