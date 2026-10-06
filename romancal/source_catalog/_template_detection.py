@@ -36,10 +36,10 @@ from photutils.segmentation import SegmentationImage
 
 from romancal.source_catalog._background import RomanBackground
 from romancal.source_catalog._detection import (
-    fft_convolve,
     ivw_convolve,
-    make_gaussian_kernel,
+    make_gaussian_kernel_1d,
     make_segmentation_image,
+    separable_convolve,
     snr_from_ivw,
 )
 
@@ -174,12 +174,15 @@ def make_template_snr_images(
         background is subtracted from this one; see the note at the call
         site.
     """
-    # we use single precision here because these arrays and the transforms built
-    # from them are the bulk of the step's memory.
+    # we use single precision here because these arrays and the convolutions
+    # built from them are the bulk of the step's memory.  ``err`` is float16
+    # in L2 products, where 1 / err**2 overflows for err < 0.004, so it is
+    # widened before squaring.
     data = np.asarray(data, dtype=np.float32)
+    err = np.asarray(err, dtype=np.float32)
     good = ~mask if mask is not None else np.ones(data.shape, dtype=bool)
-    wht = np.where(good, 1.0 / np.where(good, err, 1.0) ** 2, 0.0)
-    wht = wht.astype(np.float32)
+    wht = np.zeros(data.shape, dtype=np.float32)
+    wht[good] = 1 / err[good] ** 2
 
     clipped_data, n_clipped = _clip_for_detection(data, err, mask)
     if n_clipped:
@@ -190,14 +193,14 @@ def make_template_snr_images(
 
     snr_images = []
     for fwhm in _template_fwhms(kernel_fwhm, template_fwhm, pixel_scale):
-        kernel = make_gaussian_kernel(fwhm, size_factor=_TEMPLATE_SIZE_FACTOR)
-        if kernel.shape[0] > min(data.shape):
+        kernel = make_gaussian_kernel_1d(fwhm, size_factor=_TEMPLATE_SIZE_FACTOR)
+        if len(kernel) > min(data.shape):
             # The kernel is wider than the image, so it is all boundary.
             # Triggered by cutouts and by test frames; real images are far
             # larger than the bank.
             log.info(
                 f"Skipping template FWHM={fwhm:.1f} px: kernel "
-                f"{kernel.shape[0]} px exceeds the image"
+                f"{len(kernel)} px exceeds the image"
             )
             continue
         # Remove the light this template should not be detecting: anything
@@ -208,10 +211,11 @@ def make_template_snr_images(
         box = _bkg_box_size(fwhm)
         bkg = RomanBackground(data, box_size=box, mask=mask).background
         num, denom2 = ivw_convolve(clipped_data - bkg, wht, kernel, mask=mask)
-        snr_images.append(snr_from_ivw(num, denom2))
         del bkg
+        snr_images.append(snr_from_ivw(num, denom2))
+        del num, denom2
         log.info(
-            f"Template FWHM={fwhm:.1f} px: kernel {kernel.shape[0]} px, "
+            f"Template FWHM={fwhm:.1f} px: kernel {len(kernel)} px, "
             f"background box {box} px"
         )
 
@@ -226,10 +230,10 @@ def make_template_snr_images(
     # additional background removed.
     # We should investigate subtracting one, but we need to more carefully
     # track what scale the background should be removed on for each different template
-    psf_kernel = make_gaussian_kernel(
+    psf_kernel = make_gaussian_kernel_1d(
         kernel_fwhm / pixel_scale, size_factor=_MOMENT_SIZE_FACTOR
     )
-    conv_psf = fft_convolve(data, psf_kernel, mask=mask)
+    conv_psf = separable_convolve(data, psf_kernel, mask=mask)
 
     return snr_images, conv_psf
 
@@ -490,7 +494,8 @@ def make_segmentation_image_template(
     mask : 2D `numpy.ndarray`, optional
         Boolean mask; True values are given zero weight.
     bkg_boxsize : int, optional
-        Box size for estimating the noise of each significance image.
+        Box size, in pixels, for estimating the noise of each significance
+        image.
     max_sources : int, optional
         Keep at most this many sources, the most significant first.  Zero
         means no limit.

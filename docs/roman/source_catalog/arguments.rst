@@ -3,8 +3,8 @@ Step Arguments
 
 The ``source_catalog`` step has the following arguments:
 
-* ``--bkg_boxsize``: An integer value giving the background mesh box
-  size in pixels
+* ``--bkg_boxsize``: A floating-point value giving the background mesh
+  box size in arcsec
 
 * ``--kernel_fwhm``: A floating-point value giving the FWHM in arcsec
   of the point-source detection template.  The larger templates are

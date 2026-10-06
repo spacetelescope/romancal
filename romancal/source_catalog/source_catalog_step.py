@@ -56,10 +56,10 @@ class SourceCatalogStep(RomanStep):
 
     Other Parameters
     ----------------
-    bkg_boxsize : int, optional
-        Edge length, in pixels, of the square mesh boxes used by
+    bkg_boxsize : float, optional
+        Edge length, in arcsec, of the square mesh boxes used by
         `~photutils.background.Background2D` to estimate the global 2D
-        background.
+        background, and the noise of the detection significance images.
 
     kernel_fwhm : float, optional
         Full-width-at-half-maximum, in arcsec, of the Gaussian smoothing
@@ -104,7 +104,7 @@ class SourceCatalogStep(RomanStep):
     reference_file_types: ClassVar = ["apcorr"]
 
     spec = """
-        bkg_boxsize = integer(default=1000)   # background mesh box size in pixels
+        bkg_boxsize = float(default=55.0)     # background mesh box size in arcsec
         kernel_fwhm = float(default=0.2)      # Gaussian kernel FWHM in arcsec
         template_fwhm = float_list(default=list(0.6, 2.4))  # extra template FWHM in arcsec
         snr_threshold = float(default=5.0)    # detection threshold in sigma
@@ -291,23 +291,25 @@ class SourceCatalogStep(RomanStep):
             )
             model.err = np.maximum(model.err, err_floor)
 
+        pixel_scale = _pixel_scale(model)
+        kernel_fwhm_px = self.kernel_fwhm / pixel_scale
+        bkg_boxsize_px = max(round(self.bkg_boxsize / pixel_scale), 1)
+        log.info(
+            f"Pixel scale {pixel_scale:.4f} arcsec/px; PSF kernel FWHM "
+            f"{self.kernel_fwhm} arcsec = {kernel_fwhm_px:.2f} px; background "
+            f"box {self.bkg_boxsize} arcsec = {bkg_boxsize_px} px"
+        )
+
         log.info("Calculating and subtracting background")
         # bad pixel mask rather than coverage_mask to keep finite RMS estimates
         # in holes
         bkg = RomanBackground(
             model.data,
-            box_size=self.bkg_boxsize,
+            box_size=bkg_boxsize_px,
             mask=mask,
         )
         model.data -= bkg.background
         del bkg  # not used later; save memory
-
-        pixel_scale = _pixel_scale(model)
-        kernel_fwhm_px = self.kernel_fwhm / pixel_scale
-        log.info(
-            f"Pixel scale {pixel_scale:.4f} arcsec/px; PSF kernel FWHM "
-            f"{self.kernel_fwhm} arcsec = {kernel_fwhm_px:.2f} px"
-        )
 
         log.info("Detecting sources")
         det_template = None
@@ -328,7 +330,7 @@ class SourceCatalogStep(RomanStep):
                 pixel_scale=pixel_scale,
                 deblend=self.deblend,
                 mask=mask,
-                bkg_boxsize=self.bkg_boxsize,
+                bkg_boxsize=bkg_boxsize_px,
                 max_sources=self.max_sources,
             )
             if detection_image is None:

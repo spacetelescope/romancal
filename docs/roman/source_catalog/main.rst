@@ -17,8 +17,8 @@ data. The background and background noise are estimated using the
 class from `Photutils
 <https://photutils.readthedocs.io/en/stable/index.html>`_. This class
 calculates the background by measuring the sigma-clipped median within
-user-defined boxes of a specified size (``bkg_boxsize``). The background
-RMS noise is then estimated using the sigma-clipped standard deviation
+user-defined boxes of a specified angular size (``bkg_boxsize``, in
+arcsec). The background RMS noise is then estimated using the sigma-clipped standard deviation
 within the same boxes.
 
 

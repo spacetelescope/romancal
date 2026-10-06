@@ -147,7 +147,7 @@ def test_forced_catalog(image_model, function_jail, ignore_parquet_metadata_path
     output_filename = "force_cat.parquet"
     _ = SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=50,
+        bkg_boxsize=5.0,
         kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
@@ -156,7 +156,7 @@ def test_forced_catalog(image_model, function_jail, ignore_parquet_metadata_path
     )
     result_force, segmentation_map = SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=50,
+        bkg_boxsize=5.0,
         kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
@@ -262,8 +262,8 @@ def _write_forcing_segm(image_model, filename, *, unit, scale=1.0):
     """
     SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        bkg_boxsize=5.0,
+        kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
         save_results=True,
@@ -282,8 +282,8 @@ def _write_forcing_segm(image_model, filename, *, unit, scale=1.0):
 def _call_forced(image_model, filename):
     return SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        bkg_boxsize=5.0,
+        kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
         save_results=False,
@@ -337,8 +337,8 @@ def test_forced_catalog_requires_detection_image(image_model, function_jail):
     """Purpose: forced photometry errors clearly if forcing segm lacks detection_image."""
     _, segm = SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        bkg_boxsize=5.0,
+        kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
         save_results=False,
@@ -352,8 +352,8 @@ def test_forced_catalog_requires_detection_image(image_model, function_jail):
     with pytest.raises(ValueError, match="must include a detection_image"):
         SourceCatalogStep.call(
             image_model,
-            bkg_boxsize=50,
-            kernel_fwhm=2.0,
+            bkg_boxsize=5.0,
+            kernel_fwhm=0.2,
             snr_threshold=5,
             npixels=10,
             save_results=False,
@@ -385,7 +385,7 @@ def test_l2_source_catalog(
 
     result_catalog, result_segmentation_map = SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=50,
+        bkg_boxsize=5.0,
         kernel_fwhm=0.2,
         snr_threshold=snr_threshold,
         npixels=npixels,
@@ -465,7 +465,7 @@ def test_l3_source_catalog(
     # create the L3 PSF for flux determination.
     result_catalog, result_segmentation_map = SourceCatalogStep.call(
         mosaic_model,
-        bkg_boxsize=50,
+        bkg_boxsize=5.0,
         kernel_fwhm=0.2,
         snr_threshold=snr_threshold,
         npixels=npixels,
@@ -527,7 +527,7 @@ def test_background(mosaic_model, function_jail):
     """
     result_catalog, _ = SourceCatalogStep.call(
         mosaic_model,
-        bkg_boxsize=1000,
+        bkg_boxsize=100.0,
         kernel_fwhm=0.2,
         snr_threshold=3,
         npixels=25,
@@ -545,7 +545,7 @@ def test_source_catalog_populates_dust_ebv(model_fixture, request, function_jail
     model = request.getfixturevalue(model_fixture)
     result_catalog, _ = SourceCatalogStep.call(
         model,
-        bkg_boxsize=50,
+        bkg_boxsize=5.0,
         kernel_fwhm=0.2,
         snr_threshold=3,
         npixels=10,
@@ -570,7 +570,7 @@ def test_nested_metadata_propagated_to_catalog_and_segmentation(
 
     result_catalog, result_segmentation_map = SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=50,
+        bkg_boxsize=5.0,
         kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
@@ -597,7 +597,7 @@ def test_l2_input_model_unchanged(image_model, function_jail):
         image_model,
         snr_threshold=0.5,
         npixels=5,
-        bkg_boxsize=50,
+        bkg_boxsize=5.0,
         kernel_fwhm=0.2,
         save_results=False,
         fit_psf=False,
@@ -614,7 +614,7 @@ def test_kron_nomask_flux(image_model):
     """
     cat, _ = SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=50,
+        bkg_boxsize=5.0,
         kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=9,
@@ -630,7 +630,7 @@ def test_kron_nomask_flux(image_model):
 def test_l2_segmentation_contains_skyvals(image_model):
     _, result_segmentation_map = SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=50,
+        bkg_boxsize=5.0,
         kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
@@ -654,7 +654,7 @@ def test_l2_segmentation_contains_skyvals(image_model):
 def test_l2_segmentation_without_skyvals_when_disabled(image_model):
     _, result_segmentation_map = SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=50,
+        bkg_boxsize=5.0,
         kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
@@ -703,7 +703,7 @@ def test_l2_skyvals_values_and_covfrac_reasonable(image_model):
 
     _, result_segmentation_map = SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=50,
+        bkg_boxsize=5.0,
         kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
@@ -736,7 +736,7 @@ def test_l3_input_model_unchanged(mosaic_model, function_jail):
         mosaic_model,
         snr_threshold=0.5,
         npixels=5,
-        bkg_boxsize=50,
+        bkg_boxsize=5.0,
         kernel_fwhm=0.2,
         save_results=False,
         fit_psf=False,
@@ -767,7 +767,7 @@ def test_psf_photometry(function_jail, image_model):
     """
     result_catalog, _ = SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=20,
+        bkg_boxsize=2.0,
         kernel_fwhm=0.2,
         snr_threshold=3,
         npixels=10,
@@ -808,7 +808,7 @@ def test_nonfinite_centroid_does_not_stop_the_step(
 
     result_catalog, _ = SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=20,
+        bkg_boxsize=2.0,
         kernel_fwhm=0.2,
         snr_threshold=3,
         npixels=10,
@@ -827,7 +827,7 @@ def test_do_psf_photometry_column_names(function_jail, image_model, fit_psf):
     """
     result_catalog, _ = SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=20,
+        bkg_boxsize=2.0,
         kernel_fwhm=0.2,
         snr_threshold=3,
         npixels=10,

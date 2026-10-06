@@ -6,7 +6,8 @@ and watershed deblending.
 The ``kernel_fwhm`` parameter is now given in arcseconds rather than
 pixels, with a new default of 0.2, and the larger detection templates are
 configurable angular sizes as well.  The bank therefore searches the same physical
-scales whatever the pixel scale of the image.
+scales whatever the pixel scale of the image.  ``bkg_boxsize`` is likewise
+now in arcseconds, with a default of 55 (1000 pixels at the L3 pixel scale).
 
 New det_template, det_significance, kron_nomask_flux, kron_nomask_flux_err
 catalog columns.  The first two identify the template that led to the detection

@@ -7,8 +7,9 @@ import math
 import warnings
 
 import numpy as np
-import scipy.signal
-from astropy.convolution import convolve
+import scipy.ndimage
+from astropy.convolution import Gaussian1DKernel, convolve
+from astropy.stats import gaussian_fwhm_to_sigma
 from astropy.utils.exceptions import AstropyUserWarning
 from photutils.segmentation import SourceFinder, make_2dgaussian_kernel
 from photutils.utils.exceptions import NoDetectionsWarning
@@ -104,16 +105,36 @@ def make_segmentation_image(
     return segment_img
 
 
-def _oversampling(size, max_oversampled_grid=2000):
+def make_gaussian_kernel_1d(fwhm, size_factor=4, max_size=601):
     """
-    Oversampling factor for a kernel of ``size`` pixels across.
+    Make a normalized 1D Gaussian kernel.
 
-    photutils discretizes the kernel on a grid oversampled 10x in each
-    axis, which can dominate the memory used to build a large kernel.
-    ``max_oversampled_grid`` caps the side of that grid, backing the
-    oversampling off from 10 once the kernel is large enough to need it.
+    The outer product of this kernel with itself is a normalized 2D
+    circular Gaussian, so a 2D convolution with that Gaussian is two 1D
+    convolutions with this one.  Each pixel is the mean of the Gaussian
+    over a 10x oversampled grid, matching the photutils 2D kernels.
+
+    Parameters
+    ----------
+    fwhm : float
+        Full-width at half-maximum of the Gaussian, in pixels.
+    size_factor : int, optional
+        Kernel length as a multiple of ``fwhm``.
+    max_size : int, optional
+        Largest kernel length, in pixels.
+
+    Returns
+    -------
+    kernel : 1D `numpy.ndarray`
+        The kernel array, summing to 1.
     """
-    return int(np.clip(max_oversampled_grid // size, 1, 10))
+    size = min(math.ceil(size_factor * fwhm), max_size)
+    size = size + 1 if size % 2 == 0 else size  # make size be odd
+    kernel = Gaussian1DKernel(
+        fwhm * gaussian_fwhm_to_sigma, x_size=size, mode="oversample", factor=10
+    )
+    kernel.normalize(mode="integral")
+    return kernel.array
 
 
 def make_gaussian_kernel(fwhm, size_factor=4, max_size=601):
@@ -134,16 +155,19 @@ def make_gaussian_kernel(fwhm, size_factor=4, max_size=601):
     kernel : 2D `numpy.ndarray`
         The kernel array, summing to 1.
     """
-    size = min(math.ceil(size_factor * fwhm), max_size)
-    size = size + 1 if size % 2 == 0 else size  # make size be odd
-    return np.asarray(  # sums to 1
-        make_2dgaussian_kernel(fwhm, size=size, oversampling=_oversampling(size))
-    )
+    kernel = make_gaussian_kernel_1d(fwhm, size_factor=size_factor, max_size=max_size)
+    return np.outer(kernel, kernel)
 
 
-def fft_convolve(data, kernel, mask=None):
+def separable_convolve(data, kernel, mask=None):
     """
-    Convolve ``data`` with ``kernel``, zero-padded at the boundary.
+    Convolve ``data`` with the outer product of ``kernel`` with itself.
+
+    The convolution is done directly, as one 1D convolution along each
+    axis, and is zero-padded at the boundary.  Unlike an FFT, a direct
+    convolution is exactly zero far from any nonzero data, so masked
+    regions and image edges are not filled with round-off from bright
+    sources elsewhere in the image.
 
     This uses single precision to conserve memory and fills NaNs to zeros
     before convolution.
@@ -152,8 +176,9 @@ def fft_convolve(data, kernel, mask=None):
     ----------
     data : 2D `numpy.ndarray`
         The array to convolve.
-    kernel : 2D `numpy.ndarray`
-        The convolution kernel, with odd sides so that "same" is centered.
+    kernel : 1D `numpy.ndarray`
+        The 1D convolution kernel, with odd length so that the result is
+        centered.
     mask : 2D `numpy.ndarray`, optional
         Boolean mask; where True, data is zeroed before convolution.
 
@@ -168,7 +193,8 @@ def fft_convolve(data, kernel, mask=None):
         np.asarray(data, dtype=np.float32), nan=0.0, posinf=0.0, neginf=0.0
     )
     kernel = np.asarray(kernel, dtype=np.float32)
-    return scipy.signal.fftconvolve(data, kernel, mode="same")
+    out = scipy.ndimage.convolve1d(data, kernel, axis=0, mode="constant")
+    return scipy.ndimage.convolve1d(out, kernel, axis=1, mode="constant")
 
 
 def ivw_convolve(data, wht, kernel, mask=None):
@@ -190,8 +216,8 @@ def ivw_convolve(data, wht, kernel, mask=None):
         Background-subtracted data.
     wht : 2D `numpy.ndarray`
         Inverse-variance weights; zero where masked.
-    kernel : 2D `numpy.ndarray`
-        The convolution kernel.
+    kernel : 1D `numpy.ndarray`
+        The 1D factor of the separable template; see `separable_convolve`.
     mask : 2D `numpy.ndarray`, optional
         Boolean mask; True values force the data and weights to zero.
 
@@ -203,8 +229,8 @@ def ivw_convolve(data, wht, kernel, mask=None):
         ``conv(wht, kernel**2)``.
     """
     return (
-        fft_convolve(data * wht, kernel, mask=mask),
-        fft_convolve(wht, kernel**2, mask=mask),
+        separable_convolve(data * wht, kernel, mask=mask),
+        separable_convolve(wht, kernel**2, mask=mask),
     )
 
 
@@ -216,8 +242,8 @@ def snr_from_ivw(num, denom2):
     over bands before the ratio is taken; templates, by contrast, are
     combined after it, by taking the maximum of their ratios.
     ``denom2`` is mathematically
-    non-negative, but the FFT returns small negative values where it should
-    return zero, so it is clamped before the square root.
+    non-negative, but is clamped before the square root to guard against
+    round-off.
 
     Parameters
     ----------
@@ -229,5 +255,5 @@ def snr_from_ivw(num, denom2):
     snr : 2D `numpy.ndarray`
         ``num / sqrt(denom2)``, zero where there is no weight.
     """
-    denom = np.sqrt(np.maximum(denom2, 0.0))
-    return np.where(denom > 0, num / denom, 0.0)
+    denom = np.sqrt(np.maximum(denom2, 0))
+    return np.divide(num, denom, out=np.zeros_like(num), where=denom > 0)

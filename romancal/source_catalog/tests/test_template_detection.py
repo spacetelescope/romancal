@@ -6,11 +6,13 @@ import numpy as np
 import pytest
 import scipy.ndimage
 from astropy.modeling.models import Gaussian2D
+from photutils.segmentation import make_2dgaussian_kernel
 
 from romancal.source_catalog._background import RomanBackground
 from romancal.source_catalog._detection import (
     ivw_convolve,
     make_gaussian_kernel,
+    make_gaussian_kernel_1d,
     snr_from_ivw,
 )
 from romancal.source_catalog._template_detection import (
@@ -18,6 +20,7 @@ from romancal.source_catalog._template_detection import (
     _bkg_box_size,
     _template_fwhms,
     make_segmentation_image_template,
+    make_template_snr_images,
 )
 
 # The bank these tests exercise.  A list rather than a tuple, matching what
@@ -78,18 +81,25 @@ def test_background_box_tracks_the_template():
     ):
         assert 3 * box == pytest.approx(12 * fwhm, rel=0.05)
         # never larger than the kernel, which must already fit the image
-        assert (
-            box
-            <= make_gaussian_kernel(fwhm, size_factor=_TEMPLATE_SIZE_FACTOR).shape[0]
+        assert box <= len(
+            make_gaussian_kernel_1d(fwhm, size_factor=_TEMPLATE_SIZE_FACTOR)
         )
 
 
 def test_kernels_only_reach_the_wings():
     """Kernels are sized for the template, not for a background box."""
     for fwhm in _template_fwhms(0.2, TEST_TEMPLATE_FWHM, 0.1):
-        kernel = make_gaussian_kernel(fwhm, size_factor=_TEMPLATE_SIZE_FACTOR)
-        assert kernel.shape[0] <= 4 * fwhm + 2
+        kernel = make_gaussian_kernel_1d(fwhm, size_factor=_TEMPLATE_SIZE_FACTOR)
+        assert len(kernel) <= 4 * fwhm + 2
         assert kernel.sum() == pytest.approx(1.0, abs=1e-6)
+
+
+@pytest.mark.parametrize("fwhm", [1.8, 5.5, 21.8])
+def test_separable_kernel_matches_photutils(fwhm):
+    """The 1D kernel's outer product is the photutils 2D Gaussian kernel."""
+    kernel_2d = make_gaussian_kernel(fwhm)
+    expected = make_2dgaussian_kernel(fwhm, size=kernel_2d.shape[0], oversampling=10)
+    assert kernel_2d == pytest.approx(np.asarray(expected), abs=1e-12)
 
 
 def test_significance_defined_on_masked_pixels():
@@ -99,9 +109,31 @@ def test_significance_defined_on_masked_pixels():
     mask = np.zeros(data.shape, dtype=bool)
     mask[30, 30] = True
     wht = np.where(mask, 0.0, 1.0 / err**2)
-    num, denom2 = ivw_convolve(data, wht, make_gaussian_kernel(2.0), mask=mask)
+    num, denom2 = ivw_convolve(data, wht, make_gaussian_kernel_1d(2.0), mask=mask)
     assert denom2[30, 30] > 0
     assert np.isfinite(snr_from_ivw(num, denom2)[30, 30])
+
+
+def test_significance_zero_far_inside_masked_region():
+    """A bright source leaves no round-off deep inside a large masked region."""
+    data = np.zeros((200, 200), dtype=np.float32)
+    data[50, 50] = 1.0e4
+    err = np.ones_like(data)
+    mask = np.zeros(data.shape, dtype=bool)
+    mask[:, 100:] = True
+    wht = np.where(mask, 0.0, 1.0 / err**2)
+    num, denom2 = ivw_convolve(data, wht, make_gaussian_kernel_1d(10.0), mask=mask)
+    assert np.all(snr_from_ivw(num, denom2)[:, 150:] == 0)
+
+
+def test_small_float16_err_does_not_overflow():
+    """Weights are formed in float32, so small float16 errors stay finite."""
+    rng = np.random.default_rng(0)
+    err = np.full((100, 100), 1.0e-3, dtype=np.float16)
+    data = (rng.normal(size=err.shape) * 1.0e-3).astype(np.float32)
+    snr_images, conv_psf = make_template_snr_images(data, err, 0.2, [], 0.1)
+    assert np.all(np.isfinite(snr_images[0]))
+    assert np.std(snr_images[0]) > 0
 
 
 def test_templates_larger_than_image_are_skipped(wide_image):
