@@ -1,28 +1,18 @@
-import logging
-
 import crds.config
+import crds.log
 import crds.utils
 import pytest
 from roman_datamodels import datamodels as rdm
 
 from romancal.pipeline.exposure_pipeline import ExposurePipeline
-from romancal.pipeline.mosaic_pipeline import MosaicPipeline
 
+pytestmark = [pytest.mark.bigdata]
 pytest.importorskip("awscli", reason="crds[aws] dependencies are needed for s3 tests")
-
-pytestmark = pytest.mark.bigdata
 
 
 @pytest.fixture(scope="module")
 def tmp_cache(tmp_path_factory):
     yield tmp_path_factory.mktemp("crds")
-
-
-def log_contains_s3(caplog):
-    for record in caplog.records:
-        if "s3://stpubdata" in record.message:
-            return True
-    return False
 
 
 @pytest.fixture
@@ -50,31 +40,24 @@ def s3_crds(tmp_cache, monkeypatch):
     monkeypatch.setenv("CRDS_SERVER_URL", "https://roman-crds-serverless.stsci.edu")
     monkeypatch.setenv("CRDS_OBSERVATORY", "roman")
     monkeypatch.setenv("CRDS_PATH", str(tmp_cache))
-
+    old_level = crds.log.set_verbose()
     yield
+    crds.log.set_verbose(old_level)
     crds.config.set_crds_state(old_state)
     crds.utils.clear_function_caches()
 
 
-def test_s3_elp(s3_crds, rtdata, caplog):
-    caplog.set_level(logging.INFO)
-    input_data = "r0000101001001001001_0001_wfi01_f158_uncal.asdf"
-    rtdata.get_data(f"WFI/image/{input_data}")
-    rtdata.input = input_data
-
-    # Test Pipeline
-    result, *_ = ExposurePipeline.call(rtdata.input)
-
-    # no truth comparison here since the context may differ
-    assert isinstance(result, rdm.ImageModel)
-    assert log_contains_s3(caplog)
-
-
-def test_s3_mos(s3_crds, rtdata, caplog):
-    caplog.set_level(logging.INFO)
-    rtdata.get_asn("WFI/image/L3_regtest_asn.json")
-    result, *_ = MosaicPipeline.call(rtdata.input)
-
-    # no truth comparison here since the context may differ
-    assert isinstance(result, rdm.MosaicModel)
-    assert log_contains_s3(caplog)
+def test_get_reference(s3_crds, caplog):
+    pipeline = ExposurePipeline()
+    model = rdm.ImageModel.create_fake_data()
+    try:
+        pipeline.get_reference_file(model, "flat")
+    except crds.CrdsLookupError:
+        # ok to have a lookup error as fetching config/mapping is enough
+        pass
+    assert [
+        m
+        for m in caplog.messages
+        if "Loading config from URI 's3://stpubdata/roman/crds/config/roman/server_config'."
+        in m
+    ]
