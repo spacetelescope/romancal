@@ -1,5 +1,6 @@
 import logging
 import os
+import warnings
 from collections.abc import Mapping
 from datetime import datetime
 from functools import cached_property
@@ -309,6 +310,7 @@ class SkyCells:
                     np.float64
                 ),  # hotfix for `TypeError: Object of type float32 is not JSON serializable`
                 "vparity": vparity,
+                "skycells_ref_file": Path(self._skymap.path).name,
             }
             for skycell_index, projregion_index in zip(
                 self.indices, self.projection_regions, strict=True
@@ -888,6 +890,13 @@ class SkyMap:
             f"skymap at {self.path} uses vparity={vparity:+d} "
             f"({'standard' if vparity == -1 else 'mirror-image'} handedness)"
         )
+        if vparity != -1:
+            warnings.warn(
+                "Old skycell reference file with mirror-image parity still in "
+                "use!  Skycells and filenames will correspond to obsolete, "
+                "different locations.",
+                stacklevel=3,  # past cached_property, to the caller
+            )
         return vparity
 
     def projection_regions_containing(

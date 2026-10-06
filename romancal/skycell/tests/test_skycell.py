@@ -1,5 +1,6 @@
 """Unit tests for skycell functions"""
 
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -303,14 +304,19 @@ def test_skycell_wcsinfo(name, either_skymap_subset):
 def test_skymap_vparity(skymap_subset, mirrored_skymap_subset):
     """the handedness of a skymap follows from its `x_tangent` values"""
 
-    assert skymap_subset.vparity == 1
-    assert mirrored_skymap_subset.vparity == -1
+    # fresh instances, since vparity is cached
+    with pytest.warns(UserWarning, match="mirror-image parity"):
+        assert skymap.SkyMap(skymap_subset.path).vparity == 1
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        assert skymap.SkyMap(mirrored_skymap_subset.path).vparity == -1
 
     # and is recorded in the wcs info written to associations
     name = SAMPLE_SKYCELL_NAMES[0]
     for sm in (skymap_subset, mirrored_skymap_subset):
         skycell = skymap.SkyCells.from_names([name], skymap=sm)
         assert skycell.wcs_infos[0]["vparity"] == sm.vparity
+        assert skycell.wcs_infos[0]["skycells_ref_file"] == Path(sm.path).name
 
 
 @pytest.mark.parametrize("name", SAMPLE_SKYCELL_NAMES)
