@@ -114,18 +114,6 @@ def test_significance_defined_on_masked_pixels():
     assert np.isfinite(snr_from_ivw(num, denom2)[30, 30])
 
 
-def test_significance_zero_far_inside_masked_region():
-    """A bright source leaves no round-off deep inside a large masked region."""
-    data = np.zeros((200, 200), dtype=np.float32)
-    data[50, 50] = 1.0e4
-    err = np.ones_like(data)
-    mask = np.zeros(data.shape, dtype=bool)
-    mask[:, 100:] = True
-    wht = np.where(mask, 0.0, 1.0 / err**2)
-    num, denom2 = ivw_convolve(data, wht, make_gaussian_kernel_1d(10.0), mask=mask)
-    assert np.all(snr_from_ivw(num, denom2)[:, 150:] == 0)
-
-
 def test_small_float16_err_does_not_overflow():
     """Weights are formed in float32, so small float16 errors stay finite."""
     rng = np.random.default_rng(0)

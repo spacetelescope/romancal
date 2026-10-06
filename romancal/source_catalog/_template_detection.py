@@ -175,9 +175,8 @@ def make_template_snr_images(
         site.
     """
     # we use single precision here because these arrays and the convolutions
-    # built from them are the bulk of the step's memory.  ``err`` is float16
-    # in L2 products, where 1 / err**2 overflows for err < 0.004, so it is
-    # widened before squaring.
+    # built from them are the bulk of the step's memory.
+    # cast err to float32 before doing math since it is float16 in L2 images
     data = np.asarray(data, dtype=np.float32)
     err = np.asarray(err, dtype=np.float32)
     good = ~mask if mask is not None else np.ones(data.shape, dtype=bool)
