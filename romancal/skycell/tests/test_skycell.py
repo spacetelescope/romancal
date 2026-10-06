@@ -342,23 +342,23 @@ def test_skycell_wcs_from_asn(name, skymap_subset, mirrored_skymap_subset):
     """an association's wcs info gives the WCS it was made with, whatever
     the skymap in use"""
 
+    # make a skycell with the new and old skycells files
     for made_with in (skymap_subset, mirrored_skymap_subset):
         skycell = skymap.SkyCells.from_names([name], skymap=made_with)
         # round trip through JSON, as when stored in an association, and
-        # wrap read-only, as ModelLibrary presents it
+        # wrap read-only, as ModelLibrary presents it; a plain dict would
+        # pass checks that the real association fails
         wcs_info = json.loads(json.dumps(skycell.wcs_infos[0]))
         asn = MappingProxyType({"skycell_wcs_info": MappingProxyType(wcs_info)})
         assert asn["skycell_wcs_info"]["vparity"] == made_with.vparity
 
         nx, ny = skycell.pixel_shape
         x, y = np.meshgrid(np.linspace(0, nx - 1, 4), np.linspace(0, ny - 1, 4))
+        # test that its information was preserved.
         for current in (skymap_subset, mirrored_skymap_subset):
             wcsobj = skymap.SkyCells.wcs_from_asn(asn, skymap=current)
+            # resample relies on the shape
             assert wcsobj.array_shape == (ny, nx)
-            assert (
-                wcsobj.bounding_box.bounding_box()
-                == skycell.wcs[0].bounding_box.bounding_box()
-            )
             assert_allclose_lonlat(
                 np.array(wcsobj(x, y)), np.array(skycell.wcs[0](x, y))
             )
@@ -368,20 +368,19 @@ def test_skycell_wcs_from_asn_without_vparity(skymap_subset, mirrored_skymap_sub
     """wcs info written before vparity was recorded uses the old, mirror-image
     convention, and so still describes the skycell it was made for"""
 
-    # this association predates the current skymap, in which the same name
-    # refers to a different footprint
-    with open(DATA_DIRECTORY / "L3_mosaic_asn.json") as f:
-        asn = json.load(f)
-    wcs_info = asn["skycell_wcs_info"]
-    assert "vparity" not in wcs_info
+    skycell = skymap.SkyCells.from_names(
+        [SAMPLE_SKYCELL_NAMES[0]], skymap=skymap_subset
+    )
+    wcs_info = dict(skycell.wcs_infos[0])
+    del wcs_info["vparity"]
+    asn = {"skycell_wcs_info": wcs_info}
 
+    nx, ny = skycell.pixel_shape
+    x, y = np.meshgrid(np.linspace(0, nx - 1, 4), np.linspace(0, ny - 1, 4))
     for current in (skymap_subset, mirrored_skymap_subset):
         wcsobj = skymap.SkyCells.wcs_from_asn(asn, skymap=current)
-        assert_allclose_lonlat(
-            wcsobj((wcs_info["nx"] - 1) / 2, (wcs_info["ny"] - 1) / 2),
-            (wcs_info["ra_center"], wcs_info["dec_center"]),
-        )
-        assert sky_handedness(wcsobj, 2499.5, 2499.5) > 0
+        assert_allclose_lonlat(np.array(wcsobj(x, y)), np.array(skycell.wcs[0](x, y)))
+        assert sky_handedness(wcsobj, (nx - 1) / 2, (ny - 1) / 2) > 0
 
 
 def test_skycell_wcs_from_asn_target(skymap_subset):

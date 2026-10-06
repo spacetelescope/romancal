@@ -134,10 +134,8 @@ class SkyCells:
     def wcs_from_asn(asn: Mapping, skymap: "SkyMap" = None) -> WCS:
         """WCS of the skycell an association was made for
 
-        Built directly from the association's `skycell_wcs_info` when
-        present, so the skymap reference file is not needed and the WCS is
-        the one the association was made with, even if the skymap has since
-        changed. Otherwise the skycell is looked up by the `target` name.
+        Derived from the association's `skycell_wcs_info` when
+        present.  Otherwise the skycell is looked up by the `target` name.
 
         Parameters
         ----------
@@ -979,6 +977,13 @@ def _wcsinfo_to_wcs(
 ) -> WCS:
     """Create a WCS from the skycell wcsinfo meta
 
+    The vparity / handedness of the WCS is taken from `wcsinfo["vparity"]`: -1
+    corresponds to the usual convention where right ascension increases as
+    x decreases.  It defaults to +1, the original reference file convention,
+    so that wcsinfo written before vparity was recorded keeps its meaning;
+    wcsinfo from newer reference files records vparity = -1.  It is ignored
+    if `wcsinfo` supplies an explicit `rotation_matrix`.
+
     Parameters
     ----------
     wcsinfo : dict or MosaicModel.meta.wcsinfo
@@ -987,14 +992,6 @@ def _wcsinfo_to_wcs(
     bounding_box : None or 4-tuple
         The bounding box in detector/pixel space. Form of input is:
         ((x_left, x_right), (y_bottom, y_top))
-
-    The parity of the pixel x axis is taken from `wcsinfo["vparity"]`: +1
-    puts right ascension increasing with x (mirror image), -1 the usual
-    orientation with right ascension increasing to the left. It defaults to
-    +1, the convention of skymaps up to ``roman_wfi_skycells_0001``, so that
-    wcsinfo written before vparity was recorded still describes the skycell
-    it was made for. It is ignored if `wcsinfo` supplies an explicit
-    `rotation_matrix`. See `SkyMap.vparity`.
 
     Returns
     -------

@@ -10,8 +10,6 @@ from romancal.skycell.tests.test_skycell import assert_corners_on_pixel_corners
 # mark all tests in this module
 pytestmark = [pytest.mark.bigdata]
 
-# names present in both roman_wfi_skycells_0001 and _0002, which renamed
-# skycells; under each file they refer to different footprints
 TEST_SKYCELLS = [
     "000p86x39y68",
     "045p86x34y29",
