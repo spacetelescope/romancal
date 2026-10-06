@@ -89,48 +89,60 @@ def test_skycells_projection_regions():
 
 def test_skycells_containing_points():
     rng = np.random.default_rng()
-    lon = rng.standard_normal(10000)
-    lon = lon / np.max(np.abs(lon)) * 180 + 180
-    lat = rng.standard_normal(10000)
-    lat = lat / np.max(np.abs(lat)) * 90
-    radec = np.stack([lon, lat], axis=1)
+    npoints = 100000
+    radec = np.stack(
+        [
+            rng.uniform(0, 360, npoints),
+            np.degrees(np.arcsin(rng.uniform(-1, 1, npoints))),
+        ],
+        axis=1,
+    )
 
     skycells_containing_points = skymap.SKYMAP.skycells.containing(radec)
-    point_indices_outside_skycells = [
-        point_index
-        for point_index in np.arange(radec.shape[0])
-        if not any(
-            point_index not in skycell_point_indices
-            for skycell_point_indices in skycells_containing_points.values()
-        )
-    ]
+    skycells_exclusively_containing_points = skymap.SKYMAP.skycells.cores_containing(
+        radec
+    )
+    containing_pairs = {
+        (skycell_index, point_index)
+        for skycell_index, point_indices in skycells_containing_points.items()
+        for point_index in point_indices
+    }
+    skycells_per_point = np.bincount(
+        [point_index for _, point_index in containing_pairs], minlength=npoints
+    )
 
-    assert len(point_indices_outside_skycells) == 0, (
-        f"{len(point_indices_outside_skycells)} / {radec.shape[0]} points do not lie within any skycell"
+    assert np.all(skycells_per_point >= 1), (
+        f"{np.sum(skycells_per_point == 0)} / {npoints} points do not lie within any skycell"
+    )
+    # the skycell whose core contains a point also contains it
+    assert all(
+        (skycell_index, point_index) in containing_pairs
+        for skycell_index, point_indices in skycells_exclusively_containing_points.items()
+        for point_index in point_indices
     )
 
 
 def test_skycells_cores_containing_points():
     rng = np.random.default_rng()
-    lon = rng.standard_normal(10000)
-    lon = lon / np.max(np.abs(lon)) * 180 + 180
-    lat = rng.standard_normal(10000)
-    lat = lat / np.max(np.abs(lat)) * 90
-    radec = np.stack([lon, lat], axis=1)
+    npoints = 100000
+    radec = np.stack(
+        [
+            rng.uniform(0, 360, npoints),
+            np.degrees(np.arcsin(rng.uniform(-1, 1, npoints))),
+        ],
+        axis=1,
+    )
 
     skycells_exclusively_containing_points = skymap.SKYMAP.skycells.cores_containing(
         radec
     )
-    point_indices_outside_core = [
-        point_index
-        for point_index in np.arange(radec.shape[0])
-        if not any(
-            point_index not in skycell_point_indices
-            for skycell_point_indices in skycells_exclusively_containing_points.values()
-        )
-    ]
+    skycells_per_point = np.bincount(
+        np.concatenate(list(skycells_exclusively_containing_points.values())),
+        minlength=npoints,
+    )
 
     # each point on the sphere MUST belong to exactly one skycell
-    assert len(point_indices_outside_core) == 0, (
-        f"{len(point_indices_outside_core)} / {radec.shape[0]} points do not lie within the exclusive zone of any skycell"
+    assert np.all(skycells_per_point == 1), (
+        f"{np.sum(skycells_per_point == 0)} / {npoints} points lie within no skycell core, "
+        f"{np.sum(skycells_per_point > 1)} within more than one"
     )

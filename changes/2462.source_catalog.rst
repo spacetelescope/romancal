@@ -1,0 +1,3 @@
+Allow forced photometry on zero-source single-band prompt catalogs
+to return an empty forced catalog instead of failing when the
+forcing segmentation has no labels and no detection_image.

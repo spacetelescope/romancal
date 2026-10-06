@@ -49,6 +49,22 @@ SIMPLE_EXPECTED_GAIN = {
     ),
     "chisq": np.array([[1.998, 7.996], [4.992, 0.0]], dtype=np.float16),
 }
+# Same as SIMPLE_EXPECTED_GAIN, but without jump detection the jump in the
+# last pixel is not removed.
+SIMPLE_EXPECTED_GAIN_NOJUMP = {
+    "data": np.array(
+        [[0.54822373, 0.54822373], [0.21932559, 0.6579495]], dtype=np.float32
+    ),
+    "err": np.array([[0.1097, 0.1097], [0.0694, 0.1201]], dtype=np.float16),
+    "var_poisson": np.array(
+        [[0.012024, 0.012024], [0.00481, 0.01443]], dtype=np.float16
+    ),
+    "var_rnoise": np.array(
+        [[2.4e-06, 2.4e-06], [2.4e-06, 2.4e-06]],
+        dtype=np.float16,
+    ),
+    "chisq": np.array([[1.998, 7.996], [4.992, 14.984]], dtype=np.float16),
+}
 SIMPLE_EXPECTED_RNOISE = {
     "data": np.array(
         [[0.5263168, 0.5263168], [0.23026292, 0.72367984]], dtype=np.float32
@@ -292,7 +308,7 @@ def test_fits(fit_ramps, attribute):
             id="default",
         ),  # No gain or noise
         pytest.param(
-            (SIMPLE_RESULTANTS, 5, 0.01, False, SIMPLE_EXPECTED_GAIN, False),
+            (SIMPLE_RESULTANTS, 5, 0.01, False, SIMPLE_EXPECTED_GAIN_NOJUMP, False),
             id="extragain",
         ),  # Increase gain
         pytest.param(

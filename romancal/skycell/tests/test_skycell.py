@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import roman_datamodels
+import spherical_geometry.polygon as sgp
 from astropy.coordinates import SkyCoord
 from numpy.testing import assert_allclose
 
@@ -212,6 +213,8 @@ def test_projregion_from_skycell(skymap_subset):
     projregion1 = skymap.ProjectionRegion(1, skymap=skymap_subset)
 
     assert len(skycell.projection_regions) == 1
+    # source catalogs pack this into 64-bit source ids
+    assert skycell.projection_regions.dtype == np.int64
     assert skycell.projection_regions[0] == projregion0.index  # this calls CRDS!
 
     assert (
@@ -346,9 +349,41 @@ def test_skycells(skymap_subset):
     assert len(skycells.polygons) == len(SAMPLE_SKYCELL_NAMES)
 
 
-def test_skycells_cores_containing_center(sample_skycells):
-    assert np.all(sample_skycells.containing(sample_skycells.radec_centers))
-    assert sample_skycells.cores_containing(sample_skycells.radec_centers) != {}
+def test_skycells_containing_centers(sample_skycells):
+    # each skycell contains its own center, and perhaps other centers too
+    containing = sample_skycells.containing(sample_skycells.radec_centers)
+    assert sorted(containing) == sorted(sample_skycells.indices.tolist())
+    for position, index in enumerate(sample_skycells.indices.tolist()):
+        assert position in containing[index]
+
+
+def test_skycells_containing(skymap_subset):
+    skycells = skymap_subset.skycells
+    rng = np.random.default_rng(3)
+    # random points around projection regions 0 and 1
+    radec = np.stack(
+        [rng.uniform(-25, 25, 200) % 360, rng.uniform(84.4, 90, 200)], axis=1
+    )
+
+    containing = skycells.containing(radec)
+
+    polygons = [
+        sgp.SingleSphericalPolygon(corners, center)
+        for corners, center in zip(
+            skycells.vectorpoint_corners, skycells.vectorpoint_centers, strict=True
+        )
+    ]
+    for point, (ra, dec) in enumerate(radec):
+        found = {index for index, points in containing.items() if point in points}
+        # a skycell that contains the point has its center within 0.055 degrees
+        separations = skymap._separation(
+            skycells.vectorpoint_centers, skymap._vectorpoints(np.array([ra, dec]))
+        )
+        nearby = np.flatnonzero(separations < 0.06)
+        expected = {
+            int(index) for index in nearby if polygons[index].contains_lonlat(ra, dec)
+        }
+        assert found == expected
 
 
 @pytest.mark.parametrize(
@@ -366,3 +401,21 @@ def test_skycells_cores_containing_center(sample_skycells):
 )
 def test_skycells_cores_containing(radec, expected, sample_skycells):
     assert sample_skycells.cores_containing(radec) == expected
+
+
+def test_skycells_cores_containing_pole(skymap_subset):
+    """the pole belongs to the skycell centered on it"""
+    pole_skycell = skymap.SkyCells.from_names(["135p90x50y50"], skymap=skymap_subset)
+    for ra in (0.0, 123.0):
+        assert skymap_subset.skycells.cores_containing([ra, 90.0]) == {
+            int(pole_skycell.indices[0]): [0]
+        }
+
+
+def test_ra_in_range():
+    # the upper bound is exclusive, so adjacent ranges share no points
+    ra = np.array([337.5, 0.0, 22.5])
+    assert skymap._ra_in_range(ra, 337.5, 22.5).tolist() == [True, True, False]
+    assert skymap._ra_in_range(ra, 22.5, 67.5).tolist() == [False, False, True]
+    # the full circle contains everything, including values that wrap to 360
+    assert np.all(skymap._ra_in_range(np.array([0.0, 360.0, -1e-20]), 0.0, 360.0))
