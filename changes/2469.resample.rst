@@ -1,0 +1,3 @@
+Build the skycell WCS directly from the association's ``skycell_wcs_info``,
+which now records ``vparity``, instead of looking the skycell up by name, so
+associations keep their skycell when the skymap reference file changes.

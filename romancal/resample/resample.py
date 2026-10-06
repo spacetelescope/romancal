@@ -243,17 +243,17 @@ class ResampleData(Resample):
         self._blend_meta = blend_meta
 
         if output_wcs is None and resample_on_skycell:
-            # first try to retrieve a sky cell name from the association
+            # first try to retrieve a sky cell from the association
             try:
-                skycell = sc.SkyCells.from_asns([self.input_models.asn])
+                skycell_wcs = sc.SkyCells.wcs_from_asn(self.input_models.asn)
 
-                log.info(f"Skycell record: {skycell.data}")
-
+                ny, nx = skycell_wcs.array_shape
+                ra, dec = skycell_wcs((nx - 1) / 2, (ny - 1) / 2)
                 log.info(
-                    f"Creating skycell image at ra: {skycell.radec_centers[0, 0]}  dec {skycell.radec_centers[0, 1]}",
+                    f"Resampling to skycell {skycell_wcs.name} wcs, "
+                    f"centered at ra: {ra}  dec {dec}"
                 )
-                log.info("Resampling to skycell wcs")
-                output_wcs = {"wcs": skycell.wcs[0]}
+                output_wcs = {"wcs": skycell_wcs}
             except (ValueError, KeyError) as err:
                 log.warning(f"Unable to compute skycell from input association: {err}")
                 log.warning("Computing output wcs from all input wcses")

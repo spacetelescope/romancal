@@ -1,6 +1,8 @@
 """Unit tests for skycell functions"""
 
+import json
 from pathlib import Path
+from types import MappingProxyType
 
 import numpy as np
 import pytest
@@ -333,6 +335,62 @@ def test_skycell_wcs_mirrored_skymap(name, skymap_subset, mirrored_skymap_subset
     center = ((nx - 1) / 2, (ny - 1) / 2)
     assert sky_handedness(delivered.wcs[0], *center) > 0
     assert sky_handedness(mirrored.wcs[0], *center) < 0
+
+
+@pytest.mark.parametrize("name", SAMPLE_SKYCELL_NAMES)
+def test_skycell_wcs_from_asn(name, skymap_subset, mirrored_skymap_subset):
+    """an association's wcs info gives the WCS it was made with, whatever
+    the skymap in use"""
+
+    for made_with in (skymap_subset, mirrored_skymap_subset):
+        skycell = skymap.SkyCells.from_names([name], skymap=made_with)
+        # round trip through JSON, as when stored in an association, and
+        # wrap read-only, as ModelLibrary presents it
+        wcs_info = json.loads(json.dumps(skycell.wcs_infos[0]))
+        asn = MappingProxyType({"skycell_wcs_info": MappingProxyType(wcs_info)})
+        assert asn["skycell_wcs_info"]["vparity"] == made_with.vparity
+
+        nx, ny = skycell.pixel_shape
+        x, y = np.meshgrid(np.linspace(0, nx - 1, 4), np.linspace(0, ny - 1, 4))
+        for current in (skymap_subset, mirrored_skymap_subset):
+            wcsobj = skymap.SkyCells.wcs_from_asn(asn, skymap=current)
+            assert wcsobj.array_shape == (ny, nx)
+            assert (
+                wcsobj.bounding_box.bounding_box()
+                == skycell.wcs[0].bounding_box.bounding_box()
+            )
+            assert_allclose_lonlat(
+                np.array(wcsobj(x, y)), np.array(skycell.wcs[0](x, y))
+            )
+
+
+def test_skycell_wcs_from_asn_without_vparity(skymap_subset, mirrored_skymap_subset):
+    """wcs info written before vparity was recorded uses the old, mirror-image
+    convention, and so still describes the skycell it was made for"""
+
+    # this association predates the current skymap, in which the same name
+    # refers to a different footprint
+    with open(DATA_DIRECTORY / "L3_mosaic_asn.json") as f:
+        asn = json.load(f)
+    wcs_info = asn["skycell_wcs_info"]
+    assert "vparity" not in wcs_info
+
+    for current in (skymap_subset, mirrored_skymap_subset):
+        wcsobj = skymap.SkyCells.wcs_from_asn(asn, skymap=current)
+        assert_allclose_lonlat(
+            wcsobj((wcs_info["nx"] - 1) / 2, (wcs_info["ny"] - 1) / 2),
+            (wcs_info["ra_center"], wcs_info["dec_center"]),
+        )
+        assert sky_handedness(wcsobj, 2499.5, 2499.5) > 0
+
+
+def test_skycell_wcs_from_asn_target(skymap_subset):
+    """without wcs info, the skycell is looked up by its target name"""
+
+    asn = {"skycell_wcs_info": "none", "target": "000p86x69y62"}
+    wcsobj = skymap.SkyCells.wcs_from_asn(asn, skymap=skymap_subset)
+    expected = skymap.SkyCells.from_names(["000p86x69y62"], skymap=skymap_subset)
+    assert_allclose(wcsobj(1000, 2000), expected.wcs[0](1000, 2000))
 
 
 def test_skycells(skymap_subset):

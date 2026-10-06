@@ -581,12 +581,12 @@ def test_resampledata_init_catches_skycell_lookup_errors(wfi_sca1, monkeypatch, 
     input_models = ModelLibrary([wfi_sca1])
     expected_wcs, expected_ps, expected_ratio = make_output_wcs(input_models)
 
-    def _raise_from_asns(asns):
+    def _raise_from_asn(asn):
         raise error
 
     monkeypatch.setattr(
-        "romancal.resample.resample.sc.SkyCells.from_asns",
-        _raise_from_asns,
+        "romancal.resample.resample.sc.SkyCells.wcs_from_asn",
+        _raise_from_asn,
     )
 
     resamp = ResampleData(

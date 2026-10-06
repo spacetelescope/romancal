@@ -66,6 +66,11 @@
                         },
                         "orientat_projection_center": {
                             "type": "number"
+                        },
+                        "vparity": {
+                            "description": "Parity of the pixel x axis: -1 for right ascension increasing to the left, +1 for mirror image; +1 if absent",
+                            "type": "integer",
+                            "enum": [-1, 1]
                         }
                     },
                     "required": ["name", "pixel_scale", "ra_projection_center", "dec_projection_center", "x0_projection", "y0_projection", "ra_center", "dec_center", "nx", "ny", "orientat", "orientat_projection_center"]
