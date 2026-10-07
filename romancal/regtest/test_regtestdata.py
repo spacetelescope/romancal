@@ -145,3 +145,61 @@ def test_n_diffs(tmp_path, n_diffs):
     assert "arrays_differ" in diff.diff
     assert "root['v']" in diff.diff["arrays_differ"]
     assert n_diffs == diff.diff["arrays_differ"]["root['v']"]["n_diffs"]
+
+
+@pytest.mark.parametrize(
+    "v0, v1",
+    [
+        (["a", "b", "c"], ["a", "x", "y"]),
+        ([True, True, True], [True, False, False]),
+    ],
+)
+def test_non_numeric_arrays(tmp_path, v0, v1):
+    fn0 = tmp_path / "test0.asdf"
+    fn1 = tmp_path / "test1.asdf"
+    asdf.AsdfFile({"t": astropy.table.Table({"a": v0})}).write_to(fn0)
+    asdf.AsdfFile({"t": astropy.table.Table({"a": v1})}).write_to(fn1)
+
+    diff = compare_asdf(fn0, fn0)
+    assert diff.identical, diff.report()
+
+    diff = compare_asdf(fn0, fn1)
+    assert not diff.identical
+    assert "tables_differ" in diff.diff
+    table_diff = diff.diff["tables_differ"]["root['t']"]
+    assert table_diff["column_values"]["a"]["n_diffs"] == 2
+
+
+def test_table_meta_array(tmp_path):
+    fn0 = tmp_path / "test0.asdf"
+    fn1 = tmp_path / "test1.asdf"
+    t0 = astropy.table.Table({"a": [1.0, 2.0]})
+    t0.meta["m"] = np.array([1.0, 2.0])
+    t1 = astropy.table.Table({"a": [1.0, 2.0]})
+    t1.meta["m"] = np.array([1.0, 3.0])
+    asdf.AsdfFile({"t": t0}).write_to(fn0)
+    asdf.AsdfFile({"t": t1}).write_to(fn1)
+
+    diff = compare_asdf(fn0, fn0)
+    assert diff.identical, diff.report()
+
+    diff = compare_asdf(fn0, fn1)
+    assert not diff.identical
+    assert "metas_differ" in diff.diff["tables_differ"]["root['t']"]
+
+
+def test_ignored_paths_not_compared(tmp_path):
+    fn0 = tmp_path / "test0.asdf"
+    fn1 = tmp_path / "test1.asdf"
+    asdf.AsdfFile(
+        {"t": astropy.table.Table({"a": [1.0, 2.0]}), "v": np.zeros(3)}
+    ).write_to(fn0)
+    asdf.AsdfFile(
+        {"t": astropy.table.Table({"a": [3.0, 4.0]}), "v": np.ones(3)}
+    ).write_to(fn1)
+
+    diff = compare_asdf(fn0, fn1, ignore=["t", "v"])
+    assert diff.identical, diff.report()
+
+    diff = compare_asdf(fn0, fn1)
+    assert not diff.identical

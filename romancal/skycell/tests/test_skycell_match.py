@@ -24,6 +24,7 @@ of its columns so that subsets of the table selected to reduce the filesize stil
 retain the same index obtained.)
 """
 
+from itertools import pairwise
 from pathlib import Path
 
 import astropy.coordinates as coord
@@ -31,6 +32,7 @@ import astropy.modeling.models as amm
 import astropy.units as u
 import numpy as np
 import pytest
+import spherical_geometry.polygon as sgp
 import spherical_geometry.vector as sgv
 from gwcs import WCS, coordinate_frames
 
@@ -342,6 +344,12 @@ def mk_gwcs(ra, dec, pa, bounding_box=None, shape=(4096, 4096)) -> WCS:
             0.2,
             [],
         ),
+        # inside the nominal ra/dec bounds of projection region 1, but outside
+        # the great-circle polygon joining their corners
+        ((0.0, 84.8), (0, 0), 0, 0.01, ["000p86x28y50"]),
+        # outside the nominal bounds, among skycells that overhang them
+        ((0.0, 84.55), (0, 0), 0, 0.01, ["000p86x25y50"]),
+        ((22.6, 86.0), (0, 0), 0, 0.01, ["000p86x49y71"]),
         (
             TEST_POINTS[5],
             (0, 0),
@@ -374,7 +382,8 @@ def test_skycell_match(
     corners = mk_im_corners(*test_point + np.array(offset), rotation, size)
 
     intersecting_skycells = skymap.SkyCells(
-        sm.find_skycell_matches(corners, skymap=skymap_subset), skymap=skymap_subset
+        sm.find_skycell_matches(corners, skymap=skymap_subset, buffer_pixels=0),
+        skymap=skymap_subset,
     )
 
     assert sorted(intersecting_skycells.names) == sorted(expected_skycell_names)
@@ -406,7 +415,8 @@ def test_match_from_wcs_with_bbox(test_point, expected_skycell_names, skymap_sub
     )
 
     intersecting_skycells = skymap.SkyCells(
-        sm.find_skycell_matches(wcsobj, skymap=skymap_subset), skymap=skymap_subset
+        sm.find_skycell_matches(wcsobj, skymap=skymap_subset, buffer_pixels=0),
+        skymap=skymap_subset,
     )
 
     assert sorted(intersecting_skycells.names) == sorted(expected_skycell_names)
@@ -418,3 +428,88 @@ def test_match_from_wcs_without_bbox(test_point):
 
     with pytest.raises(ValueError):
         sm.find_skycell_matches(wcsobj, skymap=skymap_subset)
+
+
+@pytest.mark.parametrize(
+    "ra,dec,rotation,size",
+    [
+        # across the lower edge of projection region 1, where the great circle
+        # joining its corners strays from its nominal bounds
+        (0.0, 84.8, 0, 0.4),
+        # across the ra boundary between projection region 1 and its neighbor
+        (22.5, 86.0, 30, 0.4),
+        # across the boundary between projection region 1 and the polar cap
+        (0.0, 88.2, 45, 0.4),
+        # a polar cap skycell overhanging the cap's bounds
+        (132.7, 88.17, 0, 0.13),
+        # centered on the pole
+        (0.0, 90.0, 10, 0.4),
+        # across ra = 0, the size of the WFI
+        (350.0, 86.4, 60, 0.8),
+        # a postage stamp
+        (5.0, 87.0, 0, 0.001),
+    ],
+)
+def test_match_exhaustive(ra, dec, rotation, size, skymap_subset):
+    """compare matching routines with brute force matches"""
+    skycells = skymap_subset.skycells
+    footprint = sm._ImageFootprint(mk_im_corners(ra, dec, rotation, size))
+
+    separations = skymap._separation(
+        skycells.vectorpoint_centers, footprint.vectorpoint_center
+    )
+    nearby = np.flatnonzero(separations < footprint.radius + 1).tolist()
+    expected = [
+        index
+        for index in nearby
+        if footprint.polygon.intersects_poly(
+            sgp.SingleSphericalPolygon(
+                skycells.vectorpoint_corners[index],
+                skycells.vectorpoint_centers[index],
+            )
+        )
+    ]
+
+    matches = sm.find_skycell_matches(
+        footprint.radec_corners, skymap=skymap_subset, buffer_pixels=0
+    )
+    assert sorted(matches) == expected
+
+
+def test_match_buffer(skymap_subset):
+    corners = mk_im_corners(*TEST_POINTS[0], 45, 0.3)
+
+    matches = [
+        set(
+            sm.find_skycell_matches(
+                corners, skymap=skymap_subset, buffer_pixels=buffer_pixels
+            )
+        )
+        for buffer_pixels in (0, 5, 20, 200)
+    ]
+
+    # growing the buffer only adds skycells, and eventually does add some
+    for smaller, larger in pairwise(matches):
+        assert smaller <= larger
+    assert matches[0] < matches[-1]
+
+
+def test_match_default_buffer(skymap_subset):
+    """the default buffer grows with the footprint"""
+    skycell = skymap.SkyCells.from_names(["000p86x50y65"], skymap=skymap_subset)
+    index = skycell.indices[0]
+
+    def matches(size, **kwargs):
+        """whether the skycell matches a square footprint of the given size in
+        pixels that ends 10 pixels short of the skycell's left edge"""
+        x = np.array([-10.5 - size, -10.5, -10.5, -10.5 - size])
+        y = 2500 + np.array([-size, -size, size, size]) / 2
+        corners = np.stack(skycell.wcs[0](x, y, with_bounding_box=False), axis=-1)
+        return index in sm.find_skycell_matches(corners, skymap=skymap_subset, **kwargs)
+
+    # too far for a postage stamp, unless the buffer is as large as the gap
+    assert not matches(10)
+    assert matches(10, buffer_pixels=20)
+    # close enough for an image the size of a WFI detector
+    assert not matches(8000, buffer_pixels=0)
+    assert matches(8000)
