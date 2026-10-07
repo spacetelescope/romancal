@@ -151,8 +151,10 @@ class LinearityStep(RomanStep):
         # Full well is 65k DN.  After linearity correction we can't be more than
         # a factor of several away from this.
         # Any points larger than 1e6 should be flagged.
-        m = np.abs(input_model.data) > 1e6
-        input_model.data[m] = np.clip(input_model.data[m], -1e6, 1e6)
+        # Also ensure negative values and NaNs get caught.
+        m = ~((input_model.data > 0) & (input_model.data < 1e6))
+        input_model.data[m] = np.clip(input_model.data[m], 0, 1e6)
+        input_model.data[m] = np.nan_to_num(input_model.data[m])
         input_model.groupdq[m] |= group.DO_NOT_USE
         nbad = np.sum(m)
         log.warning(f"Flagged {nbad} spurious values outside remotely plausible range.")
