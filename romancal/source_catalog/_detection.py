@@ -164,10 +164,7 @@ def separable_convolve(data, kernel, mask=None):
     Convolve ``data`` with the outer product of ``kernel`` with itself.
 
     The convolution is done directly, as one 1D convolution along each
-    axis, and is zero-padded at the boundary.  Unlike an FFT, a direct
-    convolution is exactly zero far from any nonzero data, so masked
-    regions and image edges are not filled with round-off from bright
-    sources elsewhere in the image.
+    axis, and is zero-padded at the boundary.
 
     This uses single precision to conserve memory and fills NaNs to zeros
     before convolution.
@@ -177,8 +174,8 @@ def separable_convolve(data, kernel, mask=None):
     data : 2D `numpy.ndarray`
         The array to convolve.
     kernel : 1D `numpy.ndarray`
-        The 1D convolution kernel, with odd length so that the result is
-        centered.
+        The 1D convolution kernel.  The kernel must have odd length to avoid
+        image shifts.
     mask : 2D `numpy.ndarray`, optional
         Boolean mask; where True, data is zeroed before convolution.
 
@@ -186,7 +183,15 @@ def separable_convolve(data, kernel, mask=None):
     -------
     convolved : 2D `numpy.ndarray`
         The convolved array, of the same shape as ``data``.
+
+    Raises
+    ------
+    ValueError
+        If ``kernel`` has even length.
     """
+    if len(kernel) % 2 == 0:
+        msg = f"kernel must have odd length; got {len(kernel)}"
+        raise ValueError(msg)
     if mask is not None:
         data = np.where(mask, 0.0, data)
     data = np.nan_to_num(

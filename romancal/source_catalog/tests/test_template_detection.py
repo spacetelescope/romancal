@@ -13,6 +13,7 @@ from romancal.source_catalog._detection import (
     ivw_convolve,
     make_gaussian_kernel,
     make_gaussian_kernel_1d,
+    separable_convolve,
     snr_from_ivw,
 )
 from romancal.source_catalog._template_detection import (
@@ -112,6 +113,12 @@ def test_significance_defined_on_masked_pixels():
     num, denom2 = ivw_convolve(data, wht, make_gaussian_kernel_1d(2.0), mask=mask)
     assert denom2[30, 30] > 0
     assert np.isfinite(snr_from_ivw(num, denom2)[30, 30])
+
+
+def test_separable_convolve_rejects_even_kernel():
+    """An even-length kernel would shift the image by half a pixel."""
+    with pytest.raises(ValueError, match="odd length"):
+        separable_convolve(np.zeros((10, 10)), np.ones(4) / 4)
 
 
 def test_small_float16_err_does_not_overflow():
