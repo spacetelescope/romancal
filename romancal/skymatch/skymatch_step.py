@@ -141,7 +141,7 @@ class SkyMatchStep(RomanStep):
             meta={"index": index},
         )
 
-        if self.subtract and "level" in background_meta:
+        if self.subtract and background_meta.get("level") is not None:
             sky_im.sky = background_meta["level"]
 
         return sky_im
