@@ -532,6 +532,21 @@ class TestChannelView:
         # Check that the regression matches the new object
         assert (new.data == regression).all()
 
+    def test_remove_trends_rejects_outliers(self, data):
+        # Fit without one reference pixel (zeros are ignored by the fit)
+        clean = StandardView(data.copy()).channels
+        clean.data[:, :, 0, 5] = 0
+        clean.remove_trends()
+
+        # Fit with that reference pixel as an outlier
+        new = StandardView(data.copy()).channels
+        new.data[:, :, 0, 5] += 1e6
+        new.remove_trends()
+
+        # The outlier is clipped, so the fits match
+        new.data[:, :, 0, 5] = 0
+        assert_allclose(new.data, clean.data, atol=1e-3)
+
     def test_cosine_interpolate(self, standard):
         channels = standard.channels
         non_view_data = channels.data.copy()
