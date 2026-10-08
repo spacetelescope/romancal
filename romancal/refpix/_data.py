@@ -10,10 +10,9 @@ if TYPE_CHECKING:
 from dataclasses import dataclass
 from enum import IntEnum
 
-from astropy.modeling import models, fitting
-from astropy.stats import SigmaClip
-
 import numpy as np
+from astropy.modeling import fitting, models
+from astropy.stats import SigmaClip
 from scipy import fft
 
 
@@ -382,12 +381,14 @@ class ChannelView(BaseView):
         # Restrict to the reference pixels and non-zero values
         t_ref = t[REF_ROWS, :]
         not_zero = self.data != 0
-        
+
         # Initialize the Astropy iterative sigma clipping fitter outside the loop
         # You can adjust sigma and maxiters based on the dynamic flagging needs
         line_init = models.Linear1D()
         base_fitter = fitting.LinearLSQFitter()
-        or_fit = fitting.FittingWithOutlierRemoval(base_fitter, SigmaClip(sigma=3.0, maxiters=5))
+        or_fit = fitting.FittingWithOutlierRemoval(
+            base_fitter, SigmaClip(sigma=3.0, maxiters=5)
+        )
 
         # fit needs to be done for each channel and frame separately
         for chan_data, chan_not_zero in zip(self.data, not_zero, strict=False):
