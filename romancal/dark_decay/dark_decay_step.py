@@ -30,7 +30,11 @@ class DarkDecayStep(RomanStep):
     """
 
     def process(self, dataset):
-        input_model = open_dataset(dataset, update_version=self.update_version)
+        input_model = open_dataset(
+            dataset,
+            update_version=self.update_version,
+            downgrade_version=self.downgrade_version,
+        )
 
         if self.save_results:
             try:

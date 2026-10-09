@@ -81,7 +81,11 @@ class LinearityStep(RomanStep):
     ]
 
     def process(self, dataset):
-        input_model = open_dataset(dataset, update_version=self.update_version)
+        input_model = open_dataset(
+            dataset,
+            update_version=self.update_version,
+            downgrade_version=self.downgrade_version,
+        )
 
         # Get reference file names
         self.lin_name = self.get_reference_file(input_model, "linearity")
