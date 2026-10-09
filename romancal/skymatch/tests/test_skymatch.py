@@ -77,7 +77,6 @@ def mk_image_model(
 
     l2_im.meta["wcs"] = mk_gwcs(image_shape, sky_offset=sky_offset, rotate=rotation)
 
-    l2_im.meta.background = {"level": None, "subtracted": False, "method": "None"}
     l2_im.meta.cal_step = {}
     for step_name in l2_im.schema_info("required")["roman"]["meta"]["cal_step"][
         "required"
