@@ -60,6 +60,9 @@ def test_update(old_model, latest_model, vfs_value, wp_bool):
     assert new_model.tag == latest_model.tag
     assert new_model.meta.observation.wfi_parallel == wp_bool
     assert not new_model.meta.exposure.hga_move
+    assert new_model.meta.visit.wfi_acm_z_defocus_size is None
+    for ref_file in ["darkdecaysignal", "integralnonlinearity", "inverselinearity", "bam"]:
+        assert ref_file in new_model.meta.get("ref_file", None)
 
 
 def test_L3_update(old_L3_model, latest_L3_model):
