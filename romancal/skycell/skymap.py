@@ -80,7 +80,7 @@ class SkyCells:
         if isinstance(names, str):
             names = [names]
 
-        if np.issubdtype(skymap.model.skycells.dtype['name'], np.bytes_):
+        if np.issubdtype(skymap.model.skycells.dtype["name"], np.bytes_):
             names = [name.encode() for name in names]
 
         indices = np.isin(skymap.model.skycells["name"], names).nonzero()[0]
