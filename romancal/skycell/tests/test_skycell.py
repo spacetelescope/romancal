@@ -54,7 +54,7 @@ def test_skycell_from_name(skymap_subset):
 
     assert skycell.data == np.void(
         (
-            "135p90x50y57",
+            b"135p90x50y57",
             224.99999999999997,
             89.48668040110688,
             -90.0,
@@ -70,7 +70,7 @@ def test_skycell_from_name(skymap_subset):
             89.52333943360831,
         ),
         dtype=[
-            ("name", "<U16"),
+            ("name", ">S16"),
             ("ra_center", "<f8"),
             ("dec_center", "<f8"),
             ("orientat", "<f4"),
