@@ -72,44 +72,31 @@ class SkyMatchStep(RomanStep):
         )
 
         # create a list of "Sky" Images and/or Groups:
-        images = []
+        sky_images = []
         with library:
-            for model in library:
-                images.append(self._imodel2skyim(model))
+            for index, model in enumerate(library):
+                sky_images.append(self._imodel2skyim(model, index))
+                library.shelve(model, index, modify=False)
 
             # match/compute sky values:
             skymatch(
-                images,
+                sky_images,
                 skymethod=self.skymethod,
                 match_down=self.match_down,
                 subtract=self.subtract,
             )
 
             # set sky background value in each image's meta:
-            for im in images:
-                if isinstance(im, SkyImage):
-                    self._set_sky_background(
-                        im, "COMPLETE" if im.is_sky_valid else "SKIPPED"
-                    )
-                else:
-                    for gim in im:
-                        self._set_sky_background(
-                            gim, "COMPLETE" if gim.is_sky_valid else "SKIPPED"
-                        )
-            for index, image in enumerate(images):
-                library.shelve(image.meta["image_model"], index)
+            for sky_image in sky_images:
+                index = sky_image.meta["index"]
+                image = library.borrow(index)
+                self._set_sky_background(sky_image, image)
+                library.shelve(image, index)
 
         return library
 
-    def _imodel2skyim(self, image_model):
-        input_image_model = image_model
-
-        if "background" not in image_model.meta:
-            image_model.meta["background"] = {
-                "level": None,
-                "subtracted": None,
-                "method": None,
-            }
+    def _imodel2skyim(self, image_model, index):
+        background_meta = image_model.meta.get("background", {})
 
         if self._dqbits is None:
             dqmask = np.isfinite(image_model.data)
@@ -120,28 +107,26 @@ class SkyMatchStep(RomanStep):
 
         # see if 'skymatch' was previously run and raise an exception
         # if 'subtract' mode has changed compared to the previous pass:
-        level = image_model.meta.background.level
-
-        if image_model.meta.background.subtracted and level is None:
-            # NOTE: In principle we could assume that level is 0 and
-            # possibly add a log entry documenting this, however,
-            # at this moment I think it is safer to quit and...
-            #
-            # report inconsistency:
-            raise ValueError(
-                "Background level was subtracted but the "
-                "'level' property is undefined (None)."
-            )
-
-        if image_model.meta.background.subtracted and self.subtract:
-            # cannot run 'skymatch' step on already "skymatched" images
-            # when 'subtract' spec is inconsistent with
-            # meta.background.subtracted:
-            raise ValueError(
-                "'subtract' step's specification is "
-                "inconsistent with background info already "
-                f"present in image '{image_model.meta.filename:s}' meta."
-            )
+        if background_meta.get("subtracted", False):
+            if "level" not in background_meta:
+                # NOTE: In principle we could assume that level is 0 and
+                # possibly add a log entry documenting this, however,
+                # at this moment I think it is safer to quit and...
+                #
+                # report inconsistency:
+                raise ValueError(
+                    "Background level was subtracted but the "
+                    "'level' property is undefined (None)."
+                )
+            if self.subtract:
+                # cannot run 'skymatch' step on already "skymatched" images
+                # when 'subtract' spec is inconsistent with
+                # meta.background.subtracted:
+                raise ValueError(
+                    "'subtract' step's specification is "
+                    "inconsistent with background info already "
+                    f"present in image '{image_model.meta.filename:s}' meta."
+                )
 
         wcs = deepcopy(image_model.meta.wcs)
 
@@ -153,25 +138,27 @@ class SkyMatchStep(RomanStep):
             sky_id=image_model.meta.filename,  # file name?
             skystat=self._skystat,
             stepsize=self.stepsize,
-            meta={"image_model": input_image_model},
+            meta={"index": index},
         )
 
-        if self.subtract and level is not None:
-            sky_im.sky = level
+        if self.subtract and background_meta.get("level") is not None:
+            sky_im.sky = background_meta["level"]
 
         return sky_im
 
-    def _set_sky_background(self, sky_image, step_status):
-        image = sky_image.meta["image_model"]
+    def _set_sky_background(self, sky_image, image):
         sky = sky_image.sky if sky_image.sky is not None else 0
+
+        if "background" not in image.meta:
+            image.meta["background"] = {}
 
         image.meta.background.method = str(self.skymethod)
         image.meta.background.subtracted = self.subtract
-        # In numpy 2, the dtypes are more carefully controlled, so to match the
-        # schema the data type needs to be re-cast to float64.
         image.meta.background.level = sky
 
-        if step_status == "COMPLETE" and self.subtract:
+        if sky_image.is_sky_valid and self.subtract:
             image.data[...] = sky_image.image[...]
 
-        image.meta.cal_step.skymatch = step_status
+        image.meta.cal_step.skymatch = (
+            "COMPLETE" if sky_image.is_sky_valid else "SKIPPED"
+        )

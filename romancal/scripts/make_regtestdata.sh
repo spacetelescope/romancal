@@ -210,7 +210,7 @@ multiband_asn \
     ${l3name}_coadd.asdf \
     ${l3name_f213}_coadd.asdf \
     --psf-match-reference-filter F158
-strun romancal.step.MultibandCatalogStep ${l3name_mb}_asn.json --deblend True
+strun romancal.step.MultibandCatalogStep ${l3name_mb}_asn.json --deblend True --kernel_fwhms 2.0,5.0 --inject_sources True
 cp ${l3name_mb}_asn.json $outdir/WFI/image/
 cp ${l3name_mb}_cat.parquet $outdir/truth/WFI/image/
 cp ${l3name_mb}_segm.asdf $outdir/truth/WFI/image/

@@ -11,6 +11,8 @@ from dataclasses import dataclass
 from enum import IntEnum
 
 import numpy as np
+from astropy.modeling import fitting, models
+from astropy.stats import SigmaClip
 from scipy import fft
 
 
@@ -380,6 +382,12 @@ class ChannelView(BaseView):
         t_ref = t[REF_ROWS, :]
         not_zero = self.data != 0
 
+        # Linear fit with iterative sigma clipping to reject outliers
+        line_init = models.Linear1D()
+        or_fit = fitting.FittingWithOutlierRemoval(
+            fitting.LinearLSQFitter(), SigmaClip(sigma=3.0, maxiters=5)
+        )
+
         # fit needs to be done for each channel and frame separately
         for chan_data, chan_not_zero in zip(self.data, not_zero, strict=False):
             for frame_data, frame_not_zero in zip(
@@ -396,11 +404,10 @@ class ChannelView(BaseView):
                 if x_vals.size < 1 or y_vals.size < 1:
                     continue
 
-                # Perform the fit using a 1st order polynomial, (i.e. linear fit)
-                m, b = np.polyfit(x_vals, y_vals, 1)
+                fitted_model, _ = or_fit(line_init, x_vals, y_vals)
 
                 # Remove the fit from the data
-                frame_data -= (t * m + b) * frame_not_zero
+                frame_data -= fitted_model(t) * frame_not_zero
 
         return self
 
