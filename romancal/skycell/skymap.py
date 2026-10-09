@@ -80,6 +80,9 @@ class SkyCells:
         if isinstance(names, str):
             names = [names]
 
+        if np.issubdtype(skymap.model.skycells.dtype["name"], np.bytes_):
+            names = [name.encode() for name in names]
+
         indices = np.isin(skymap.model.skycells["name"], names).nonzero()[0]
         found_names = skymap.model.skycells["name"][indices]
 
@@ -156,7 +159,10 @@ class SkyCells:
         the name of a skycell comprises the rounded center coordinates of its containing projection region in right ascension and declination,
         and the XY location of the skycell within its projection region in units of ordinal skycells from that center
         """
-        return self.data["name"].tolist()
+        arr = self.data["name"]
+        if np.issubdtype(arr.dtype, np.bytes_):
+            arr = arr.astype(np.str_)
+        return arr.tolist()
 
     @property
     def radec_centers(self) -> NDArray[float]:
