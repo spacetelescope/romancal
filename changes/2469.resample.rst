@@ -1,0 +1,2 @@
+Build the skycell WCS directly from the association's ``skycell_wcs_info``,
+which now records ``vparity``, instead of looking the skycell up by name.

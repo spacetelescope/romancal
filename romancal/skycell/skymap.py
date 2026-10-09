@@ -1,5 +1,7 @@
 import logging
 import os
+import warnings
+from collections.abc import Mapping
 from datetime import datetime
 from functools import cached_property
 from pathlib import Path
@@ -116,7 +118,9 @@ class SkyCells:
             if isinstance(asn, os.PathLike):
                 asn = ModelLibrary._load_asn(asn)
 
-            if "skycell_wcs_info" in asn and isinstance(asn["skycell_wcs_info"], dict):
+            if "skycell_wcs_info" in asn and isinstance(
+                asn["skycell_wcs_info"], Mapping
+            ):
                 skycell_names.append(asn["skycell_wcs_info"]["name"])
             elif "target" in asn and asn["target"].lower() != "none":
                 skycell_names.append(asn["target"])
@@ -126,6 +130,34 @@ class SkyCells:
                 )
 
         return SkyCells.from_names(skycell_names, skymap=skymap)
+
+    @staticmethod
+    def wcs_from_asn(asn: Mapping, skymap: "SkyMap" = None) -> WCS:
+        """WCS of the skycell an association was made for
+
+        Derived from the association's `skycell_wcs_info` when
+        present.  Otherwise the skycell is looked up by the `target` name.
+
+        Parameters
+        ----------
+        asn : Mapping
+            association dictionary
+        skymap: SkyMap
+            skymap instance used for a lookup by name; defaults to global
+            SKYMAP (Default value = None)
+        """
+
+        wcs_info = asn.get("skycell_wcs_info")
+        if not isinstance(wcs_info, Mapping):
+            return SkyCells.from_asns([asn], skymap=skymap).wcs[0]
+
+        return _wcsinfo_to_wcs(
+            wcs_info,
+            bounding_box=(
+                (-0.5, wcs_info["nx"] - 0.5),
+                (-0.5, wcs_info["ny"] - 0.5),
+            ),
+        )
 
     @property
     def indices(self) -> NDArray[int]:
@@ -244,6 +276,11 @@ class SkyCells:
     def wcs_infos(self) -> list[dict[str, float | str]]:
         """WCS properties as defined in the Level 3 association schema for each skycell"""
 
+        return self._wcs_infos(self._skymap.vparity)
+
+    def _wcs_infos(self, vparity: int) -> list[dict[str, float | str]]:
+        """`wcs_infos` with the given vparity, see `SkyMap.vparity`"""
+
         return [
             {
                 "name": self._skymap.model.skycells[skycell_index]["name"].item(0),
@@ -272,6 +309,8 @@ class SkyCells:
                 ][projregion_index].astype(
                     np.float64
                 ),  # hotfix for `TypeError: Object of type float32 is not JSON serializable`
+                "vparity": vparity,
+                "skycells_ref_file": Path(self._skymap.path).name,
             }
             for skycell_index, projregion_index in zip(
                 self.indices, self.projection_regions, strict=True
@@ -638,6 +677,7 @@ class ProjectionRegion:
             "nx": self.data["nx"],
             "ny": self.data["ny"],
             "orientat": self.orientation,
+            "vparity": self._skymap.vparity,
         }
 
     @cached_property
@@ -813,6 +853,52 @@ class SkyMap:
         """number of pixels per skycell"""
         return self.model.meta.nxy_skycell, self.model.meta.nxy_skycell
 
+    @cached_property
+    def vparity(self) -> int:
+        """vparity of the pixel grids defined by this skymap
+
+        Old reference files used a non-conventional vparity = +1 convention
+        (ra increases to the right), while new reference files use a
+        vparity = -1 convention (ra increases to the left).  This convention
+        is not recorded explicitly in the reference file, but can be
+        determined by comparing x_tangent with the location of the skycell
+        relative to the reference point.
+
+        This function determines which convention applies by finding
+        which parity puts the center pixel
+        of a skycell on that skycell's recorded center; the wrong parity
+        misses by at least 500 arcseconds, for any skycell whose tangent
+        point does not fall at its center.
+        """
+        center = (self.pixel_shape[0] - 1) / 2
+
+        # a skycell centered on the tangent point is identical under either
+        # parity; consecutive skycells differ in `x_tangent`, so at most one
+        # of the first two can be centered
+        index = 0 if self.model.skycells["x_tangent"][0] != center else 1
+        skycell = SkyCells(np.array([index]), skymap=self)
+
+        # if `x_tangent` is in the flipped convention, this WCS is the right
+        # one and puts the center pixel on the recorded center
+        wcsobj = _wcsinfo_to_wcs(skycell._wcs_infos(vparity=-1)[0])
+        separation = coordinates.SkyCoord(
+            *wcsobj(center, center), unit=u.deg
+        ).separation(coordinates.SkyCoord(*skycell.radec_centers[0], unit=u.deg))
+
+        vparity = -1 if separation < 1 * u.arcsec else 1
+        log.info(
+            f"skymap at {self.path} uses vparity={vparity:+d} "
+            f"({'standard' if vparity == -1 else 'mirror-image'} handedness)"
+        )
+        if vparity != -1:
+            warnings.warn(
+                "Old skycell reference file with mirror-image parity still in "
+                "use!  Skycells and filenames will correspond to obsolete, "
+                "different locations.",
+                stacklevel=3,  # past cached_property, to the caller
+            )
+        return vparity
+
     def projection_regions_containing(
         self, radec: NDArray[float]
     ) -> dict[int, list[int]]:
@@ -900,6 +986,13 @@ def _wcsinfo_to_wcs(
 ) -> WCS:
     """Create a WCS from the skycell wcsinfo meta
 
+    The vparity / handedness of the WCS is taken from `wcsinfo["vparity"]`: -1
+    corresponds to the usual convention where right ascension increases as
+    x decreases.  It defaults to +1, the original reference file convention,
+    so that wcsinfo written before vparity was recorded keeps its meaning;
+    wcsinfo from newer reference files records vparity = -1.  It is ignored
+    if `wcsinfo` supplies an explicit `rotation_matrix`.
+
     Parameters
     ----------
     wcsinfo : dict or MosaicModel.meta.wcsinfo
@@ -932,7 +1025,7 @@ def _wcsinfo_to_wcs(
                     )
                 ),
                 v3i_yangle=0.0,
-                vparity=1,
+                vparity=wcsinfo.get("vparity", 1),
             ),
             (2, 2),
         )
@@ -955,8 +1048,9 @@ def _wcsinfo_to_wcs(
         wcsobj.bounding_box = bounding_box
 
     # ensure array_shape is populated
-    if not hasattr(wcsobj, "array_shape"):
-        wcsobj.array_shape = wcsobj.pixel_shape[::-1]
+    if wcsobj.array_shape is None and bounding_box:
+        (x0, x1), (y0, y1) = bounding_box
+        wcsobj.array_shape = (round(y1 - y0), round(x1 - x0))
 
     return wcsobj
 
