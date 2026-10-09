@@ -34,9 +34,7 @@ def _dq_names(model):
 
 
 def _ensure_dq2(model):
-    """Return ``model``'s dq2 array, creating an empty one if needed.
-
-    Files written before dq2 existed simply lack the array.
+    """Add an empty dq2 array to ``model`` in place if it lacks one.
 
     Models with no pixel-level data quality array at all, such as the L1
     ``ScienceRawModel``, have nothing for dq2 to accompany and raise
@@ -44,14 +42,13 @@ def _ensure_dq2(model):
     """
     dq_name, dq2_name = _dq_names(model)
     if dq2_name in model:
-        return model[dq2_name]
+        return
     if dq_name not in model:
         raise TypeError(
             f"{type(model).__name__} has no {dq_name} array for {dq2_name} to accompany"
         )
     log.info(f"{type(model).__name__} has no {dq2_name} array; adding an empty one.")
     model[dq2_name] = np.zeros(model[dq_name].shape, dtype=model[dq_name].dtype)
-    return model[dq2_name]
 
 
 def _align(ref_array, shape, name):
