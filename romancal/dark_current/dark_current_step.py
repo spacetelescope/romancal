@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from roman_datamodels import datamodels as rdm
 
 from romancal.datamodels.fileio import open_dataset
+from romancal.lib.dqutils import update_dq
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:
@@ -69,5 +70,5 @@ def subtract_dark_current(input_model, dark_model):
 
     # Do the dark correction
     input_model.data -= dark_slope
-    input_model.dq |= dark_model.dq[4:-4, 4:-4]
+    update_dq(input_model, dark_model)
     input_model.meta.cal_step.dark = "COMPLETE"
