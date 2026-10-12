@@ -1,6 +1,5 @@
 from pathlib import Path
 from re import match
-from types import SimpleNamespace
 
 import asdf
 import astropy.units as u
@@ -750,55 +749,52 @@ def test_l2_segmentation_without_skyvals_when_disabled(image_model):
     assert "healpix11_cov" not in result_segmentation_map
 
 
-def test_skyvals_coverage_includes_source_pixels(monkeypatch):
+def test_skyvals_coverage_includes_source_pixels(image_model):
     """
-    Purpose: healpix11_cov must include source pixels, while sky medians
-    use only unsegmented sky pixels.
+    Purpose: sky medians exclude segmented source pixels, while healpix11_cov
+    still covers those pixels when they are unmasked.
     """
+    # Positive pixel_area so get_pixel_area_sr does not fall back to a WCS estimate.
+    image_model.meta.photometry.pixel_area = 1.0e-12
+    ny, nx = image_model.data.shape
+    image_model.data = np.full((ny, nx), 20.0, dtype=np.float32)
+    image_model.data[5, 5] = 999.0
+    image_model.err = np.ones((ny, nx), dtype=np.float32)
 
-    class WCS:
-        def pixel_to_world_values(self, x, y):
-            return np.asarray(x) * 180.0, np.asarray(y) * 0.0
+    segmentation = np.zeros((ny, nx), dtype=np.uint32)
+    segmentation[5, 5] = 1
+    bad_pixel_mask = np.zeros((ny, nx), dtype=bool)
 
-    input_model = SimpleNamespace(
-        data=np.array([[10.0, 20.0]], dtype=np.float32),
-        err=np.ones((1, 2), dtype=np.float32),
-        meta=SimpleNamespace(wcs=WCS()),
+    skyvals, healpix11_cov = compute_skyvals(
+        image_model, segmentation, bad_pixel_mask
     )
-    segmentation = np.array([[1, 0]], dtype=np.uint32)
-    bad_pixel_mask = np.zeros((1, 2), dtype=bool)
 
-    monkeypatch.setattr(
-        "romancal.source_catalog._skyvals.get_pixel_area_sr", lambda model: 1.0
+    assert skyvals.shape[0] > 0
+    # Source pixel value must not enter sky medians.
+    np.testing.assert_array_equal(skyvals["data"], 20.0)
+    assert healpix11_cov.shape[0] > 0
+
+    # Source-only footprint still contributes to healpix11_cov.
+    source_only_mask = np.ones((ny, nx), dtype=bool)
+    source_only_mask[5, 5] = False
+    _, healpix11_source = compute_skyvals(
+        image_model, segmentation, source_only_mask
     )
-    skyvals, healpix11_cov = compute_skyvals(input_model, segmentation, bad_pixel_mask)
-
-    assert skyvals.shape == (1,)
-    assert skyvals["data"][0] == 20.0
-    assert healpix11_cov.shape == (2,)
+    assert healpix11_source.shape[0] >= 1
+    assert np.all(np.isin(healpix11_source, healpix11_cov))
 
 
-def test_skyvals_empty_when_all_pixels_masked(monkeypatch):
+def test_skyvals_empty_when_all_pixels_masked(image_model):
     """
     Purpose: fully masked inputs return empty skyvals and healpix11_cov.
     """
+    image_model.meta.photometry.pixel_area = 1.0e-12
+    bad_pixel_mask = np.ones(image_model.data.shape, dtype=bool)
+    segmentation = np.zeros(image_model.data.shape, dtype=np.uint32)
 
-    class WCS:
-        def pixel_to_world_values(self, x, y):
-            raise AssertionError("WCS should not be called when nothing is usable")
-
-    input_model = SimpleNamespace(
-        data=np.ones((2, 2), dtype=np.float32),
-        err=np.ones((2, 2), dtype=np.float32),
-        meta=SimpleNamespace(wcs=WCS()),
+    skyvals, healpix11_cov = compute_skyvals(
+        image_model, segmentation, bad_pixel_mask
     )
-    segmentation = np.zeros((2, 2), dtype=np.uint32)
-    bad_pixel_mask = np.ones((2, 2), dtype=bool)
-
-    monkeypatch.setattr(
-        "romancal.source_catalog._skyvals.get_pixel_area_sr", lambda model: 1.0
-    )
-    skyvals, healpix11_cov = compute_skyvals(input_model, segmentation, bad_pixel_mask)
 
     assert skyvals.shape == (0,)
     assert skyvals.dtype == SKYVALS_DTYPE
@@ -806,51 +802,47 @@ def test_skyvals_empty_when_all_pixels_masked(monkeypatch):
     assert healpix11_cov.dtype == np.int64
 
 
-def test_skyvals_chunked_matches_single_pass(monkeypatch):
+def test_skyvals_chunked_matches_single_pass(image_model):
     """
-    Purpose: row-chunked WCS/HEALPix aggregation must match a single-chunk
-    pass so memory optimization does not change skyvals contents.
+    Purpose: row-chunked WCS/HEALPix aggregation matches a single-pass run so
+    chunking does not change skyvals contents.
     """
-
-    class WCS:
-        def pixel_to_world_values(self, x, y):
-            # Map pixel x to lon so neighboring columns land in distinct healpixels.
-            return np.asarray(x, dtype=float) * 0.01, np.asarray(y, dtype=float) * 0.0
-
+    image_model.meta.photometry.pixel_area = 1.0e-12
     rng = np.random.default_rng(0)
-    data = rng.normal(5.0, 1.0, size=(5, 8)).astype(np.float32)
-    err = np.full_like(data, 0.5)
-    segmentation = np.zeros(data.shape, dtype=np.uint32)
+    image_model.data = rng.normal(5.0, 1.0, size=image_model.data.shape).astype(
+        np.float32
+    )
+    image_model.err = np.full_like(image_model.data, 0.5, dtype=np.float32)
+
+    segmentation = np.zeros(image_model.data.shape, dtype=np.uint32)
     segmentation[1, 1] = 1
     segmentation[3, 4] = 2
-    bad_pixel_mask = np.zeros(data.shape, dtype=bool)
+    bad_pixel_mask = np.zeros(image_model.data.shape, dtype=bool)
     bad_pixel_mask[0, 0] = True
 
-    input_model = SimpleNamespace(
-        data=data,
-        err=err,
-        meta=SimpleNamespace(wcs=WCS()),
-    )
-    monkeypatch.setattr(
-        "romancal.source_catalog._skyvals.get_pixel_area_sr", lambda model: 1.0
-    )
-
-    monkeypatch.setattr("romancal.source_catalog._skyvals._SKYVALS_CHUNK_ROWS", 1)
     sky_chunked, hp11_chunked = compute_skyvals(
-        input_model, segmentation, bad_pixel_mask
+        image_model, segmentation, bad_pixel_mask, chunk_rows=1
     )
-
-    monkeypatch.setattr("romancal.source_catalog._skyvals._SKYVALS_CHUNK_ROWS", 1000)
-    sky_single, hp11_single = compute_skyvals(input_model, segmentation, bad_pixel_mask)
+    sky_single, hp11_single = compute_skyvals(
+        image_model, segmentation, bad_pixel_mask, chunk_rows=10_000
+    )
 
     assert sky_chunked.dtype == sky_single.dtype
     np.testing.assert_array_equal(sky_chunked["healpix17"], sky_single["healpix17"])
-    np.testing.assert_allclose(sky_chunked["data"], sky_single["data"], rtol=0, atol=0)
-    np.testing.assert_allclose(sky_chunked["err"], sky_single["err"], rtol=0, atol=0)
-    np.testing.assert_allclose(
-        sky_chunked["covfrac"], sky_single["covfrac"], rtol=0, atol=0
-    )
+    np.testing.assert_array_equal(sky_chunked["data"], sky_single["data"])
+    np.testing.assert_array_equal(sky_chunked["err"], sky_single["err"])
+    np.testing.assert_array_equal(sky_chunked["covfrac"], sky_single["covfrac"])
     np.testing.assert_array_equal(np.sort(hp11_chunked), np.sort(hp11_single))
+
+
+def test_skyvals_rejects_invalid_chunk_rows(image_model):
+    """
+    Purpose: chunk_rows must be a positive integer.
+    """
+    segmentation = np.zeros(image_model.data.shape, dtype=np.uint32)
+    bad_pixel_mask = np.zeros(image_model.data.shape, dtype=bool)
+    with pytest.raises(ValueError, match="chunk_rows must be >= 1"):
+        compute_skyvals(image_model, segmentation, bad_pixel_mask, chunk_rows=0)
 
 
 def test_l2_skyvals_values_and_covfrac_reasonable(image_model):

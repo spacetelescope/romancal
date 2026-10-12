@@ -14,12 +14,8 @@ log = logging.getLogger(__name__)
 
 HEALPIX17_NSIDE = 2**17
 HEALPIX11_DIVISOR = 4**6
-# Internal row-chunk size for WCS/HEALPix conversion. Full-image conversion of
-# a Roman SCA (~16M pixels) peaks several GB above baseline. 256 rows on a
-# ~4k-wide detector is ~1M pixels/chunk: small enough to cap temporary RA/Dec
-# and healpix arrays, large enough to avoid excessive Python loop overhead.
-# Not a user-facing knob; tune only if re-profiling on realistic L2 images.
-_SKYVALS_CHUNK_ROWS = 256
+# Default row-chunk size for WCS/HEALPix conversion (~1M pixels on a 4k-wide SCA).
+_DEFAULT_CHUNK_ROWS = 256
 SKYVALS_DTYPE = np.dtype(
     [
         ("healpix17", np.int64),
@@ -30,12 +26,12 @@ SKYVALS_DTYPE = np.dtype(
 )
 
 
-def compute_skyvals(input_model, segmentation, bad_pixel_mask):
+def compute_skyvals(input_model, segmentation, bad_pixel_mask, chunk_rows=_DEFAULT_CHUNK_ROWS):
     """
     Compute HEALPix-aggregated sky statistics from masked image pixels.
 
-    Image coordinates are converted to HEALPix in row chunks (see
-    ``_SKYVALS_CHUNK_ROWS``) so peak memory stays bounded on full SCA images.
+    Coordinates are converted to HEALPix in row chunks of ``chunk_rows`` to
+    bound temporary WCS/HEALPix arrays on large images.
 
     Parameters
     ----------
@@ -45,6 +41,9 @@ def compute_skyvals(input_model, segmentation, bad_pixel_mask):
         2D segmentation labels; source pixels are non-zero.
     bad_pixel_mask : np.ndarray
         Boolean 2D mask where True means "exclude pixel from sky calculation".
+    chunk_rows : int, optional
+        Number of image rows to convert through WCS/HEALPix at a time.
+        Must be >= 1. Default is 256.
 
     Returns
     -------
@@ -58,6 +57,9 @@ def compute_skyvals(input_model, segmentation, bad_pixel_mask):
         contain at least one pixel not rejected by the bad-pixel mask,
         regardless of its segmentation label.
     """
+    if chunk_rows < 1:
+        raise ValueError(f"chunk_rows must be >= 1, got {chunk_rows}")
+
     data = input_model.data
     err = input_model.err
     wcs = input_model.meta.wcs
@@ -72,18 +74,15 @@ def compute_skyvals(input_model, segmentation, bad_pixel_mask):
         )
         return np.empty((0,), dtype=SKYVALS_DTYPE), np.empty((0,), dtype=np.int64)
 
-    # Valid sky pixels are those not rejected by upstream masks and not part
-    # of detected sources.
+    # Valid sky pixels: unmasked and not part of a detected source.
     valid = coverage & (segmentation == 0)
     if not np.any(valid):
-        # Fallback: if every source-masked pixel is rejected, use all unmasked
-        # pixels so we still produce per-exposure sky estimates.
+        # If every unmasked pixel is in a source, fall back to all unmasked
+        # pixels so per-exposure sky estimates are still produced.
         valid = coverage
 
     ny = data.shape[0]
     n_sky = int(np.count_nonzero(valid))
-    # Preallocate flat sky-pixel buffers. Peak memory is dominated by these
-    # plus per-chunk WCS temporaries, not by a second full-image copy of RA/Dec.
     healpix17 = np.empty(n_sky, dtype=np.int64)
     vals_data = np.empty(n_sky, dtype=np.float32)
     vals_err = np.empty(n_sky, dtype=np.float32)
@@ -92,8 +91,8 @@ def compute_skyvals(input_model, segmentation, bad_pixel_mask):
 
     healpix = HEALPix(nside=HEALPIX17_NSIDE, order="nested", frame="icrs")
 
-    for y0 in range(0, ny, _SKYVALS_CHUNK_ROWS):
-        y1 = min(y0 + _SKYVALS_CHUNK_ROWS, ny)
+    for y0 in range(0, ny, chunk_rows):
+        y1 = min(y0 + chunk_rows, ny)
         cov_rows = coverage[y0:y1]
         if not np.any(cov_rows):
             continue
@@ -101,7 +100,6 @@ def compute_skyvals(input_model, segmentation, bad_pixel_mask):
         yy_local, xx = np.nonzero(cov_rows)
         yy = yy_local + y0
 
-        # Convert this row chunk only — full-image WCS was the main memory spike.
         ra, dec = wcs.pixel_to_world_values(xx, yy)
         chunk_healpix17 = np.asarray(
             healpix.lonlat_to_healpix(ra * u.deg, dec * u.deg),
@@ -113,16 +111,13 @@ def compute_skyvals(input_model, segmentation, bad_pixel_mask):
         if np.any(is_sky_pixel):
             n = int(np.count_nonzero(is_sky_pixel))
             sl = slice(n_filled, n_filled + n)
-            healpix17[sl] = chunk_healpix17[is_sky_pixel]
             yy_sky = yy[is_sky_pixel]
             xx_sky = xx[is_sky_pixel]
+            healpix17[sl] = chunk_healpix17[is_sky_pixel]
             vals_data[sl] = data[yy_sky, xx_sky]
             vals_err[sl] = err[yy_sky, xx_sky]
             n_filled += n
 
-    # n_sky counts valid sky pixels over the full image; the loop above walks
-    # every coverage row and fills exactly those pixels. Mismatch means the
-    # masks or chunking logic is inconsistent.
     if n_filled != n_sky:
         raise RuntimeError(
             f"skyvals fill count mismatch: filled {n_filled} sky pixels, "
@@ -134,28 +129,28 @@ def compute_skyvals(input_model, segmentation, bad_pixel_mask):
     else:
         healpix11_cov = np.empty((0,), dtype=np.int64)
 
-    # Sort/group by healpixel so per-healpixel reductions are contiguous.
-    order = np.argsort(healpix17)
-    hp_sorted = healpix17[order]
-    data_sorted = vals_data[order]
-    err_sorted = vals_err[order]
-    del healpix17, vals_data, vals_err, order
-
+    # argsort once, then gather values into healpix order. Avoids keeping both
+    # unsorted and fully duplicated sorted buffers longer than needed.
+    order = np.argsort(healpix17, kind="mergesort")
+    hp_sorted = np.take(healpix17, order)
+    del healpix17
     unique_hp, starts, counts = np.unique(
         hp_sorted, return_index=True, return_counts=True
     )
+    del hp_sorted
+
+    vals_data = np.take(vals_data, order)
+    vals_err = np.take(vals_err, order)
+    del order
 
     med_data = np.empty(unique_hp.size, dtype=np.float32)
     med_err = np.empty(unique_hp.size, dtype=np.float32)
-    # Pixels entering this path are already finite (bad_pixel_mask excludes
-    # non-finite data/err), so plain median is sufficient and cheaper than
-    # nanmedian.
+    # bad_pixel_mask already excludes non-finite data/err.
     for i, (start, count) in enumerate(zip(starts, counts, strict=True)):
         section = slice(start, start + count)
-        med_data[i] = np.median(data_sorted[section])
-        med_err[i] = np.median(err_sorted[section])
+        med_data[i] = np.median(vals_data[section])
+        med_err[i] = np.median(vals_err[section])
 
-    # Normalize contributing-pixel counts to fractional HEALPix coverage.
     healpix_area_sr = 4.0 * np.pi / (12.0 * HEALPIX17_NSIDE * HEALPIX17_NSIDE)
     expected_pixels = healpix_area_sr / pixel_area_sr
     covfrac = np.clip(counts.astype(np.float64) / expected_pixels, 0.0, 1.0).astype(
