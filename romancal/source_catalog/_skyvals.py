@@ -14,9 +14,11 @@ log = logging.getLogger(__name__)
 
 HEALPIX17_NSIDE = 2**17
 HEALPIX11_DIVISOR = 4**6
-# Process this many image rows at a time through WCS/HEALPix. Full-image
-# conversion of a Roman SCA (~16M pixels) peaks several GB above baseline;
-# chunking keeps temporary coordinate arrays small while preserving results.
+# Internal row-chunk size for WCS/HEALPix conversion. Full-image conversion of
+# a Roman SCA (~16M pixels) peaks several GB above baseline. 256 rows on a
+# ~4k-wide detector is ~1M pixels/chunk: small enough to cap temporary RA/Dec
+# and healpix arrays, large enough to avoid excessive Python loop overhead.
+# Not a user-facing knob; tune only if re-profiling on realistic L2 images.
 _SKYVALS_CHUNK_ROWS = 256
 SKYVALS_DTYPE = np.dtype(
     [
@@ -31,6 +33,9 @@ SKYVALS_DTYPE = np.dtype(
 def compute_skyvals(input_model, segmentation, bad_pixel_mask):
     """
     Compute HEALPix-aggregated sky statistics from masked image pixels.
+
+    Image coordinates are converted to HEALPix in row chunks (see
+    ``_SKYVALS_CHUNK_ROWS``) so peak memory stays bounded on full SCA images.
 
     Parameters
     ----------
@@ -115,19 +120,19 @@ def compute_skyvals(input_model, segmentation, bad_pixel_mask):
             vals_err[sl] = err[yy_sky, xx_sky]
             n_filled += n
 
+    # n_sky counts valid sky pixels over the full image; the loop above walks
+    # every coverage row and fills exactly those pixels. Mismatch means the
+    # masks or chunking logic is inconsistent.
     if n_filled != n_sky:
-        # Defensive trim if counts drift (should not happen with consistent masks).
-        healpix17 = healpix17[:n_filled]
-        vals_data = vals_data[:n_filled]
-        vals_err = vals_err[:n_filled]
+        raise RuntimeError(
+            f"skyvals fill count mismatch: filled {n_filled} sky pixels, "
+            f"expected {n_sky}"
+        )
 
     if hp11_chunks:
         healpix11_cov = np.unique(np.concatenate(hp11_chunks)).astype(np.int64)
     else:
         healpix11_cov = np.empty((0,), dtype=np.int64)
-
-    if n_filled == 0:
-        return np.empty((0,), dtype=SKYVALS_DTYPE), healpix11_cov
 
     # Sort/group by healpixel so per-healpixel reductions are contiguous.
     order = np.argsort(healpix17)
