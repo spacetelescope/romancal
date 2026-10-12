@@ -126,7 +126,10 @@ def test_multiband_catalog(
     # should be similar across all matched bands (since they share an
     # effective PSF after matching).  Assert that matched ratios are much
     # closer to the F158 reference than the original unmatched ratios.
-    bright = cat["segment_f158_flux"] > np.median(cat["segment_f158_flux"])
+    # Use only bright sources.  The simulated sources are all Gaia stars
+    # brighter than about 21st magnitude, while unflagged bad pixels add
+    # many faint, very compact detections that would dominate the median.
+    bright = cat["kron_f158_abmag"] < 21
     ref_ratio = np.nanmedian(
         cat["aper02_f158_flux"][bright] / cat["aper08_f158_flux"][bright]
     )
