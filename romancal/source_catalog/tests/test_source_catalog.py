@@ -751,6 +751,11 @@ def test_l2_segmentation_without_skyvals_when_disabled(image_model):
 
 
 def test_skyvals_coverage_includes_source_pixels(monkeypatch):
+    """
+    Purpose: healpix11_cov must include source pixels, while sky medians
+    use only unsegmented sky pixels.
+    """
+
     class WCS:
         def pixel_to_world_values(self, x, y):
             return np.asarray(x) * 180.0, np.asarray(y) * 0.0
@@ -773,9 +778,85 @@ def test_skyvals_coverage_includes_source_pixels(monkeypatch):
     assert healpix11_cov.shape == (2,)
 
 
+def test_skyvals_empty_when_all_pixels_masked(monkeypatch):
+    """
+    Purpose: fully masked inputs return empty skyvals and healpix11_cov.
+    """
+
+    class WCS:
+        def pixel_to_world_values(self, x, y):
+            raise AssertionError("WCS should not be called when nothing is usable")
+
+    input_model = SimpleNamespace(
+        data=np.ones((2, 2), dtype=np.float32),
+        err=np.ones((2, 2), dtype=np.float32),
+        meta=SimpleNamespace(wcs=WCS()),
+    )
+    segmentation = np.zeros((2, 2), dtype=np.uint32)
+    bad_pixel_mask = np.ones((2, 2), dtype=bool)
+
+    monkeypatch.setattr(
+        "romancal.source_catalog._skyvals.get_pixel_area_sr", lambda model: 1.0
+    )
+    skyvals, healpix11_cov = compute_skyvals(input_model, segmentation, bad_pixel_mask)
+
+    assert skyvals.shape == (0,)
+    assert skyvals.dtype == SKYVALS_DTYPE
+    assert healpix11_cov.shape == (0,)
+    assert healpix11_cov.dtype == np.int64
+
+
+def test_skyvals_chunked_matches_single_pass(monkeypatch):
+    """
+    Purpose: row-chunked WCS/HEALPix aggregation must match a single-chunk
+    pass so memory optimization does not change skyvals contents.
+    """
+
+    class WCS:
+        def pixel_to_world_values(self, x, y):
+            # Map pixel x to lon so neighboring columns land in distinct healpixels.
+            return np.asarray(x, dtype=float) * 0.01, np.asarray(y, dtype=float) * 0.0
+
+    rng = np.random.default_rng(0)
+    data = rng.normal(5.0, 1.0, size=(5, 8)).astype(np.float32)
+    err = np.full_like(data, 0.5)
+    segmentation = np.zeros(data.shape, dtype=np.uint32)
+    segmentation[1, 1] = 1
+    segmentation[3, 4] = 2
+    bad_pixel_mask = np.zeros(data.shape, dtype=bool)
+    bad_pixel_mask[0, 0] = True
+
+    input_model = SimpleNamespace(
+        data=data,
+        err=err,
+        meta=SimpleNamespace(wcs=WCS()),
+    )
+    monkeypatch.setattr(
+        "romancal.source_catalog._skyvals.get_pixel_area_sr", lambda model: 1.0
+    )
+
+    monkeypatch.setattr("romancal.source_catalog._skyvals._SKYVALS_CHUNK_ROWS", 1)
+    sky_chunked, hp11_chunked = compute_skyvals(
+        input_model, segmentation, bad_pixel_mask
+    )
+
+    monkeypatch.setattr("romancal.source_catalog._skyvals._SKYVALS_CHUNK_ROWS", 1000)
+    sky_single, hp11_single = compute_skyvals(input_model, segmentation, bad_pixel_mask)
+
+    assert sky_chunked.dtype == sky_single.dtype
+    np.testing.assert_array_equal(sky_chunked["healpix17"], sky_single["healpix17"])
+    np.testing.assert_allclose(sky_chunked["data"], sky_single["data"], rtol=0, atol=0)
+    np.testing.assert_allclose(sky_chunked["err"], sky_single["err"], rtol=0, atol=0)
+    np.testing.assert_allclose(
+        sky_chunked["covfrac"], sky_single["covfrac"], rtol=0, atol=0
+    )
+    np.testing.assert_array_equal(np.sort(hp11_chunked), np.sort(hp11_single))
+
+
 def test_l2_skyvals_values_and_covfrac_reasonable(image_model):
     """
-    Verify skyvals statistics are sensible on a controlled input image.
+    Purpose: skyvals medians recover a controlled background and covfrac stays
+    in [0, 1] with some near-full healpixels on a realistic L2 image.
     """
     rng = np.random.default_rng(seed=9)
     image_model.data = (rng.normal(0, 1, size=image_model.data.shape) + 100.0).astype(
