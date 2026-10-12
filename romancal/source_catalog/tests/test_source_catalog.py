@@ -765,9 +765,7 @@ def test_skyvals_coverage_includes_source_pixels(image_model):
     segmentation[5, 5] = 1
     bad_pixel_mask = np.zeros((ny, nx), dtype=bool)
 
-    skyvals, healpix11_cov = compute_skyvals(
-        image_model, segmentation, bad_pixel_mask
-    )
+    skyvals, healpix11_cov = compute_skyvals(image_model, segmentation, bad_pixel_mask)
 
     assert skyvals.shape[0] > 0
     # Source pixel value must not enter sky medians.
@@ -777,9 +775,7 @@ def test_skyvals_coverage_includes_source_pixels(image_model):
     # Source-only footprint still contributes to healpix11_cov.
     source_only_mask = np.ones((ny, nx), dtype=bool)
     source_only_mask[5, 5] = False
-    _, healpix11_source = compute_skyvals(
-        image_model, segmentation, source_only_mask
-    )
+    _, healpix11_source = compute_skyvals(image_model, segmentation, source_only_mask)
     assert healpix11_source.shape[0] >= 1
     assert np.all(np.isin(healpix11_source, healpix11_cov))
 
@@ -792,9 +788,7 @@ def test_skyvals_empty_when_all_pixels_masked(image_model):
     bad_pixel_mask = np.ones(image_model.data.shape, dtype=bool)
     segmentation = np.zeros(image_model.data.shape, dtype=np.uint32)
 
-    skyvals, healpix11_cov = compute_skyvals(
-        image_model, segmentation, bad_pixel_mask
-    )
+    skyvals, healpix11_cov = compute_skyvals(image_model, segmentation, bad_pixel_mask)
 
     assert skyvals.shape == (0,)
     assert skyvals.dtype == SKYVALS_DTYPE

@@ -26,7 +26,9 @@ SKYVALS_DTYPE = np.dtype(
 )
 
 
-def compute_skyvals(input_model, segmentation, bad_pixel_mask, chunk_rows=_DEFAULT_CHUNK_ROWS):
+def compute_skyvals(
+    input_model, segmentation, bad_pixel_mask, chunk_rows=_DEFAULT_CHUNK_ROWS
+):
     """
     Compute HEALPix-aggregated sky statistics from masked image pixels.
 
