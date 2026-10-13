@@ -331,6 +331,37 @@ def test_dqinit_sub_data_encoding_offset():
     assert np.allclose(result.data - result2.data, offset)
 
 
+def test_dqinit_l1_reference_read_added():
+    offset = 7
+    shape = (2, 20, 20)
+
+    wfi_sci_raw_model = rawim(shape, "WFI", "WFI_IMAGE")
+    result = DQInitStep.call(wfi_sci_raw_model.copy())
+
+    wfi_sci_raw_model.reference_read = wfi_sci_raw_model.data[0] * 0 + offset
+    wfi_sci_raw_model.reference_amp33 = wfi_sci_raw_model.amp33[0] * 0 + offset
+    wfi_sci_raw_model.meta.instrument.l1_reference_read_added = True
+    result2 = DQInitStep.call(wfi_sci_raw_model.copy())
+
+    assert np.allclose(result2.data, result.data)
+    assert np.allclose(result2.amp33, result.amp33)
+
+
+def test_dqinit_l1_data_encoding_offset_removed():
+    offset = 7
+    shape = (2, 20, 20)
+
+    wfi_sci_raw_model = rawim(shape, "WFI", "WFI_IMAGE")
+    result = DQInitStep.call(wfi_sci_raw_model.copy())
+
+    wfi_sci_raw_model.meta.instrument.data_encoding_offset = offset
+    wfi_sci_raw_model.meta.instrument.l1_data_encoding_offset_removed = True
+    result2 = DQInitStep.call(wfi_sci_raw_model.copy())
+
+    assert np.allclose(result2.data, result.data)
+    assert np.allclose(result2.amp33, result.amp33)
+
+
 def test_dqinit_gw_expansion():
     """Test that expand_gw_flagging extends the DO_NOT_USE zone around the guide window."""
     shape = (2, 100, 100)
