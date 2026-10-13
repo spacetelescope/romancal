@@ -2,7 +2,7 @@ import logging
 import warnings
 
 import numpy as np
-from astropy.stats import sigma_clipped_stats
+from astropy.stats import mad_std, sigma_clipped_stats
 from roman_datamodels import dqflags
 from scipy import optimize
 
@@ -133,11 +133,21 @@ def correct_anomaly(input_model, mask_rows=False):
 
     # Identify weakly illuminated pixels in each row for fitting.
     # Use a different pair of reads, to minimize bias from covariances.
-    # With only 4 resultants, the last pair shares the 3rd resultant with
-    # the estimate above, where it is weighted by diff_time[0] / diff_time[1].
-    last = min(4, data.shape[0] - 1)
-    diff_data = data[last] - data[last - 1]
-    high_illum_mask = diff_data > np.median(diff_data, axis=1)
+    if data.shape[0] >= 5:
+        diff_data = data[4] - data[3]
+        threshold = np.median(diff_data, axis=1, keepdims=True)
+    else:
+        # With only 4 resultants, the last pair shares the 3rd resultant
+        # with the estimate above.  Selecting on it biases the residual by
+        # its covariance with the selected noise, which is large for a cut
+        # at the median.  Exclude only clearly illuminated pixels instead,
+        # so that few pixels lie near the cut.
+        diff_data = data[3] - data[2]
+        threshold = (
+            np.median(diff_data, axis=1, keepdims=True)
+            + 3 * mad_std(diff_data, axis=1)[:, np.newaxis]
+        )
+    high_illum_mask = diff_data > threshold
 
     # Compute the sigma clipped mean of the residual for each row
     # from the low illumination pixels
