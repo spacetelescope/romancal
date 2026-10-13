@@ -75,7 +75,7 @@ def update_model_version(model, *, close_on_update=False):
         "darkdecaysignal",
         "integralnonlinearity",
         "inverselinearity",
-        "bam",
+        "bam",  # added in B24
     ]
     ref_file = model.meta.get("ref_file", None)
     if ref_file is not None:
