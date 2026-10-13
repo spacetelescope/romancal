@@ -345,6 +345,8 @@ def test_dqinit_l1_reference_read_added():
 
     assert np.allclose(result2.data, result.data)
     assert np.allclose(result2.amp33, result.amp33)
+    assert "reference_read" not in result2
+    assert "reference_amp33" not in result2
 
 
 def test_dqinit_l1_data_encoding_offset_removed():

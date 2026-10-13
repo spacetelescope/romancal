@@ -135,23 +135,26 @@ def do_dqinit(model, mask, expand_gw_flagging=0):
 
     # the reference read has been subtracted from the science data
     # in older L1 files.  Add it back into the data unless the L1 says it
-    # was already added back in.
+    # was already added back in.  Either way, drop the reference read
+    # arrays so they are not propagated to the ramp.
     # the TVAC files are special and there the reference read was
     # already added back in
-    reference_read_added = is_tvac or model.meta.instrument.get(
-        "l1_reference_read_added", False
-    )
-    if not reference_read_added:
+    if not is_tvac:
+        reference_read_added = model.meta.instrument.get(
+            "l1_reference_read_added", False
+        )
+        if reference_read_added:
+            log.info("Reference read already added to L1 data; not adding.")
         reference_read = getattr(output_model, "reference_read", None)
         if reference_read is not None:
-            output_model.data += reference_read
+            if not reference_read_added:
+                output_model.data += reference_read
             del output_model.reference_read
         reference_amp33 = getattr(output_model, "reference_amp33", None)
         if reference_amp33 is not None:
-            output_model.amp33 += reference_amp33
+            if not reference_read_added:
+                output_model.amp33 += reference_amp33
             del output_model.reference_amp33
-    else:
-        log.info("Reference read already added to L1 data; not adding.")
 
     # If a data encoding offset was added to the data, remove it
     # from the data and amp33 arrays, unless the L1 says it was
