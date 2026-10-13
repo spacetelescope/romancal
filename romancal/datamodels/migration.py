@@ -68,7 +68,7 @@ def update_model_version(model, *, close_on_update=False):
         model, (ImageModel, ScienceRawModel)
     ) and "wfi_acm_z_defocus_size" not in model.meta.get(
         "visit", "wfi_acm_z_defocus_size"
-    ):
+    ) and "wfi_acm_z_defocus_size" not in model.meta.visit:
         updated_model.meta.visit.wfi_acm_z_defocus_size = None
 
     new_ref_files = [
