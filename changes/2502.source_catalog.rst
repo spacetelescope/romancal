@@ -1,0 +1,2 @@
+Reduced peak memory in ``source_catalog`` skyvals by converting image
+coordinates to HEALPix in row chunks instead of the full image at once.
