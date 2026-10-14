@@ -66,3 +66,13 @@ The ``skymatch`` step uses the following optional arguments:
   Bin width, in sigma, used to sample the distribution of pixel
   values in order to compute the sky background using statistics
   that require binning, such as `mode` and `midpt`.
+
+``offset_file`` (str, default='')
+  Optional path to a parquet table of per-exposure sky offsets. When set
+  (or when the mosaic ASN product provides ``skymatch_offsets_file``), the
+  step loads pipeline background levels from that table and skips the usual
+  stcal sky calculation. Relative ASN paths are resolved against the ASN
+  directory. The table should include ``filename`` and either ``level``
+  (value to subtract) or ``epsilon`` (additive skyval offset; stored level
+  is ``-epsilon``).
+

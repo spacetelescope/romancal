@@ -91,6 +91,7 @@ roman_set_telescope_pointing = "romancal.scripts.set_telescope_pointing:_main"
 roman_set_velocity_aberration = "romancal.scripts.set_velocity_aberration:_main"
 roman_static_preview = "romancal.scripts.static_preview:command"
 roman_v1_calculate = "romancal.scripts.v1_calculate:_main"
+roman_export_skyvals_parquet = "romancal.scripts.export_skyvals_parquet:main"
 skycell_asn = "romancal.associations.skycell_asn:_cli"
 multiband_asn = "romancal.associations.multiband_asn:_cli"
 

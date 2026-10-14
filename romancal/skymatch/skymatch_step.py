@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 from copy import deepcopy
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -14,6 +15,11 @@ from roman_datamodels.dqflags import pixel
 from stcal.skymatch import SkyImage, SkyStats, skymatch
 
 from romancal.datamodels.fileio import open_dataset
+from romancal.skymatch.offset_io import (
+    load_offset_table,
+    lookup_offset,
+    resolve_offsets_path_from_asn,
+)
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:
@@ -37,6 +43,9 @@ class SkyMatchStep(RomanStep):
         match_down = boolean(default=True) # adjust sky to lowest measured value?
         subtract = boolean(default=False) # subtract computed sky from image data?
 
+        # User / ASN offset table (parquet). When set, stcal skymatch is skipped.
+        offset_file = string(default='')  # parquet offsets table; overrides ASN field when set
+
         # Image's bounding polygon parameters:
         stepsize = integer(default=None) # Max vertex separation
 
@@ -57,6 +66,10 @@ class SkyMatchStep(RomanStep):
         library = open_dataset(
             dataset, update_version=self.update_version, as_library=True
         )
+
+        offsets_path = self._resolve_offset_file(library)
+        if offsets_path is not None:
+            return self._process_from_offset_file(library, offsets_path)
 
         self._dqbits = interpret_bit_flags(self.dqbits, flag_name_map=pixel)
 
@@ -90,8 +103,65 @@ class SkyMatchStep(RomanStep):
             for sky_image in sky_images:
                 index = sky_image.meta["index"]
                 image = library.borrow(index)
-                self._set_sky_background(sky_image, image)
+                self._set_sky_background(
+                    image,
+                    level=sky_image.sky if sky_image.sky is not None else 0.0,
+                    method=str(self.skymethod),
+                    complete=bool(sky_image.is_sky_valid),
+                    data=sky_image.image if self.subtract else None,
+                )
                 library.shelve(image, index)
+
+        return library
+
+    def _resolve_offset_file(self, library) -> Path | None:
+        """Return parquet offsets path from step param or ASN, if any."""
+        if self.offset_file:
+            path = Path(str(self.offset_file)).expanduser()
+            if not path.is_file():
+                raise FileNotFoundError(f"offset_file not found: {path}")
+            return path.resolve()
+
+        asn = getattr(library, "asn", None)
+        if not asn:
+            return None
+        # AbstractModelLibrary stores the ASN directory for member path joins.
+        asn_dir = getattr(library, "_asn_dir", None)
+        asn_path = Path(asn_dir) / "asn.json" if asn_dir else None
+        path = resolve_offsets_path_from_asn(asn, asn_path=asn_path)
+        if path is None:
+            return None
+        if not path.is_file():
+            raise FileNotFoundError(f"ASN skymatch_offsets_file not found: {path}")
+        return path
+
+    def _process_from_offset_file(self, library, offsets_path: Path):
+        """Apply pipeline levels from a parquet offsets table."""
+        log.info("Using skymatch offsets from %s", offsets_path)
+        table = load_offset_table(offsets_path)
+        method = "file"
+
+        with library:
+            for index, model in enumerate(library):
+                filename = getattr(model.meta, "filename", None) or f"model_{index}"
+                try:
+                    level = lookup_offset(filename, table)
+                except KeyError as err:
+                    raise ValueError(
+                        f"No offset entry for library member {filename!r} "
+                        f"in {offsets_path}"
+                    ) from err
+
+                self._set_sky_background(
+                    model,
+                    level=float(level),
+                    method=method,
+                    complete=True,
+                    data=None,
+                )
+                if self.subtract:
+                    model.data = np.asarray(model.data) - float(level)
+                library.shelve(model, index)
 
         return library
 
@@ -109,19 +179,11 @@ class SkyMatchStep(RomanStep):
         # if 'subtract' mode has changed compared to the previous pass:
         if background_meta.get("subtracted", False):
             if "level" not in background_meta:
-                # NOTE: In principle we could assume that level is 0 and
-                # possibly add a log entry documenting this, however,
-                # at this moment I think it is safer to quit and...
-                #
-                # report inconsistency:
                 raise ValueError(
                     "Background level was subtracted but the "
                     "'level' property is undefined (None)."
                 )
             if self.subtract:
-                # cannot run 'skymatch' step on already "skymatched" images
-                # when 'subtract' spec is inconsistent with
-                # meta.background.subtracted:
                 raise ValueError(
                     "'subtract' step's specification is "
                     "inconsistent with background info already "
@@ -135,7 +197,7 @@ class SkyMatchStep(RomanStep):
             wcs_fwd=wcs.forward_transform,
             wcs_inv=wcs.backward_transform,
             mask=dqmask,
-            sky_id=image_model.meta.filename,  # file name?
+            sky_id=image_model.meta.filename,
             skystat=self._skystat,
             stepsize=self.stepsize,
             meta={"index": index},
@@ -146,19 +208,15 @@ class SkyMatchStep(RomanStep):
 
         return sky_im
 
-    def _set_sky_background(self, sky_image, image):
-        sky = sky_image.sky if sky_image.sky is not None else 0
-
+    def _set_sky_background(self, image, *, level, method, complete, data=None):
         if "background" not in image.meta:
             image.meta["background"] = {}
 
-        image.meta.background.method = str(self.skymethod)
+        image.meta.background.method = str(method)
         image.meta.background.subtracted = self.subtract
-        image.meta.background.level = sky
+        image.meta.background.level = float(level)
 
-        if sky_image.is_sky_valid and self.subtract:
-            image.data[...] = sky_image.image[...]
+        if complete and self.subtract and data is not None:
+            image.data[...] = data[...]
 
-        image.meta.cal_step.skymatch = (
-            "COMPLETE" if sky_image.is_sky_valid else "SKIPPED"
-        )
+        image.meta.cal_step.skymatch = "COMPLETE" if complete else "SKIPPED"
