@@ -65,7 +65,7 @@ and this will list all the strun options as well as the step options for the rom
 3D raw data
 +++++++++++
 
-:Data model: `~romancal.datamodels.RampModel`
+:Data model: `~roman_datamodels.datamodels.ScienceRawModel`
 :File suffix: _uncal
 
 The input to the ``ExposurePipeline`` can be a single raw exposure,
@@ -78,12 +78,11 @@ with the sources found in the exposure. If multiple exposures exist in the assoc
 then the final alignment will use all the sources found in the exposures
 (see :ref:`tweakreg <tweakreg_step>`).
 
-Note that in the operational environment, the
-input will be in the form of a `~romancal.datamodels.RawScienceModel`, which only
-contains the 3D array of detector pixel values, along with some optional
-extensions. When such a file is loaded into the pipeline, it is immediately
-converted into a `~romancal.datamodels.RampModel`, and has all additional data arrays
-for errors and Data Quality flags created and initialized.
+The `~roman_datamodels.datamodels.ScienceRawModel` only contains the 3D array of
+detector pixel values, along with some optional extensions. The first step of the
+pipeline, :ref:`dq_init <dq_init_step>`, converts it into a
+`~roman_datamodels.datamodels.RampModel`, creating and initializing the additional
+data arrays for errors and Data Quality flags.
 
 When the ``ExposurePipeline`` processes a fully saturated input (all pixels flagged as saturated),
 the corresponding output image will:
@@ -102,7 +101,7 @@ Outputs
 2D Image model
 ++++++++++++++
 
-:Data model: `~romancal.datamodels.ImageModel`
+:Data model: `~roman_datamodels.datamodels.ImageModel`
 :File suffix: _cal
 
 Catalog (SourceCatalog)
@@ -118,7 +117,7 @@ Segmentation Map (SegmentationMapModel)
 
 The segmentation map is
 
-:Data model: `~romancal.datamodels.MosaicSegmentationMapModel`
+:Data model: `~roman_datamodels.datamodels.SegmentationMapModel`
 :File suffix: _segm
 
 For L2 imaging prompt products, when
@@ -142,7 +141,7 @@ source catalog and segmentation map from the individual exposues is also saved.
 WFI Level 1/Level 2 WCS (WfiWcsModel)
 +++++++++++++++++++++++++++++++++++++
 
-:Data model: `~romancal.datamodels.WfiWcsModel`
+:Data model: `~roman_datamodels.datamodels.WfiWcsModel`
 :File suffix: _wcs
 
 Contains a copy of the final, Gaia-aligned, Level 2 Generalized World Coordinate
