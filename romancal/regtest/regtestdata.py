@@ -1,6 +1,8 @@
 import os
 import pprint
 import shutil
+import sys
+import time
 from contextlib import chdir
 from pathlib import Path
 
@@ -30,7 +32,6 @@ RETRY_MAX = int(os.environ.get("TEST_BIGDATA_RETRY_MAX", 3))
 RETRY_DELAY = int(os.environ.get("TEST_BIGDATA_RETRY_DELAY", 5))
 
 
-# TODO add retry
 def _download(url, dest, timeout=TIMEOUT, chunk_size=CHUNK_SIZE):
     """Simple HTTP/HTTPS downloader."""
     # Optional import: requests is not needed for local big data setup.
@@ -38,13 +39,22 @@ def _download(url, dest, timeout=TIMEOUT, chunk_size=CHUNK_SIZE):
 
     dest = os.path.abspath(dest)
 
-    with requests.get(url, stream=True, timeout=timeout) as r:
-        r.raise_for_status()
-        with open(dest, "w+b") as data:
-            for chunk in r.iter_content(chunk_size=chunk_size):
-                data.write(chunk)
+    retries = RETRY_MAX
 
-    return dest
+    while retries:
+        try:
+            with requests.get(url, stream=True, timeout=timeout) as r:
+                r.raise_for_status()
+                with open(dest, "w+b") as data:
+                    for chunk in r.iter_content(chunk_size=chunk_size):
+                        data.write(chunk)
+            return dest
+        except Exception as err:
+            retries -= 1
+            if not retries:
+                raise
+            print(f"download: {url} failed({err}), trying again...", file=sys.stderr)
+            time.sleep(RETRY_DELAY)
 
 
 class RegtestData:
