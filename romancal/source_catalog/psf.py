@@ -687,8 +687,20 @@ class _PSFCatalog:
         """
         # Define minimum separation before sources are fit simultaneously
         grouper = SourceGrouper(min_separation=5)  # pixels
+
+        # Keep each fitted position within this many pixels of its
+        # initial position along each axis, which is the half-width of
+        # the default fit region. The PSF model otherwise drifts across
+        # extended sources without converging. A smaller bound degrades
+        # stars whose centroid is offset from the PSF position, e.g., by
+        # a blended neighbor.
+        xy_bounds = 2.5  # pixels
         psfphot = PSFPhotometry(
-            self.psf_model, fit_shape, grouper=grouper, aperture_radius=fit_shape[0]
+            self.psf_model,
+            fit_shape,
+            grouper=grouper,
+            aperture_radius=fit_shape[0],
+            xy_bounds=xy_bounds,
         )
 
         init_params = Table()

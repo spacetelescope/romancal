@@ -578,6 +578,8 @@ class RomanSourceCatalog:
             self.model,
             self._xypos_finite,
             self._pixel_area_map,
+            self.segment_img,
+            self.label,
             ee_spline=self.ee_spline,
             requested_properties=self.column_names,
         )

@@ -8,7 +8,7 @@ import pytest
 import roman_datamodels
 import spherical_geometry.polygon as sgp
 from astropy.coordinates import SkyCoord
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_equal
 
 from romancal.skycell import skymap
 
@@ -71,7 +71,10 @@ def skymap_subset() -> skymap.SkyMap:
     smaller subset to allow these tests
     to run without access to the full skymap from CRDS.
     """
-    return skymap.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf")
+    skymap_subset = skymap.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf")
+    yield skymap_subset
+    # SkyMap opens its file lazily and never closes it
+    skymap_subset.model.close()
 
 
 @pytest.fixture(scope="module")
@@ -80,21 +83,23 @@ def mirrored_skymap_subset(tmp_path_factory) -> skymap.SkyMap:
     the same subset mirrored in x within each skycell and marked with
     `meta.vparity = -1`, standing in for a skymap in the standard handedness
     """
-    model = roman_datamodels.open(DATA_DIRECTORY / "skymap_subset.asdf")
-    skycells = np.array(model.skycells)
-    skycells["x_tangent"] = model.meta.nxy_skycell - 1 - skycells["x_tangent"]
-    # keep the corners in pixel order: (0, 0), (nx, 0), (nx, ny), (0, ny)
-    for a, b in ((1, 2), (3, 4)):
-        for coord in ("ra", "dec"):
-            skycells[[f"{coord}_corn{a}", f"{coord}_corn{b}"]] = skycells[
-                [f"{coord}_corn{b}", f"{coord}_corn{a}"]
-            ].copy()
-    model.skycells = skycells
-    model.meta.vparity = -1
-
     path = tmp_path_factory.mktemp("skymap") / "skymap_subset_mirrored.asdf"
-    model.save(path)
-    return skymap.SkyMap(path)
+    with roman_datamodels.open(DATA_DIRECTORY / "skymap_subset.asdf") as model:
+        skycells = np.array(model.skycells)
+        skycells["x_tangent"] = model.meta.nxy_skycell - 1 - skycells["x_tangent"]
+        # keep the corners in pixel order: (0, 0), (nx, 0), (nx, ny), (0, ny)
+        for a, b in ((1, 2), (3, 4)):
+            for coord in ("ra", "dec"):
+                skycells[[f"{coord}_corn{a}", f"{coord}_corn{b}"]] = skycells[
+                    [f"{coord}_corn{b}", f"{coord}_corn{a}"]
+                ].copy()
+        model.skycells = skycells
+        model.meta.vparity = -1
+        model.save(path)
+
+    mirrored = skymap.SkyMap(path)
+    yield mirrored
+    mirrored.model.close()
 
 
 @pytest.fixture(params=["delivered", "mirrored"])
@@ -158,6 +163,23 @@ def test_skycell_from_name(skymap_subset):
 
     with pytest.raises(KeyError):
         skymap.SkyCells.from_names(["notaskycellname"], skymap=skymap_subset)
+
+
+def test_skycells_from_names_matches_full_search(skymap_subset):
+    all_names = skymap_subset.model.skycells["name"]
+
+    # skycells from several projection regions, in unsorted order
+    indices = np.array([len(all_names) - 1, 999, 0, 2500, 1000])
+    names = [str(name) for name in all_names[indices]]
+
+    skycells = skymap.SkyCells.from_names(names, skymap=skymap_subset)
+
+    assert_array_equal(skycells.indices, np.isin(all_names, names).nonzero()[0])
+    assert_array_equal(skycells.indices, np.sort(indices))
+
+    # A valid projection region with a skycell position that does not exist
+    with pytest.raises(KeyError):
+        skymap.SkyCells.from_names([names[0], "135p90x99y99"], skymap=skymap_subset)
 
 
 @pytest.mark.filterwarnings("ignore:SkyCells.from_asns is deprecated")
