@@ -80,8 +80,26 @@ class SkyCells:
         if isinstance(names, str):
             names = [names]
 
-        indices = np.isin(skymap.model.skycells["name"], names).nonzero()[0]
-        found_names = skymap.model.skycells["name"][indices]
+        # Only the skycells of the named projection regions are
+        # searched, which avoids reading all of the skycell names from
+        # the memory-mapped sky map. This relies on two properties of
+        # the sky map. A skycell name is the name of its projection
+        # region followed by the skycell's position in that region
+        # (e.g., ``315p86`` and ``x50y75``). The skycells of a
+        # projection region are contiguous in the skycell table, from
+        # its ``skycell_start`` up to its ``skycell_end``.
+        skycell_names = skymap.model.skycells["name"]
+        projection_regions = skymap.model.projection_regions
+        indices = []
+        for name in set(names):
+            region = skymap._projection_region_names.get(name.partition("x")[0])
+            if region is None:
+                continue
+            start = projection_regions["skycell_start"][region]
+            end = projection_regions["skycell_end"][region]
+            indices.extend(start + (skycell_names[start:end] == name).nonzero()[0])
+        indices = np.sort(np.array(indices, dtype=np.intp))
+        found_names = skycell_names[indices]
 
         if len(indices) == len(names):
             return SkyCells(
@@ -723,6 +741,7 @@ class SkyMap:
         # reset data if retrieved
         self._data = None
         self.__dict__.pop("_projection_region_radii", None)
+        self.__dict__.pop("_projection_region_names", None)
 
     @property
     def model(self) -> AsdfFile:
@@ -745,6 +764,18 @@ class SkyMap:
     def skycells(self) -> SkyCells:
         """collection of all skycells in this skymap"""
         return SkyCells(np.arange(len(self.model.skycells)), skymap=self)
+
+    @cached_property
+    def _projection_region_names(self) -> dict[str, int]:
+        """
+        Index of each projection region, keyed by the part of its
+        skycell names before the ``x`` (e.g., ``315p86``).
+        """
+        starts = self.model.projection_regions["skycell_start"]
+        first_names = self.model.skycells["name"][starts]
+        return {
+            str(name).partition("x")[0]: index for index, name in enumerate(first_names)
+        }
 
     @cached_property
     def projection_regions_kdtree(self) -> KDTree:
