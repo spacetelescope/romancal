@@ -86,21 +86,6 @@ class RegtestData:
         # Initialize non-initialized attributes
         self.asn = None
 
-    def __repr__(self):
-        return pprint.pformat(
-            dict(
-                input=self.input,
-                output=self.output,
-                truth=self.truth,
-                input_remote=self.input_remote,
-                truth_remote=self.truth_remote,
-                remote_results_path=self.remote_results_path,
-                test_name=self.test_name,
-                traceback=self.traceback,
-            ),
-            indent=1,
-        )
-
     @property
     def input_remote(self):
         if self._input_remote is not None:
@@ -245,14 +230,19 @@ class RegtestData:
                     self._get_bigdata(fullpath)
 
     def to_asdf(self, path):
-        tree = eval(str(self))  # noqa: S307
-        af = asdf.AsdfFile(tree=tree)
+        af = asdf.AsdfFile(
+            {
+                "input": self.input,
+                "output": self.output,
+                "truth": self.truth,
+                "input_remote": self.input_remote,
+                "truth_remote": self.truth_remote,
+                "remote_results_path": self.remote_results_path,
+                "test_name": self.test_name,
+                "traceback": self.traceback,
+            }
+        )
         af.write_to(path)
-
-    @classmethod
-    def open(cls, filename):
-        with asdf.open(filename) as af:
-            return cls(**af.tree)
 
 
 def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=True):
