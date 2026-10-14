@@ -62,18 +62,9 @@ class RegtestData:
 
     def __init__(
         self,
-        env="dev",
-        inputs_root="roman-pipeline",
-        results_root="roman-pipeline-results/regression-tests/runs/",
-        input=None,
-        input_remote=None,
-        output=None,
-        truth=None,
-        truth_remote=None,
-        remote_results_path=None,
-        test_name=None,
-        traceback=None,
-        **kwargs,
+        env,
+        inputs_root,
+        results_root,
     ):
         self._env = env
         self._inputs_root = inputs_root
@@ -81,16 +72,16 @@ class RegtestData:
         self._bigdata_root = os.environ.get("TEST_BIGDATA")
 
         # Initialize @property attributes
-        self.input = input
-        self.input_remote = input_remote
-        self.output = output
-        self.truth = truth
-        self.truth_remote = truth_remote
+        self.input = None
+        self.input_remote = None
+        self.output = None
+        self.truth = None
+        self.truth_remote = None
 
         # No @properties for the following attributes
-        self.remote_results_path = remote_results_path
-        self.test_name = test_name
-        self.traceback = traceback
+        self.remote_results_path = None
+        self.test_name = None
+        self.traceback = None
 
         # Initialize non-initialized attributes
         self.asn = None
@@ -171,10 +162,6 @@ class RegtestData:
         else:
             self._output = value
 
-    @property
-    def bigdata_root(self):
-        return self._bigdata_root
-
     def _get_bigdata(self, path):
         src = os.path.join(self._bigdata_root, self._inputs_root, self._env, path)
 
@@ -187,6 +174,7 @@ class RegtestData:
             shutil.copy2(src, dest)
         else:
             _download(src, dest)
+        return dest
 
     # The methods
     def get_data(self, path=None):
