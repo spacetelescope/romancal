@@ -55,7 +55,6 @@ class RegtestData:
         env="dev",
         inputs_root="roman-pipeline",
         results_root="roman-pipeline-results/regression-tests/runs/",
-        docopy=True,
         input=None,
         input_remote=None,
         output=None,
@@ -70,8 +69,6 @@ class RegtestData:
         self._inputs_root = inputs_root
         self._results_root = results_root
         self._bigdata_root = os.environ.get("TEST_BIGDATA")
-
-        self.docopy = docopy
 
         # Initialize @property attributes
         self.input = input
@@ -168,10 +165,7 @@ class RegtestData:
     def bigdata_root(self):
         return self._bigdata_root
 
-    def _get_bigdata(self, path, docopy=True):
-        if not docopy:
-            raise NotImplementedError("docopy False is not supported")
-
+    def _get_bigdata(self, path):
         src = os.path.join(self._bigdata_root, self._inputs_root, self._env, path)
 
         filename = os.path.basename(src)
@@ -185,7 +179,7 @@ class RegtestData:
             _download(src, dest)
 
     # The methods
-    def get_data(self, path=None, docopy=None):
+    def get_data(self, path=None):
         """Copy data from Artifactory remote resource to the CWD
 
         Updates self.input and self.input_remote upon completion
@@ -194,14 +188,12 @@ class RegtestData:
             path = self.input_remote
         else:
             self.input_remote = path
-        if docopy is None:
-            docopy = self.docopy
-        self.input = self._get_bigdata(path, docopy=docopy)
+        self.input = self._get_bigdata(path)
         self.input_remote = os.path.join(self._inputs_root, self._env, path)
 
         return self.input
 
-    def get_truth(self, path=None, docopy=None):
+    def get_truth(self, path=None):
         """Copy truth data from Artifactory remote resource to the CWD/truth
 
         Updates self.truth and self.truth_remote on completion
@@ -210,18 +202,16 @@ class RegtestData:
             path = self.truth_remote
         else:
             self.truth_remote = path
-        if docopy is None:
-            docopy = self.docopy
 
         truth_dir = Path("truth")
         truth_dir.mkdir(exist_ok=True)
         with chdir(truth_dir):
-            self.truth = self._get_bigdata(path, docopy=docopy)
+            self.truth = self._get_bigdata(path)
             self.truth_remote = os.path.join(self._inputs_root, self._env, path)
 
         return self.truth
 
-    def get_asn(self, path=None, docopy=True, get_members=True):
+    def get_asn(self, path=None, get_members=True):
         """Copy association and association members from Artifactory remote
         resource to the CWD/truth.
 
@@ -232,13 +222,6 @@ class RegtestData:
         path: str
             The remote path
 
-        docopy : bool
-            Switch to control whether or not to copy a file
-            into the test output directory when running the test.
-            If you wish to open the file directly from remote
-            location or just to set path to source, set this to `False`.
-            Default: `True`
-
         get_members: bool
             If an association is the input, retrieve the members.
             Otherwise, do not.
@@ -247,11 +230,9 @@ class RegtestData:
             path = self.input_remote
         else:
             self.input_remote = path
-        if docopy is None:
-            docopy = self.docopy
 
         # Get the association JSON file
-        self.input = self._get_bigdata(path, docopy=docopy)
+        self.input = self._get_bigdata(path)
         with open(self.input) as fp:
             asn = load_asn(fp)
             self.asn = asn
@@ -263,7 +244,7 @@ class RegtestData:
                     fullpath = os.path.join(
                         os.path.dirname(self.input_remote), member["expname"]
                     )
-                    self._get_bigdata(fullpath, docopy=self.docopy)
+                    self._get_bigdata(fullpath)
 
     def to_asdf(self, path):
         tree = eval(str(self))  # noqa: S307
