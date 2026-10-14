@@ -77,7 +77,19 @@ def update_model_version(model, *, close_on_update=False):
             )
             updated_model[dq2_name] = np.zeros_like(model[dq_name])
 
-    new_ref_files = ["darkdecaysignal", "integralnonlinearity", "inverselinearity"]
+    # old files (<B24) lack wfi_acm_z_defocus_size
+    if (
+        isinstance(model, (ImageModel, ScienceRawModel))
+        and "wfi_acm_z_defocus_size" not in model.meta.visit
+    ):
+        updated_model.meta.visit.wfi_acm_z_defocus_size = None
+
+    new_ref_files = [
+        "darkdecaysignal",
+        "integralnonlinearity",
+        "inverselinearity",
+        "bam",  # added in B24
+    ]
     ref_file = model.meta.get("ref_file", None)
     if ref_file is not None:
         for new_file in new_ref_files:

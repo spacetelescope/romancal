@@ -1,0 +1,1 @@
+Added migration support for the ACM keyword and BAM reference file entry.
