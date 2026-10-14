@@ -57,7 +57,8 @@ def skymap_subset() -> skymap.SkyMap:
     smaller subset to allow these tests
     to run without access to the full skymap from CRDS.
     """
-    return skymap.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf")
+    with skymap.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf") as skymap_subset:
+        yield skymap_subset
 
 
 def mk_im_corners(

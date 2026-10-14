@@ -39,10 +39,8 @@ def skymap_subset() -> skymap.SkyMap:
     smaller subset to allow these tests
     to run without access to the full skymap from CRDS.
     """
-    skymap_subset = skymap.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf")
-    yield skymap_subset
-    # SkyMap opens its file lazily and never closes it
-    skymap_subset.model.close()
+    with skymap.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf") as skymap_subset:
+        yield skymap_subset
 
 
 @pytest.fixture()
@@ -345,6 +343,37 @@ def test_skycells_cores_containing_pole(skymap_subset):
         assert skymap_subset.skycells.cores_containing([ra, 90.0]) == {
             int(pole_skycell.indices[0]): [0]
         }
+
+
+def test_skymap_close():
+    skymap_subset = skymap.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf")
+    # Closing a sky map that was never opened does nothing.
+    skymap_subset.close()
+
+    model = skymap_subset.model
+    skymap_subset.close()
+    assert model._asdf._closed
+
+    # The file is reopened on the next access.
+    assert skymap_subset.model is not model
+    assert len(skymap_subset.model.skycells) == len(skymap_subset.skycells)
+    skymap_subset.close()
+
+
+def test_skymap_context_manager():
+    with skymap.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf") as skymap_subset:
+        model = skymap_subset.model
+        assert not model._asdf._closed
+    assert model._asdf._closed
+
+
+def test_skymap_path_setter_closes_file():
+    path = DATA_DIRECTORY / "skymap_subset.asdf"
+    skymap_subset = skymap.SkyMap(path)
+    model = skymap_subset.model
+    skymap_subset.path = path
+    assert model._asdf._closed
+    skymap_subset.close()
 
 
 def test_ra_in_range():

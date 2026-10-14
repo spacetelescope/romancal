@@ -739,7 +739,7 @@ class SkyMap:
     def path(self, path: Path | None):
         self._path = path
         # reset data if retrieved
-        self._data = None
+        self.close()
         self.__dict__.pop("_projection_region_radii", None)
         self.__dict__.pop("_projection_region_names", None)
 
@@ -759,6 +759,22 @@ class SkyMap:
                 self._path = Path(rmap["skycells"])
             self._data = roman_datamodels.open(self._path, memmap=True)
         return self._data
+
+    def close(self):
+        """
+        Close the skymap reference file if it is open.
+
+        The file is reopened the next time the data model is accessed.
+        """
+        if self._data is not None:
+            self._data.close()
+            self._data = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
 
     @cached_property
     def skycells(self) -> SkyCells:
