@@ -39,7 +39,10 @@ def skymap_subset() -> skymap.SkyMap:
     smaller subset to allow these tests
     to run without access to the full skymap from CRDS.
     """
-    return skymap.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf")
+    skymap_subset = skymap.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf")
+    yield skymap_subset
+    # SkyMap opens its file lazily and never closes it
+    skymap_subset.model.close()
 
 
 @pytest.fixture()
