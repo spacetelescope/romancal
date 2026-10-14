@@ -69,23 +69,38 @@ and orientation of the major axis.
 The image moments are computed in the pixel frame. Properties that are
 reported in sky units (``semimajor``, ``semiminor``, ``fwhm``,
 ``kron_radius``, ``segment_area``, and ``nn_distance``) are converted
-using the pixel scale local to each source, and ``orientation_sky`` is
-measured from the direction of north local to each source rather than
-from a single direction for the whole image.
+using the pixel scale local to each source.
 
-Only the size and rotation of the local pixel are accounted for, not its
-shape. Where pixels are not square, the sky-frame axis lengths and
-position angle carry a residual error of order the departure from
-squareness (1-3% for Roman). ``ellipticity`` and ``orientation_pix``
-are pixel-frame quantities and are not corrected at all.
+``orientation_sky`` is the position angle of the major axis measured
+from North toward East, in the range (-90, 90] degrees. It is calculated
+by :external+photutils:py:class:`photutils.segmentation.SourceCatalog`,
+which transports the pixel-frame covariance matrix to the sky with the
+WCS Jacobian evaluated at each source. This accounts for the local WCS
+rotation, parity, and distortion.
+
+The centroid errors (e.g., ``x_centroid_err`` and ``ra_centroid_err``)
+are also calculated by ``SourceCatalog`` by propagating the input error
+array through the centroid calculation. The sky centroid errors are the
+great-circle errors along the Right Ascension and Declination directions
+in arcsec. The centroid errors are zero where the input errors are zero.
+They are NaN where the input errors are NaN or where the source is
+completely masked.
+
+For the sizes, only the area of the local pixel is accounted for, not
+its shape. Where pixels are not square, the sky-frame axis lengths carry
+a residual error of order the departure from squareness (1-3% for
+Roman). ``ellipticity`` and ``orientation_pix`` are pixel-frame
+quantities and are not corrected at all.
 
 Circular aperture photometry is performed at several aperture sizes
 (:math:`r` = 0.1, 0.2, 0.4, 0.8, 1.6 arcsec) for each source. These
 radii are converted to pixels using the pixel scale local to each
-source.  Because a single aperture can only be measured at one radius at
+source. Because a single aperture can only be measured at one radius at
 a time, sources are grouped into batches that share a common radius,
 chosen so that no source's aperture radius is wrong by more than about
-one part in :math:`10^{4}`.
+one part in :math:`10^{4}`. Pixels assigned to neighboring sources in
+the segmentation image are excluded from the circular apertures, using
+the same ``"mask"`` aperture mask method as the Kron photometry.
 
 The ``circle_pix`` and ``annulus_pix`` entries in the catalog metadata
 report the mean radius over all sources rather than the exact radius
@@ -103,7 +118,16 @@ by setting the ``fit_psf`` keyword. Enabling this option fits a model
 PSF to each source to measure its position and flux. The PSF model is
 generated using reference files on CRDS. PSF photometry is performed
 using the :external+photutils:py:class:`photutils.psf.PSFPhotometry`
-class.
+class. The fitted position of each source is constrained to lie within
+2.5 pixels of its centroid along each axis. A fit that ends at this limit
+has bit 32 set in the ``psf_flags`` column.
+
+In practice, bits 8 and 32 of ``psf_flags`` are set almost exclusively
+for extended sources, whose light profiles the PSF model cannot
+describe. They mark PSF measurements that are not meaningful for that
+source rather than a failure of the fit, and sources with either bit
+set are nearly always also flagged by ``is_extended``. Fits of isolated
+point sources end well inside the limit.
 
 For Level 2 data, a gridded PSF model is generated for each individual
 detector using the reference files in CRDS. These PSF models account
@@ -151,10 +175,12 @@ circular annulus centered on the source. The circular annulus has an
 inner and outer radius of 2.4 and 2.8 arcsec, respectively, converted to
 pixels using the pixel scale local to each source. The local background
 flux is calculated as the sigma-clipped median value within the annulus,
-divided by the local pixel solid angle, and is
-a surface brightness (nJy/arcsec\ :sup:`2`) rather than a flux. Although
-this local background value is included in the source catalog, it is not
-subtracted from any of the measured fluxes.
+divided by the local pixel solid angle, and is a surface brightness
+(nJy/arcsec\ :sup:`2`) rather than a flux. Pixels assigned to any
+source in the segmentation image, including the source being measured,
+are excluded from the annulus. Although this local background value is
+included in the source catalog, it is not subtracted from any of the
+measured fluxes.
 
 Each source has a field, `is_extended`, intended to indicate whether the
 source is more extended than expected, were the object a point source.
