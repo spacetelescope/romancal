@@ -44,11 +44,6 @@ def _skycell_wcs_from_asn(asn, skymap=None):
     """
     wcs_info = asn.get("skycell_wcs_info")
     if isinstance(wcs_info, Mapping):
-        if wcs_info.get("vparity", 1) != -1:
-            log.warning(
-                "Association records a skycell with the old mirror-image "
-                "parity; the coadd will have RA increasing to the right."
-            )
         return sc.wcsinfo_to_wcs(wcs_info)
 
     target = asn.get("target", "none")

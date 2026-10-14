@@ -975,6 +975,13 @@ def wcsinfo_to_wcs(
     if matrix is not None:
         matrix = np.array(matrix)
     else:
+        vparity = wcsinfo.get("vparity", 1)
+        if vparity != -1:
+            warnings.warn(
+                "Building a skycell WCS with the old mirror-image parity "
+                "(right ascension increasing to the right).",
+                stacklevel=2,
+            )
         matrix = np.reshape(
             wcs_util.calc_rotation_matrix(
                 np.deg2rad(
@@ -983,7 +990,7 @@ def wcsinfo_to_wcs(
                     )
                 ),
                 v3i_yangle=0.0,
-                vparity=wcsinfo.get("vparity", 1),
+                vparity=vparity,
             ),
             (2, 2),
         )

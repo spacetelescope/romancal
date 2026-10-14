@@ -1,3 +1,4 @@
+import warnings
 from pathlib import Path
 
 import asdf
@@ -645,7 +646,13 @@ def test_skycell_wcs_from_asn(skymap_subset):
 
     # without a recorded parity, the original +1 convention applies
     unrecorded = {k: v for k, v in wcs_info.items() if k != "vparity"}
-    np.testing.assert_allclose(wcs_from(unrecorded)(1000, 2000), expected)
+    with pytest.warns(UserWarning, match="old mirror-image parity"):
+        np.testing.assert_allclose(wcs_from(unrecorded)(1000, 2000), expected)
+
+    # the standard parity builds without a warning
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        wcs_from({**wcs_info, "vparity": -1})
 
 
 def test_skycell_wcs_from_asn_target(skymap_subset):
