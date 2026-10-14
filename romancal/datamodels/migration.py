@@ -76,11 +76,12 @@ def update_model_version(model, *, close_on_update=False):
                 stacklevel=2,
             )
             updated_model[dq2_name] = np.zeros_like(model[dq_name])
-   
+
     # old files (<B24) lack wfi_acm_z_defocus_size
-    if isinstance(
-        model, (ImageModel, ScienceRawModel)
-    ) and "wfi_acm_z_defocus_size" not in model.meta.visit:
+    if (
+        isinstance(model, (ImageModel, ScienceRawModel))
+        and "wfi_acm_z_defocus_size" not in model.meta.visit
+    ):
         updated_model.meta.visit.wfi_acm_z_defocus_size = None
 
     new_ref_files = [
