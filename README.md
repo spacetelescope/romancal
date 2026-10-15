@@ -165,6 +165,7 @@ Each `romancal` tag was released on PyPI on the date given in `Date`.
 
 | romancal tag | DMS build  | CRDS_CONTEXT | Date     | Notes                                   |
 | ------------ | ---------- | ------------ | -------- | --------------------------------------- |
+| 1.2.0        | 27Q1_B24   | 077          | TBD      | Release for Build 27Q1_B24 (Build 24)   |
 | 1.1.0        | 26Q4_B23   | 058          | Aug 2026 | Release for Build 26Q4_B23 (Build 23)   |
 | 1.0.2        | 26Q3_B22.3 | 065          | Sep 2026 | Release for Build 26Q3_B22.3 (Build 22) |
 | 1.0.1        | 26Q3_B22.1 | 055          | Jun 2026 | Release for Build 26Q3_B22.1 (Build 22) |
