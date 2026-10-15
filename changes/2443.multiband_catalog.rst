@@ -1,1 +1,0 @@
-Masked non-finite data, not just non-finite errors, when building the multiband detection image.

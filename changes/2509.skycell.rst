@@ -1,2 +1,0 @@
-Add ``SkyMap.close`` and context manager support so that the sky map reference
-file can be closed.
