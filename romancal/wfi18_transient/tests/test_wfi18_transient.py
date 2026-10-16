@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from roman_datamodels import datamodels, dqflags
 
 from romancal.lib.basic_utils import frame_read_times
@@ -47,8 +48,9 @@ def transient_glow(frame_time):
     return glow
 
 
-def test_wfi18_transient(caplog):
-    model = create_ramp_model(5)
+@pytest.mark.parametrize("nresultants", [4, 5])
+def test_wfi18_transient(caplog, nresultants):
+    model = create_ramp_model(nresultants)
 
     # Fill the data array with a flat value
     model.data[:] = 1.0
@@ -97,9 +99,9 @@ def test_wfi18_transient_wrong_detector():
 
 
 def test_wfi18_transient_too_few_resultants(caplog):
-    model = create_ramp_model(1)
+    model = create_ramp_model(3)
 
-    # attempting to call with resultants < 5 will fall back on masking
+    # attempting to call with resultants < 4 will fall back on masking
     result = WFI18TransientStep.call(model)
     assert result.meta.cal_step.wfi18_transient == "COMPLETE"
 
