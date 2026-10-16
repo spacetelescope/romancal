@@ -134,23 +134,33 @@ def do_dqinit(model, mask, expand_gw_flagging=0):
         )
 
     # the reference read has been subtracted from the science data
-    # in the L1 files.  Add it back into the data.
+    # in older L1 files.  Add it back into the data unless the L1 says it
+    # was already added back in.
     # the TVAC files are special and there the reference read was
     # already added back in
+    reference_read_added = model.meta.instrument.get("l1_reference_read_added", False)
     reference_read = getattr(output_model, "reference_read", None)
-    if reference_read is not None and not is_tvac:
+    if reference_read is not None and not is_tvac and not reference_read_added:
         output_model.data += reference_read
-        del output_model.reference_read
     reference_amp33 = getattr(output_model, "reference_amp33", None)
-    if reference_amp33 is not None and not is_tvac:
+    if reference_amp33 is not None and not is_tvac and not reference_read_added:
         output_model.amp33 += reference_amp33
+
+    # don't propagate the reference read arrays to the ramp
+    if reference_read is not None:
+        del output_model.reference_read
+    if reference_amp33 is not None:
         del output_model.reference_amp33
 
     # If a data encoding offset was added to the data, remove it
-    # from the data and amp33 arrays
-    data_encoding_offset = getattr(model.meta.instrument, "data_encoding_offset", 0)
-    output_model.data -= data_encoding_offset
-    output_model.amp33 -= data_encoding_offset
+    # from the data and amp33 arrays, unless the L1 says it was
+    # already removed
+    if not model.meta.instrument.get("l1_data_encoding_offset_removed", False):
+        data_encoding_offset = getattr(model.meta.instrument, "data_encoding_offset", 0)
+        output_model.data -= data_encoding_offset
+        output_model.amp33 -= data_encoding_offset
+    else:
+        log.info("Data encoding offset already removed from L1 data; not removing.")
 
     if mask is not None and output_model.pixeldq.shape == mask.dq.shape:
         update_dq(output_model, mask)
