@@ -1,4 +1,0 @@
-Fit and remove the transient for exposures with 4 resultants instead of
-masking the affected rows, and fix the selection of weakly illuminated pixels,
-which compared each pixel against the median of the corresponding column
-rather than row.
