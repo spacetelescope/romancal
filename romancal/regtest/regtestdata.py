@@ -27,7 +27,7 @@ ARTIFACTORY_API_KEY_FILE = "/eng/ssb2/keys/svc_rodata.key"
 
 # Define a request timeout in seconds
 TIMEOUT = int(os.environ.get("TEST_BIGDATA_TIMEOUT", 30))
-CHUNK_SIZE = int(os.environ.get("TEST_BIGDATA_CHUNK_SIZE", 16384))
+CHUNK_SIZE = int(os.environ.get("TEST_BIGDATA_CHUNK_SIZE", 1048576))
 RETRY_MAX = int(os.environ.get("TEST_BIGDATA_RETRY_MAX", 3))
 RETRY_DELAY = int(os.environ.get("TEST_BIGDATA_RETRY_DELAY", 5))
 
@@ -85,34 +85,6 @@ class RegtestData:
 
         # Initialize non-initialized attributes
         self.asn = None
-
-    @property
-    def input_remote(self):
-        if self._input_remote is not None:
-            return os.path.join(*self._input_remote)
-        else:
-            return None
-
-    @input_remote.setter
-    def input_remote(self, value):
-        if value:
-            self._input_remote = value.split(os.sep)
-        else:
-            self._input_remote = value
-
-    @property
-    def truth_remote(self):
-        if self._truth_remote is not None:
-            return os.path.join(*self._truth_remote)
-        else:
-            return None
-
-    @truth_remote.setter
-    def truth_remote(self, value):
-        if value:
-            self._truth_remote = value.split(os.sep)
-        else:
-            self._truth_remote = value
 
     @property
     def input(self):
