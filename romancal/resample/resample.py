@@ -1,5 +1,6 @@
 import logging
 import math
+from collections.abc import Mapping
 
 import numpy as np
 from roman_datamodels import datamodels, dqflags
@@ -19,6 +20,39 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 __all__ = ["ResampleData", "make_output_wcs"]
+
+
+def _skycell_wcs_from_asn(asn, skymap=None):
+    """WCS of the skycell an association was made for
+
+    Built from the association's ``skycell_wcs_info`` when present, so that
+    an association keeps the pixel grid it was made with even if the skycell
+    reference file changes.  Otherwise the skycell named by ``target`` is
+    looked up in the current skycell reference file.
+
+    Parameters
+    ----------
+    asn : dict
+        Association dictionary.
+    skymap : `~romancal.skycell.skymap.SkyMap`, optional
+        Skymap used to look up ``target``; defaults to the global skymap.
+
+    Returns
+    -------
+    `~gwcs.wcs.WCS`
+        The skycell WCS.
+    """
+    wcs_info = asn.get("skycell_wcs_info")
+    if isinstance(wcs_info, Mapping):
+        return sc.wcsinfo_to_wcs(wcs_info)
+
+    target = asn.get("target", "none")
+    if target.lower() == "none":
+        raise ValueError(
+            "cannot extract skycell information from an association without "
+            "`skycell_wcs_info` or `target`"
+        )
+    return sc.SkyCells.from_names([target], skymap=skymap).wcs[0]
 
 
 def make_output_wcs(
@@ -243,17 +277,17 @@ class ResampleData(Resample):
         self._blend_meta = blend_meta
 
         if output_wcs is None and resample_on_skycell:
-            # first try to retrieve a sky cell name from the association
+            # first try to retrieve a sky cell from the association
             try:
-                skycell = sc.SkyCells.from_asns([self.input_models.asn])
+                skycell_wcs = _skycell_wcs_from_asn(self.input_models.asn)
 
-                log.info(f"Skycell record: {skycell.data}")
-
+                ny, nx = skycell_wcs.array_shape
+                ra, dec = skycell_wcs((nx - 1) / 2, (ny - 1) / 2)
                 log.info(
-                    f"Creating skycell image at ra: {skycell.radec_centers[0, 0]}  dec {skycell.radec_centers[0, 1]}",
+                    f"Resampling to skycell {skycell_wcs.name} wcs, "
+                    f"centered at ra: {ra}  dec {dec}"
                 )
-                log.info("Resampling to skycell wcs")
-                output_wcs = {"wcs": skycell.wcs[0]}
+                output_wcs = {"wcs": skycell_wcs}
             except (ValueError, KeyError) as err:
                 log.warning(f"Unable to compute skycell from input association: {err}")
                 log.warning("Computing output wcs from all input wcses")

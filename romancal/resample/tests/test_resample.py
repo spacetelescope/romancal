@@ -1,3 +1,6 @@
+import warnings
+from pathlib import Path
+
 import asdf
 import numpy as np
 import pytest
@@ -10,7 +13,12 @@ from stcal.resample.utils import compute_mean_pixel_area
 from romancal.assign_wcs.assign_wcs import add_s_region
 from romancal.datamodels import ModelLibrary
 from romancal.resample import ResampleStep
-from romancal.resample.resample import ResampleData, make_output_wcs
+from romancal.resample.resample import (
+    ResampleData,
+    _skycell_wcs_from_asn,
+    make_output_wcs,
+)
+from romancal.skycell import skymap
 from romancal.tests.wcs_helpers import create_wcs_object
 
 
@@ -581,12 +589,12 @@ def test_resampledata_init_catches_skycell_lookup_errors(wfi_sca1, monkeypatch, 
     input_models = ModelLibrary([wfi_sca1])
     expected_wcs, expected_ps, expected_ratio = make_output_wcs(input_models)
 
-    def _raise_from_asns(asns):
+    def _raise_from_asn(asn):
         raise error
 
     monkeypatch.setattr(
-        "romancal.resample.resample.sc.SkyCells.from_asns",
-        _raise_from_asns,
+        "romancal.resample.resample._skycell_wcs_from_asn",
+        _raise_from_asn,
     )
 
     resamp = ResampleData(
@@ -608,3 +616,51 @@ def test_resampledata_init_catches_skycell_lookup_errors(wfi_sca1, monkeypatch, 
     assert resamp._output_wcs.array_shape == expected_wcs.array_shape
     np.testing.assert_allclose(resamp._output_pixel_scale, expected_ps)
     np.testing.assert_allclose(resamp._pixel_scale_ratio, expected_ratio)
+
+
+@pytest.fixture(scope="module")
+def skymap_subset():
+    sm = skymap.SkyMap(
+        Path(skymap.__file__).parent / "tests" / "data" / "skymap_subset.asdf"
+    )
+    yield sm
+    sm.model.close()
+
+
+def test_skycell_wcs_from_asn(skymap_subset):
+    """the WCS comes from the association's skycell_wcs_info, not the name"""
+    skycell = skymap.SkyCells.from_names(["000p86x69y62"], skymap=skymap_subset)
+    wcs_info = skycell.wcs_infos[0]
+    expected = skycell.wcs[0](1000, 2000)
+
+    def wcs_from(wcs_info):
+        return _skycell_wcs_from_asn({"skycell_wcs_info": wcs_info})
+
+    wcsobj = wcs_from(wcs_info)
+    assert wcsobj.array_shape == (wcs_info["ny"], wcs_info["nx"])
+    np.testing.assert_allclose(wcsobj(1000, 2000), expected)
+
+    # the recorded parity is used, not that of the current skymap
+    flipped = {**wcs_info, "vparity": -wcs_info["vparity"]}
+    assert not np.allclose(wcs_from(flipped)(1000, 2000), expected)
+
+    # without a recorded parity, the original +1 convention applies
+    unrecorded = {k: v for k, v in wcs_info.items() if k != "vparity"}
+    with pytest.warns(UserWarning, match="old mirror-image parity"):
+        np.testing.assert_allclose(wcs_from(unrecorded)(1000, 2000), expected)
+
+    # the standard parity builds without a warning
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        wcs_from({**wcs_info, "vparity": -1})
+
+
+def test_skycell_wcs_from_asn_target(skymap_subset):
+    """without wcs info, the skycell is looked up by its target name"""
+    asn = {"skycell_wcs_info": "none", "target": "000p86x69y62"}
+    wcsobj = _skycell_wcs_from_asn(asn, skymap=skymap_subset)
+    expected = skymap.SkyCells.from_names(["000p86x69y62"], skymap=skymap_subset)
+    np.testing.assert_allclose(wcsobj(1000, 2000), expected.wcs[0](1000, 2000))
+
+    with pytest.raises(ValueError):
+        _skycell_wcs_from_asn({"skycell_wcs_info": "none", "target": "none"})

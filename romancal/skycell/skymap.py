@@ -1,5 +1,7 @@
 import logging
 import os
+import warnings
+from collections.abc import Mapping
 from datetime import datetime
 from functools import cached_property
 from pathlib import Path
@@ -25,7 +27,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-__all__ = ["SKYMAP", "ProjectionRegion", "SkyCells", "SkyMap"]
+__all__ = ["SKYMAP", "ProjectionRegion", "SkyCells", "SkyMap", "wcsinfo_to_wcs"]
 
 
 class SkyCells:
@@ -129,12 +131,22 @@ class SkyCells:
             skymap instance; defaults to global SKYMAP (Default value = None)
         """
 
+        warnings.warn(
+            "SkyCells.from_asns is deprecated and will be removed in a future "
+            "release; use SkyCells.from_names with the skycell name, or "
+            "wcsinfo_to_wcs with the association's `skycell_wcs_info`.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         skycell_names = []
         for asn in asns:
             if isinstance(asn, os.PathLike):
                 asn = ModelLibrary._load_asn(asn)
 
-            if "skycell_wcs_info" in asn and isinstance(asn["skycell_wcs_info"], dict):
+            if "skycell_wcs_info" in asn and isinstance(
+                asn["skycell_wcs_info"], Mapping
+            ):
                 skycell_names.append(asn["skycell_wcs_info"]["name"])
             elif "target" in asn and asn["target"].lower() != "none":
                 skycell_names.append(asn["target"])
@@ -290,6 +302,8 @@ class SkyCells:
                 ][projregion_index].astype(
                     np.float64
                 ),  # hotfix for `TypeError: Object of type float32 is not JSON serializable`
+                "vparity": self._skymap.vparity,
+                "skycells_ref_file": Path(self._skymap.path).name,
             }
             for skycell_index, projregion_index in zip(
                 self.indices, self.projection_regions, strict=True
@@ -301,7 +315,7 @@ class SkyCells:
         """WCS objects representing these skycells"""
 
         return [
-            _wcsinfo_to_wcs(
+            wcsinfo_to_wcs(
                 wcs_info,
                 bounding_box=(
                     (-0.5, self.pixel_shape[0] - 0.5),
@@ -644,7 +658,7 @@ class ProjectionRegion:
 
     @property
     def wcs_info(self) -> dict[str, float | str]:
-        """WCS properties as defined in the Level 3 association schema"""
+        """WCS properties, in the form of the Level 3 association schema"""
 
         return {
             "name": f"proj{self.index}",
@@ -656,12 +670,14 @@ class ProjectionRegion:
             "nx": self.data["nx"],
             "ny": self.data["ny"],
             "orientat": self.orientation,
+            "vparity": self._skymap.vparity,
+            "skycells_ref_file": Path(self._skymap.path).name,
         }
 
     @cached_property
     def wcs(self) -> WCS:
         """WCS representing this skycell"""
-        wcsobj = _wcsinfo_to_wcs(
+        wcsobj = wcsinfo_to_wcs(
             self.wcs_info,
             bounding_box=(
                 (-0.5, self.pixel_shape[0] - 0.5),
@@ -742,6 +758,7 @@ class SkyMap:
         self.close()
         self.__dict__.pop("_projection_region_radii", None)
         self.__dict__.pop("_projection_region_names", None)
+        self.__dict__.pop("vparity", None)
 
     @property
     def model(self) -> AsdfFile:
@@ -860,6 +877,32 @@ class SkyMap:
         """number of pixels per skycell"""
         return self.model.meta.nxy_skycell, self.model.meta.nxy_skycell
 
+    @cached_property
+    def vparity(self) -> int:
+        """vparity of the pixel grids defined by this skymap
+
+        Old reference files used a non-conventional vparity = +1 convention
+        (ra increases to the right), while new reference files use a
+        vparity = -1 convention (ra increases to the left), recorded in
+        `meta.vparity`.  Reference files without `meta.vparity` use the old
+        convention.
+        """
+        vparity = int(self.model.meta.get("vparity", 1))
+        if vparity not in (-1, 1):
+            raise ValueError(f"invalid skymap vparity {vparity}")
+        log.info(
+            f"skymap at {self.path} uses vparity={vparity:+d} "
+            f"({'standard' if vparity == -1 else 'mirror-image'} handedness)"
+        )
+        if vparity != -1:
+            warnings.warn(
+                "Old skycell reference file with mirror-image parity still in "
+                "use!  Skycells and filenames will correspond to obsolete, "
+                "different locations.",
+                stacklevel=3,  # past cached_property, to the caller
+            )
+        return vparity
+
     def projection_regions_containing(
         self, radec: NDArray[float]
     ) -> dict[int, list[int]]:
@@ -941,11 +984,18 @@ def _ra_in_range(ra: float, low: float, high: float):
         return (ra >= low) | (ra < high)
 
 
-def _wcsinfo_to_wcs(
+def wcsinfo_to_wcs(
     wcsinfo: dict,
     bounding_box: tuple[tuple[float, float], tuple[float, float]] | None = None,
 ) -> WCS:
     """Create a WCS from the skycell wcsinfo meta
+
+    The vparity / handedness of the WCS is taken from `wcsinfo["vparity"]`: -1
+    corresponds to the usual convention where right ascension increases as
+    x decreases.  It defaults to +1, the original reference file convention,
+    so that wcsinfo written before vparity was recorded keeps its meaning;
+    wcsinfo from newer reference files records vparity = -1.  It is ignored
+    if `wcsinfo` supplies an explicit `rotation_matrix`.
 
     Parameters
     ----------
@@ -954,7 +1004,8 @@ def _wcsinfo_to_wcs(
 
     bounding_box : None or 4-tuple
         The bounding box in detector/pixel space. Form of input is:
-        ((x_left, x_right), (y_bottom, y_top))
+        ((x_left, x_right), (y_bottom, y_top)).  Defaults to the pixel
+        edges of an `nx` by `ny` image when `wcsinfo` records them.
 
     Returns
     -------
@@ -971,6 +1022,13 @@ def _wcsinfo_to_wcs(
     if matrix is not None:
         matrix = np.array(matrix)
     else:
+        vparity = wcsinfo.get("vparity", 1)
+        if vparity != -1:
+            warnings.warn(
+                "Building a skycell WCS with the old mirror-image parity "
+                "(right ascension increasing to the right).",
+                stacklevel=2,
+            )
         matrix = np.reshape(
             wcs_util.calc_rotation_matrix(
                 np.deg2rad(
@@ -979,7 +1037,7 @@ def _wcsinfo_to_wcs(
                     )
                 ),
                 v3i_yangle=0.0,
-                vparity=1,
+                vparity=vparity,
             ),
             (2, 2),
         )
@@ -998,12 +1056,19 @@ def _wcsinfo_to_wcs(
         [(detector_frame, det2sky), (sky_frame, None)], name=wcsinfo.get("name", None)
     )
 
+    if bounding_box is None and "nx" in wcsinfo and "ny" in wcsinfo:
+        bounding_box = (
+            (-0.5, wcsinfo["nx"] - 0.5),
+            (-0.5, wcsinfo["ny"] - 0.5),
+        )
+
     if bounding_box:
         wcsobj.bounding_box = bounding_box
 
     # ensure array_shape is populated
-    if not hasattr(wcsobj, "array_shape"):
-        wcsobj.array_shape = wcsobj.pixel_shape[::-1]
+    if wcsobj.array_shape is None and bounding_box:
+        (x0, x1), (y0, y1) = bounding_box
+        wcsobj.array_shape = (round(y1 - y0), round(x1 - x0))
 
     return wcsobj
 

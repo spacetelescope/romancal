@@ -1,0 +1,4 @@
+Take the handedness of skycell WCSes from the skycells reference file's
+``meta.vparity`` keyword, so that skycells adopt the standard orientation
+(right ascension increasing to the left) once a reference file with
+``vparity = -1`` is delivered.  Deprecate ``SkyCells.from_asns``.
