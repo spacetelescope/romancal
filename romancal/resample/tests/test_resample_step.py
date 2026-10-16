@@ -20,11 +20,7 @@ from romancal.tests.wcs_helpers import create_wcs_object
 def asdf_wcs_file():
     def _create_asdf_wcs_file(tmp_path):
         file_path = tmp_path / "wcs.asdf"
-        wcs_data = create_wcs_object(
-            (10, 0),
-            (0.000031, 0.000031),
-            (100, 100),
-        )
+        wcs_data = create_wcs_object((10, 0), (0.000031, 0.000031))
         wcs = {"wcs": wcs_data}
         with AsdfFile(wcs) as af:
             af.write_to(file_path)
@@ -39,10 +35,10 @@ def test_load_custom_wcs_no_file():
     assert result is None
 
 
-def test_load_custom_wcs_missing_output_shape(asdf_wcs_file):
-    with pytest.raises(ValueError):
+def test_load_custom_wcs_missing_output_shape(asdf_wcs_file, tmp_path):
+    with pytest.raises(ValueError, match=r"Step argument 'output_shape' is required.*"):
         step = ResampleStep()
-        step._load_custom_wcs(asdf_wcs_file, None)
+        step._load_custom_wcs(asdf_wcs_file(tmp_path), None)
 
 
 def test_load_custom_wcs_invalid_file(tmp_path):
