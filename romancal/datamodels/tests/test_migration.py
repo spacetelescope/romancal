@@ -62,6 +62,14 @@ def test_update(old_model, latest_model, vfs_value, wp_bool):
     assert not new_model.meta.exposure.hga_move
     assert new_model.dq2.shape == old_model.dq.shape
     assert not new_model.dq2.any()
+    assert new_model.meta.visit.wfi_acm_z_defocus_size is None
+    for ref_file in [
+        "darkdecaysignal",
+        "integralnonlinearity",
+        "inverselinearity",
+        "bam",
+    ]:
+        assert ref_file in new_model.meta.ref_file
 
 
 def test_ramp_update():

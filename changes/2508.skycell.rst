@@ -1,3 +1,0 @@
-Reduce the memory and run time of ``SkyCells.from_names`` by searching only the
-named projection regions instead of every skycell name in the sky map. This
-lowers the peak memory of ``source_catalog`` on mosaics by about 1.7 GB.
