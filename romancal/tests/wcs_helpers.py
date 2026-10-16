@@ -11,7 +11,7 @@ from gwcs import coordinate_frames as cf
 __all__ = ["create_wcs_object"]
 
 
-def create_wcs_object(fiducial_world, pscale, shape, distortion=None, **kwargs):
+def create_wcs_object(fiducial_world, pscale, shape=None, distortion=None, **kwargs):
     """
     Create a simple tangent-plane WCS object without rotation.
 
@@ -23,7 +23,7 @@ def create_wcs_object(fiducial_world, pscale, shape, distortion=None, **kwargs):
         A pair of values corresponding to the fiducial's world coordinate.
     pscale : tuple
         A pair of values corresponding to the pixel scale in each axis.
-    shape : tuple
+    shape : tuple, optional
         A pair of values specifying the dimensions of the WCS object.
     distortion : `~astropy.modeling.Model`, optional
         A two-input, two-output model applied in pixel coordinates
@@ -74,15 +74,16 @@ def create_wcs_object(fiducial_world, pscale, shape, distortion=None, **kwargs):
 
     wcs_obj = WCS(pipeline)
 
-    wcs_obj.bounding_box = kwargs.get(
-        "bounding_box",
-        (
-            (-0.5, shape[-1] - 0.5),
-            (-0.5, shape[-2] - 0.5),
-        ),
-    )
+    if shape is not None:
+        wcs_obj.bounding_box = kwargs.get(
+            "bounding_box",
+            (
+                (-0.5, shape[-1] - 0.5),
+                (-0.5, shape[-2] - 0.5),
+            ),
+        )
 
-    wcs_obj.pixel_shape = shape[::-1]
-    wcs_obj.array_shape = shape
+        wcs_obj.pixel_shape = shape[::-1]
+        wcs_obj.array_shape = shape
 
     return wcs_obj
