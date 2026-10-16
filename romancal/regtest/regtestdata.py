@@ -20,11 +20,6 @@ from gwcs.wcstools import grid_from_bounding_box
 from romancal.associations._load_asn import load_asn
 from romancal.regtest._differ import Diff, DiffSettings
 
-# from romancal.lib.suffix import replace_suffix
-
-# Define location of default Artifactory API key, for Jenkins use only
-ARTIFACTORY_API_KEY_FILE = "/eng/ssb2/keys/svc_rodata.key"
-
 # Define a request timeout in seconds
 TIMEOUT = int(os.environ.get("TEST_BIGDATA_TIMEOUT", 30))
 CHUNK_SIZE = int(os.environ.get("TEST_BIGDATA_CHUNK_SIZE", 1048576))
