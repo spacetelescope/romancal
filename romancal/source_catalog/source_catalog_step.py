@@ -107,7 +107,7 @@ class SourceCatalogStep(RomanStep):
     spec = """
         bkg_boxsize = float(default=55.0)     # background mesh box size in arcsec
         kernel_fwhm = float(default=0.2)      # Gaussian kernel FWHM in arcsec
-        template_fwhm = float_list(default=list(0.6, 2.4))  # extra template FWHM in arcsec
+        template_fwhm = float_list(default=list(0.6))  # extra template FWHM in arcsec
         snr_threshold = float(default=5.0)    # detection threshold in sigma
         npixels = integer(default=9)          # min usable pixels in a final segment
         deblend = boolean(default=True)       # deblend sources?
