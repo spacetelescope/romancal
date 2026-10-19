@@ -1,5 +1,0 @@
-Fit the WFI18 first-read transient with 4 resultants, using the last pair of
-resultants to find weakly illuminated pixels; previously 4-resultant exposures
-fell back on masking. Also fix the selection of weakly illuminated pixels,
-which compared each pixel against the median of its column rather than its
-row.

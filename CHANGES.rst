@@ -1,3 +1,17 @@
+1.0.3 (2026-10-19)
+==================
+
+``wfi18_transient`` (WFI-Image, WFI-Prism, WFI-Grism)
+-----------------------------------------------------
+
+- Fit the WFI18 first-read transient with 4 resultants, using the last pair of
+  resultants to find weakly illuminated pixels; previously 4-resultant
+  exposures
+  fell back on masking. Also fix the selection of weakly illuminated pixels,
+  which compared each pixel against the median of its column rather than its
+  row. (`#2504 <https://github.com/spacetelescope/romancal/issues/2504>`_)
+
+
 1.0.2 (2026-09-08)
 ==================
 
