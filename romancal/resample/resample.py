@@ -44,7 +44,7 @@ def _skycell_wcs_from_asn(asn, skymap=None):
     """
     wcs_info = asn.get("skycell_wcs_info")
     if isinstance(wcs_info, Mapping):
-        return sc.wcsinfo_to_wcs(wcs_info)
+        return sc._wcsinfo_to_wcs(wcs_info)
 
     target = asn.get("target", "none")
     if target.lower() == "none":

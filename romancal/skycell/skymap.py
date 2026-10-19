@@ -27,7 +27,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-__all__ = ["SKYMAP", "ProjectionRegion", "SkyCells", "SkyMap", "wcsinfo_to_wcs"]
+__all__ = ["SKYMAP", "ProjectionRegion", "SkyCells", "SkyMap"]
 
 
 class SkyCells:
@@ -133,8 +133,7 @@ class SkyCells:
 
         warnings.warn(
             "SkyCells.from_asns is deprecated and will be removed in a future "
-            "release; use SkyCells.from_names with the skycell name, or "
-            "wcsinfo_to_wcs with the association's `skycell_wcs_info`.",
+            "release; use SkyCells.from_names with the skycell name.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -314,16 +313,7 @@ class SkyCells:
     def wcs(self) -> list[WCS]:
         """WCS objects representing these skycells"""
 
-        return [
-            wcsinfo_to_wcs(
-                wcs_info,
-                bounding_box=(
-                    (-0.5, self.pixel_shape[0] - 0.5),
-                    (-0.5, self.pixel_shape[1] - 0.5),
-                ),
-            )
-            for wcs_info in self.wcs_infos
-        ]
+        return [_wcsinfo_to_wcs(wcs_info) for wcs_info in self.wcs_infos]
 
     @property
     def pixel_scale(self) -> float:
@@ -677,15 +667,7 @@ class ProjectionRegion:
     @cached_property
     def wcs(self) -> WCS:
         """WCS representing this skycell"""
-        wcsobj = wcsinfo_to_wcs(
-            self.wcs_info,
-            bounding_box=(
-                (-0.5, self.pixel_shape[0] - 0.5),
-                (-0.5, self.pixel_shape[1] - 0.5),
-            ),
-        )
-        wcsobj.array_shape = self.pixel_shape
-        return wcsobj
+        return _wcsinfo_to_wcs(self.wcs_info)
 
     def contains_radec(self, radec: NDArray[float]) -> NDArray[bool]:
         """whether the given point(s) are contained within the bounds of this projection region"""
@@ -984,11 +966,8 @@ def _ra_in_range(ra: float, low: float, high: float):
         return (ra >= low) | (ra < high)
 
 
-def wcsinfo_to_wcs(
-    wcsinfo: dict,
-    bounding_box: tuple[tuple[float, float], tuple[float, float]] | None = None,
-) -> WCS:
-    """Create a WCS from the skycell wcsinfo meta
+def _wcsinfo_to_wcs(wcsinfo: dict) -> WCS:
+    """Create a WCS from skycell or projection region WCS properties
 
     The vparity / handedness of the WCS is taken from `wcsinfo["vparity"]`: -1
     corresponds to the usual convention where right ascension increases as
@@ -997,15 +976,15 @@ def wcsinfo_to_wcs(
     wcsinfo from newer reference files records vparity = -1.  It is ignored
     if `wcsinfo` supplies an explicit `rotation_matrix`.
 
+    The bounding box spans the pixel edges of an `nx` by `ny` image.
+
     Parameters
     ----------
-    wcsinfo : dict or MosaicModel.meta.wcsinfo
-        The L3 wcsinfo to create a WCS from.
-
-    bounding_box : None or 4-tuple
-        The bounding box in detector/pixel space. Form of input is:
-        ((x_left, x_right), (y_bottom, y_top)).  Defaults to the pixel
-        edges of an `nx` by `ny` image when `wcsinfo` records them.
+    wcsinfo : dict
+        WCS properties in the form of the Level 3 association schema's
+        ``skycell_wcs_info``, as given by `SkyCells.wcs_infos` or
+        `ProjectionRegion.wcs_info`.  This is not the L3
+        ``MosaicModel.meta.wcsinfo``.
 
     Returns
     -------
@@ -1056,19 +1035,9 @@ def wcsinfo_to_wcs(
         [(detector_frame, det2sky), (sky_frame, None)], name=wcsinfo.get("name", None)
     )
 
-    if bounding_box is None and "nx" in wcsinfo and "ny" in wcsinfo:
-        bounding_box = (
-            (-0.5, wcsinfo["nx"] - 0.5),
-            (-0.5, wcsinfo["ny"] - 0.5),
-        )
-
-    if bounding_box:
-        wcsobj.bounding_box = bounding_box
-
-    # ensure array_shape is populated
-    if wcsobj.array_shape is None and bounding_box:
-        (x0, x1), (y0, y1) = bounding_box
-        wcsobj.array_shape = (round(y1 - y0), round(x1 - x0))
+    nx, ny = int(wcsinfo["nx"]), int(wcsinfo["ny"])
+    wcsobj.bounding_box = ((-0.5, nx - 0.5), (-0.5, ny - 0.5))
+    wcsobj.array_shape = (ny, nx)
 
     return wcsobj
 

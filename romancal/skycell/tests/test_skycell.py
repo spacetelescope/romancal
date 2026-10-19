@@ -251,6 +251,19 @@ def test_projregion_from_skycell(skymap_subset):
         skymap.ProjectionRegion.from_skycell_index(10000, skymap=skymap_subset)
 
 
+def test_projregion_wcs_shape(skymap_subset):
+    # region 1 is not square, so a transposed shape would show up here
+    projregion = skymap.ProjectionRegion(1, skymap=skymap_subset)
+    nx, ny = projregion.pixel_shape
+    assert nx != ny
+
+    assert projregion.wcs.array_shape == (ny, nx)
+    assert projregion.wcs.bounding_box.bounding_box(order="F") == (
+        (-0.5, nx - 0.5),
+        (-0.5, ny - 0.5),
+    )
+
+
 @pytest.mark.parametrize("name", SAMPLE_SKYCELL_NAMES)
 def test_skycell_wcs_pixel_to_world(name, either_skymap_subset):
     skycell = skymap.SkyCells.from_names([name], skymap=either_skymap_subset)
