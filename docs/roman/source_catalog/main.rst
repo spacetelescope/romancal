@@ -254,7 +254,8 @@ of every pixel in the source segment, using the flags listed in
 :ref:`data_quality_flags`. Note that pixels with ``DO_NOT_USE`` set are
 never included in a segment and are therefore never propagated to
 ``image_flags``.  The ``image_flags2`` column is treated analogously,
-using the ``dq2`` array instead of the ``dq`` array.
+using the ``dq2`` array and the flags listed in
+:ref:`extra_data_quality_flags`.
 
 The ``psf_flags`` column contains the following bit flags defined by the
 :external+photutils:py:class:`photutils.psf.PSFPhotometry` class:
