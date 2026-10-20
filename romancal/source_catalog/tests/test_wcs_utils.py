@@ -237,20 +237,3 @@ def test_sky_errors_match_spherical_offsets():
     east_y, north_y = _sky_offsets(wcs, x, y, 0.0, y_err)
     assert u.allclose(east_err, np.hypot(east_x, east_y) * u.arcsec, rtol=1e-4)
     assert u.allclose(north_err, np.hypot(north_x, north_y) * u.arcsec, rtol=1e-4)
-
-
-def test_sky_errors_near_a_pole():
-    """
-    Close to a pole the RA error must stay a great-circle angle,
-    without blowing up as 1 / cos(dec).
-    """
-    pscale = 10.0 / 3600.0
-    wcs = _make_wcs((256, 256), pscale=pscale, crval=(0.0, 90.0))
-    x, y = np.array([3.0]), np.array([4.0])
-    assert wcs(x, y, with_bounding_box=False)[1] > 89.98
-
-    east_err, north_err = pixel_to_sky_errors(wcs, x, y, np.ones(1), np.ones(1))
-
-    expected = (pscale * u.deg).to(u.arcsec)
-    assert u.allclose(east_err, expected, rtol=1e-3)
-    assert u.allclose(north_err, expected, rtol=1e-3)

@@ -95,21 +95,20 @@ def pixel_area_from_wcs(wcs, x, y):
 
 def pixel_to_sky_errors(wcs, x, y, x_err, y_err):
     """
-    Convert independent pixel position errors to errors on the sky.
+    Convert independent pixel position uncertainties to uncertainties in sky coordinates.
 
-    The pixel errors are carried to the plane tangent to the sky with
-    the local WCS Jacobian (see `wcs_jacobian`), projected onto the
-    local East and North directions. Any correlation between the x and
-    y errors is neglected.
+    The position uncertainties in pixels are transformed to sky coordinates using the
+    local WCS Jacobian (see `wcs_jacobian`).  Covariance between the x and
+    y uncertainties is neglected.
 
     Parameters
     ----------
     wcs : WCS object
         A world coordinate system transformation mapping pixel to world
-        (longitude, latitude) coordinates in degrees.
+        coordinates in degrees.
 
     x, y : `~numpy.ndarray`
-        Pixel coordinates, of any common shape.
+        Pixel coordinates.
 
     x_err, y_err : `~numpy.ndarray`
         The 1-sigma pixel position errors, with the same shape as ``x``.
@@ -117,10 +116,30 @@ def pixel_to_sky_errors(wcs, x, y, x_err, y_err):
     Returns
     -------
     east_err, north_err : `~astropy.units.Quantity`
-        The 1-sigma errors in arcsec along East (the Right Ascension
-        direction as a great-circle angle, i.e., including the cos(dec)
-        factor) and North.
+        The 1-sigma errors in arcsec in the right ascension
+        direction and declination directions.
     """
+    # We want, e.g. for the East error,
+    #
+    #     east_err = sqrt((dE/dx * x_err)**2 + (dE/dy * y_err)**2)
+    #
+    # where dE/dx is the distance (arcsec) the sky position moves toward
+    # East per pixel step along x. We get dE/dx in two steps: how the
+    # position moves in 3D per pixel step (the Jacobian), and how much of
+    # that motion points East (a dot product with the East unit vector).
+    #
+    # Shapes below are for N sources.
+
+    # Step 1: the Jacobian, shape (N, 3, 2). jacobian[n, :, 0] is the
+    # 3D (cartesian) step, in arcsec, of the sky position's unit vector
+    # when moving one pixel along x; jacobian[n, :, 1] is the same for y.
+    # Both steps lie in the plane tangent to the sky at the source.
+    jacobian = wcs_jacobian(wcs, x, y)
+
+    # Step 2: the East and North unit vectors in that tangent plane, as
+    # 3D cartesian vectors of shape (N, 3). They are the derivatives of
+    # the unit vector (cos(lat) cos(lon), cos(lat) sin(lon), sin(lat))
+    # with respect to lon (divided by cos(lat)) and lat respectively.
     lon, lat = np.deg2rad(wcs(x, y, with_bounding_box=False))
     east = np.stack([-np.sin(lon), np.cos(lon), np.zeros_like(lon)], axis=-1)
     north = np.stack(
@@ -128,15 +147,16 @@ def pixel_to_sky_errors(wcs, x, y, x_err, y_err):
         axis=-1,
     )
 
-    # The rows of the 2x2 (East, North) x (x, y) Jacobian
-    jacobian = wcs_jacobian(wcs, x, y)
-    d_east = np.einsum("...i,...ij->...j", east, jacobian)
-    d_north = np.einsum("...i,...ij->...j", north, jacobian)
+    # Dot each pixel step with East and North, shape (N, 2):
+    # d_east[n] = (dE/dx, dE/dy) and d_north[n] = (dN/dx, dN/dy), in
+    # arcsec per pixel. Because East is a great-circle direction, dE
+    # already includes the cos(dec) factor.
+    d_east = np.einsum("ni,nij->nj", east, jacobian)
+    d_north = np.einsum("ni,nij->nj", north, jacobian)
 
-    def propagate(d):
-        return np.hypot(d[..., 0] * x_err, d[..., 1] * y_err) * u.arcsec
-
-    return propagate(d_east), propagate(d_north)
+    east_err = np.hypot(d_east[..., 0] * x_err, d_east[..., 1] * y_err)
+    north_err = np.hypot(d_north[..., 0] * x_err, d_north[..., 1] * y_err)
+    return east_err * u.arcsec, north_err * u.arcsec
 
 
 def pixel_area_map(wcs, shape, step=64):
