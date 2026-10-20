@@ -88,6 +88,7 @@ class SourceCatalogStep(RomanStep):
 
     max_sources : int, optional
         Keep only this many sources, starting with the most significant.
+        Zero, the default, keeps all of them.
 
     suffix : str, optional
         Suffix appended to the output filenames.  Default ``'cat'``.
@@ -111,7 +112,7 @@ class SourceCatalogStep(RomanStep):
         snr_threshold = float(default=5.0)    # detection threshold in sigma
         npixels = integer(default=9)          # min usable pixels in a final segment
         deblend = boolean(default=True)       # deblend sources?
-        max_sources = integer(default=30000)  # keep this many brightest (0 = no limit)
+        max_sources = integer(default=0)  # keep this many most significant (0 = no limit)
         suffix = string(default='cat')        # Default suffix for output files
         fit_psf = boolean(default=True)       # fit source PSFs for accurate astrometry?
         forced_segmentation = string(default='')  # force the use of this segmentation map

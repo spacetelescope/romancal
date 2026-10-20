@@ -26,6 +26,7 @@ The ``source_catalog`` step has the following arguments:
 
 * ``--max_sources``: An integer value giving the maximum number of
   sources to keep, retaining the most significant; zero means no limit
+  (default is 0)
 
 * ``--suffix``: A string value giving the file name suffix to use for
   the output catalog file (default is ``'cat'``).

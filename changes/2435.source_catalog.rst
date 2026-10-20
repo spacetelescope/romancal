@@ -15,3 +15,6 @@ catalog columns.  The first two identify the template that led to the detection
 of each source and its corresponding SNR.  The second two give the
 Kron fluxes without masking regions contaminated by neighbors; kron_flux /
 kron_nomask_flux can be used as a blending estimate.
+
+The new ``max_sources`` option keeps only that many of the most significant
+detections; by default there is no limit.

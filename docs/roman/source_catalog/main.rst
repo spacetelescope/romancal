@@ -98,8 +98,8 @@ order of decreasing significance.  The first segment to claim a pixel
 ``npixels`` usable pixels is dropped. The template that detected each
 source and its peak significance are recorded in the catalog as
 ``det_template`` and ``det_significance``. Very crowded fields can yield
-more detections than are worth measuring, so ``max_sources`` keeps only
-that many of the most significant.
+more detections than are worth measuring; setting ``max_sources`` keeps
+only that many of the most significant.  By default all are kept.
 
 
 Source Photometry and Properties
