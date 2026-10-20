@@ -102,7 +102,9 @@ def make_si_test_image():
     assert data.shape == (500, 500)
 
     rng = np.random.default_rng(seed=RNG_SEED)
-    noise_scale = MEANFLUX / EXPTIME
+    # Enough noise that background mesh residuals near the bright source
+    # wings stay well below the detection threshold
+    noise_scale = 0.05 * MEANFLUX
     noise = rng.normal(loc=MEANFLUX, scale=noise_scale, size=data.shape)
     data += noise
     err = np.sqrt(np.ones_like(data))
