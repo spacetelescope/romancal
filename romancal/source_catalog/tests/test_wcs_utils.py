@@ -11,7 +11,10 @@ from astropy.modeling import models
 from photutils.segmentation import SegmentationImage
 
 from romancal.source_catalog._segment import SegmentCatalog
-from romancal.source_catalog._wcs_utils import pixel_area_map
+from romancal.source_catalog._wcs_utils import (
+    pixel_area_map,
+    pixel_to_sky_errors,
+)
 from romancal.tests.wcs_helpers import create_wcs_object
 
 # Pixel scale in degrees, roughly the WFI native scale
@@ -204,3 +207,50 @@ def test_segment_geometry_tracks_local_pixel_area():
     assert np.isclose(
         (cat.segment_area[1] / cat.segment_area[0]).value, 1.10, rtol=1e-3
     )
+
+
+def _sky_offsets(wcs, x, y, dx, dy):
+    """
+    The (East, North) offsets in arcsec from pixel (x, y) to
+    (x + dx, y + dy), measured with astropy's spherical routines.
+    """
+    start = SkyCoord(*wcs(x, y, with_bounding_box=False), unit="deg")
+    end = SkyCoord(*wcs(x + dx, y + dy, with_bounding_box=False), unit="deg")
+    return [offset.to_value(u.arcsec) for offset in start.spherical_offsets_to(end)]
+
+
+def test_sky_errors_match_spherical_offsets():
+    """
+    On a distorted WCS, the sky errors must match independent pixel
+    errors propagated through offsets measured by astropy.
+    """
+    wcs = _make_wcs((256, 256), distorted=True)
+    x = np.array([10.0, 128.0, 240.0])
+    y = np.array([200.0, 128.0, 30.0])
+    x_err = np.array([0.02, 0.1, 0.3])
+    y_err = np.array([0.05, 0.1, 0.01])
+
+    east_err, north_err = pixel_to_sky_errors(wcs, x, y, x_err, y_err)
+
+    # Offsets are linear over these small steps
+    east_x, north_x = _sky_offsets(wcs, x, y, x_err, 0.0)
+    east_y, north_y = _sky_offsets(wcs, x, y, 0.0, y_err)
+    assert u.allclose(east_err, np.hypot(east_x, east_y) * u.arcsec, rtol=1e-4)
+    assert u.allclose(north_err, np.hypot(north_x, north_y) * u.arcsec, rtol=1e-4)
+
+
+def test_sky_errors_near_a_pole():
+    """
+    Close to a pole the RA error must stay a great-circle angle,
+    without blowing up as 1 / cos(dec).
+    """
+    pscale = 10.0 / 3600.0
+    wcs = _make_wcs((256, 256), pscale=pscale, crval=(0.0, 90.0))
+    x, y = np.array([3.0]), np.array([4.0])
+    assert wcs(x, y, with_bounding_box=False)[1] > 89.98
+
+    east_err, north_err = pixel_to_sky_errors(wcs, x, y, np.ones(1), np.ones(1))
+
+    expected = (pscale * u.deg).to(u.arcsec)
+    assert u.allclose(east_err, expected, rtol=1e-3)
+    assert u.allclose(north_err, expected, rtol=1e-3)

@@ -22,6 +22,8 @@ from photutils.psf import (
 )
 from scipy.ndimage import map_coordinates
 
+from romancal.source_catalog._wcs_utils import pixel_to_sky_errors
+
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
@@ -758,15 +760,31 @@ class _PSFCatalog:
         return self._sky_psf.dec
 
     @lazyproperty
+    def _sky_psf_err(self):
+        """
+        The (East, North) errors of the fitted-PSF sky position, in
+        arcsec.
+        """
+        east_err, north_err = pixel_to_sky_errors(
+            self.model.meta.wcs,
+            self.x_psf.value,
+            self.y_psf.value,
+            self.x_psf_err.value,
+            self.y_psf_err.value,
+        )
+        return east_err.astype(np.float32), north_err.astype(np.float32)
+
+    @lazyproperty
     def ra_psf_err(self):
         """
-        The uncertainty in ra_psf.
+        The uncertainty in ra_psf, as a great-circle angle (i.e.,
+        including the cos(dec) factor).
         """
-        return np.zeros(self.ra_psf.shape, dtype=np.float32) * u.arcsec
+        return self._sky_psf_err[0]
 
     @lazyproperty
     def dec_psf_err(self):
         """
         The uncertainty in dec_psf.
         """
-        return np.zeros(self.dec_psf.shape, dtype=np.float32) * u.arcsec
+        return self._sky_psf_err[1]

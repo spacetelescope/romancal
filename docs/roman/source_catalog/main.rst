@@ -86,6 +86,12 @@ in arcsec. The centroid errors are zero where the input errors are zero.
 They are NaN where the input errors are NaN or where the source is
 completely masked.
 
+The PSF sky position errors (``ra_psf_err`` and ``dec_psf_err``) are
+the fitted pixel position errors (``x_psf_err`` and ``y_psf_err``)
+carried to the sky with the WCS Jacobian evaluated at each source, in
+the same great-circle sense as the sky centroid errors. Any correlation
+between the fitted x and y positions is neglected.
+
 For the sizes, only the area of the local pixel is accounted for, not
 its shape. Where pixels are not square, the sky-frame axis lengths carry
 a residual error of order the departure from squareness (1-3% for

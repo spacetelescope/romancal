@@ -93,6 +93,52 @@ def pixel_area_from_wcs(wcs, x, y):
     return area * u.arcsec**2
 
 
+def pixel_to_sky_errors(wcs, x, y, x_err, y_err):
+    """
+    Convert independent pixel position errors to errors on the sky.
+
+    The pixel errors are carried to the plane tangent to the sky with
+    the local WCS Jacobian (see `wcs_jacobian`), projected onto the
+    local East and North directions. Any correlation between the x and
+    y errors is neglected.
+
+    Parameters
+    ----------
+    wcs : WCS object
+        A world coordinate system transformation mapping pixel to world
+        (longitude, latitude) coordinates in degrees.
+
+    x, y : `~numpy.ndarray`
+        Pixel coordinates, of any common shape.
+
+    x_err, y_err : `~numpy.ndarray`
+        The 1-sigma pixel position errors, with the same shape as ``x``.
+
+    Returns
+    -------
+    east_err, north_err : `~astropy.units.Quantity`
+        The 1-sigma errors in arcsec along East (the Right Ascension
+        direction as a great-circle angle, i.e., including the cos(dec)
+        factor) and North.
+    """
+    lon, lat = np.deg2rad(wcs(x, y, with_bounding_box=False))
+    east = np.stack([-np.sin(lon), np.cos(lon), np.zeros_like(lon)], axis=-1)
+    north = np.stack(
+        [-np.sin(lat) * np.cos(lon), -np.sin(lat) * np.sin(lon), np.cos(lat)],
+        axis=-1,
+    )
+
+    # The rows of the 2x2 (East, North) x (x, y) Jacobian
+    jacobian = wcs_jacobian(wcs, x, y)
+    d_east = np.einsum("...i,...ij->...j", east, jacobian)
+    d_north = np.einsum("...i,...ij->...j", north, jacobian)
+
+    def propagate(d):
+        return np.hypot(d[..., 0] * x_err, d[..., 1] * y_err) * u.arcsec
+
+    return propagate(d_east), propagate(d_north)
+
+
 def pixel_area_map(wcs, shape, step=64):
     """
     Compute the on-sky solid angle of every pixel in an image.
