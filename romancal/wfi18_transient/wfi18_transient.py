@@ -2,7 +2,7 @@ import logging
 import warnings
 
 import numpy as np
-from astropy.stats import sigma_clipped_stats
+from astropy.stats import mad_std, sigma_clipped_stats
 from roman_datamodels import dqflags
 from scipy import optimize
 
@@ -82,7 +82,7 @@ def correct_anomaly(input_model, mask_rows=False):
     """
     Correct the transient first read anomaly.
 
-    If the input model has less than 5 resultants or the fitting
+    If the input model has less than 4 resultants or the fitting
     process fails, the most affected rows in the first read will be
     masked instead of fitting and removing the anomaly.
 
@@ -101,7 +101,7 @@ def correct_anomaly(input_model, mask_rows=False):
         The updated model.
     """
     # Fallback option: just mask the affected rows in the first read
-    if mask_rows or input_model.data.shape[0] < 5:
+    if mask_rows or input_model.data.shape[0] < 4:
         log.info("Masking affected rows")
         mask_affected_rows(input_model.groupdq)
         return input_model
@@ -133,8 +133,21 @@ def correct_anomaly(input_model, mask_rows=False):
 
     # Identify weakly illuminated pixels in each row for fitting.
     # Use a different pair of reads, to minimize bias from covariances.
-    diff_data = data[4] - data[3]
-    high_illum_mask = diff_data > np.median(diff_data, axis=1)
+    if data.shape[0] >= 5:
+        diff_data = data[4] - data[3]
+        threshold = np.median(diff_data, axis=1, keepdims=True)
+    else:
+        # With only 4 resultants, the last pair shares the 3rd resultant
+        # with the estimate above.  Selecting on it biases the residual by
+        # its covariance with the selected noise, which is large for a cut
+        # at the median.  Exclude only clearly illuminated pixels instead,
+        # so that few pixels lie near the cut.
+        diff_data = data[3] - data[2]
+        threshold = (
+            np.median(diff_data, axis=1, keepdims=True)
+            + 3 * mad_std(diff_data, axis=1)[:, np.newaxis]
+        )
+    high_illum_mask = diff_data > threshold
 
     # Compute the sigma clipped mean of the residual for each row
     # from the low illumination pixels

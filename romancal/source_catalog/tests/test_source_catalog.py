@@ -1,6 +1,5 @@
 from pathlib import Path
 from re import match
-from types import SimpleNamespace
 
 import asdf
 import astropy.units as u
@@ -28,6 +27,7 @@ from romancal.source_catalog._source_catalog import RomanSourceCatalog
 from romancal.source_catalog._unit_conversion import (
     validate_and_convert_to_flux_density,
 )
+from romancal.source_catalog._wcs_utils import pixel_area_map
 from romancal.source_catalog.source_catalog_step import SourceCatalogStep
 
 from .helpers import compare_model_and_parquet_metadata
@@ -202,6 +202,10 @@ def test_forced_catalog(image_model, function_jail, ignore_parquet_metadata_path
         expected = np.asarray(source_segm.detection_image)
         assert_equal(np.asarray(force_segm.detection_image), expected)
         assert_equal(np.asarray(segmentation_map.detection_image), expected)
+
+    for name in ("x_centroid_err", "y_centroid_win_err", "ra_centroid_err"):
+        assert np.all(np.isfinite(catalog[name]))
+        assert np.all(catalog[name] > 0)
 
     compare_model_and_parquet_metadata(
         image_model, output_filename, ignore_parquet_metadata_paths
@@ -624,6 +628,58 @@ def test_l3_source_catalog(
         assert np.any(cat["dec"])
 
 
+def test_centroid_errors_and_sky_orientation(image_model, function_jail):
+    """
+    The centroid errors, sky orientation, and annulus background error
+    are calculated by photutils and must be populated with valid values.
+    """
+    result_catalog, _ = SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=3,
+        npixels=10,
+        save_results=False,
+    )
+    cat = result_catalog.source_catalog
+    assert len(cat) > 0
+
+    pix_names = (
+        "x_centroid_err",
+        "y_centroid_err",
+        "x_centroid_win_err",
+        "y_centroid_win_err",
+    )
+    sky_names = (
+        "ra_centroid_err",
+        "dec_centroid_err",
+        "ra_centroid_win_err",
+        "dec_centroid_win_err",
+    )
+    for names, unit in ((pix_names, u.pix), (sky_names, u.arcsec)):
+        for name in names:
+            assert cat[name].unit == unit
+            assert cat[name].dtype == np.float32
+            assert np.all(np.isfinite(cat[name]))
+            assert np.all(cat[name] > 0)
+
+    # The total sky error is the total pixel error times the pixel
+    # scale, independent of the WCS rotation
+    wcs = image_model.meta.wcs
+    pixel_scale = np.sqrt(pixel_area_map(wcs, image_model.data.shape).mean())
+    pix_err = np.hypot(cat["x_centroid_err"].value, cat["y_centroid_err"].value)
+    sky_err = np.hypot(cat["ra_centroid_err"].value, cat["dec_centroid_err"].value)
+    assert_allclose(sky_err / pix_err, pixel_scale.to_value(u.arcsec), rtol=1e-3)
+
+    assert cat["orientation_sky"].unit == u.deg
+    assert cat["orientation_sky"].dtype == np.float32
+    assert np.all(cat["orientation_sky"] > -90)
+    assert np.all(cat["orientation_sky"] <= 90)
+
+    assert cat["aper_bkg_flux_err"].dtype == np.float32
+    assert np.all(cat["aper_bkg_flux_err"] > 0)
+
+
 def test_background(mosaic_model, function_jail):
     """
     Test background fallback when Background2D fails.
@@ -775,32 +831,100 @@ def test_l2_segmentation_without_skyvals_when_disabled(image_model):
     assert "healpix11_cov" not in result_segmentation_map
 
 
-def test_skyvals_coverage_includes_source_pixels(monkeypatch):
-    class WCS:
-        def pixel_to_world_values(self, x, y):
-            return np.asarray(x) * 180.0, np.asarray(y) * 0.0
+def test_skyvals_coverage_includes_source_pixels(image_model):
+    """
+    Purpose: sky medians exclude segmented source pixels, while healpix11_cov
+    still covers those pixels when they are unmasked.
+    """
+    # Positive pixel_area so get_pixel_area_sr does not fall back to a WCS estimate.
+    image_model.meta.photometry.pixel_area = 1.0e-12
+    ny, nx = image_model.data.shape
+    image_model.data = np.full((ny, nx), 20.0, dtype=np.float32)
+    image_model.data[5, 5] = 999.0
+    image_model.err = np.ones((ny, nx), dtype=np.float32)
 
-    input_model = SimpleNamespace(
-        data=np.array([[10.0, 20.0]], dtype=np.float32),
-        err=np.ones((1, 2), dtype=np.float32),
-        meta=SimpleNamespace(wcs=WCS()),
+    segmentation = np.zeros((ny, nx), dtype=np.uint32)
+    segmentation[5, 5] = 1
+    bad_pixel_mask = np.zeros((ny, nx), dtype=bool)
+
+    skyvals, healpix11_cov = compute_skyvals(image_model, segmentation, bad_pixel_mask)
+
+    assert skyvals.shape[0] > 0
+    # Source pixel value must not enter sky medians.
+    np.testing.assert_array_equal(skyvals["data"], 20.0)
+    assert healpix11_cov.shape[0] > 0
+
+    # Source-only footprint still contributes to healpix11_cov.
+    source_only_mask = np.ones((ny, nx), dtype=bool)
+    source_only_mask[5, 5] = False
+    _, healpix11_source = compute_skyvals(image_model, segmentation, source_only_mask)
+    assert healpix11_source.shape[0] >= 1
+    assert np.all(np.isin(healpix11_source, healpix11_cov))
+
+
+def test_skyvals_empty_when_all_pixels_masked(image_model):
+    """
+    Purpose: fully masked inputs return empty skyvals and healpix11_cov.
+    """
+    image_model.meta.photometry.pixel_area = 1.0e-12
+    bad_pixel_mask = np.ones(image_model.data.shape, dtype=bool)
+    segmentation = np.zeros(image_model.data.shape, dtype=np.uint32)
+
+    skyvals, healpix11_cov = compute_skyvals(image_model, segmentation, bad_pixel_mask)
+
+    assert skyvals.shape == (0,)
+    assert skyvals.dtype == SKYVALS_DTYPE
+    assert healpix11_cov.shape == (0,)
+    assert healpix11_cov.dtype == np.int64
+
+
+def test_skyvals_chunked_matches_single_pass(image_model):
+    """
+    Purpose: row-chunked WCS/HEALPix aggregation matches a single-pass run so
+    chunking does not change skyvals contents.
+    """
+    image_model.meta.photometry.pixel_area = 1.0e-12
+    rng = np.random.default_rng(0)
+    image_model.data = rng.normal(5.0, 1.0, size=image_model.data.shape).astype(
+        np.float32
     )
-    segmentation = np.array([[1, 0]], dtype=np.uint32)
-    bad_pixel_mask = np.zeros((1, 2), dtype=bool)
+    image_model.err = np.full_like(image_model.data, 0.5, dtype=np.float32)
 
-    monkeypatch.setattr(
-        "romancal.source_catalog._skyvals.get_pixel_area_sr", lambda model: 1.0
+    segmentation = np.zeros(image_model.data.shape, dtype=np.uint32)
+    segmentation[1, 1] = 1
+    segmentation[3, 4] = 2
+    bad_pixel_mask = np.zeros(image_model.data.shape, dtype=bool)
+    bad_pixel_mask[0, 0] = True
+
+    sky_chunked, hp11_chunked = compute_skyvals(
+        image_model, segmentation, bad_pixel_mask, chunk_rows=1
     )
-    skyvals, healpix11_cov = compute_skyvals(input_model, segmentation, bad_pixel_mask)
+    sky_single, hp11_single = compute_skyvals(
+        image_model, segmentation, bad_pixel_mask, chunk_rows=10_000
+    )
 
-    assert skyvals.shape == (1,)
-    assert skyvals["data"][0] == 20.0
-    assert healpix11_cov.shape == (2,)
+    assert sky_chunked.dtype == sky_single.dtype
+    np.testing.assert_array_equal(sky_chunked["healpix17"], sky_single["healpix17"])
+    np.testing.assert_array_equal(sky_chunked["data"], sky_single["data"])
+    np.testing.assert_array_equal(sky_chunked["err"], sky_single["err"])
+    np.testing.assert_array_equal(sky_chunked["covfrac"], sky_single["covfrac"])
+    np.testing.assert_array_equal(np.sort(hp11_chunked), np.sort(hp11_single))
+
+
+def test_skyvals_rejects_invalid_chunk_rows(image_model):
+    """
+    Purpose: chunk_rows must be a positive integer.
+    """
+    segmentation = np.zeros(image_model.data.shape, dtype=np.uint32)
+    bad_pixel_mask = np.zeros(image_model.data.shape, dtype=bool)
+    with pytest.raises(ValueError, match="chunk_rows must be >= 1"):
+        compute_skyvals(image_model, segmentation, bad_pixel_mask, chunk_rows=0)
 
 
 def test_l2_skyvals_values_and_covfrac_reasonable(image_model):
     """
-    Verify skyvals statistics are sensible on a controlled input image.
+    Purpose: skyvals medians recover a controlled background and covfrac stays
+    in [0, 1] with some near-full healpixels on a realistic L2 image.
     """
     rng = np.random.default_rng(seed=9)
     image_model.data = (rng.normal(0, 1, size=image_model.data.shape) + 100.0).astype(

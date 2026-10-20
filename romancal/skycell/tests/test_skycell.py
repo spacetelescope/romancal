@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import spherical_geometry.polygon as sgp
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_equal
 
 from romancal.skycell import skymap
 
@@ -39,7 +39,8 @@ def skymap_subset() -> skymap.SkyMap:
     smaller subset to allow these tests
     to run without access to the full skymap from CRDS.
     """
-    return skymap.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf")
+    with skymap.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf") as skymap_subset:
+        yield skymap_subset
 
 
 @pytest.fixture()
@@ -92,6 +93,23 @@ def test_skycell_from_name(skymap_subset):
 
     with pytest.raises(KeyError):
         skymap.SkyCells.from_names(["notaskycellname"], skymap=skymap_subset)
+
+
+def test_skycells_from_names_matches_full_search(skymap_subset):
+    all_names = skymap_subset.model.skycells["name"]
+
+    # skycells from several projection regions, in unsorted order
+    indices = np.array([len(all_names) - 1, 999, 0, 2500, 1000])
+    names = [str(name) for name in all_names[indices]]
+
+    skycells = skymap.SkyCells.from_names(names, skymap=skymap_subset)
+
+    assert_array_equal(skycells.indices, np.isin(all_names, names).nonzero()[0])
+    assert_array_equal(skycells.indices, np.sort(indices))
+
+    # A valid projection region with a skycell position that does not exist
+    with pytest.raises(KeyError):
+        skymap.SkyCells.from_names([names[0], "135p90x99y99"], skymap=skymap_subset)
 
 
 def test_skycell_from_asn(skymap_subset):
@@ -325,6 +343,37 @@ def test_skycells_cores_containing_pole(skymap_subset):
         assert skymap_subset.skycells.cores_containing([ra, 90.0]) == {
             int(pole_skycell.indices[0]): [0]
         }
+
+
+def test_skymap_close():
+    skymap_subset = skymap.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf")
+    # Closing a sky map that was never opened does nothing.
+    skymap_subset.close()
+
+    model = skymap_subset.model
+    skymap_subset.close()
+    assert model._asdf._closed
+
+    # The file is reopened on the next access.
+    assert skymap_subset.model is not model
+    assert len(skymap_subset.model.skycells) == len(skymap_subset.skycells)
+    skymap_subset.close()
+
+
+def test_skymap_context_manager():
+    with skymap.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf") as skymap_subset:
+        model = skymap_subset.model
+        assert not model._asdf._closed
+    assert model._asdf._closed
+
+
+def test_skymap_path_setter_closes_file():
+    path = DATA_DIRECTORY / "skymap_subset.asdf"
+    skymap_subset = skymap.SkyMap(path)
+    model = skymap_subset.model
+    skymap_subset.path = path
+    assert model._asdf._closed
+    skymap_subset.close()
 
 
 def test_ra_in_range():
