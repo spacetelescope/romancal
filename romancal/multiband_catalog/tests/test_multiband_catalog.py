@@ -8,6 +8,7 @@ import numpy as np
 import pyarrow
 import pytest
 from astropy.modeling.models import Gaussian2D
+from astropy.stats import mad_std
 from astropy.table import Table
 from astropy.time import Time
 from numpy.testing import assert_allclose, assert_equal
@@ -101,7 +102,9 @@ def make_si_test_image():
     assert data.shape == (500, 500)
 
     rng = np.random.default_rng(seed=RNG_SEED)
-    noise_scale = MEANFLUX / EXPTIME
+    # Enough noise that background mesh residuals near the bright source
+    # wings stay well below the detection threshold
+    noise_scale = 0.05 * MEANFLUX
     noise = rng.normal(loc=MEANFLUX, scale=noise_scale, size=data.shape)
     data += noise
     err = np.sqrt(np.ones_like(data))
@@ -688,11 +691,15 @@ def test_multiband_source_injection_nan_catalog(libraries_si_nan, function_jail)
                 assert np.all(np.isnan(si_model.data[y_nan_idx, x_nan_idx]))
                 libmods[si_type].shelve(si_model, modify=False)
 
-        # si_type vs NoNan - most pixels should be close
+        # si_type vs NoNan - most pixels should be close. The NaNs perturb
+        # the background mesh slightly everywhere, so allow a small
+        # fraction of the noise for background-subtracted pixels near zero.
+        noise = mad_std(results["NoNan"].si_detection_image, ignore_nan=True)
         sum_ac_test = np.isclose(
             results["NoNan"].si_detection_image,
             results[si_type].si_detection_image,
             rtol=1e-2,
+            atol=1e-2 * noise,
         )
 
         # Ensure over 90% of pixels are close to NoNan data
