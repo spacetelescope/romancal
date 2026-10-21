@@ -388,7 +388,21 @@ class RomanSourceCatalog:
 
         return flags
 
-    def _segment_flags(self, dq):
+    def _flag_dtype(self, column):
+        """
+        The catalog dtype for a segment flag column.
+
+        Use the column's schema definition if there is one, then that of
+        ``image_flags`` (``image_flags2`` may not be in the schema yet),
+        and otherwise ``uint32`` to match the DQ arrays.
+        """
+        for name in (column, "image_flags"):
+            definition = self.cat_model.get_column_definition(name)
+            if definition is not None:
+                return np.dtype(definition["datatype"])
+        return np.dtype(np.uint32)
+
+    def _segment_flags(self, dq, column):
         """
         Bitwise-or a pixel-level DQ array over each source segment.
 
@@ -398,25 +412,30 @@ class RomanSourceCatalog:
             Pixel-level data quality array matching the segmentation image,
             or None if the model has no such array.
 
+        column : str
+            The catalog column name, used to look up its dtype.
+
         Returns
         -------
         `numpy.ndarray`
-            Per-source flags as ``int32``.  All zero if ``dq`` is None.
+            Per-source flags with the column's dtype.  All zero if ``dq``
+            is None.
         """
         flags = np.zeros(self.n_sources, dtype=np.uint32)
-        if dq is None:
-            return flags.view(np.int32)
+        if dq is not None:
+            labels = self.segment_img.data.ravel()
+            m = labels > 0
+            # segment_img.labels is sorted, so searchsorted maps each
+            # labeled pixel onto its row in the output catalog
+            index = np.searchsorted(self.segment_img.labels, labels[m])
+            np.bitwise_or.at(flags, index, dq.ravel()[m].astype(np.uint32))
 
-        labels = self.segment_img.data.ravel()
-        m = labels > 0
-        # segment_img.labels is sorted, so searchsorted maps each labeled
-        # pixel onto its row in the output catalog
-        index = np.searchsorted(self.segment_img.labels, labels[m])
-        np.bitwise_or.at(flags, index, dq.ravel()[m].astype(np.uint32))
-
-        # the catalog columns are signed; reinterpret rather than cast so
-        # that a set bit 31 cannot raise or change the bit pattern
-        return flags.view(np.int32)
+        dtype = self._flag_dtype(column)
+        if dtype.itemsize == flags.itemsize:
+            # reinterpret rather than cast, so that a set bit 31 in a
+            # signed column cannot raise or change the bit pattern
+            return flags.view(dtype)
+        return flags.astype(dtype)
 
     @lazyproperty
     def image_flags(self):
@@ -426,7 +445,7 @@ class RomanSourceCatalog:
         Non-zero if a pixel within the segment was flagged in one of the
         input images.  Zero for models that carry no ``dq`` array.
         """
-        return self._segment_flags(self.model.get("dq", None))
+        return self._segment_flags(self.model.get("dq", None), "image_flags")
 
     @lazyproperty
     def image_flags2(self):
@@ -437,7 +456,7 @@ class RomanSourceCatalog:
         within the segment was flagged in ``dq2`` in one of the
         input images.
         """
-        return self._segment_flags(self.model.get("dq2", None))
+        return self._segment_flags(self.model.get("dq2", None), "image_flags2")
 
     @lazyproperty
     def dust_ebv(self):

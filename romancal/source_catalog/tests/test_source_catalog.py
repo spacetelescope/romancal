@@ -1103,3 +1103,47 @@ def test_l2_catalog_propagates_dq_to_image_flags(image_model, function_jail):
     assert not catalog["image_flags2"][clean].any()
     assert (catalog["image_flags"][flagged] == int(pixel.NO_LIN_CORR)).all()
     assert (catalog["image_flags2"][flagged] == 1 << 5).all()
+
+
+@pytest.mark.parametrize("dtype", (np.int32, np.uint32))
+def test_l2_catalog_image_flags_dtype_follows_schema(
+    image_model, dtype, monkeypatch, function_jail
+):
+    """
+    The flag columns take the schema's dtype, image_flags2 falls back to
+    that of image_flags, and a set bit 31 survives either way.
+    """
+    original = ImageSourceCatalogModel.get_column_definition
+
+    def get_column_definition(self, name):
+        if name == "image_flags2":
+            return None
+        definition = original(self, name)
+        if name == "image_flags":
+            definition = {**definition, "datatype": np.dtype(dtype)}
+        return definition
+
+    monkeypatch.setattr(
+        ImageSourceCatalogModel, "get_column_definition", get_column_definition
+    )
+
+    shape = image_model.data.shape
+    image_model.dq = np.full(shape, 1 << 31, dtype=np.uint32)
+    image_model["dq2"] = np.full(shape, 1 << 31, dtype=np.uint32)
+
+    result_catalog, _ = SourceCatalogStep.call(
+        image_model,
+        snr_threshold=0.5,
+        npixels=5,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        save_results=False,
+        fit_psf=False,
+    )
+
+    catalog = result_catalog.source_catalog
+    assert len(catalog) > 0
+    for column in ("image_flags", "image_flags2"):
+        flags = np.asarray(catalog[column])
+        assert flags.dtype == dtype
+        assert (flags.view(np.uint32) == 1 << 31).all()
