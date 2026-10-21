@@ -1072,7 +1072,7 @@ def test_l2_catalog_propagates_dq_to_image_flags(image_model, function_jail):
     """image_flags/image_flags2 collect DQ bits over each source segment."""
     shape = image_model.data.shape
     image_model.dq = np.zeros(shape, dtype=np.uint32)
-    image_model["dq2"] = np.zeros(shape, dtype=np.uint32)
+    image_model.dq2 = np.zeros(shape, dtype=np.uint32)
     # flag the bottom half of the image only
     half = shape[0] // 2
     image_model.dq[half:, :] = pixel.NO_LIN_CORR
@@ -1129,7 +1129,7 @@ def test_l2_catalog_image_flags_dtype_follows_schema(
 
     shape = image_model.data.shape
     image_model.dq = np.full(shape, 1 << 31, dtype=np.uint32)
-    image_model["dq2"] = np.full(shape, 1 << 31, dtype=np.uint32)
+    image_model.dq2 = np.full(shape, 1 << 31, dtype=np.uint32)
 
     result_catalog, _ = SourceCatalogStep.call(
         image_model,

@@ -146,7 +146,7 @@ def copy_model_arrays(model):
         copied_model.err = model.err.copy().astype("float32")
         copied_model.dq = model.dq
         if "dq2" in model:
-            copied_model["dq2"] = model.dq2
+            copied_model.dq2 = model.dq2
     elif isinstance(model, MosaicModel):
         copied_model = MosaicModel()
         copied_model.meta = model.meta

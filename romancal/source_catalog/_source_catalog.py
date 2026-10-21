@@ -431,11 +431,11 @@ class RomanSourceCatalog:
             np.bitwise_or.at(flags, index, dq.ravel()[m].astype(np.uint32))
 
         dtype = self._flag_dtype(column)
-        if dtype.itemsize == flags.itemsize:
-            # reinterpret rather than cast, so that a set bit 31 in a
-            # signed column cannot raise or change the bit pattern
-            return flags.view(dtype)
-        return flags.astype(dtype)
+        if dtype == np.int32:
+            # reinterpret rather than cast, so that a set bit 31 keeps its
+            # bit pattern (it reads as negative) rather than overflowing
+            return flags.view(np.int32)
+        return flags.astype(dtype, copy=False)
 
     @lazyproperty
     def image_flags(self):
