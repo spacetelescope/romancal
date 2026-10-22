@@ -237,3 +237,23 @@ def test_sky_errors_match_spherical_offsets():
     east_y, north_y = _sky_offsets(wcs, x, y, 0.0, y_err)
     assert u.allclose(east_err, np.hypot(east_x, east_y) * u.arcsec, rtol=1e-4)
     assert u.allclose(north_err, np.hypot(north_x, north_y) * u.arcsec, rtol=1e-4)
+
+
+def test_sky_errors_nan_outside_bounding_box():
+    """
+    Positions outside the WCS bounding box, where pixel_to_world gives
+    NaN, must have NaN sky errors. Positions in the outermost half pixel
+    are inside the bounding box and must have finite errors.
+    """
+    wcs = _make_wcs((256, 256), distorted=True)
+    x = np.array([-0.5, -0.3, 255.3, 255.5, -0.6, 255.6, 128.0, 128.0])
+    y = np.array([128.0, 128.0, 128.0, 128.0, 128.0, 128.0, -0.6, 255.6])
+    err = np.full(x.shape, 0.1)
+
+    east_err, north_err = pixel_to_sky_errors(wcs, x, y, err, err)
+
+    outside = ~np.isfinite(wcs.pixel_to_world(x, y).ra.deg)
+    assert outside.tolist() == [False] * 4 + [True] * 4
+    for sky_err in (east_err, north_err):
+        assert np.all(np.isfinite(sky_err[~outside]))
+        assert np.all(np.isnan(sky_err[outside]))

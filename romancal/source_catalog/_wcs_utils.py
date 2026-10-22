@@ -117,7 +117,8 @@ def pixel_to_sky_errors(wcs, x, y, x_err, y_err):
     -------
     east_err, north_err : `~astropy.units.Quantity`
         The 1-sigma errors in arcsec in the right ascension
-        direction and declination directions.
+        direction and declination directions. They are NaN for positions
+        outside the WCS bounding box, where the sky position is also NaN.
     """
     # We want, e.g. for the East error,
     #
@@ -140,7 +141,10 @@ def pixel_to_sky_errors(wcs, x, y, x_err, y_err):
     # 3D cartesian vectors of shape (N, 3). They are the derivatives of
     # the unit vector (cos(lat) cos(lon), cos(lat) sin(lon), sin(lat))
     # with respect to lon (divided by cos(lat)) and lat respectively.
-    lon, lat = np.deg2rad(wcs(x, y, with_bounding_box=False))
+    # Unlike in wcs_jacobian, the bounding box is applied here. A position
+    # outside it gets NaN unit vectors and thus NaN errors, matching the
+    # NaN sky position from pixel_to_world.
+    lon, lat = np.deg2rad(wcs(x, y))
     east = np.stack([-np.sin(lon), np.cos(lon), np.zeros_like(lon)], axis=-1)
     north = np.stack(
         [-np.sin(lat) * np.cos(lon), -np.sin(lat) * np.sin(lon), np.cos(lat)],
