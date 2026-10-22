@@ -25,7 +25,7 @@ def pick_stars(model, catalog, stamp_size=9, mask_nans=True,
         L2 model
 
     catalog : Table
-        catalog based of model
+        catalog based on model
 
     stamp_size : int
         Size of the cutouts
