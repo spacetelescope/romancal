@@ -6,10 +6,12 @@ and flux/position analysis
 from astropy.nddata import NDData
 from astropy.stats import sigma_clipped_stats
 from astropy.table import Table
+from astropy.time import Time
 import numpy as np
 from photutils.psf import EPSFBuilder, EPSFStars, extract_stars
 
 from roman_datamodels import dqflags
+from roman_datamodels.datamodels import EpsfRefModel
 
 
 def build_epsf(stars, max_psferr=None, **kwargs_epsfbuilder):
@@ -46,6 +48,65 @@ def build_epsf(stars, max_psferr=None, **kwargs_epsfbuilder):
     epsf_result = epsfbuilder(stars)
 
     return epsf_result
+
+
+def make_epsf_reference(epsf, sca, bandpass, meta=None):
+    """Create an EPSF reference model from an ePSF.
+
+    Parameters
+    ----------
+    epsf : EPSFBuildResult
+        The epsf to store.
+
+    sca : int
+        The SCA/Detector represented.
+
+    bandpass : str
+        The bandpass represented.
+
+    meta : dict
+        Reference meta values to use. If unspecified, minimal fake values will be used.
+
+    Returns
+    -------
+    epsf_model : EpsfRefModel
+        The EPSF Reference model.
+    """
+    default_meta = {
+        'author': 'make_epsf_reference',
+        'description': str(epsf),
+        'jitter_major': 0.,
+        'jitter_minor': 0.,
+        'jitter_position_angle': 0.,
+        'instrument': {
+            'name': 'WFI',
+            'detector': f'WFI{sca:02d}',
+            'optical_element': bandpass.upper(),
+        },
+        'origin': 'STSCI',
+        'oversample': epsf.epsf.oversampling[0],
+        'pedigree': f'INFLIGHT {Time.now()}',
+        'pixel_x': 2047.5,
+        'pixel_y': 2047.5,
+        'telescope': 'ROMAN',
+        'useafter': Time('2026-09-30', format='isot'),
+    }
+    if meta is None:
+        meta = dict()
+    final_meta = default_meta | meta
+    defaults = {'meta': final_meta}
+
+    epsf_data = epsf.epsf.data
+    psf = np.zeros((3, 3, 1, epsf_data.shape[0], epsf_data.shape[1]), dtype=np.float32)
+    psf[0, 1, 0, :, :] = epsf_data
+    defaults['psf'] = psf
+    model = EpsfRefModel.create_minimal(defaults=defaults)
+
+    # Update meta that are not defined in the model.
+    # These need be done after model creation or they are ignored.
+    model.meta['oversample'] = meta.get('oversample', epsf.epsf.oversampling[0])
+
+    return model
 
 
 def pick_stars(model, catalog, stamp_size=9, mask_nans=True,
