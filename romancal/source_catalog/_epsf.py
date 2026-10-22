@@ -7,9 +7,45 @@ from astropy.nddata import NDData
 from astropy.stats import sigma_clipped_stats
 from astropy.table import Table
 import numpy as np
-from photutils.psf import EPSFStars, extract_stars
+from photutils.psf import EPSFBuilder, EPSFStars, extract_stars
 
 from roman_datamodels import dqflags
+
+
+def build_epsf(stars, max_psferr=None, **kwargs_epsfbuilder):
+    """Create the ePSF from a list of stars.
+
+    Parameters
+    ----------
+    stars : EPSFStars
+        The stars to base the ePSF on
+
+    kwargs_epsfbuilder : dict
+        Arguments to pass to EPSFBuilder. If the following arguments
+        are left unspecified, these defaults will be used:
+        - oversample=4
+        - maxiters=30
+        - central_accuracy: Value of argument `max_psferr` if max_psferr is not None.
+        - progress_bar=false
+
+    Returns
+    -------
+    epsf_result : EPFSBuildResults
+        The created ePSF.
+    """
+    epsfbuilder_final_kwargs = {
+            'oversampling': 4, 'maxiters': 30, 'progress_bar': False
+        }
+    if kwargs_epsfbuilder is None:
+        kwargs_epsfbuilder = dict()
+    epsfbuilder_final_kwargs.update(kwargs_epsfbuilder)
+    if max_psferr is not None:
+        epsfbuilder_final_kwargs['central_accuracy'] = epsfbuilder_final_kwargs.get('central_accuracy', max_psferr)
+
+    epsfbuilder = EPSFBuilder(**epsfbuilder_final_kwargs)
+    epsf_result = epsfbuilder(stars)
+
+    return epsf_result
 
 
 def pick_stars(model, catalog, stamp_size=9, mask_nans=True,
