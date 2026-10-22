@@ -8,6 +8,21 @@ import roman_datamodels as rdm
 
 from romancal.source_catalog import _epsf as epsf
 
+
+@pytest.mark.parametrize('attr_test',
+                         [
+                             lambda inputs, expected: inputs['result'].converged,
+                             lambda inputs, expected: len(inputs['result'].excluded_star_indices) == 0,
+                         ],
+                         ids=['converted', 'excluded stars'])
+def test_build_epsf_attributes(build_epsf, attr_test):
+    """Test various attributes of the results from pick_stars"""
+    result, expected = build_epsf
+
+    inputs = {'result': result}
+    assert attr_test(inputs, expected)
+
+
 @pytest.mark.parametrize('attr_test',
                          [
                              lambda inputs, expected: len(inputs['stars']) == expected['len'],
@@ -25,6 +40,22 @@ def test_pick_stars_attributes(pick_stars, attr_test):
 # ######################
 # Fixtures and utilities
 # ######################
+@pytest.fixture(
+    params=[
+        ({}, {}),  # use all defaults
+    ],
+    ids=['default kwargs']
+)
+def build_epsf(pick_stars, request):
+    """Build the ePSF using various inputs."""
+    stars, max_psferr, _ = pick_stars
+    kwargs, expected = request.param
+
+    result = epsf.build_epsf(stars, max_psferr=max_psferr, **kwargs)
+
+    return result, expected
+
+
 @pytest.fixture(scope='module')
 def l2_model(rtdata_module):
     """Retrieve an L2 model
@@ -53,7 +84,7 @@ def l2_model(rtdata_module):
     ids=['default kwargs']
 )
 def pick_stars(l2_model, request):
-    """Test functionlity of pick_stars"""
+    """Generate list of stars based on various inputs."""
     model, catalog = l2_model
     pick_stars_args, expected = request.param
 
