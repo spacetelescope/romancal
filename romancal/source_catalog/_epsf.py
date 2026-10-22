@@ -4,7 +4,7 @@ Utilities to create ePSF models to be used where PSFs are needed in source detec
 and flux/position analysis
 """
 from astropy.nddata import NDData
-from astropy.stats import SigmaClip, mad_std, sigma_clipped_stats
+from astropy.stats import sigma_clipped_stats
 from astropy.table import Table
 import numpy as np
 from photutils.psf import EPSFStars, extract_stars
@@ -21,10 +21,10 @@ def pick_stars(model, catalog, stamp_size=9, mask_nans=True,
 
     Parameters
     ----------
-    model : model
+    model : roman_datamodels.datamodels.ImageModel
         L2 model
 
-    catalog : Table
+    catalog : astropy.table.Table
         catalog based on model
 
     stamp_size : int
