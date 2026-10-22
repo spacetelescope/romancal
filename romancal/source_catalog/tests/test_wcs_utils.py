@@ -11,7 +11,10 @@ from astropy.modeling import models
 from photutils.segmentation import SegmentationImage
 
 from romancal.source_catalog._segment import SegmentCatalog
-from romancal.source_catalog._wcs_utils import pixel_area_map
+from romancal.source_catalog._wcs_utils import (
+    pixel_area_map,
+    pixel_to_sky_errors,
+)
 from romancal.tests.wcs_helpers import create_wcs_object
 
 # Pixel scale in degrees, roughly the WFI native scale
@@ -204,3 +207,53 @@ def test_segment_geometry_tracks_local_pixel_area():
     assert np.isclose(
         (cat.segment_area[1] / cat.segment_area[0]).value, 1.10, rtol=1e-3
     )
+
+
+def _sky_offsets(wcs, x, y, dx, dy):
+    """
+    The (East, North) offsets in arcsec from pixel (x, y) to
+    (x + dx, y + dy), measured with astropy's spherical routines.
+    """
+    start = SkyCoord(*wcs(x, y, with_bounding_box=False), unit="deg")
+    end = SkyCoord(*wcs(x + dx, y + dy, with_bounding_box=False), unit="deg")
+    return [offset.to_value(u.arcsec) for offset in start.spherical_offsets_to(end)]
+
+
+def test_sky_errors_match_spherical_offsets():
+    """
+    On a distorted WCS, the sky errors must match independent pixel
+    errors propagated through offsets measured by astropy.
+    """
+    wcs = _make_wcs((256, 256), distorted=True)
+    x = np.array([10.0, 128.0, 240.0])
+    y = np.array([200.0, 128.0, 30.0])
+    x_err = np.array([0.02, 0.1, 0.3])
+    y_err = np.array([0.05, 0.1, 0.01])
+
+    east_err, north_err = pixel_to_sky_errors(wcs, x, y, x_err, y_err)
+
+    # Offsets are linear over these small steps
+    east_x, north_x = _sky_offsets(wcs, x, y, x_err, 0.0)
+    east_y, north_y = _sky_offsets(wcs, x, y, 0.0, y_err)
+    assert u.allclose(east_err, np.hypot(east_x, east_y) * u.arcsec, rtol=1e-4)
+    assert u.allclose(north_err, np.hypot(north_x, north_y) * u.arcsec, rtol=1e-4)
+
+
+def test_sky_errors_nan_outside_bounding_box():
+    """
+    Positions outside the WCS bounding box, where pixel_to_world gives
+    NaN, must have NaN sky errors. Positions in the outermost half pixel
+    are inside the bounding box and must have finite errors.
+    """
+    wcs = _make_wcs((256, 256), distorted=True)
+    x = np.array([-0.5, -0.3, 255.3, 255.5, -0.6, 255.6, 128.0, 128.0])
+    y = np.array([128.0, 128.0, 128.0, 128.0, 128.0, 128.0, -0.6, 255.6])
+    err = np.full(x.shape, 0.1)
+
+    east_err, north_err = pixel_to_sky_errors(wcs, x, y, err, err)
+
+    outside = ~np.isfinite(wcs.pixel_to_world(x, y).ra.deg)
+    assert outside.tolist() == [False] * 4 + [True] * 4
+    for sky_err in (east_err, north_err):
+        assert np.all(np.isfinite(sky_err[~outside]))
+        assert np.all(np.isnan(sky_err[outside]))
