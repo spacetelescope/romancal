@@ -1,6 +1,6 @@
 {
   "template": "https://github.com/spacetelescope/stsci-package-template",
-  "commit": "e9df785e23884c9ba118e8f7a792e3dbbad3bfcb",
+  "commit": "9d1515679d243805f399ca9c085d8b9d67281435",
   "checkout": null,
   "context": {
     "cookiecutter": {
@@ -17,7 +17,7 @@
       "python_build_backend": "setuptools",
       "crds_observatory": "roman",
       "_template": "https://github.com/spacetelescope/stsci-package-template",
-      "_commit": "e9df785e23884c9ba118e8f7a792e3dbbad3bfcb"
+      "_commit": "9d1515679d243805f399ca9c085d8b9d67281435"
     }
   },
   "directory": "python-package"
