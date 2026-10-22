@@ -25,7 +25,7 @@ def build_epsf(stars, max_psferr=None, **kwargs_epsfbuilder):
         are left unspecified, these defaults will be used:
         - oversample=4
         - maxiters=30
-        - central_accuracy: Value of argument `max_psferr` if max_psferr is not None.
+        - center_accuracy: Value of argument `max_psferr` if max_psferr is not None.
         - progress_bar=false
 
     Returns
@@ -40,7 +40,7 @@ def build_epsf(stars, max_psferr=None, **kwargs_epsfbuilder):
         kwargs_epsfbuilder = dict()
     epsfbuilder_final_kwargs.update(kwargs_epsfbuilder)
     if max_psferr is not None:
-        epsfbuilder_final_kwargs['central_accuracy'] = epsfbuilder_final_kwargs.get('central_accuracy', max_psferr)
+        epsfbuilder_final_kwargs['center_accuracy'] = epsfbuilder_final_kwargs.get('center_accuracy', max_psferr)
 
     epsfbuilder = EPSFBuilder(**epsfbuilder_final_kwargs)
     epsf_result = epsfbuilder(stars)
