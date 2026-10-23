@@ -28,7 +28,7 @@ def test_make_epsf_reference(build_epsf):
     """Validate the epsf reference creation."""
     result, _ = build_epsf
 
-    model = _epsf.make_epsf_reference(result, 1, "f158")
+    model = _epsf.make_epsf_reference(result, 'wfi01', "f158")
 
     model.validate()
 

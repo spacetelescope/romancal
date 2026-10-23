@@ -59,7 +59,52 @@ def build_epsf(stars, max_psferr=None, **kwargs_epsfbuilder):
     return epsf_result
 
 
-def make_epsf_reference(epsf, sca, bandpass, meta=None):
+def epsf_from_model(model, catalog, kwargs_pick_stars=None, kwargs_build_epsf=None, meta=None):
+    """Given a Roman L2 ImageModel and associated source catalog, construct the ePSF.
+
+    Parameters
+    ----------
+    model : roman_datamodels.datamodels.ImageModel
+        L2 model
+
+    catalog : astropy.table.Table
+        catalog based on model
+
+    kwargs_pick_stars : dict or None
+        Keyword arguments to pass to the `pick_stars` function.
+
+    kwargs_build_epsf : dict or None
+        Keyword arguments to pass to the `build_epsf` function.
+
+    meta : dict or None
+        The meta to use to populate the ePSF reference model meta with.
+
+    Returns
+    -------
+    epsf_model : EpsfRefModel
+        The EPSF Reference model.
+    """
+    # Retrieve some basic info from the input model.
+    detector = model.meta.instrument.detector
+    optical_element = model.meta.instrument.optical_element
+
+    if kwargs_pick_stars is None:
+        kwargs_pick_stars = dict()
+    stars, max_psferr = pick_stars(model, catalog, **kwargs_pick_stars)
+
+    if kwargs_build_epsf is None:
+        kwargs_build_epsf = dict()
+    epsf = build_epsf(stars, max_psferr, **kwargs_build_epsf)
+
+    if meta is None:
+        meta = dict()
+    epsf_model = make_epsf_reference(epsf, detector, optical_element, meta=meta)
+
+    # That's all folks
+    return epsf_model
+
+
+def make_epsf_reference(epsf, detector, optical_element, meta=None):
     """Create an EPSF reference model from an ePSF.
 
     Parameters
@@ -67,11 +112,12 @@ def make_epsf_reference(epsf, sca, bandpass, meta=None):
     epsf : EPSFBuildResult
         The epsf to store.
 
-    sca : int
-        The SCA/Detector represented.
+    detector : str
+        The detector represented. Should be of form "WFIXX"
+        where "XX" is zero-padded detector number
 
-    bandpass : str
-        The bandpass represented.
+    optical_element : str
+        The optical_element represented.
 
     meta : dict
         Reference meta values to use. If unspecified, minimal fake values will be used.
@@ -89,8 +135,8 @@ def make_epsf_reference(epsf, sca, bandpass, meta=None):
         "jitter_position_angle": 0.0,
         "instrument": {
             "name": "WFI",
-            "detector": f"WFI{sca:02d}",
-            "optical_element": bandpass.upper(),
+            "detector": detector.upper(),
+            "optical_element": optical_element.upper(),
         },
         "origin": "STSCI",
         "oversample": epsf.epsf.oversampling[0],
