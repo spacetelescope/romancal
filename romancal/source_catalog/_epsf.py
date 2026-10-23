@@ -10,19 +10,19 @@ and flux/position analysis.
 
 `cli` is the command-line interface entrypoint.
 """
+
 import argparse
 import logging
 import warnings
 
 import numpy as np
+import roman_datamodels as rdm
 from astropy.nddata import NDData
 from astropy.stats import sigma_clipped_stats
 from astropy.table import Table
 from astropy.time import Time
 from photutils.psf import EPSFBuilder, EPSFStars, extract_stars
-import roman_datamodels as rdm
 from roman_datamodels.datamodels import EpsfRefModel
-
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -52,7 +52,7 @@ def build_epsf(stars, max_psferr=None, **kwargs_epsfbuilder):
     epsf_result : EPFSBuildResults
         The created ePSF.
     """
-    logger.info('Building ePSF from catalog of %s stars', len(stars))
+    logger.info("Building ePSF from catalog of %s stars", len(stars))
     epsfbuilder_final_kwargs = {
         "oversampling": 4,
         "maxiters": 30,
@@ -61,9 +61,9 @@ def build_epsf(stars, max_psferr=None, **kwargs_epsfbuilder):
     if kwargs_epsfbuilder is None:
         kwargs_epsfbuilder = dict()
     epsfbuilder_final_kwargs.update(kwargs_epsfbuilder)
-    if epsfbuilder_final_kwargs.get('center_accuracy') is None:
+    if epsfbuilder_final_kwargs.get("center_accuracy") is None:
         try:
-            del epsfbuilder_final_kwargs['center_accuracy']
+            del epsfbuilder_final_kwargs["center_accuracy"]
         except KeyError:
             pass
     if max_psferr is not None:
@@ -75,7 +75,7 @@ def build_epsf(stars, max_psferr=None, **kwargs_epsfbuilder):
     epsf_result = epsfbuilder(stars)
 
     # That's all folks.
-    logger.info('Calculated ePSF parameters: %s', epsf_result)
+    logger.info("Calculated ePSF parameters: %s", epsf_result)
     return epsf_result
 
 
@@ -85,81 +85,123 @@ def cli(argv=None):
     Given an Roman L2 ImageModel and associated source catalog, create a ePSF reference file.
     """
     parser = argparse.ArgumentParser(
-        description='Create an ePSF reference file from a Roman L2 image and associated catalog'
+        description="Create an ePSF reference file from a Roman L2 image and associated catalog"
     )
 
     # General arguments
-    parser.add_argument('model', type=str,
-                        help='Path to the Roman L2 calibration image.')
-    parser.add_argument('catalog', type=str,
-                        help='Path to the source catalog associated with the L2 image.')
-    parser.add_argument('output_epsf_reffile', type=str,
-                        help='Path to write the newly created ePSF reference file.')
-    parser.add_argument("-v", "--verbose",
+    parser.add_argument(
+        "model", type=str, help="Path to the Roman L2 calibration image."
+    )
+    parser.add_argument(
+        "catalog",
+        type=str,
+        help="Path to the source catalog associated with the L2 image.",
+    )
+    parser.add_argument(
+        "output_epsf_reffile",
+        type=str,
+        help="Path to write the newly created ePSF reference file.",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
         action="count",
         default=0,
         help="Increase verbosity. Specifying multiple times adds more output.",
     )
 
     # `pick_star` arguments
-    pick_star_parser = parser.add_argument_group('pick_star', 'Star picking options.')
-    pick_star_parser.add_argument('--stamp-size', type=int,
-                                  default=9,
-                                  help='Size of the extracted stars cutouts.')
-    pick_star_parser.add_argument('--allow-nans', action='store_false',
-                                  dest='mask_nans',
-                                  help='Allows stars with NaNs')
-    pick_star_parser.add_argument('--mask-dq', type=int,
-                                  default=(rdm.dqflags.pixel.DO_NOT_USE + rdm.dqflags.pixel.SATURATED),
-                                  help='Pixel data quality flags used to mask questionable pixels from the data. Default: %(default)s')
-    pick_star_parser.add_argument('--min-flux', type=float,
-                                  default=None,
-                                  help="""Minimum flux to consider.
-                                  Flux is determined by the `photoutils.psf.extract_stars` function. Default: %(default)s"""
-                                  )
-    pick_star_parser.add_argument('--min-stdev', type=float,
-                                  default=0.3,
-                                  help="""Minimum standard deviation with a stamp to be valid.
+    pick_star_parser = parser.add_argument_group("pick_star", "Star picking options.")
+    pick_star_parser.add_argument(
+        "--stamp-size", type=int, default=9, help="Size of the extracted stars cutouts."
+    )
+    pick_star_parser.add_argument(
+        "--allow-nans",
+        action="store_false",
+        dest="mask_nans",
+        help="Allows stars with NaNs",
+    )
+    pick_star_parser.add_argument(
+        "--mask-dq",
+        type=int,
+        default=(rdm.dqflags.pixel.DO_NOT_USE + rdm.dqflags.pixel.SATURATED),
+        help="Pixel data quality flags used to mask questionable pixels from the data. Default: %(default)s",
+    )
+    pick_star_parser.add_argument(
+        "--min-flux",
+        type=float,
+        default=None,
+        help="""Minimum flux to consider.
+                                  Flux is determined by the `photoutils.psf.extract_stars` function. Default: %(default)s""",
+    )
+    pick_star_parser.add_argument(
+        "--min-stdev",
+        type=float,
+        default=0.3,
+        help="""Minimum standard deviation with a stamp to be valid.
                                   The stats are calculated using sigma-clipped determination over each object's stamp.
-                                  Default: %(default)s""")
-    pick_star_parser.add_argument('--max-psferr', type=float,
-                                  default=None,
-                                  help="""Maximum  sqrt(x_psf_err**2 + y_psf_err**2) allowed.
+                                  Default: %(default)s""",
+    )
+    pick_star_parser.add_argument(
+        "--max-psferr",
+        type=float,
+        default=None,
+        help="""Maximum  sqrt(x_psf_err**2 + y_psf_err**2) allowed.
                                   If None, sigma-clipped stats to remove anything larger than
                                   two times the deviation of the psf errors for all objects.
-                                  Default: %(default)s""")
-    pick_star_parser.add_argument('--allow-extended', action='store_false',
-                                  dest='mask_extended',
-                                  help="""Allow extended sources.""")
-    pick_star_parser.add_argument('--allow-failed-psffit', action='store_false',
-                                  dest='mask_failed_psffit',
-                                  help="""Removed objects that have a bad PSF fit. Indicated by the x/y_psf_err being 0.""")
+                                  Default: %(default)s""",
+    )
+    pick_star_parser.add_argument(
+        "--allow-extended",
+        action="store_false",
+        dest="mask_extended",
+        help="""Allow extended sources.""",
+    )
+    pick_star_parser.add_argument(
+        "--allow-failed-psffit",
+        action="store_false",
+        dest="mask_failed_psffit",
+        help="""Removed objects that have a bad PSF fit. Indicated by the x/y_psf_err being 0.""",
+    )
 
     # `build_epsf` arguments
-    build_epsf_parser = parser.add_argument_group('build_epsf', 'photutils.EPSFBuilder options.')
-    build_epsf_parser.add_argument('--oversampling', type=int,
-                                   default=4,
-                                   help="""The integer oversampling factor(s) of the output ePSF relative to the input stars.
-                                   Default: %(default)s""")
-    build_epsf_parser.add_argument('--maxiters', type=int, default=30,
-                                   help="""The maximum number of ePSF building iterations to perform.
-                                   Default: %(default)s""")
-    build_epsf_parser.add_argument('--center-accuracy', type=float, default=None,
-                                   help="""The desired accuracy for the centers of stars. If not specified, this will be
+    build_epsf_parser = parser.add_argument_group(
+        "build_epsf", "photutils.EPSFBuilder options."
+    )
+    build_epsf_parser.add_argument(
+        "--oversampling",
+        type=int,
+        default=4,
+        help="""The integer oversampling factor(s) of the output ePSF relative to the input stars.
+                                   Default: %(default)s""",
+    )
+    build_epsf_parser.add_argument(
+        "--maxiters",
+        type=int,
+        default=30,
+        help="""The maximum number of ePSF building iterations to perform.
+                                   Default: %(default)s""",
+    )
+    build_epsf_parser.add_argument(
+        "--center-accuracy",
+        type=float,
+        default=None,
+        help="""The desired accuracy for the centers of stars. If not specified, this will be
                                    based on the value of `max_psferr`
-                                   Default: %(default)s""")
+                                   Default: %(default)s""",
+    )
 
     args = parser.parse_args(argv)
 
     # Separate out the group arguments.
     groups = {}
     for group in parser._action_groups:
-        if group.title in ['positional arguments', 'options']:
+        if group.title in ["positional arguments", "options"]:
             continue
         group_args = {
             action.dest: getattr(args, action.dest)
             for action in group._group_actions
-            if action.dest != 'help'
+            if action.dest != "help"
         }
         groups[group.title] = group_args
 
@@ -172,7 +214,7 @@ def cli(argv=None):
     level = LOGLEVELS[min(len(LOGLEVELS) - 1, args.verbose)]
     logger.setLevel(level)
     if level > logging.DEBUG:
-        warnings.simplefilter('ignore', UserWarning)
+        warnings.simplefilter("ignore", UserWarning)
     else:
         logger_handler.setFormatter(logger_format_debug)
     logger.info("epsf_from_model called with args %s", args)
@@ -180,16 +222,21 @@ def cli(argv=None):
     # Determine ePSF
     with rdm.open(args.model) as model:
         catalog = Table.read(args.catalog)
-        epsf_model = epsf_from_model(model, catalog,
-                                     kwargs_pick_stars=groups['pick_star'],
-                                     kwargs_build_epsf=groups['build_epsf'])
+        epsf_model = epsf_from_model(
+            model,
+            catalog,
+            kwargs_pick_stars=groups["pick_star"],
+            kwargs_build_epsf=groups["build_epsf"],
+        )
 
     # That's all folks.
-    logger.info('Saving ePSF to %s', args.output_epsf_reffile)
+    logger.info("Saving ePSF to %s", args.output_epsf_reffile)
     epsf_model.save(args.output_epsf_reffile)
 
 
-def epsf_from_model(model, catalog, kwargs_pick_stars=None, kwargs_build_epsf=None, meta=None):
+def epsf_from_model(
+    model, catalog, kwargs_pick_stars=None, kwargs_build_epsf=None, meta=None
+):
     """Given a Roman L2 ImageModel and associated source catalog, construct the ePSF.
 
     Parameters
@@ -257,7 +304,7 @@ def make_epsf_reference(epsf, detector, optical_element, meta=None):
     epsf_model : EpsfRefModel
         The EPSF Reference model.
     """
-    logger.info('Creating ePSF reference.')
+    logger.info("Creating ePSF reference.")
     default_meta = {
         "author": "make_epsf_reference",
         "description": str(epsf),
@@ -352,7 +399,7 @@ def pick_stars(
     max_psferr : float
         Two * deviation of the individual stars' psf error estimates, determined using sigma-clipped statistics.
     """
-    logger.info('Picking stars from catalog of %s objects.', len(catalog))
+    logger.info("Picking stars from catalog of %s objects.", len(catalog))
 
     # Massage the data
     mean_val, median_val, std_val = sigma_clipped_stats(model.data, sigma=2.0)
@@ -446,5 +493,7 @@ def pick_stars(
     )
 
     # That's all folks
-    logger.info('Found %s valid stars with maximum PSF error of %s', len(stars), max_psferr)
+    logger.info(
+        "Found %s valid stars with maximum PSF error of %s", len(stars), max_psferr
+    )
     return stars, max_psferr
