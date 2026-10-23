@@ -75,4 +75,3 @@ The ``skymatch`` step uses the following optional arguments:
   directory. The table should include ``filename`` and either ``level``
   (value to subtract) or ``epsilon`` (additive skyval offset; stored level
   is ``-epsilon``).
-
