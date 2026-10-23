@@ -1,7 +1,12 @@
 """Effective Point Spread Function utilities.
 
 Utilities to create ePSF models to be used where PSFs are needed in source detection
-and flux/position analysis
+and flux/position analysis.
+
+General order of operations is
+- pick_stars
+- build_epsf
+- make_epsf_reference
 """
 from astropy.nddata import NDData
 from astropy.stats import sigma_clipped_stats
@@ -20,7 +25,7 @@ def build_epsf(stars, max_psferr=None, **kwargs_epsfbuilder):
     Parameters
     ----------
     stars : EPSFStars
-        The stars to base the ePSF on
+        The stars to base the ePSF on.
 
     kwargs_epsfbuilder : dict
         Arguments to pass to EPSFBuilder. If the following arguments
@@ -128,21 +133,22 @@ def pick_stars(model, catalog, stamp_size=9, mask_nans=True,
         Size of the cutouts
 
     mask_dq : int or None
-        Pixel flags to count as bad
+        Pixel data quality flags used to mask questionable pixels from the data.
 
     min_flux : float or None
-        Minimum flux.
+        Minimum flux to consider. Flux is determined by the `photoutils.psf.extract_stars` function.
 
     min_stdev : float or None
         Minimum standard deviation with a stamp to be valid.
+        The stats are calculated using sigma-clipped determination over each object's stamp.
 
     max_psferr : float or None
         Maximum  sqrt(x_psf_err**2 + y_psf_err**2) allowed.
-        If None, sigma-clipped stats to remove anything larger that
-        two times the deviation.
+        If None, sigma-clipped stats to remove anything larger than
+        two times the deviation of the psf errors for all objects.
 
     mask_extended : bool
-        Remove extended sources
+        Remove extended sources.
 
     mask_failed_psffit : bool
         Removed objects that have a bad PSF fit. Indicated by the x/y_psf_err being 0.
@@ -150,7 +156,10 @@ def pick_stars(model, catalog, stamp_size=9, mask_nans=True,
     Returns
     -------
     stars : EPSFStars
-        The stars
+        The stars to use for ePSF determination.
+
+    max_psferr : float
+        Two * deviation of the individual stars' psf error estimates, determined using sigma-clipped statistics.
     """
     # Massage the data
     mean_val, median_val, std_val = sigma_clipped_stats(model.data, sigma=2.0)
