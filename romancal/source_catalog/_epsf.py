@@ -86,8 +86,8 @@ def make_epsf_reference(epsf, sca, bandpass, meta=None):
         'origin': 'STSCI',
         'oversample': epsf.epsf.oversampling[0],
         'pedigree': f'INFLIGHT {Time.now()}',
-        'pixel_x': 2047.5,
-        'pixel_y': 2047.5,
+        'pixel_x': [2047.5],
+        'pixel_y': [2047.5],
         'telescope': 'ROMAN',
         'useafter': Time('2026-09-30', format='isot'),
     }

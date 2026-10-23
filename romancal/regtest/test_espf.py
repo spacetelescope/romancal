@@ -6,7 +6,7 @@ from astropy.table import Table
 import numpy as np
 import roman_datamodels as rdm
 
-from romancal.source_catalog import _epsf as epsf
+from romancal.source_catalog import _epsf
 
 
 @pytest.mark.parametrize('attr_test',
@@ -21,6 +21,15 @@ def test_build_epsf_attributes(build_epsf, attr_test):
 
     inputs = {'result': result}
     assert attr_test(inputs, expected)
+
+
+def test_make_epsf_reference(build_epsf):
+    """Validate the epsf reference creation."""
+    result, _ = build_epsf
+
+    model = _epsf.make_epsf_reference(result, 1, 'f158')
+
+    model.validate()
 
 
 @pytest.mark.parametrize('attr_test',
@@ -51,7 +60,7 @@ def build_epsf(pick_stars, request):
     stars, max_psferr, _ = pick_stars
     kwargs, expected = request.param
 
-    result = epsf.build_epsf(stars, max_psferr=max_psferr, **kwargs)
+    result = _epsf.build_epsf(stars, max_psferr=max_psferr, **kwargs)
 
     return result, expected
 
@@ -88,6 +97,6 @@ def pick_stars(l2_model, request):
     model, catalog = l2_model
     pick_stars_args, expected = request.param
 
-    stars, max_psferr = epsf.pick_stars(model, catalog, **pick_stars_args)
+    stars, max_psferr = _epsf.pick_stars(model, catalog, **pick_stars_args)
 
     return stars, max_psferr, expected
