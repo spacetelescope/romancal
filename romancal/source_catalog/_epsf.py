@@ -3,11 +3,16 @@
 Utilities to create ePSF models to be used where PSFs are needed in source detection
 and flux/position analysis.
 
-General order of operations is
+`epsf_from_model` encapsulates the general order of operations which is:
 - pick_stars
 - build_epsf
 - make_epsf_reference
+
+`cli` is the command-line interface entrypoint.
 """
+import argparse
+import logging
+import warnings
 
 import numpy as np
 from astropy.nddata import NDData
@@ -15,8 +20,15 @@ from astropy.stats import sigma_clipped_stats
 from astropy.table import Table
 from astropy.time import Time
 from photutils.psf import EPSFBuilder, EPSFStars, extract_stars
-from roman_datamodels import dqflags
+import roman_datamodels as rdm
 from roman_datamodels.datamodels import EpsfRefModel
+
+
+# Setup logging
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
+DEBUG_FULL = logging.DEBUG - 1
+LOGLEVELS = [logging.INFO, logging.DEBUG, DEBUG_FULL]
 
 
 def build_epsf(stars, max_psferr=None, **kwargs_epsfbuilder):
@@ -40,6 +52,7 @@ def build_epsf(stars, max_psferr=None, **kwargs_epsfbuilder):
     epsf_result : EPFSBuildResults
         The created ePSF.
     """
+    logger.info('Building ePSF from catalog of %s stars', len(stars))
     epsfbuilder_final_kwargs = {
         "oversampling": 4,
         "maxiters": 30,
@@ -56,7 +69,55 @@ def build_epsf(stars, max_psferr=None, **kwargs_epsfbuilder):
     epsfbuilder = EPSFBuilder(**epsfbuilder_final_kwargs)
     epsf_result = epsfbuilder(stars)
 
+    # That's all folks.
+    logger.info('Calculated ePSF parameters: %s', epsf_result)
     return epsf_result
+
+
+def cli(argv=None):
+    """Command-line interface entry point.
+
+    Given an Roman L2 ImageModel and associated source catalog, create a ePSF reference file.
+    """
+    parser = argparse.ArgumentParser(
+        description='Create an ePSF reference file from a Roman L2 image and associated catalog'
+    )
+
+    parser.add_argument('model', type=str,
+                        help='Path to the Roman L2 calibration image.')
+    parser.add_argument('catalog', type=str,
+                        help='Path to the source catalog associated with the L2 image.')
+    parser.add_argument('output_epsf_reffile', type=str,
+                        help='Path to write the newly created ePSF reference file.')
+    parser.add_argument("-v", "--verbose",
+        action="count",
+        default=0,
+        help="Increase verbosity. Specifying multiple times adds more output.",
+    )
+    args = parser.parse_args(argv)
+
+    # Configure logging
+    logger_handler = logging.StreamHandler()
+    logger.addHandler(logger_handler)
+    logger_format_debug = logging.Formatter(
+        "%(levelname)s:%(filename)s::%(funcName)s: %(message)s"
+    )
+    level = LOGLEVELS[min(len(LOGLEVELS) - 1, args.verbose)]
+    logger.setLevel(level)
+    if level > logging.DEBUG:
+        warnings.simplefilter('ignore', UserWarning)
+    else:
+        logger_handler.setFormatter(logger_format_debug)
+    logger.info("epsf_from_model called with args %s", args)
+
+    # Determine ePSF
+    with rdm.open(args.model) as model:
+        catalog = Table.read(args.catalog)
+        epsf_model = epsf_from_model(model, catalog)
+
+    # That's all folks.
+    logger.info('Saving ePSF to %s', args.output_epsf_reffile)
+    epsf_model.save(args.output_epsf_reffile)
 
 
 def epsf_from_model(model, catalog, kwargs_pick_stars=None, kwargs_build_epsf=None, meta=None):
@@ -127,6 +188,7 @@ def make_epsf_reference(epsf, detector, optical_element, meta=None):
     epsf_model : EpsfRefModel
         The EPSF Reference model.
     """
+    logger.info('Creating ePSF reference.')
     default_meta = {
         "author": "make_epsf_reference",
         "description": str(epsf),
@@ -169,7 +231,7 @@ def pick_stars(
     catalog,
     stamp_size=9,
     mask_nans=True,
-    mask_dq=(dqflags.pixel.DO_NOT_USE + dqflags.pixel.SATURATED),
+    mask_dq=(rdm.dqflags.pixel.DO_NOT_USE + rdm.dqflags.pixel.SATURATED),
     min_flux=500.0,
     min_stdev=None,
     max_psferr=None,
@@ -218,6 +280,8 @@ def pick_stars(
     max_psferr : float
         Two * deviation of the individual stars' psf error estimates, determined using sigma-clipped statistics.
     """
+    logger.info('Picking stars from catalog of %s objects.', len(catalog))
+
     # Massage the data
     mean_val, median_val, std_val = sigma_clipped_stats(model.data, sigma=2.0)
     data = model.data - median_val
@@ -310,4 +374,5 @@ def pick_stars(
     )
 
     # That's all folks
+    logger.info('Found %s valid stars with maximum PSF error of %s', len(stars), max_psferr)
     return stars, max_psferr
