@@ -24,6 +24,21 @@ def test_build_epsf_attributes(build_epsf, attr_test):
     assert attr_test(inputs, expected)
 
 
+@pytest.mark.parametrize(
+    "attr_test",
+    [
+        lambda inputs, expected: inputs["model"].validate() is None,
+    ],
+    ids=["validation"],
+)
+def test_epsf_from_model_attributes(epsf_from_model, attr_test):
+    """Test building an ePSF from a model."""
+    result, expected = epsf_from_model
+
+    inputs = {'model': result}
+    assert attr_test(inputs, expected)
+
+
 def test_make_epsf_reference(build_epsf):
     """Validate the epsf reference creation."""
     result, _ = build_epsf
@@ -66,6 +81,22 @@ def build_epsf(pick_stars, request):
     kwargs, expected = request.param
 
     result = _epsf.build_epsf(stars, max_psferr=max_psferr, **kwargs)
+
+    return result, expected
+
+
+@pytest.fixture(
+    params= [
+        ({}, {}),  # use all defaults
+    ],
+    ids=["default kwargs"]
+)
+def epsf_from_model(l2_model, request):
+    """Create an ePSF reference from an L2 model"""
+    l2_model, l2_cat = l2_model
+    kwargs, expected = request.param
+
+    result = _epsf.epsf_from_model(l2_model, l2_cat, **kwargs)
 
     return result, expected
 
