@@ -1,25 +1,26 @@
 """Unit tests for the epsf module"""
 
-import pytest
-
-from astropy.table import Table
 import numpy as np
+import pytest
 import roman_datamodels as rdm
+from astropy.table import Table
 
 from romancal.source_catalog import _epsf
 
 
-@pytest.mark.parametrize('attr_test',
-                         [
-                             lambda inputs, expected: inputs['result'].converged,
-                             lambda inputs, expected: len(inputs['result'].excluded_star_indices) == 0,
-                         ],
-                         ids=['converted', 'excluded stars'])
+@pytest.mark.parametrize(
+    "attr_test",
+    [
+        lambda inputs, expected: inputs["result"].converged,
+        lambda inputs, expected: len(inputs["result"].excluded_star_indices) == 0,
+    ],
+    ids=["converted", "excluded stars"],
+)
 def test_build_epsf_attributes(build_epsf, attr_test):
     """Test various attributes of the results from pick_stars"""
     result, expected = build_epsf
 
-    inputs = {'result': result}
+    inputs = {"result": result}
     assert attr_test(inputs, expected)
 
 
@@ -27,22 +28,26 @@ def test_make_epsf_reference(build_epsf):
     """Validate the epsf reference creation."""
     result, _ = build_epsf
 
-    model = _epsf.make_epsf_reference(result, 1, 'f158')
+    model = _epsf.make_epsf_reference(result, 1, "f158")
 
     model.validate()
 
 
-@pytest.mark.parametrize('attr_test',
-                         [
-                             lambda inputs, expected: len(inputs['stars']) == expected['len'],
-                             lambda inputs, expected: np.isclose(inputs['max_psferr'], expected['max_psferr'])
-                         ],
-                         ids=['n_stars', 'max_psferr'])
+@pytest.mark.parametrize(
+    "attr_test",
+    [
+        lambda inputs, expected: len(inputs["stars"]) == expected["len"],
+        lambda inputs, expected: np.isclose(
+            inputs["max_psferr"], expected["max_psferr"]
+        ),
+    ],
+    ids=["n_stars", "max_psferr"],
+)
 def test_pick_stars_attributes(pick_stars, attr_test):
     """Test various attributes of the results from pick_stars"""
     stars, max_psferr, expected = pick_stars
 
-    inputs = {'stars': stars, 'max_psferr': max_psferr}
+    inputs = {"stars": stars, "max_psferr": max_psferr}
     assert attr_test(inputs, expected)
 
 
@@ -53,7 +58,7 @@ def test_pick_stars_attributes(pick_stars, attr_test):
     params=[
         ({}, {}),  # use all defaults
     ],
-    ids=['default kwargs']
+    ids=["default kwargs"],
 )
 def build_epsf(pick_stars, request):
     """Build the ePSF using various inputs."""
@@ -65,7 +70,7 @@ def build_epsf(pick_stars, request):
     return result, expected
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def l2_model(rtdata_module):
     """Retrieve an L2 model
 
@@ -77,7 +82,7 @@ def l2_model(rtdata_module):
     rtdata = rtdata_module
 
     model_fname = "r0000101001001001001_0001_wfi01_f158_cal.asdf"
-    cat_fname = 'r0000101001001001001_0001_wfi01_f158_cat.parquet'
+    cat_fname = "r0000101001001001001_0001_wfi01_f158_cat.parquet"
     rtdata.get_data(f"WFI/image/{model_fname}")
     rtdata.get_data(f"WFI/image/{cat_fname}")
 
@@ -88,9 +93,9 @@ def l2_model(rtdata_module):
 
 @pytest.fixture(
     params=[
-        ({}, {'len': 21, 'max_psferr': 0.052558005}),  # use all defaults
+        ({}, {"len": 21, "max_psferr": 0.052558005}),  # use all defaults
     ],
-    ids=['default kwargs']
+    ids=["default kwargs"],
 )
 def pick_stars(l2_model, request):
     """Generate list of stars based on various inputs."""
