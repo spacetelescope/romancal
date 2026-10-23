@@ -1,0 +1,4 @@
+Add HEALPix sky-offset solver and parquet offset tables for ``SkyMatchStep``.
+Supports ``offset_file`` and ASN product field ``skymatch_offsets_file`` so
+L3 coadds can use precomputed pairwise offsets from L2 skyvals without
+calling an external skymatch package.

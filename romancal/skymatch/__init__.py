@@ -1,6 +1,6 @@
 """
 This package provides support for sky background subtraction and equalization
-(matching).
+(matching), including a HEALPix-based multi-exposure offset solver.
 """
 
 import logging
