@@ -34,8 +34,9 @@ def test_build_epsf_attributes(build_epsf, attr_test):
 def test_epsf_from_model_attributes(epsf_from_model, attr_test):
     """Test building an ePSF from a model."""
     result, expected = epsf_from_model
+    model, epsf, stars = result
 
-    inputs = {"model": result}
+    inputs = {"model": model}
     assert attr_test(inputs, expected)
 
 
