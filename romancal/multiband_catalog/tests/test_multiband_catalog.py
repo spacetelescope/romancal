@@ -99,7 +99,6 @@ def library_model_all_nan():
     return ModelLibrary([model1, model2])
 
 
-
 @pytest.fixture
 def library_model_f062_f129_f213():
     """
@@ -206,9 +205,7 @@ def check_psf_matched_catalog(cat, all_filters, ref_filter):
         assert len(value) == n_aper
 
 
-def shared_tests(
-    result, cat, library_model, save_results, function_jail, shape=SHAPE
-):
+def shared_tests(result, cat, library_model, save_results, function_jail, shape=SHAPE):
     with library_model:
         input_model = library_model.borrow(0)
         assert result.meta.data_release_id == input_model.meta.data_release_id
@@ -766,8 +763,6 @@ def test_match_recovered_sources():
     assert "empty" not in rec_table.colnames
 
 
-
-
 @pytest.mark.parametrize("fit_psf", (True, False))
 @pytest.mark.parametrize(
     "psf_match_reference_filter",
@@ -808,7 +803,6 @@ def test_multiband_catalog_reference_filter(
     cat = result.source_catalog
     assert isinstance(cat, Table)
     assert len(cat) == 112
-
 
     # None means reddest (F184) is auto-selected
     ref = (psf_match_reference_filter or "F184").lower()
