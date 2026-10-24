@@ -81,7 +81,7 @@ class SourceCatalogStep(RomanStep):
 
     class_alias = "source_catalog"
 
-    reference_file_types: ClassVar = ["apcorr"]
+    reference_file_types: ClassVar = ["apcorr", "epsf"]
 
     spec = """
         bkg_boxsize = integer(default=1000)   # background mesh box size in pixels
