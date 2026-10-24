@@ -13,6 +13,8 @@ and flux/position analysis.
 
 import argparse
 import logging
+import math
+import random
 import warnings
 
 import numpy as np
@@ -21,6 +23,8 @@ from astropy.nddata import NDData
 from astropy.stats import sigma_clipped_stats
 from astropy.table import Table
 from astropy.time import Time
+from astropy.visualization import simple_norm
+import matplotlib.pyplot as plt
 from photutils.psf import EPSFBuilder, EPSFStars, extract_stars
 from roman_datamodels.datamodels import EpsfRefModel
 
@@ -101,6 +105,14 @@ def cli(argv=None):
         "output_epsf_reffile",
         type=str,
         help="Path to write the newly created ePSF reference file.",
+    )
+    parser.add_argument(
+        '--plot-epsf', action="store_true",
+        help='Plot the ePSF.'
+    )
+    parser.add_argument(
+        '--plot-stamps', type=int, default=None,
+        help='Plot the specified number of randomly selected stamps.'
     )
     parser.add_argument(
         "-v",
@@ -222,12 +234,18 @@ def cli(argv=None):
     # Determine ePSF
     with rdm.open(args.model) as model:
         catalog = Table.read(args.catalog)
-        epsf_model = epsf_from_model(
+        epsf_model, epsf, stars = epsf_from_model(
             model,
             catalog,
             kwargs_pick_stars=groups["pick_star"],
             kwargs_build_epsf=groups["build_epsf"],
         )
+
+    if args.plot_epsf:
+        plot_epsfstar(epsf.epsf.data, finalize=True)
+    if args.plot_stamps:
+        to_plot = random.choices(stars, k=args.plot_stamps)
+        plot_epsfstars(to_plot)
 
     # That's all folks.
     logger.info("Saving ePSF to %s", args.output_epsf_reffile)
@@ -258,8 +276,8 @@ def epsf_from_model(
 
     Returns
     -------
-    epsf_model : EpsfRefModel
-        The EPSF Reference model.
+    epsf_model, epsf, stars : EpsfRefModel, ImagePSF, EPSFStars
+        The EPSF reference model, the ePSF, and the stars used.
     """
     # Retrieve some basic info from the input model.
     detector = model.meta.instrument.detector
@@ -278,7 +296,7 @@ def epsf_from_model(
     epsf_model = make_epsf_reference(epsf, detector, optical_element, meta=meta)
 
     # That's all folks
-    return epsf_model
+    return epsf_model, epsf, stars
 
 
 def make_epsf_reference(epsf, detector, optical_element, meta=None):
@@ -497,3 +515,65 @@ def pick_stars(
         "Found %s valid stars with maximum PSF error of %s", len(stars), max_psferr
     )
     return stars, max_psferr
+
+
+def plot_epsfstar(star, ax=plt, title=None, finalize=False, **kwargs_simple_norm):
+    """Plot EPSFStar.
+
+    Parameters
+    ----------
+    star : EPSFStar or other array-like object
+        The 2D data to plot
+
+    ax : matplotlib.Axes
+        The axis to plot on.
+
+    finalize : bool
+        Close out the plot.
+
+    kwargs_simple_norm : dict
+        Arguments for the `astropy.visualization.simple_norm` function. If None, the "log" stretch with "percent=99.0" is used.
+    """
+    if not len(kwargs_simple_norm):
+        kwargs_simple_norm = {'stretch': 'log', 'percent': 99.0}
+    norm = simple_norm(star, **kwargs_simple_norm)
+    if title is not None:
+        ax.set_title(title)
+    ax.imshow(star, norm=norm, origin='lower', cmap='viridis')
+    if finalize:
+        ax.show()
+
+
+def plot_epsfstars(stars, ncols=5, title_func=None, **kwargs_simple_norm):
+    """Plot EPSFStars
+
+    Parameters
+    ----------
+    stars : EPSFStars
+        stars to plot
+
+    ncols : int
+        Number of columns
+
+    title_func : func
+        Function to generate a string to use as the title for each star.
+        Expect arguments `(axis, idx, star)`.
+
+    kwargs_simple_norm : dict
+        Arguments for the `simple_norm` function. If None, the "log" stretch with "percent=99.0" is used.
+    """
+    if title_func is None:
+        title_func = lambda axis, idx, star: f'Star {idx}'
+
+    nstars = len(stars)
+    nrows = math.ceil(len(stars) / ncols)
+    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(20, 4 * nstars),
+                           squeeze=True, layout='compressed',
+                          )
+    if ncols > 1:
+        ax = ax.ravel()
+
+    for idx, (axis, star) in enumerate(zip(ax, stars)):
+        plot_epsfstar(star, ax=axis, title=title_func(axis, idx, star), **kwargs_simple_norm)
+
+    plt.show()
