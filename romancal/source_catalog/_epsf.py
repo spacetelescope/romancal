@@ -17,6 +17,7 @@ import math
 import random
 import warnings
 
+import matplotlib.pyplot as plt
 import numpy as np
 import roman_datamodels as rdm
 from astropy.nddata import NDData
@@ -24,7 +25,6 @@ from astropy.stats import sigma_clipped_stats
 from astropy.table import Table
 from astropy.time import Time
 from astropy.visualization import simple_norm
-import matplotlib.pyplot as plt
 from photutils.psf import EPSFBuilder, EPSFStars, extract_stars
 from roman_datamodels.datamodels import EpsfRefModel
 
@@ -106,13 +106,12 @@ def cli(argv=None):
         type=str,
         help="Path to write the newly created ePSF reference file.",
     )
+    parser.add_argument("--plot-epsf", action="store_true", help="Plot the ePSF.")
     parser.add_argument(
-        '--plot-epsf', action="store_true",
-        help='Plot the ePSF.'
-    )
-    parser.add_argument(
-        '--plot-stamps', type=int, default=None,
-        help='Plot the specified number of randomly selected stamps.'
+        "--plot-stamps",
+        type=int,
+        default=None,
+        help="Plot the specified number of randomly selected stamps.",
     )
     parser.add_argument(
         "-v",
@@ -535,11 +534,11 @@ def plot_epsfstar(star, ax=plt, title=None, finalize=False, **kwargs_simple_norm
         Arguments for the `astropy.visualization.simple_norm` function. If None, the "log" stretch with "percent=99.0" is used.
     """
     if not len(kwargs_simple_norm):
-        kwargs_simple_norm = {'stretch': 'log', 'percent': 99.0}
+        kwargs_simple_norm = {"stretch": "log", "percent": 99.0}
     norm = simple_norm(star, **kwargs_simple_norm)
     if title is not None:
         ax.set_title(title)
-    ax.imshow(star, norm=norm, origin='lower', cmap='viridis')
+    ax.imshow(star, norm=norm, origin="lower", cmap="viridis")
     if finalize:
         ax.show()
 
@@ -563,17 +562,23 @@ def plot_epsfstars(stars, ncols=5, title_func=None, **kwargs_simple_norm):
         Arguments for the `simple_norm` function. If None, the "log" stretch with "percent=99.0" is used.
     """
     if title_func is None:
-        title_func = lambda axis, idx, star: f'Star {idx}'
+        title_func = lambda axis, idx, star: f"Star {idx}"
 
     nstars = len(stars)
     nrows = math.ceil(len(stars) / ncols)
-    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(20, 4 * nstars),
-                           squeeze=True, layout='compressed',
-                          )
+    fig, ax = plt.subplots(
+        nrows=nrows,
+        ncols=ncols,
+        figsize=(20, 4 * nstars),
+        squeeze=True,
+        layout="compressed",
+    )
     if ncols > 1:
         ax = ax.ravel()
 
     for idx, (axis, star) in enumerate(zip(ax, stars)):
-        plot_epsfstar(star, ax=axis, title=title_func(axis, idx, star), **kwargs_simple_norm)
+        plot_epsfstar(
+            star, ax=axis, title=title_func(axis, idx, star), **kwargs_simple_norm
+        )
 
     plt.show()
