@@ -74,6 +74,7 @@ sdp = [
     "stpreview>=0.6.0",
     "roman-photoz>=0.1.1",
     "crds[aws]>=13.2.7,<15",  # this version range should always match the requirement above
+    "awscli>=1.46",
 ]
 
 [project.urls]
