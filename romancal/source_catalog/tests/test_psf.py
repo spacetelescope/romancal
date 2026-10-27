@@ -19,6 +19,7 @@ from photutils.datasets import make_model_image
 from photutils.psf import GriddedPSFModel, ImagePSF
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 
+from romancal.source_catalog._wcs_utils import pixel_area_from_wcs
 from romancal.source_catalog.psf import (
     _azimuthally_average_via_fft,
     _central_stamp,
@@ -150,6 +151,20 @@ def test_psf_fit(setup_inputs, dx, dy, true_flux):
 
     assert np.all(catalog.x_psf_err.value < scale_factor_approx * approx_centroid_err)
     assert np.all(catalog.y_psf_err.value < scale_factor_approx * approx_centroid_err)
+
+    # the sky errors are the pixel errors scaled by the pixel scale of
+    # this undistorted, square-pixel WCS
+    pixel_scale = np.sqrt(
+        pixel_area_from_wcs(
+            image_model.meta.wcs, catalog.x_psf.value, catalog.y_psf.value
+        )
+    )
+    assert u.allclose(
+        catalog.ra_psf_err, catalog.x_psf_err.value * pixel_scale, rtol=1e-3
+    )
+    assert u.allclose(
+        catalog.dec_psf_err, catalog.y_psf_err.value * pixel_scale, rtol=1e-3
+    )
 
 
 # new routines: render_stamp, _get_jitter_params, _evaluate_gaussian_fft, add_jitter

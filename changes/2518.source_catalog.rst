@@ -1,0 +1,1 @@
+Drop the romanisim ``source_id`` column from the source injection catalog.
