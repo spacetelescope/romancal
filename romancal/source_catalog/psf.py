@@ -611,15 +611,32 @@ class _PSFCatalog:
         A 2D boolean mask image with the same shape as the input data.
         This mask is used for PSF photometry. The mask should be the
         same one used to create the segmentation image.
+
+    fixed_positions : bool, optional
+        If `True`, hold the PSF positions fixed at ``xypos`` and fit
+        only the fluxes. The fitted positions are then not reported.
+
+    prefix : str, optional
+        Prefix added to the output column names.
     """
 
     def __init__(
-        self, model, psf_ref_model, xypos, mask=None, *, requested_properties=None
+        self,
+        model,
+        psf_ref_model,
+        xypos,
+        mask=None,
+        *,
+        requested_properties=None,
+        fixed_positions=False,
+        prefix="",
     ):
         self.model = model
         self.psf_ref_model = psf_ref_model
         self.xypos = xypos
         self.mask = mask
+        self.fixed_positions = fixed_positions
+        self.prefix = prefix
 
         if requested_properties is None:
             self.properties = list(self.available_properties)
@@ -637,13 +654,10 @@ class _PSFCatalog:
         The full set of source-property column names this catalog can
         produce.
         """
-        return (
-            *self._name_map.values(),
-            "ra_psf",
-            "dec_psf",
-            "ra_psf_err",
-            "dec_psf_err",
-        )
+        names = list(self._name_map.values())
+        if not self.fixed_positions:
+            names.extend(["ra_psf", "dec_psf", "ra_psf_err", "dec_psf_err"])
+        return tuple(f"{self.prefix}{name}" for name in names)
 
     @lazyproperty
     def psf_model(self):
@@ -663,6 +677,10 @@ class _PSFCatalog:
                 pixfrac=self.model.meta.resample.pixfrac,
             )
 
+        if self.fixed_positions:
+            psf_model.x_0.fixed = True
+            psf_model.y_0.fixed = True
+
         return psf_model
 
     @lazyproperty
@@ -671,10 +689,11 @@ class _PSFCatalog:
         Mapping of photutils column names to the output catalog names.
         """
         name_map = {}
-        name_map["x_fit"] = "x_psf"
-        name_map["x_err"] = "x_psf_err"
-        name_map["y_fit"] = "y_psf"
-        name_map["y_err"] = "y_psf_err"
+        if not self.fixed_positions:
+            name_map["x_fit"] = "x_psf"
+            name_map["x_err"] = "x_psf_err"
+            name_map["y_fit"] = "y_psf"
+            name_map["y_err"] = "y_psf_err"
         name_map["flux_fit"] = "psf_flux"
         name_map["flux_err"] = "psf_flux_err"
         name_map["reduced_chi2"] = "psf_gof"
@@ -736,7 +755,7 @@ class _PSFCatalog:
             if new_name in ("x_psf", "y_psf", "x_psf_err", "y_psf_err"):
                 value *= u.pix
 
-            setattr(self, new_name, value)
+            setattr(self, f"{self.prefix}{new_name}", value)
 
     @lazyproperty
     def _sky_psf(self):

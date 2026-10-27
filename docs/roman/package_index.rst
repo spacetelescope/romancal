@@ -22,6 +22,7 @@
    skymatch/index.rst
    source_catalog/index.rst
    stpipe/index.rst
+   time_domain_catalog/index.rst
    tweakreg/index.rst
    set_velocity_aberration.rst
    wfi18_transient/index.rst

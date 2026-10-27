@@ -19,6 +19,7 @@ from .resample.resample_step import ResampleStep
 from .saturation.saturation_step import SaturationStep
 from .skymatch.skymatch_step import SkyMatchStep
 from .source_catalog.source_catalog_step import SourceCatalogStep
+from .time_domain_catalog.time_domain_catalog_step import TimeDomainCatalogStep
 from .tweakreg.tweakreg_step import TweakRegStep
 from .wfi18_transient.wfi18_transient_step import WFI18TransientStep
 
@@ -39,6 +40,7 @@ __all__ = [
     "SaturationStep",
     "SkyMatchStep",
     "SourceCatalogStep",
+    "TimeDomainCatalogStep",
     "TweakRegStep",
     "WFI18TransientStep",
 ]

@@ -53,14 +53,15 @@ class ApertureCatalog:
         radii and to convert the annulus background back to a surface
         brightness.
 
-    segment_img : `~photutils.segmentation.SegmentationImage`
+    segment_img : `~photutils.segmentation.SegmentationImage` or `None`
         A 2D segmentation image, with the same shape as ``model.data``,
         where sources are labeled by different positive integer values
-        and zero is reserved for the background.
+        and zero is reserved for the background. If `None`, no pixels
+        are masked from the apertures or the background annulus.
 
-    labels : 1D `~numpy.ndarray`
+    labels : 1D `~numpy.ndarray` or `None`
         The segmentation label of each source, in the same order as
-        ``xypos_finite``.
+        ``xypos_finite``. Ignored if ``segment_img`` is `None`.
 
     ee_spline : callable, optional
         Encircled-energy spline mapping aperture radius (pixels) to
@@ -122,7 +123,7 @@ class ApertureCatalog:
         self.xypos_finite = xypos_finite
         self.pixel_area_map = pixel_area_map
         self.segment_img = segment_img
-        self.labels = np.asarray(labels)
+        self.labels = None if segment_img is None else np.asarray(labels)
         self.ee_spline = ee_spline
 
         self.fractions = []
@@ -134,6 +135,13 @@ class ApertureCatalog:
         # dynamically-generated aperture flux column names, which are
         # derived from `aperture_radii` (a lazyproperty).
         self.calc_aperture_photometry()
+
+    def _mask_method(self, method):
+        """
+        The photutils mask method, or "none" without a segmentation
+        image.
+        """
+        return method if self.segment_img is not None else "none"
 
     @lazyproperty
     def available_properties(self):
@@ -294,7 +302,7 @@ class ApertureCatalog:
                 annulus,
                 sigma_clip=sigclip,
                 segmentation_image=self.segment_img,
-                mask_method=self.ANNULUS_MASK_METHOD,
+                mask_method=self._mask_method(self.ANNULUS_MASK_METHOD),
             )
             bkg_median[idx] = stats.median
             bkg_median_err[idx] = stats.median_err
@@ -420,8 +428,8 @@ class ApertureCatalog:
                 apertures,
                 error=self.model.err,
                 segmentation_image=self.segment_img,
-                labels=self.labels[idx],
-                mask_method=self.APERTURE_MASK_METHOD,
+                labels=None if self.labels is None else self.labels[idx],
+                mask_method=self._mask_method(self.APERTURE_MASK_METHOD),
             )
             for i in range(n_radii):
                 values = phot.flux[:, i]
