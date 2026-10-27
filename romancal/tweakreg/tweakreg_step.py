@@ -119,6 +119,16 @@ class TweakRegStep(RomanStep):
                     )
                     image_model.meta.cal_step.tweakreg = "SKIPPED"
                 else:
+                    # set_telescope_pointing sets vparity = -1 from the SIAF
+                    # for all WFI apertures; +1 means it never ran or failed.
+                    if image_model.meta.wcsinfo.vparity == 1:
+                        images.shelve(image_model, i, modify=False)
+                        raise ValueError(
+                            f"meta.wcsinfo for {image_model.meta.filename} has "
+                            "placeholder values (vparity=+1); the pointing was "
+                            "likely never set by set_telescope_pointing. "
+                            "Cannot align this image."
+                        )
                     try:
                         catalog = self.get_tweakreg_catalog(source_catalog, image_model)
                     except AttributeError as e:
