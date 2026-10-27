@@ -280,6 +280,7 @@ def test_multiband_catalog(
         fit_psf=fit_psf,
         save_results=save_results,
         deblend=True,
+        inject_sources=False,
     )
 
     cat = result.source_catalog
@@ -305,6 +306,7 @@ def test_multiband_catalog_populates_dust_ebv(library_model, function_jail):
         fit_psf=False,
         save_results=False,
         deblend=True,
+        inject_sources=False,
     )
     cat = result.source_catalog
     assert "dust_ebv" in cat.colnames
@@ -324,6 +326,7 @@ def test_forced_photometry_with_multiband_segmentation(library_model, function_j
         fit_psf=False,
         save_results=True,
         deblend=True,
+        inject_sources=False,
     )
     assert hasattr(segm, "detection_image")
     segm_path = Path(function_jail / f"{segm.meta.filename}_segm.asdf")
@@ -389,6 +392,7 @@ def test_multiband_catalog_no_detections(library_model, save_results, function_j
         npixels=10,
         fit_psf=False,
         save_results=save_results,
+        inject_sources=False,
     )
 
     cat = result.source_catalog
@@ -418,7 +422,7 @@ def test_multiband_catalog_invalid_inputs(
         snr_threshold=3,
         npixels=10,
         fit_psf=False,
-        # inject_sources=False,
+        inject_sources=False,
         save_results=save_results,
     )
 
@@ -447,6 +451,7 @@ def test_multiband_catalog_some_invalid_inputs(
         fit_psf=False,
         save_results=save_results,
         deblend=True,
+        inject_sources=False,
     )
 
     cat = result.source_catalog
@@ -561,7 +566,6 @@ def test_multiband_source_injection_no_detections(
         npixels=5,
         fit_psf=False,
         deblend=True,
-        inject_sources=True,
         inject_seed=50,
         save_results=False,
         save_debug_info=True,
