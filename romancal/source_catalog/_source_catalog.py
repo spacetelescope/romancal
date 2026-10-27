@@ -22,21 +22,19 @@ from scipy.ndimage import map_coordinates
 from romancal import __version__ as romancal_version
 from romancal.skycell import skymap
 from romancal.source_catalog._aperture import ApertureCatalog
+from romancal.source_catalog._calibrate import (
+    DEFAULT_FLUX_UNIT,
+    convert_to_flux_density,
+)
 from romancal.source_catalog._column_schema import CatalogSchema
 from romancal.source_catalog._daofind import DAOFindCatalog
 from romancal.source_catalog._neighbors import NNCatalog
 from romancal.source_catalog._segment import SegmentCatalog
-from romancal.source_catalog._unit_conversion import (
-    validate_and_convert_to_flux_density,
-)
 from romancal.source_catalog._wcs_utils import pixel_area_at, pixel_area_map
 from romancal.source_catalog.psf import _PSFCatalog
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
-
-# The flux density unit of the catalog and of the saved detection image
-DEFAULT_FLUX_UNIT = "nJy"
 
 
 @dataclass(frozen=True)
@@ -190,12 +188,6 @@ class RomanSourceCatalog:
         self.wcs = self.model.meta.wcs
         self.meta = {}
         self.aperture_cat = None
-
-        # Define flux unit conversion factors
-        if "photometry" in self.model.meta:
-            self.l2_to_sb = self.model.meta.photometry.conversion_megajanskys
-        else:
-            self.l2_to_sb = 1.0
 
         if self.fit_psf and self.psf_model is None:
             log.error(
@@ -610,13 +602,11 @@ class RomanSourceCatalog:
         Validate that model data arrays have compatible units and
         convert them to ``self.flux_unit`` if needed.
         """
-        sb_to_flux = (self._pixel_area_map * (u.MJy / u.sr)).to(self.flux_unit)
-        self.convolved_data = validate_and_convert_to_flux_density(
+        self.convolved_data = convert_to_flux_density(
             self.model,
             self.convolved_data,
             flux_unit=self.flux_unit,
-            l2_to_sb=self.l2_to_sb,
-            sb_to_flux=sb_to_flux,
+            area_map=self._pixel_area_map,
         )
 
     @property
