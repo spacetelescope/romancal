@@ -9,9 +9,9 @@ from romancal.source_catalog.source_catalog_step import SourceCatalogStep
 from romancal.source_catalog.tests.test_source_catalog import (  # noqa: F401
     image_model,
 )
-from romancal.time_domain_catalog.time_domain_catalog_step import (
+from romancal.time_domain_catalog import TimeDomainCatalogStep
+from romancal.time_domain_catalog._time_domain_catalog import (
     SKYCELL_OVERLAP_BIT,
-    TimeDomainCatalogStep,
     read_forced_catalogs,
 )
 
