@@ -41,7 +41,8 @@ log = logging.getLogger(__name__)
 
 # Smallest per-pixel uncertainty kept, as a fraction of the image median.
 # Clips implausibly low values that would otherwise dominate the
-# inverse-variance weights in the source detection convolutions.
+# inverse-variance weights in the source detection convolutions.  Applied
+# only to the err used for detection, not to photometric errors.
 _MIN_ERR_FRACTION = 0.03
 
 
@@ -216,6 +217,22 @@ class SourceCatalogStep(RomanStep):
         return detection_image
 
     @staticmethod
+    def _floor_err(err, mask):
+        """
+        Return a copy of ``err`` with implausibly small values raised.
+
+        Used only for detection; photometric errors use the input ``err``.
+        """
+        err_floor = _MIN_ERR_FRACTION * np.median(err[~mask])
+        n_floored = int(np.count_nonzero(err < err_floor))
+        if n_floored:
+            log.warning(
+                f"Raised {n_floored} pixels with implausibly small "
+                f"uncertainties to err = {err_floor:.4g} for detection"
+            )
+        return np.maximum(err, err_floor)
+
+    @staticmethod
     def _save_detection_image(segmentation_model, catobj):
         """
         Save the detection image used by a catalog and its unit.
@@ -364,16 +381,6 @@ class SourceCatalogStep(RomanStep):
                     cat_model, segmentation_model, input_model, model, mask
                 )
 
-        # Clip implausibly small errors
-        err_floor = _MIN_ERR_FRACTION * np.median(model.err[~mask])
-        n_floored = int(np.count_nonzero(model.err < err_floor))
-        if n_floored:
-            log.warning(
-                f"Raised {n_floored} pixels with implausibly small "
-                f"uncertainties to err = {err_floor:.4g}"
-            )
-            model.err = np.maximum(model.err, err_floor)
-
         pixel_scale = _pixel_scale(model)
         kernel_fwhm_px = self.kernel_fwhm / pixel_scale
         bkg_boxsize_px = max(round(self.bkg_boxsize / pixel_scale), 1)
@@ -407,7 +414,7 @@ class SourceCatalogStep(RomanStep):
                     det_significance,
                 ) = make_segmentation_image_template(
                     model.data,
-                    model.err,
+                    self._floor_err(model.err, mask),
                     snr_threshold=self.snr_threshold,
                     n_pixels=self.npixels,
                     kernel_fwhm=self.kernel_fwhm,

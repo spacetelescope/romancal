@@ -10,6 +10,7 @@ from photutils.segmentation import make_2dgaussian_kernel
 
 from romancal.source_catalog._background import RomanBackground
 from romancal.source_catalog._detection import (
+    convolve_data,
     ivw_convolve,
     make_gaussian_kernel,
     make_gaussian_kernel_1d,
@@ -113,6 +114,17 @@ def test_significance_defined_on_masked_pixels():
     num, denom2 = ivw_convolve(data, wht, make_gaussian_kernel_1d(2.0), mask=mask)
     assert denom2[30, 30] > 0
     assert np.isfinite(snr_from_ivw(num, denom2)[30, 30])
+
+
+def test_convolve_data_interpolates_masked_pixels():
+    # A flat image stays flat however much of it is masked or off the edge.
+    data = np.full((40, 40), 3.0)
+    mask = np.zeros(data.shape, dtype=bool)
+    mask[10:13, 10:13] = True
+    data[mask] = 1e6
+    data[30, 30] = np.nan
+    conv = convolve_data(data, 3.0, mask=mask)
+    np.testing.assert_allclose(conv, 3.0, rtol=1e-5)
 
 
 def test_separable_convolve_rejects_even_kernel():

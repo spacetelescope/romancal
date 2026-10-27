@@ -10,6 +10,10 @@ configurable angular sizes as well
 scales whatever the pixel scale of the image.  ``bkg_boxsize`` is likewise
 now in arcseconds, with a default of 55 (1000 pixels at the L3 pixel scale).
 
+``snr_threshold`` now applies to the matched-filter significance of the
+best-fitting template rather than to the per-pixel signal-to-noise ratio of
+the convolved image.
+
 New det_template, det_significance, kron_nomask_flux, kron_nomask_flux_err
 catalog columns.  The first two identify the template that led to the detection
 of each source and its corresponding SNR.  The second two give the

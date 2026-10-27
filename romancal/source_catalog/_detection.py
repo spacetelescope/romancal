@@ -8,20 +8,21 @@ import warnings
 
 import numpy as np
 import scipy.ndimage
-from astropy.convolution import Gaussian1DKernel, convolve
+from astropy.convolution import Gaussian1DKernel
 from astropy.stats import gaussian_fwhm_to_sigma
-from astropy.utils.exceptions import AstropyUserWarning
-from photutils.segmentation import SourceFinder, make_2dgaussian_kernel
+from photutils.segmentation import SourceFinder
 from photutils.utils.exceptions import NoDetectionsWarning
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-def convolve_data(data, kernel_fwhm, size=None, mask=None):
+def convolve_data(data, kernel_fwhm, mask=None, size_factor=4):
     """
-    Convolve the background-subtracted model image with a Gaussian
-    kernel.
+    Convolve the background-subtracted image with a Gaussian PSF kernel.
+
+    Masked and non-finite pixels are interpolated over; the convolution is
+    normalized by the kernel weight falling on good pixels.
 
     Parameters
     ----------
@@ -29,27 +30,26 @@ def convolve_data(data, kernel_fwhm, size=None, mask=None):
         The input 2D array. The data is assumed to be
         background subtracted.
     kernel_fwhm : float
-        The FWHM of the Gaussian kernel.
-    size : int, optional
-        The size of the kernel array. Default is 3 times the kernel
-        FWHM.
+        The FWHM of the Gaussian kernel, in pixels.
     mask : 2D `numpy.ndarray`, optional
         A boolean mask with the same shape as the input data. True
         values indicate masked pixels.
+    size_factor : int, optional
+        Kernel length as a multiple of ``kernel_fwhm``.
 
     Returns
     -------
     convolved_data : `numpy.ndarray`
-        The convolved data array.
+        The convolved data array; zero where the kernel covers no good
+        pixels.
     """
-    size = math.ceil(kernel_fwhm * 3)
-    size = size + 1 if size % 2 == 0 else size  # make size be odd
-    kernel = make_2dgaussian_kernel(kernel_fwhm, size=size)  # normalized to 1
-
-    with warnings.catch_warnings():
-        # suppress warnings caused by large masked areas
-        warnings.simplefilter("ignore", AstropyUserWarning)
-        return convolve(data, kernel, mask=mask)
+    kernel = make_gaussian_kernel_1d(kernel_fwhm, size_factor=size_factor)
+    good = np.isfinite(data)
+    if mask is not None:
+        good &= ~mask
+    num = separable_convolve(data, kernel, mask=~good)
+    wt = separable_convolve(good, kernel)
+    return np.divide(num, wt, out=np.zeros_like(num), where=wt > 0)
 
 
 def make_segmentation_image(
@@ -246,9 +246,8 @@ def snr_from_ivw(num, denom2):
     Kept separate from `ivw_convolve` because the arrays must be summed
     over bands before the ratio is taken; templates, by contrast, are
     combined after it, by taking the maximum of their ratios.
-    ``denom2`` is mathematically
-    non-negative, but is clamped before the square root to guard against
-    round-off.
+    ``denom2`` is mathematically non-negative, but is clamped before the
+    square root to guard against round-off.
 
     Parameters
     ----------

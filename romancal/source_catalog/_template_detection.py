@@ -36,10 +36,10 @@ from photutils.segmentation import SegmentationImage
 
 from romancal.source_catalog._background import RomanBackground
 from romancal.source_catalog._detection import (
+    convolve_data,
     ivw_convolve,
     make_gaussian_kernel_1d,
     make_segmentation_image,
-    separable_convolve,
     snr_from_ivw,
 )
 
@@ -229,10 +229,9 @@ def make_template_snr_images(
     # additional background removed.
     # We should investigate subtracting one, but we need to more carefully
     # track what scale the background should be removed on for each different template
-    psf_kernel = make_gaussian_kernel_1d(
-        kernel_fwhm / pixel_scale, size_factor=_MOMENT_SIZE_FACTOR
+    conv_psf = convolve_data(
+        data, kernel_fwhm / pixel_scale, mask=mask, size_factor=_MOMENT_SIZE_FACTOR
     )
-    conv_psf = separable_convolve(data, psf_kernel, mask=mask)
 
     return snr_images, conv_psf
 
