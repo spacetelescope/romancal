@@ -4,8 +4,10 @@ import logging
 from pathlib import Path
 
 import pytest
+
 from astropy.table import Table
 from astropy.time import Time
+import numpy as np
 
 from romancal.lib.engdb import engdb_mast
 from romancal.lib.engdb.engdb_lib import EngDB_Value
@@ -15,7 +17,7 @@ from romancal.lib.engdb.tests.utils import assert_xfail
 log = logging.getLogger(__name__)
 
 # Test query
-QUERY = ("ope_scf_dir", "2027-02-1T00:00:00", "2027-02-28T23:00:00")
+QUERY = ("scf_ac_sdr_qbj_1", "2026-10-01T00:00:00", "2026-10-01T00:05:00")
 
 # Expected return from query
 EXPECTED_RESPONSE = (
@@ -67,7 +69,10 @@ def test_get_meta(engdb, mnemonic, expected):
 def test_get_records(engdb):
     """Test getting records"""
     records = engdb._get_records(*QUERY)
-    assert_xfail("SCFA" in records["EUValue"])
+    assert len(records)
+    assert np.allclose(records['EUValue'], 0.756946)
+    assert (records['MJD'] >= (Time(QUERY[1]).mjd - 60.)).all()
+    assert (records['MJD'] <= (Time(QUERY[2]).mjd + 60.)).all()
 
 
 @pytest.mark.parametrize(
