@@ -1,0 +1,30 @@
+#ASDF 1.0.0
+#ASDF_STANDARD 1.6.0
+%YAML 1.1
+%TAG ! tag:stsci.edu:asdf/
+--- !core/asdf-1.1.0
+asdf_library: !core/software-1.0.0 {author: The ASDF Developers, homepage: 'http://github.com/asdf-format/asdf',
+  name: asdf, version: 5.3.1}
+history:
+  extensions:
+  - !core/extension_metadata-1.0.0
+    extension_class: asdf.extension._manifest.ManifestExtension
+    extension_uri: asdf://asdf-format.org/core/extensions/core-1.6.0
+    manifest_software: !core/software-1.0.0 {name: asdf_standard, version: 1.5.0}
+    software: !core/software-1.0.0 {name: asdf, version: 5.3.1}
+roman:
+  bam_quaternion: [-0.18541749359303772, 0.6841636922799866, -0.17893482160935997,
+    0.6822922576514541]
+  meta:
+    author: T. Desjardins, T. Sohn
+    description: Quaternion values for the alignment matrix between the Roman observatory
+      boresight and fine guidance system (FGS). This file updates the BAM using on-orbit
+      values from Roman commissioning and is valid for observations taken starting
+      with CAR-86.17 (EP 12, Pass 13).
+    instrument: {name: WFI}
+    origin: STSCI/SOC
+    pedigree: INFLIGHT 2026-10-13 2026-10-13
+    reftype: BAM
+    telescope: ROMAN
+    useafter: '2026-10-13T02:22:00'
+...
