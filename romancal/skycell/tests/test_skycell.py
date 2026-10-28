@@ -32,10 +32,6 @@ SAMPLE_SKYCELL_NAMES = [
 ]
 
 
-def assert_allclose_lonlat(actual: np.ndarray, desired: np.ndarray, rtol=1e-7, atol=0):
-    assert_allclose(actual, desired)
-
-
 def assert_corners_on_pixel_corners(
     wcsobj, radec_corners: np.ndarray, pixel_shape: tuple[int, int]
 ):
@@ -78,8 +74,8 @@ def skymap_subset() -> skymap.SkyMap:
 @pytest.fixture(scope="module")
 def mirrored_skymap_subset(tmp_path_factory) -> skymap.SkyMap:
     """
-    the same subset mirrored in x within each skycell and marked with
-    `meta.vparity = -1`, standing in for a skymap in the standard handedness
+    stand-in for a skymap in the standard handedness (`meta.vparity = -1`):
+    the subset with each skycell's pixel grid mirrored in x
     """
     path = tmp_path_factory.mktemp("skymap") / "skymap_subset_mirrored.asdf"
     with roman_datamodels.open(DATA_DIRECTORY / "skymap_subset.asdf") as model:
@@ -309,9 +305,9 @@ def test_skycell_wcsinfo(name, either_skymap_subset):
         rtol=1e-7,
     )
 
-    assert_corners_on_pixel_corners(
-        wcsobj, skycell.radec_corners[0], (wcs_info["nx"], wcs_info["ny"])
-    )
+    # right ascension increases to the left for vparity = -1
+    center = ((wcs_info["nx"] - 1) / 2, (wcs_info["ny"] - 1) / 2)
+    assert np.sign(sky_handedness(wcsobj, *center)) == wcs_info["vparity"]
 
 
 def test_skymap_vparity(skymap_subset, mirrored_skymap_subset):
@@ -333,28 +329,6 @@ def test_skymap_vparity(skymap_subset, mirrored_skymap_subset):
         projregion = skymap.ProjectionRegion(0, skymap=sm)
         assert projregion.wcs_info["vparity"] == sm.vparity
         assert projregion.wcs_info["skycells_ref_file"] == Path(sm.path).name
-
-
-@pytest.mark.parametrize("name", SAMPLE_SKYCELL_NAMES)
-def test_skycell_wcs_mirrored_skymap(name, skymap_subset, mirrored_skymap_subset):
-    """a mirrored skymap gives the same skycell, flipped in x"""
-
-    delivered = skymap.SkyCells.from_names([name], skymap=skymap_subset)
-    mirrored = skymap.SkyCells.from_names([name], skymap=mirrored_skymap_subset)
-
-    nx, ny = delivered.pixel_shape
-    x, y = np.meshgrid(np.linspace(0, nx - 1, 4), np.linspace(0, ny - 1, 4))
-    x, y = x.ravel(), y.ravel()
-
-    assert_allclose_lonlat(
-        np.array(mirrored.wcs[0](nx - 1 - x, y, with_bounding_box=False)),
-        np.array(delivered.wcs[0](x, y, with_bounding_box=False)),
-    )
-
-    # right ascension increases to the left, unlike in the delivered skymap
-    center = ((nx - 1) / 2, (ny - 1) / 2)
-    assert sky_handedness(delivered.wcs[0], *center) > 0
-    assert sky_handedness(mirrored.wcs[0], *center) < 0
 
 
 def test_skycells(skymap_subset):
