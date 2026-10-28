@@ -104,11 +104,12 @@ def do_dqinit(model, mask, expand_gw_flagging=0):
     # Convert to RampModel
     output_model = to_ramp_model(model)
 
-    # guide window range information
+    # guide window range information; the stop values are inclusive,
+    # so add 1 to use them as slice bounds
     x_start = int(output_model.meta.guide_star.window_xstart)
-    x_stop = int(output_model.meta.guide_star.window_xstop)
+    x_stop = int(output_model.meta.guide_star.window_xstop) + 1
     y_start = int(output_model.meta.guide_star.window_ystart)
-    y_stop = int(output_model.meta.guide_star.window_ystop)
+    y_stop = int(output_model.meta.guide_star.window_ystop) + 1
 
     npix = output_model.pixeldq.shape[0]
     if x_start >= 0 and x_start < npix and y_start >= 0 and y_start < npix:

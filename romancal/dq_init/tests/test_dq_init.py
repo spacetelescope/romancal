@@ -380,6 +380,10 @@ def test_dqinit_gw_expansion():
     result = do_dqinit(model, mask=None, expand_gw_flagging=expand)
     pq = result.pixeldq
 
+    # window stop values are inclusive
+    x_stop += 1
+    y_stop += 1
+
     # All rows in the GW column range should be flagged GW_AFFECTED_DATA
     assert np.all(pq[:, x_start:x_stop] & pixel.GW_AFFECTED_DATA != 0)
     assert pq[0, x_start - 1] & pixel.GW_AFFECTED_DATA == 0
