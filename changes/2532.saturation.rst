@@ -1,0 +1,1 @@
+Changed the default behavior to mask pixels feeling charge migration after a central pixel saturates to True.
