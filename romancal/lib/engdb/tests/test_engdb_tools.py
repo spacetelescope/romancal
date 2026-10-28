@@ -7,6 +7,7 @@ import os
 
 import pytest
 from astropy.time import Time
+import numpy as np
 
 from romancal.lib.engdb import engdb_tools
 from romancal.lib.engdb.tests.utils import assert_xfail
@@ -18,7 +19,7 @@ GOOD_MNEMONIC = "SCF_AC_SDR_QBJ_1"
 GOOD_STARTTIME = "2026-10-01T00:00:00"
 GOOD_ENDTIME = "2026-10-01T00:05:00"
 
-SHORT_STARTTIME = "2027-02-02T00:00:00"
+SHORT_STARTTIME = "2026-10-01T00:05:00"
 
 BAD_MNEMONIC = "No_Such_MNEMONIC"
 NODATA_STARTIME = "2014-01-01"
@@ -51,18 +52,18 @@ def test_values(engdb):
     values = engdb.get_values(
         GOOD_MNEMONIC, GOOD_STARTTIME, SHORT_STARTTIME, include_bracket_values=True
     )
-    assert_xfail(len(values) >= 2)
-    assert_xfail("SCFA" in values)
+    assert len(values) >= 2
+    assert np.allclose(values, 0.7569, rtol=1e-4)
 
 
 def test_values_with_bracket(engdb):
     records = engdb._get_records(GOOD_MNEMONIC, SHORT_STARTTIME, SHORT_STARTTIME)
-    assert_xfail(len(records) == 2)
+    assert len(records) == 2
     values = engdb.get_values(
         GOOD_MNEMONIC, SHORT_STARTTIME, SHORT_STARTTIME, include_bracket_values=True
     )
-    assert_xfail(len(values) == 2)
-    assert_xfail("SCFA" in values)
+    assert len(values) == 2
+    assert np.allclose(values, 0.7569, rtol=1e-4)
 
 
 def test_values_with_time(engdb):

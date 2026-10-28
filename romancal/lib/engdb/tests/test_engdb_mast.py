@@ -19,24 +19,6 @@ log = logging.getLogger(__name__)
 # Test query
 QUERY = ("scf_ac_sdr_qbj_1", "2026-10-01T00:00:00", "2026-10-01T00:05:00")
 
-# Expected return from query
-EXPECTED_RESPONSE = (
-    '{"TlmMnemonic":"OPE_SCF_DIR",'
-    '"ReqSTime":"2027-02-23T01:00:00.000",'
-    '"ReqETime":"2027-02-23T01:00:05.000",'
-    '"Count":7,"AllPoints":1,"Data":['
-    '{"ObsTime":"2027-02-23T00:59:59.054","EUValue":"SCFA"},'
-    '{"ObsTime":"2027-02-23T01:00:00.052","EUValue":"SCFA"},'
-    '{"ObsTime":"2027-02-23T01:00:01.052","EUValue":"SCFA"},'
-    '{"ObsTime":"2027-02-23T01:00:02.162","EUValue":"SCFA"},'
-    '{"ObsTime":"2027-02-23T01:00:03.161","EUValue":"SCFA"},'
-    '{"ObsTime":"2027-02-23T01:00:04.161","EUValue":"SCFA"},'
-    '{"ObsTime":"2027-02-23T01:00:05.163","EUValue":"SCFA"}]}'
-)
-EXPECTED_RECORDS = Table.read(
-    Path(__file__).parent / "data" / "test_records_expected.ecsv", format="ascii.ecsv"
-)
-
 
 @pytest.mark.parametrize(
     "mnemonic, expected",
