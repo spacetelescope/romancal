@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import os
 from copy import deepcopy
 from typing import TYPE_CHECKING
 
@@ -108,11 +107,7 @@ class ResampleStep(RomanStep):
             if "name" in input_models.asn["products"][0]:
                 output_filename = input_models.asn["products"][0]["name"]
             else:
-                # set output filename using the common prefix of all datamodels
-                output_filename = f"{os.path.commonprefix([x['expname'] for x in input_models.asn['products'][0]['members']])}.asdf"
-                if len(output_filename) == 0:
-                    # set default filename if no common prefix can be determined
-                    output_filename = "resample_output.asdf"
+                output_filename = "resample_output.asdf"
 
         if not len(input_models):
             raise ValueError("At least 1 file must be provided")
