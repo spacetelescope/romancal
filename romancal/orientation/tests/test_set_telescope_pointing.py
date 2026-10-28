@@ -26,6 +26,9 @@ pysiaf = pytest.importorskip("pysiaf")
 stp.logger.setLevel(logging.DEBUG)
 stp.logger.addHandler(logging.StreamHandler())
 
+# Get the mock databases
+DATA_PATH = Path(__file__).parent / "data"
+
 # Setup for some times
 STARTTIME = Time("2025-09-12T12:33:28", format="isot")
 ENDTIME = Time("2025-09-12T12:34:28", format="isot")
@@ -43,7 +46,8 @@ TARG_DEC = 66.0
 # in the truth file `data/transforms.asdf` and the resulting WCS results in `data/wcs.asdf`
 TRANSFORM_KWARGS = {
     "aperture": "WFI01_FULL",
-    "gscommanded": (916.4728835141, -186.8939737044),
+    'bam_ref': DATA_PATH / 'roman_wfi_bam_0007.asdf',
+    'distortion_ref': DATA_PATH / 'roman_wfi_distortion_0078.asdf',
     "pointing": plib.Pointing(
         fgs_q=np.array(
             [
@@ -56,11 +60,9 @@ TRANSFORM_KWARGS = {
         obstime=Time(1757680438.0280416, format="unix"),
         q=np.array([-0.33879082, 0.62326573, -0.36611627, 0.60226181]),
     ),
+    'target_aperture': 'WFI_CEN',
     "velocity": (-5.473753741352352, -27.480586797035414, -11.875972151015253),
 }
-
-# Get the mock databases
-DATA_PATH = Path(__file__).parent / "data"
 
 # Some tests depend on the default engineering database to be available. Check now.
 NO_ENGDB = False
@@ -291,31 +293,29 @@ def test_mnemonic_list():
     assert expected == set(plib.COARSE_MNEMONICS)
 
 
-@pytest.mark.parametrize("wcs_type", ["wcsinfo", "vinfo"])
-def test_wcs(calc_wcs, wcs_type):
+def test_wcs(calc_wcs):
     """Ensure WCS information is correct
 
     Parameters
     ----------
     calc_wcs : pytest.fixture
         Equates to tuple (wcsinfo, vinfo, transforms, t_pars)
-
-    wcs_type : str
-        Which particular WCS information to test
     """
-    wcsinfo, vinfo, _, t_pars = calc_wcs
-    wcs = {"wcsinfo": wcsinfo, "vinfo": vinfo}
+    wcs_meta, t_pars = calc_wcs
     with asdf.open(DATA_PATH / "wcs.asdf") as af:
-        expected = af.tree[wcs_type]
+        expected = af.tree['wcs_meta']
 
-    wcs_dict = wcs[wcs_type]._asdict()
-    for key in wcs_dict:
-        if key != "s_region":
-            assert np.isclose(expected[key], wcs_dict[key]), (
-                f"Key {key} differs expected {expected[key]} calculated {wcs_dict[key]}"
-            )
+    wcs_meta_flat = _flatten_dict(wcs_meta)
+    expected_flat = _flatten_dict(expected)
+    for key in wcs_meta_flat:
+        try:
+            float(wcs_meta_flat[key])
+        except (TypeError, ValueError):
+            assert expected_flat[key] == wcs_meta_flat[key]
         else:
-            assert expected[key] == wcs_dict[key]
+            assert np.isclose(expected_flat[key], wcs_meta_flat[key]), (
+                f"Key {key} differs expected {expected_flat[key]} calculated {wcs_meta_flat[key]}"
+            )
 
 
 def test_strict_pointing(science_raw_model, tmp_path):
@@ -426,17 +426,16 @@ def calc_wcs(tmp_path_factory):
     t_pars = _make_t_pars(**TRANSFORM_KWARGS)
 
     # Calculate the transforms and WCS information
-    wcsinfo, vinfo, transforms = wlib.calc_wcs(t_pars)
+    wcs_meta = wlib.calc_wcs(t_pars)
 
     # Save all for later examination.
-    transforms_path = tmp_path_factory.mktemp("transforms")
-    transforms.write_to_asdf(transforms_path / "transforms.asdf")
+    wcs_meta_path = tmp_path_factory.mktemp("transforms")
     wcs_asdf_file = asdf.AsdfFile(
-        {"wcsinfo": wcsinfo._asdict(), "vinfo": vinfo._asdict()}
+        {'wcs_meta': wcs_meta}
     )
-    wcs_asdf_file.write_to(transforms_path / "wcs.asdf")
+    wcs_asdf_file.write_to(wcs_meta_path / "wcs.asdf")
 
-    return wcsinfo, vinfo, transforms, t_pars
+    return wcs_meta, t_pars
 
 
 @pytest.fixture
@@ -479,6 +478,19 @@ def updated_model(calc_wcs):
     )
     olib.update_meta(m, t_pars, wcsinfo, vinfo, "CALCULATED")
     return m
+
+
+def _flatten_dict(d, parent_key="", sep="."):
+    """Flattens a nested dictionary, joining keys with a separator."""
+    items = {}
+    for key, value in d.items():
+        # Build the new key path
+        new_key = f"{parent_key}{sep}{key}" if parent_key else key
+        if isinstance(value, dict):
+            items.update(_flatten_dict(value, new_key, sep=sep))
+        else:
+            items[new_key] = value
+    return items
 
 
 def _getattrpath(obj, path, default=None):

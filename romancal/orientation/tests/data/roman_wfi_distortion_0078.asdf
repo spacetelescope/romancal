@@ -1,0 +1,278 @@
+#ASDF 1.0.0
+#ASDF_STANDARD 1.6.0
+%YAML 1.1
+%TAG ! tag:stsci.edu:asdf/
+--- !core/asdf-1.1.0
+asdf_library: !core/software-1.0.0 {author: The ASDF Developers, homepage: 'http://github.com/asdf-format/asdf',
+  name: asdf, version: 5.3.1}
+history:
+  entries:
+  - !core/history_entry-1.0.0 {description: 'This DISTORTION file was made using pysiaf
+      version 0.28.0 and the Roman Science Instrument Aperture File (SIAF). This file
+      updates the DISTORTION using on-orbit values from Roman commissioning and is
+      valid for observations taken starting with CAR-86.17 (EP 12, Pass 13).', time: ! '2026-10-13
+      16:16:13+00:00'}
+  extensions:
+  - !core/extension_metadata-1.0.0
+    extension_class: asdf.extension._manifest.ManifestExtension
+    extension_uri: asdf://asdf-format.org/core/extensions/core-1.6.0
+    manifest_software: !core/software-1.0.0 {name: asdf_standard, version: 1.5.0}
+    software: !core/software-1.0.0 {name: asdf, version: 5.3.1}
+  - !core/extension_metadata-1.0.0
+    extension_class: asdf.extension._manifest.ManifestExtension
+    extension_uri: asdf://asdf-format.org/astronomy/extensions/astronomy-1.2.0
+    manifest_software: !core/software-1.0.0 {name: asdf_standard, version: 1.5.0}
+    software: !core/software-1.0.0 {name: asdf-astropy, version: 0.11.0}
+  - !core/extension_metadata-1.0.0
+    extension_class: asdf.extension._manifest.ManifestExtension
+    extension_uri: asdf://asdf-format.org/transform/extensions/transform-1.7.0
+    manifest_software: !core/software-1.0.0 {name: asdf_transform_schemas, version: 0.6.0}
+    software: !core/software-1.0.0 {name: asdf-astropy, version: 0.11.0}
+  - !core/extension_metadata-1.0.0
+    extension_class: asdf.extension._manifest.ManifestExtension
+    extension_uri: asdf://astropy.org/astropy/extensions/units-1.3.0
+    software: !core/software-1.0.0 {name: asdf-astropy, version: 0.11.0}
+  - !core/extension_metadata-1.0.0
+    extension_class: asdf.extension._manifest.ManifestExtension
+    extension_uri: asdf://stsci.edu/datamodels/roman/extensions/datamodels-2.0.0
+    manifest_software: !core/software-1.0.0 {name: rad, version: 1.0.0}
+    software: !core/software-1.0.0 {name: roman_datamodels, version: 1.0.0}
+roman: !<asdf://stsci.edu/datamodels/roman/tags/reference_files/distortion-2.0.0>
+  meta:
+    author: T. Desjardins, T. Sohn
+    description: Roman WFI distortion reference file. This file was derived from the
+      distortion terms in the Science Instrument Aperture File (SIAF) in PRDOPSRSOC-14.
+      This file updates the DISTORTION using on-orbit values from Roman commissioning
+      and is valid for observations taken starting with CAR-86.17 (EP 12, Pass 13).
+    input_units: !unit/unit-1.0.0 pixel
+    instrument: {detector: WFI01, name: WFI, optical_element: F158, p_optical_element: F062|F087|F106|F129|F146|F158|F184|F213|GRISM|PRISM|DARK|}
+    origin: STSCI/SOC
+    output_units: !unit/unit-1.0.0 arcsec
+    pedigree: INFLIGHT 2026-10-13 2026-10-13
+    reftype: DISTORTION
+    telescope: ROMAN
+    useafter: !time/time-1.4.0 2026-10-13T02:22:00.000
+  coordinate_distortion_transform: !transform/compose-1.4.0
+    forward:
+    - !transform/compose-1.4.0
+      forward:
+      - !transform/compose-1.4.0
+        forward:
+        - !transform/concatenate-1.4.0
+          forward:
+          - &id001 !transform/shift-1.4.0
+            inputs: [x]
+            offset: 1.0
+            outputs: [y]
+          - *id001
+          inputs: [x0, x1]
+          outputs: [y0, y1]
+        - !transform/concatenate-1.4.0
+          forward:
+          - !transform/shift-1.4.0
+            inputs: [x]
+            offset: -2044.5
+            outputs: [y]
+          - !transform/shift-1.4.0
+            inputs: [x]
+            offset: -2044.5
+            outputs: [y]
+          inputs: [x0, x1]
+          outputs: [y0, y1]
+        inputs: [x0, x1]
+        outputs: [y0, y1]
+      - !transform/compose-1.4.0
+        forward:
+        - !transform/compose-1.4.0
+          forward:
+          - !transform/remap_axes-1.5.0
+            inputs: [x0, x1]
+            mapping: [0, 1, 0, 1]
+            outputs: [x0, x1, x2, x3]
+          - !transform/concatenate-1.4.0
+            forward:
+            - !transform/polynomial-1.3.0
+              coefficients: !core/ndarray-1.1.0
+                source: 0
+                datatype: float64
+                byteorder: little
+                shape: [6, 6]
+              domain:
+              - &id002 [-1, 1]
+              - *id002
+              inputs: [x, y]
+              outputs: [z]
+              window:
+              - *id002
+              - *id002
+            - !transform/polynomial-1.3.0
+              coefficients: !core/ndarray-1.1.0
+                source: 1
+                datatype: float64
+                byteorder: little
+                shape: [6, 6]
+              domain:
+              - *id002
+              - *id002
+              inputs: [x, y]
+              outputs: [z]
+              window:
+              - *id002
+              - *id002
+            inputs: [x0, y0, x1, y1]
+            outputs: [z0, z1]
+          inputs: [x0, x1]
+          inverse: !transform/compose-1.4.0
+            forward:
+            - !transform/remap_axes-1.5.0
+              inputs: [x0, x1]
+              mapping: [0, 1, 0, 1]
+              outputs: [x0, x1, x2, x3]
+            - !transform/concatenate-1.4.0
+              forward:
+              - !transform/polynomial-1.3.0
+                coefficients: !core/ndarray-1.1.0
+                  source: 2
+                  datatype: float64
+                  byteorder: little
+                  shape: [6, 6]
+                domain:
+                - *id002
+                - *id002
+                inputs: [x, y]
+                outputs: [z]
+                window:
+                - *id002
+                - *id002
+              - !transform/polynomial-1.3.0
+                coefficients: !core/ndarray-1.1.0
+                  source: 3
+                  datatype: float64
+                  byteorder: little
+                  shape: [6, 6]
+                domain:
+                - *id002
+                - *id002
+                inputs: [x, y]
+                outputs: [z]
+                window:
+                - *id002
+                - *id002
+              inputs: [x0, y0, x1, y1]
+              outputs: [z0, z1]
+            inputs: [x0, x1]
+            outputs: [z0, z1]
+          outputs: [z0, z1]
+        - !transform/compose-1.4.0
+          forward:
+          - !transform/remap_axes-1.5.0
+            inputs: [x0, x1]
+            mapping: [0, 1, 0, 1]
+            outputs: [x0, x1, x2, x3]
+          - !transform/concatenate-1.4.0
+            forward:
+            - !transform/polynomial-1.3.0
+              coefficients: !core/ndarray-1.1.0
+                source: 4
+                datatype: float64
+                byteorder: little
+                shape: [2, 2]
+              domain:
+              - *id002
+              - *id002
+              inputs: [x, y]
+              outputs: [z]
+              window:
+              - *id002
+              - *id002
+            - !transform/polynomial-1.3.0
+              coefficients: !core/ndarray-1.1.0
+                source: 5
+                datatype: float64
+                byteorder: little
+                shape: [2, 2]
+              domain:
+              - *id002
+              - *id002
+              inputs: [x, y]
+              outputs: [z]
+              window:
+              - *id002
+              - *id002
+            inputs: [x0, y0, x1, y1]
+            outputs: [z0, z1]
+          inputs: [x0, x1]
+          inverse: !transform/compose-1.4.0
+            forward:
+            - !transform/remap_axes-1.5.0
+              inputs: [x0, x1]
+              mapping: [0, 1, 0, 1]
+              outputs: [x0, x1, x2, x3]
+            - !transform/concatenate-1.4.0
+              forward:
+              - !transform/polynomial-1.3.0
+                coefficients: !core/ndarray-1.1.0
+                  source: 6
+                  datatype: float64
+                  byteorder: little
+                  shape: [2, 2]
+                domain:
+                - *id002
+                - *id002
+                inputs: [x, y]
+                outputs: [z]
+                window:
+                - *id002
+                - *id002
+              - !transform/polynomial-1.3.0
+                coefficients: !core/ndarray-1.1.0
+                  source: 7
+                  datatype: float64
+                  byteorder: little
+                  shape: [2, 2]
+                domain:
+                - *id002
+                - *id002
+                inputs: [x, y]
+                outputs: [z]
+                window:
+                - *id002
+                - *id002
+              inputs: [x0, y0, x1, y1]
+              outputs: [z0, z1]
+            inputs: [x0, x1]
+            outputs: [z0, z1]
+          outputs: [z0, z1]
+        inputs: [x0, x1]
+        outputs: [z0, z1]
+      inputs: [x0, x1]
+      outputs: [z0, z1]
+    - !transform/concatenate-1.4.0
+      forward:
+      - !transform/shift-1.4.0
+        inputs: [x]
+        offset: 1454.084
+        outputs: [y]
+      - !transform/shift-1.4.0
+        inputs: [x]
+        offset: -1163.304
+        outputs: [y]
+      inputs: [x0, x1]
+      outputs: [y0, y1]
+    inputs: [x0, x1]
+    outputs: [y0, y1]
+...
+”BLK 0                             `ß˝r¶K]£Ú⁄˘eêt        Êµ¢õ5?°T¶ÌB9æ≠¡y+/íΩ:y)pz∂ºa¯i‡ùo"<Àq©u€8º?ùÛá?É>∏Ÿ=«¥ãΩWH†P˛G™<0à÷™oº        ˙’]^)ù`æì>∆ÁÊaΩNú]≈Q1™<nOã]æâ<                ∂öb'ì°ΩVêÀ(©èß<≥†Õnﬂ º                        £…WÔAøòº;ùzEÎª                                q‚ıû*<                                        ”BLK 0                             Ï;/\V±ºÚG˙ôè‡BŒ        Ì’—µRØª?Y†¨∞W≠ã>¨Iô3üΩ⁄—°v®–<#ˆ«,›	<Æs8˛Ht3?Ú++èSæÚ⁄ ÍJ}Ω‰†∆ebà±ºW&0•<        ¢Ö‹Y!s>¶£3ªÓƒïΩºvë∆ Ã¿º‘Éhl˚º                k3ßr¨G=L$–É±º«™V: <                        $ ˜ä∆Ω∏<∑ÓKØ‚fÒª                                aWÊ*’"º                                        ”BLK 0                             
+ª±;èÎ∆Cœúr~q€K        yò!TQúøï}3*»[÷>ó∫lá˝b_>J≠Ú#¢∑=†T… ¥¿UΩ«arõW$"@&s<eukø[•5]
+ÌZ>21BµI∞Ω˜ÂXt8==        ãê…6)≥¯>µ÷æÊM>¡CäÓÁßΩ√ÊA<Ω                H3&ãxm>˝ÿ\·9´Ω≤∆ËçlÄ2=                        ˇ?Áå0ò=`±¬5…ê!=                                'GfpΩƒ[Ω                                        ”BLK 0                             {H5,1„‹k§f˜‰¥        ΩIÎw~"@Ì™´Æ’`%øEnÈèôÈn>´Ì∞¬√f“Ω;t§„≠“<ΩV∞√ÿ∆ôø.*5•∫>EÆJÃ7F>Ê‡‰Yb≥=Q&)[‹:Ω        ¢Eær{øŸÇ‹Môid>*ë™≠ª=∏b¶-”©@=                /ò«æ˙ú“ˇ~u±=GP$;˙;RΩ                        ¬Æ]S∏ΩâQpó9$=                                ˜aµ®¬D=                                        ”BLK 0                                µYæYÜïŒ˝≥1Z•ë%w        ‘Ê&≈s∂Îøí#ƒ\ ‡ø        ”BLK 0                                ò	ÀIÜè‚8^•°Âr¸}¨        í#ƒ\ ‡?‘Ê&≈s∂Îø        ”BLK 0                                µYæYÜïŒ˝≥1Z•ë%w        ‘Ê&≈s∂Îøí#ƒ\ ‡ø        ”BLK 0                                ò	ÀIÜè‚8^•°Âr¸}¨        í#ƒ\ ‡?‘Ê&≈s∂Îø        #ASDF BLOCK INDEX
+%YAML 1.1
+---
+- 9305
+- 9647
+- 9989
+- 10331
+- 10673
+- 10759
+- 10845
+- 10931
+...
