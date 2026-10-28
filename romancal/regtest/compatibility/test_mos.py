@@ -9,7 +9,7 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 
 
 @pytest.fixture(scope="module")
-def run_mos(old_rtdata_module, resource_tracker):
+def run_mos(old_rtdata_module):
     rtdata = old_rtdata_module
 
     rtdata.get_asn("WFI/image/L3_regtest_asn.json")
@@ -23,8 +23,7 @@ def run_mos(old_rtdata_module, resource_tracker):
         rtdata.input,
         "--update_version=True",
     ]
-    with resource_tracker.track():
-        MosaicPipeline.from_cmdline(args)
+    MosaicPipeline.from_cmdline(args)
 
     return rtdata
 
@@ -32,10 +31,6 @@ def run_mos(old_rtdata_module, resource_tracker):
 @pytest.fixture(scope="module")
 def output_filename(run_mos):
     return run_mos.output
-
-
-def test_log_tracked_resources(log_tracked_resources, run_mos):
-    log_tracked_resources()
 
 
 def test_output_exists(output_filename):
