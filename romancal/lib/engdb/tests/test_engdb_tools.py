@@ -14,9 +14,9 @@ from romancal.lib.engdb.tests.utils import assert_xfail
 # Configure logging
 log = logging.getLogger(__name__)
 
-GOOD_MNEMONIC = "OPE_SCF_DIR"
-GOOD_STARTTIME = "2027-02-01T00:00:00"
-GOOD_ENDTIME = "2027-02-28T23:00:00"
+GOOD_MNEMONIC = "SCF_AC_SDR_QBJ_1"
+GOOD_STARTTIME = "2026-10-01T00:00:00"
+GOOD_ENDTIME = "2026-10-01T00:05:00"
 
 SHORT_STARTTIME = "2027-02-02T00:00:00"
 
