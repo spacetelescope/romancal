@@ -13,7 +13,6 @@ from numpy.random import default_rng
 from stcal.tweakreg.tweakreg import TweakregError
 
 from romancal.datamodels import ModelLibrary
-from romancal.tweakreg import tweakreg_step
 from romancal.tweakreg.tweakreg_step import TweakRegStep, _validate_catalog_columns
 
 
@@ -83,8 +82,9 @@ def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, tweakreg_image):
         (0.1 * u.deg, 1, 1),
     ],
 )
+@pytest.mark.parametrize("sigma_stat", ["rmse", "mae", "mad"])
 def test_tweakreg_rotated_plane(
-    tmp_path, tweakreg_image, theta, offset_x, offset_y, gaia_coords
+    tmp_path, tweakreg_image, theta, offset_x, offset_y, sigma_stat, gaia_coords
 ):
     """
     Test that TweakReg returns accurate results.
@@ -113,7 +113,7 @@ def test_tweakreg_rotated_plane(
         overwrite=True,
     )
 
-    TweakRegStep.call([img], abs_minobj=3)
+    TweakRegStep.call([img], abs_minobj=3, sigma_stat=sigma_stat)
 
     # get world coords for Gaia sources using "wrong WCS"
     original_ref_source = [
@@ -380,27 +380,6 @@ def test_tweakreg_updates_s_region(tmp_path, tweakreg_image):
         for i, model in enumerate(res):
             assert model.meta.wcsinfo.s_region != old_fake_s_region
             res.shelve(model, i, modify=False)
-
-
-def test_tweakreg_sigma_stat(monkeypatch, tweakreg_image):
-    """sigma_stat is passed through to the absolute fit."""
-    img = tweakreg_image(shift_1=1000, shift_2=1000)
-    calls = []
-    absolute_align = tweakreg_step.tweakreg.absolute_align
-
-    def _absolute_align(*args, **kwargs):
-        calls.append(kwargs)
-        return absolute_align(*args, **kwargs)
-
-    monkeypatch.setattr(tweakreg_step.tweakreg, "absolute_align", _absolute_align)
-
-    res = TweakRegStep.call([img], sigma_stat="rmse")
-
-    assert calls[0]["sigma_stat"] == "rmse"
-    with res:
-        model = res.borrow(0)
-        assert model.meta.cal_step.tweakreg == "COMPLETE"
-        res.shelve(model, 0, modify=False)
 
 
 @pytest.mark.parametrize("save_results", [True, False])
