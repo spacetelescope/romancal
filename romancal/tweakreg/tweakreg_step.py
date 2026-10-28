@@ -57,7 +57,7 @@ class TweakRegStep(RomanStep):
         fitgeometry = option('shift', 'rshift', 'rscale', 'general', default='general') # Fitting geometry
         nclip = integer(min=0, default=3) # Number of clipping iterations in fit
         sigma = float(min=0.0, default=3.0) # Clipping limit in sigma units
-        sigma_stat = option('rmse', 'mae', 'std', 'mad', default='rmse') # Statistic used as sigma for clipping, in the relative and absolute fits
+        sigma_stat = option('rmse', 'mae', 'std', 'mad', default='mad') # Statistic used as sigma for clipping, in the relative and absolute fits
         abs_refcat = string(default='{DEFAULT_ABS_REFCAT}')  # Absolute reference catalog
         save_abs_catalog = boolean(default=False)  # Write out used absolute astrometric reference catalog as a separate product
         abs_minobj = integer(default=10) # Minimum number of objects acceptable for matching when performing absolute astrometry

@@ -394,9 +394,9 @@ def test_tweakreg_sigma_stat(monkeypatch, tweakreg_image):
 
     monkeypatch.setattr(tweakreg_step.tweakreg, "absolute_align", _absolute_align)
 
-    res = TweakRegStep.call([img], sigma_stat="mad")
+    res = TweakRegStep.call([img], sigma_stat="rmse")
 
-    assert calls[0]["sigma_stat"] == "mad"
+    assert calls[0]["sigma_stat"] == "rmse"
     with res:
         model = res.borrow(0)
         assert model.meta.cal_step.tweakreg == "COMPLETE"

@@ -191,7 +191,7 @@ Step Arguments
 * ``sigma_stat``: The statistic used as the "sigma" for clipping, in both
   the relative and the absolute fits: ``'rmse'``, ``'mae'``, ``'std'``, or
   ``'mad'``. ``'mad'`` is the most robust when mismatched sources are a
-  large fraction of the matches, as in crowded fields (Default='rmse').
+  large fraction of the matches, as in crowded fields (Default='mad').
 
 **Absolute Astrometric fitting parameters:**
 
