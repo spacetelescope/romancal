@@ -78,14 +78,17 @@ def test_get_records(engdb):
 @pytest.mark.parametrize(
     "contents",
     [
-        '"TlmMnemonic":"OPE_SCF_DIR"',
-        '"EUValue":"SCFA"',
+        'TlmMnemonic',
+        'EUValue',
+        'ObsTime',
+        'ReqSTime',
+        'ReqETime',
     ],
 )
 def test_get_records_response(engdb, contents):
     """Test getting records"""
     _ = engdb._get_records(*QUERY)
-    assert_xfail(contents in engdb.response.text)
+    assert contents in engdb.response.text
 
 
 def test_get_value_justvalues(engdb):
