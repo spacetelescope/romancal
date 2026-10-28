@@ -94,8 +94,8 @@ def test_get_records_response(engdb, contents):
 def test_get_value_justvalues(engdb):
     """Test just getting values"""
     values = engdb.get_values(*QUERY, include_bracket_values=True)
-    assert_xfail(len(values) > 1)
-    assert_xfail("SCFA" in values)
+    assert len(values) > 1
+    assert np.allclose(values, 0.7569, rtol=1.e-4)
 
 
 def test_get_values_obstimes(engdb):
@@ -103,12 +103,12 @@ def test_get_values_obstimes(engdb):
     result = engdb.get_values(
         *QUERY, include_bracket_values=True, include_obstime=True, zip_results=True
     )
-    assert_xfail(isinstance(result, list))
-    assert_xfail(len(result) > 1)
+    assert isinstance(result, list)
+    assert len(result) > 1
     item = result[0]
-    assert_xfail(isinstance(item, EngDB_Value))
-    assert_xfail(isinstance(item.obstime, Time))
-    assert_xfail(isinstance(item.value, str))
+    assert isinstance(item, EngDB_Value)
+    assert isinstance(item.obstime, Time)
+    assert isinstance(item.value, float)
 
 
 def test_get_values_nozip(engdb):
@@ -116,12 +116,12 @@ def test_get_values_nozip(engdb):
     result = engdb.get_values(
         *QUERY, include_bracket_values=True, include_obstime=True, zip_results=False
     )
-    assert_xfail(isinstance(result, EngDB_Value))
-    assert_xfail(len(result) > 1)
-    assert_xfail(isinstance(result.obstime, list))
-    assert_xfail(isinstance(result.value, list))
-    assert_xfail(isinstance(result.obstime[0], Time))
-    assert_xfail(isinstance(result.value[0], str))
+    assert isinstance(result, EngDB_Value)
+    assert len(result) > 1
+    assert isinstance(result.obstime, list)
+    assert isinstance(result.value, list)
+    assert isinstance(result.obstime[0], Time)
+    assert isinstance(result.value[0], float)
 
 
 @pytest.mark.parametrize(
