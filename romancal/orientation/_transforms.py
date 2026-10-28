@@ -107,18 +107,16 @@ class Transforms:
 class TransformParameters:
     """Parameters required for the calculations."""
 
-    #: If telemetry cannot be determined, use existing information in the observation's header.
-    allow_default: bool = False
-    #: Aperture in use
-    aperture: str = ""
+    #: Detector aperture
+    aperture: str | None = None
     #: FGS Boresite Adjustment Matrix (BAM) reference file path
     bam_ref: str | Path | None = None
     #: Parameters needed for CRDS queries
     crds_pars: dict | None = None
     #: Default quaternion to use if engineering is not available.
     default_quaternion: tuple | None = None
-    #: Commanded position of the guide star in (H, V) space.
-    gscommanded: tuple | None = None
+    #: The distortion reference which defines the V1 to detector transformation.
+    distortion_ref: str | Path | None = None
     #: Observation end time
     obsend: float | None = None
     #: Observation start time
@@ -130,9 +128,8 @@ class TransformParameters:
     reduce_func: Callable | None = None
     #: Engineering database information
     service_kwargs: dict | None = None
-    #: Path to the SIAF folder containing the roman siaf xml definitions
-    #: None to use the pysiaf builtin definitions
-    siaf_path: str | None = None
+    #: Target aperture
+    target_aperture: str | None = None
     #: If no telemetry can be found during the observation,
     #: the time, in seconds, beyond the observation time to search for telemetry.
     tolerance: float = 60.0
