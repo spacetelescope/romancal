@@ -59,25 +59,7 @@ def postmortem(request, fixturename):
         return None
 
 
-# Regtest modules (in addition to compatibility/) that take the longest to run.
-# They're collected first so that pytest-xdist starts them first and they
-# don't end up as the last modules running at the end of the run.
-SLOW_REGTEST_MODULES = ("test_wfi_image_pipeline.py",)
-
-
-def _is_slow_regtest(item):
-    """Is this item in one of the longest-running regtest modules?"""
-    path = item.path
-    if "regtest" not in path.parts:
-        return False
-    return path.parent.name == "compatibility" or path.name in SLOW_REGTEST_MODULES
-
-
 def pytest_collection_modifyitems(config, items):
-    # move the slowest regtest modules to the front; the sort is stable, so
-    # the order within and among the remaining modules is unchanged
-    items.sort(key=lambda item: not _is_slow_regtest(item))
-
     # add the index of each item in the list of items
     # this is used below for artifactory_result_path
     # to produce a unique result subdirectory for
