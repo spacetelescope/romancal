@@ -11,7 +11,6 @@ import numpy as np
 
 from romancal.lib.engdb import engdb_mast
 from romancal.lib.engdb.engdb_lib import EngDB_Value
-from romancal.lib.engdb.tests.utils import assert_xfail
 
 # Configure logging
 log = logging.getLogger(__name__)
@@ -33,19 +32,11 @@ def test_get_meta(engdb, mnemonic, expected):
     """Test meta retrieval"""
     results = engdb.get_meta(search=mnemonic)
     n = results["Count"]
-    assert_xfail(
-        n == len(results["TlmMnemonics"]), reason="No meta for mnemonics found"
-    )
+    assert n == len(results["TlmMnemonics"]), "No meta for mnemonics found"
     if expected == "something":
-        assert_xfail(
-            n != 0,
-            reason=f"Unexpected database contents. Check state of database. Count: {n}, expected: {expected}",
-        )
+        assert n != 0, f"Unexpected database contents. Check state of database. Count: {n}, expected: {expected}"
     else:
-        assert_xfail(
-            n == expected,
-            reason=f"Unexpected database contents. Check state of database. Count: {n}, expected: {expected}",
-        )
+        assert n == expected, f"Unexpected database contents. Check state of database. Count: {n}, expected: {expected}"
 
 
 def test_get_records(engdb):
