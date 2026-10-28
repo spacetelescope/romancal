@@ -40,7 +40,7 @@ EXPECTED_RECORDS = Table.read(
     "mnemonic, expected",
     [
         (None, "something"),
-        ("ope_scf_dir", 1),
+        ("scf_ac_sdr_qbj_1", 1),
         ("ope", "something"),
         ("junkfromspace", 0),
     ],
