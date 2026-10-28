@@ -183,7 +183,7 @@ def hv_to_fgs(aperture_name, h, v, siaf_path=None):
     return x_fgs, y_fgs
 
 
-def update_meta(model, t_pars, wcsinfo, vinfo, quality, siaf_path=None):
+def update_meta(model, wcs_meta, quality):
     """Update model's meta info with the given pointing.
 
     The following meta are update:
@@ -205,63 +205,27 @@ def update_meta(model, t_pars, wcsinfo, vinfo, quality, siaf_path=None):
     model : `~roman.datamodels.DataModel`
         The model to update. Updates are done in-place.
 
-    t_pars : `TransformParameters`
-        The transformation parameters. Parameters are updated during processing.
-
-    wcsinfo : `WCSRef``
-        The aperture-specific pointing.
-
-    vinfo : ``WCSRef`
-        The V1-specific pointing
+    wcs_meta : dict
+        The major meta blocks with the update information.
+        This is the dict returned from `calc_wcs`
 
     quality : str
         Indicator of the success of the pointing determination.
-
-    siaf_path : str
-        The folder where the SIAF xml information resides.
     """
-    # Shortcuts to the meta blocks
-    gs = model.meta.guide_star
-    pm = model.meta.pointing
-    wm = model.meta.wcsinfo
+    for k, v in wcs_meta["pointing"].items():
+        if hasattr(model.meta.pointing, k) or k in model.meta.pointing:
+            setattr(model.meta.pointing, k, v)
 
-    # Setup SIAF info.
-    siaf = siaf_lib.open_siaf(basepath=siaf_path)
-    aper = siaf[wm.aperture_name.upper()]
+    for k, v in wcs_meta["velocity_aberration"].items():
+        if (
+                hasattr(model.meta.velocity_aberration, k)
+                or k in model.meta.velocity_aberration
+        ):
+            setattr(model.meta.velocity_aberration, k, v)
 
-    # Update pointing info
-
-    # Update SIAF-related meta
-    wm.v2_ref = aper.V2Ref
-    wm.v3_ref = aper.V3Ref
-    wm.v3yangle = aper.V3IdlYAngle
-    wm.vparity = aper.VIdlParity
-
-    # Update aperture-centric pointing, represented by `wcsinfo`
-    wm.dec_ref = wcsinfo.dec
-    wm.ra_ref = wcsinfo.ra
-    wm.roll_ref = wcsinfo.pa
-    wm.s_region = wcsinfo.s_region
-
-    # Update general pointing information, including V1.
-    pm.dec_v1 = vinfo.dec
-    pm.pa_aperture = wcsinfo.pa
-    pm.pa_v3 = vinfo.pa
-    pm.pointing_engineering_source = quality
-    pm.quaternion = tuple(t_pars.pointing.q)
-    pm.ra_v1 = vinfo.ra
-
-    # Update target's sky location.
-    attitude = attitude_from_v1(vinfo, siaf_path=siaf_path)
-    targ_app = siaf[model.meta.pointing.target_aperture]
-    targ_app.set_attitude_matrix(attitude)
-    skycoord = targ_app.reference_point(to_frame="sky")
-    pm.target_ra = skycoord[0]
-    pm.target_dec = skycoord[1]
-
-    # Update guidestar information
-    if t_pars.gscommanded is not None:
-        gs.hv_position = t_pars.gscommanded
+    for k, v in wcs_meta["wcsinfo"].items():
+        if hasattr(model.meta.wcsinfo, k) or k in model.meta.wcsinfo:
+            setattr(model.meta.wcsinfo, k, v)
 
 
 def vector_to_angle(v):

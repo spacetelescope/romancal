@@ -360,7 +360,6 @@ def test_transform_serialize(calc_wcs, tmp_path):
 @pytest.mark.parametrize(
     "attr, expected",
     [
-        ("meta.guide_star.hv_position", (916.4728835141, -186.8939737044)),
         ("meta.pointing.dec_v1", -30.177183927606528),
         ("meta.pointing.pa_aperture", 90.60111674247034),
         ("meta.pointing.pa_v3", 90.4289479321644),
@@ -461,7 +460,7 @@ def science_raw_model():
 @pytest.fixture(scope="module")
 def updated_model(calc_wcs):
     """Update a model with a orientation calculation"""
-    wcsinfo, vinfo, _, t_pars = calc_wcs
+    wcs_meta, t_pars = calc_wcs
 
     m = rdm.datamodels.ScienceRawModel.create_fake_data(
         {
@@ -476,7 +475,7 @@ def updated_model(calc_wcs):
             }
         }
     )
-    olib.update_meta(m, t_pars, wcsinfo, vinfo, "CALCULATED")
+    olib.update_meta(m, wcs_meta, "CALCULATED")
     return m
 
 
