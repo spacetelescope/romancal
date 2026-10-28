@@ -55,7 +55,7 @@ class TweakRegStep(RomanStep):
         separation = float(default=1.0) # Minimum object separation in arcsec
         tolerance = float(default=0.7) # Matching tolerance for xyxymatch in arcsec
         fitgeometry = option('shift', 'rshift', 'rscale', 'general', default='general') # Fitting geometry
-        nclip = integer(min=0, default=3) # Number of clipping iterations in fit
+        nclip = integer(min=0, default=10) # Number of clipping iterations in fit
         sigma = float(min=0.0, default=3.0) # Clipping limit in sigma units
         sigma_stat = option('rmse', 'mae', 'std', 'mad', default='mad') # Statistic used as sigma for clipping, in the relative and absolute fits
         abs_refcat = string(default='{DEFAULT_ABS_REFCAT}')  # Absolute reference catalog
@@ -68,7 +68,7 @@ class TweakRegStep(RomanStep):
         abs_tolerance = float(default=0.7) # Matching tolerance for xyxymatch in arcsec when performing absolute astrometry
         # Fitting geometry when performing absolute astrometry
         abs_fitgeometry = option('shift', 'rshift', 'rscale', 'general', default='general')
-        abs_nclip = integer(min=0, default=3) # Number of clipping iterations in fit when performing absolute astrometry
+        abs_nclip = integer(min=0, default=10) # Number of clipping iterations in fit when performing absolute astrometry
         abs_sigma = float(min=0.0, default=3.0) # Clipping limit in sigma units when performing absolute astrometry
         output_use_model = boolean(default=True)  # When saving use `DataModel.meta.filename`
         update_source_catalog_coordinates = boolean(default=False) # Update source catalog file with tweaked coordinates?

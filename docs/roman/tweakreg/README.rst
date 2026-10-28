@@ -183,7 +183,7 @@ Step Arguments
       spread across/covering the entire image).
 
 * ``nclip``: A non-negative integer number of clipping iterations
-  to use in the fit (Default = 3).
+  to use in the fit (Default = 10).
 
 * ``sigma``: A positive `float` indicating the clipping limit, in sigma units,
   used when performing fit (Default=3.0).
@@ -235,7 +235,7 @@ Parameters used for absolute astrometry to a reference catalog.
   that apply to ``fitgeometry`` also apply to ``abs_fitgeometry``.
 
 * ``abs_nclip``: A non-negative integer number of clipping iterations
-  to use in the fit (Default = 3).
+  to use in the fit (Default = 10).
 
 * ``abs_sigma``: A positive `float` indicating the clipping limit, in sigma
   units, used when performing fit (Default=3.0).
