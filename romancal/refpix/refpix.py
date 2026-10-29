@@ -4,9 +4,7 @@ import logging
 from typing import TYPE_CHECKING
 import numpy as np
 
-from astropy.stats import mad_std
 from scipy.ndimage import gaussian_filter1d
-
 from roman_datamodels.dqflags import pixel
 
 if TYPE_CHECKING:
@@ -21,90 +19,75 @@ log.setLevel(logging.DEBUG)
 def _compute_dynamic_weights(
     datamodel: RampModel,
     sigma_thresh: float = 2.5,
+    sigma_width: float = 1.0,
     smooth_sigma: float = 8.0,
-) -> np.ndarray:
+) -> dict:
     """
-    Dynamically computes row-by-row weights [Left, Right, Default, Amp33]
-    using uniform-weight linear ramp fitting, Gaussian slope smoothing, 
-    and Tim's continuous [0, 1] sigma-tapered validity mapping.
+    Dynamically computes row-by-row weights for the 4 reference pixel states.
+    Uses max-likelihood read-noise slope fitting, Gaussian slope smoothing, 
+    and a continuous sigma-tapered validity mapping.
     """
     n_res, n_rows, _ = datamodel.data.shape
 
-    # 1. Isolate and collapse Left and Right reference columns (shape: n_res, n_rows)
-    left_refs = np.nanmedian(datamodel.data[:, :, :4], axis=2).astype(np.float32)
-    right_refs = np.nanmedian(datamodel.data[:, :, -4:], axis=2).astype(np.float32)
+    # 1. Isolate and collapse Left and Right reference columns
+    # Using nanmean per Tim's feedback to match fundamental refpix correction math
+    left_refs = np.nanmean(datamodel.data[:, :, :4], axis=2).astype(np.float32)
+    right_refs = np.nanmean(datamodel.data[:, :, -4:], axis=2).astype(np.float32)
 
     # 2. Vectorized Uniform Weight Linear Ramp Fit (Slopes in DN / resultant)
-    x = np.arange(n_res, dtype=np.float32)
-    x_diff = x - np.mean(x)
-    x_ssq = np.sum(x_diff ** 2)
+    # This is the maximum likelihood slope in the read noise limit.
+    # read_pattern is a list of lists of the read numbers that constitute each resultant.
+    ni = np.array([len(t) for t in datamodel.meta.exposure.read_pattern])
+    ti = np.array([np.mean(t) for t in datamodel.meta.exposure.read_pattern])
+    N = np.sum(ni)
+    Nt = np.sum(ni * ti)
+    Ntt = np.sum(ni * ti**2)
+    
+    # Calculate exact optimal weights for the slope fit
+    ml_weights = (N * ni * ti - Nt * ni) / (N * Ntt - Nt**2)
 
-    left_temp_diff = left_refs - np.nanmean(left_refs, axis=0)[np.newaxis, :]
-    left_slopes = np.sum(x_diff[:, np.newaxis] * left_temp_diff, axis=0) / x_ssq
+    left_slopes = np.sum(left_refs * ml_weights[:, None], axis=0)
+    right_slopes = np.sum(right_refs * ml_weights[:, None], axis=0)
 
-    right_temp_diff = right_refs - np.nanmean(right_refs, axis=0)[np.newaxis, :]
-    right_slopes = np.sum(x_diff[:, np.newaxis] * right_temp_diff, axis=0) / x_ssq
-
-    # 3. Spatial Median Centering across the 4096 rows
+    # 3. Tim's signed slope smoothing (catches coherent one-sided drifts)
+    # RESTORED: Spatial median centering is mathematically required. Healthy ref pixels 
+    # accumulate a positive baseline drift over the ramp. Without this, the global 
+    # DC drift inflates the MAD noise floor and results in 0 detections.
     left_dev = left_slopes - np.nanmedian(left_slopes)
     right_dev = right_slopes - np.nanmedian(right_slopes)
 
-    # 4A. Tim's signed slope smoothing (catches coherent one-sided drifts)
     left_smooth = gaussian_filter1d(left_dev, sigma=smooth_sigma)
     right_smooth = gaussian_filter1d(right_dev, sigma=smooth_sigma)
 
-    left_noise = max(1.5 * float(np.nanmedian(np.abs(left_smooth))), 1e-12)
-    right_noise = max(1.5 * float(np.nanmedian(np.abs(right_smooth))), 1e-12)
+    # The factor of 1.5 is the (approximate) ratio of the median absolute deviation
+    # to the standard deviation assuming Gaussianity.
+    left_noise = max(1.5 * np.nanmedian(np.abs(left_smooth)), 1e-12)
+    right_noise = max(1.5 * np.nanmedian(np.abs(right_smooth)), 1e-12)
 
-    left_snr_signed = np.abs(left_smooth) / left_noise
-    right_snr_signed = np.abs(right_smooth) / right_noise
+    left_snr = np.abs(left_smooth) / left_noise
+    right_snr = np.abs(right_smooth) / right_noise
 
-    # 4B. Rectified slope envelope (prevents bipolar yellow/blue stripes in the wings
-    # and core from canceling out during smoothing, normalized by its own MAD noise)
-    left_env = gaussian_filter1d(np.abs(left_dev), sigma=smooth_sigma)
-    right_env = gaussian_filter1d(np.abs(right_dev), sigma=smooth_sigma)
-
-    left_env_med = float(np.nanmedian(left_env))
-    right_env_med = float(np.nanmedian(right_env))
-
-    left_env_noise = max(1.5 * float(np.nanmedian(np.abs(left_env - left_env_med))), 1e-12)
-    right_env_noise = max(1.5 * float(np.nanmedian(np.abs(right_env - right_env_med))), 1e-12)
-
-    left_snr_env = (left_env - left_env_med) / left_env_noise
-    right_snr_env = (right_env - right_env_med) / right_env_noise
-
-    # Combine signed and rectified SNR so neither core sign-flips nor wings drop out
-    left_snr = np.maximum(left_snr_signed, left_snr_env)
-    right_snr = np.maximum(right_snr_signed, right_snr_env)
-
-    # 5. Tim's continuous validity weight: tapers from 1 (valid) to 0 (corrupted)
-    # across [sigma_thresh - 0.5, sigma_thresh + 0.5]
-    w_left_valid = np.clip((sigma_thresh + 0.5) - left_snr, 0.0, 1.0)
-    w_right_valid = np.clip((sigma_thresh + 0.5) - right_snr, 0.0, 1.0)
-
-    c_left = 1.0 - w_left_valid
-    c_right = 1.0 - w_right_valid
+    # 4. Continuous validity weight: tapers from 1 (valid) to 0 (corrupted)
+    # across [sigma_thresh - (sigma_width/2), sigma_thresh + (sigma_width/2)]
+    w_left_valid = np.clip((sigma_thresh - left_snr) / sigma_width + 0.5, 0.0, 1.0)
+    w_right_valid = np.clip((sigma_thresh - right_snr) / sigma_width + 0.5, 0.0, 1.0)
 
     log.info(
-        f"Dynamic weights active on {np.sum(c_left > 0)} Left rows "
-        f"(full weight on {np.sum(c_left == 1.0)} rows)."
+        f"Dynamic weights active on {np.sum((1.0 - w_left_valid) > 0)} Left rows "
+        f"(full weight on {np.sum(w_left_valid == 0.0)} rows)."
     )
     log.info(
-        f"Dynamic weights active on {np.sum(c_right > 0)} Right rows "
-        f"(full weight on {np.sum(c_right == 1.0)} rows)."
+        f"Dynamic weights active on {np.sum((1.0 - w_right_valid) > 0)} Right rows "
+        f"(full weight on {np.sum(w_right_valid == 0.0)} rows)."
     )
 
-    # 6. Bilinearly map valid/corrupted weights to [Left, Right, Default, Amp33]
-    weights = np.zeros((n_rows, 4), dtype=np.float32)
-    weights[:, 0] = w_left_valid * c_right          # Left-only (Left valid, Right corrupted)
-    weights[:, 1] = c_left * w_right_valid          # Right-only (Left corrupted, Right valid)
-    weights[:, 2] = w_left_valid * w_right_valid    # Default (Both valid)
-    weights[:, 3] = c_left * c_right                # Amp33 (Both corrupted)
-
-    np.save(
-        '/grp/roman/hgk/romcom/crosstalk_esque_issue/dr15_dynamic_weights_final.npy',
-        weights,
-    )
+    # 5. Map valid/corrupted weights to a dictionary of the 4 blend states
+    weights = {
+        'left_only': w_left_valid * (1 - w_right_valid),    # left valid, right bad
+        'right_only': w_right_valid * (1 - w_left_valid),   # left bad, right valid
+        'all_valid': w_left_valid * w_right_valid,          # Default (both valid)
+        'amp33_only': (1 - w_left_valid) * (1 - w_right_valid) # left and right both bad
+    }
 
     return weights
 
@@ -119,6 +102,7 @@ def run_steps(
     fft_interpolate: bool = True,
     dynamic_weights: str = 'dynamic',
     sigma_thresh: float = 2.5,
+    sigma_width: float = 1.0,
     smooth_sigma: float = 8.0,
 ) -> RampModel:
     """
@@ -131,8 +115,6 @@ def run_steps(
     coeffs_default = Coefficients.from_ref(refs)
 
     # 2. Generate the 3 isolated coefficient states while CONSERVING (gamma + zeta)
-    # Substituting R <- L requires gamma_left = gamma + zeta so healthy baseline drift
-    # is still fully subtracted when one side is zeroed out.
     coeffs_left = Coefficients(
         alpha=coeffs_default.alpha,
         gamma=coeffs_default.gamma + coeffs_default.zeta,
@@ -153,11 +135,12 @@ def run_steps(
 
     # 3. Compute dynamic weights ONCE on the unmutated ramp before the resultant loop
     if dynamic_weights != 'default':
-        weights = _compute_dynamic_weights(datamodel, sigma_thresh=sigma_thresh, smooth_sigma=smooth_sigma)
-        w_left = weights[:, 0][:, np.newaxis]
-        w_right = weights[:, 1][:, np.newaxis]
-        w_default = weights[:, 2][:, np.newaxis]
-        w_amp33 = weights[:, 3][:, np.newaxis]
+        weights = _compute_dynamic_weights(
+            datamodel, 
+            sigma_thresh=sigma_thresh, 
+            sigma_width=sigma_width,
+            smooth_sigma=smooth_sigma
+        )
 
     offset = None
     if remove_offset:
@@ -204,11 +187,12 @@ def run_steps(
             amp33_data = _get_corrected_state(coeffs_amp33)
             default_data = _get_corrected_state(coeffs_default)
 
+            # Dictionary unpacked directly into the blend per Tim's request
             standard.data[:] = (
-                (left_data * w_left)
-                + (right_data * w_right)
-                + (default_data * w_default)
-                + (amp33_data * w_amp33)
+                (left_data * weights['left_only'][:, None])
+                + (right_data * weights['right_only'][:, None])
+                + (default_data * weights['all_valid'][:, None])
+                + (amp33_data * weights['amp33_only'][:, None])
             )
 
         if offset is not None:
