@@ -34,7 +34,7 @@ LOGLEVELS = [logging.INFO, logging.DEBUG, olib.DEBUG_FULL]
 
 
 def apply_vector_velocity_aberration(u_vec, v_xyz_kms):
-    """Applies absolute velocity aberration to a 3D ECI unit vector."""
+    """Applies velocity aberration to a 3D ECI unit vector."""
     c_kms = 299792.458
     beta = np.array(v_xyz_kms, dtype=float) / c_kms
 
@@ -44,7 +44,6 @@ def apply_vector_velocity_aberration(u_vec, v_xyz_kms):
 
     scale_factor = 1.0 + beta_dot_u
     return u_app, float(scale_factor)
-
 
 def build_v2v3_skyoffset_frame(v1_vec, v3_vec):
     """
@@ -65,9 +64,9 @@ def build_v2v3_skyoffset_frame(v1_vec, v3_vec):
     )
     pa_v3 = float(v1_coord.position_angle(v3_step_coord).deg % 360.0)
 
-    # Note: SkyOffsetFrame defines positive rotation CCW (West of North).
-    # Passing -pa_v3 aligns +lat with +V3 (East of North) and +lon with +V2.
-    v2v3_frame = SkyOffsetFrame(origin=v1_coord, rotation=-pa_v3 * u.deg)
+    # SkyOffsetFrame positive rotation is CCW (West of North).
+    # Passing +pa_v3 aligns +lat with +V3 (East of North) and +lon with +V2.
+    v2v3_frame = SkyOffsetFrame(origin=v1_coord, rotation=pa_v3 * u.deg)
     return v2v3_frame, ra_v1, dec_v1, pa_v3
 
 
@@ -97,38 +96,42 @@ def calc_wcs(t_pars: tlib.TransformParameters):
         q_bam = [float(x) for x in af_bam["roman"]["bam_quaternion"]]
 
     sca_info = extract_sca_wcs_params(t_pars.distortion_ref)
-
     aperture_name = t_pars.aperture
     if aperture_name is None:
         aperture_name = f"{sca_info['detector']}_FULL"
 
-    # 1. TRUE ATTITUDE FRAME (astropy SkyOffsetFrame)
-    att_matrix_true = R.from_quat(t_pars.pointing.q).as_matrix()
-    v1_true = att_matrix_true[:, 0]
-    v3_true = att_matrix_true[:, 2]
+    # 1. APPARENT ATTITUDE FRAME (From Telemetry qbj)
+    # The physical orientation of the telescope capturing aberrated photons
+    att_matrix_app = R.from_quat(t_pars.pointing.q).as_matrix()
+    v1_app = att_matrix_app[:, 0]
+    v3_app = att_matrix_app[:, 2]
+
+    app_v2v3_frame, _, _, _ = build_v2v3_skyoffset_frame(v1_app, v3_app)
+
+    # 2. TRUE ATTITUDE FRAME (Inverse Velocity Aberration)
+    # Apply -v_xyz_kms to back out the aberration and recover the ICRS catalog frame
+    v_xyz_kms_inv = -np.array(t_pars.velocity, dtype=float)
+    v1_true, _ = apply_vector_velocity_aberration(v1_app, v_xyz_kms_inv)
+    v3_true_approx, _ = apply_vector_velocity_aberration(v3_app, v_xyz_kms_inv)
+
+    # Re-orthogonalize V3 against V1 to enforce a rigid 90-degree body frame
+    v3_true = v3_true_approx - np.dot(v3_true_approx, v1_true) * v1_true
+    v3_true /= np.linalg.norm(v3_true)
 
     true_v2v3_frame, true_ra_v1, true_dec_v1, true_pa_v3 = build_v2v3_skyoffset_frame(
         v1_true, v3_true
     )
 
-    # 2. APPARENT ATTITUDE FRAME (astropy SkyOffsetFrame)
-    v1_app, _ = apply_vector_velocity_aberration(v1_true, t_pars.velocity)
-    v3_app, _ = apply_vector_velocity_aberration(v3_true, t_pars.velocity)
-
-    v3_ortho = v3_app - np.dot(v3_app, v1_app) * v1_app
-    v3_ortho /= np.linalg.norm(v3_ortho)
-
-    app_v2v3_frame, _, _, _ = build_v2v3_skyoffset_frame(v1_app, v3_ortho)
-
     # 3. GLOBAL TARGET POINTING VIA BAM QUATERNION
     tgt_ya_deg, tgt_v2_ref, tgt_v3_ref = get_angles_from_quaternion(q_bam)
 
+    # Project True Sky Coordinates for APT alignment
     tgt_true_ra, tgt_true_dec, true_roll_target, tgt_true_coord = (
         project_v2v3_with_roll(tgt_v2_ref, tgt_v3_ref, true_v2v3_frame)
     )
     pa_aperture_true = (true_roll_target + tgt_ya_deg) % 360.0
 
-    # Velocity Aberration Scale Factor using 3D Cartesian unit vector from SkyCoord
+    # Velocity Aberration Scale Factor using True Target SkyCoord (forward velocity)
     u_tgt_true = tgt_true_coord.cartesian.xyz.value
     _, global_scale_factor = apply_vector_velocity_aberration(u_tgt_true, t_pars.velocity)
 
@@ -137,7 +140,7 @@ def calc_wcs(t_pars: tlib.TransformParameters):
         lon=tgt_v2_ref * u.arcsec, lat=tgt_v3_ref * u.arcsec, frame=app_v2v3_frame
     ).transform_to("icrs")
 
-    # 4. SCA-SPECIFIC WCS PROJECTIONS VIA DISTORTION REFERENCE FILE
+    # 4. SCA-SPECIFIC WCS PROJECTIONS VIA DISTORTION REFERENCE FILE (True Frame)
     true_ra_ref, true_dec_ref, true_roll_ref, _ = project_v2v3_with_roll(
         sca_info["v2_ref"], sca_info["v3_ref"], true_v2v3_frame
     )
@@ -156,7 +159,7 @@ def calc_wcs(t_pars: tlib.TransformParameters):
     )
 
     # 5. ASDF METADATA ASSEMBLY
-    meta = {
+    wcs_meta = {
         "pointing": {
             "pointing_engineering_source": "CALCULATED",
             "quaternion": [float(x) for x in t_pars.pointing.q],
@@ -186,8 +189,7 @@ def calc_wcs(t_pars: tlib.TransformParameters):
             "s_region": f"POLYGON ICRS {polygon_str}",
         },
     }
-    return meta
-
+    return wcs_meta
 
 def get_angles_from_quaternion(q_inst2b):
     """
@@ -236,6 +238,7 @@ def project_v2v3_with_roll(v2_arcsec, v3_arcsec, v2v3_frame):
 
     local_roll = float(c_icrs.position_angle(c_north_v3).deg % 360.0)
     return float(c_icrs.ra.deg), float(c_icrs.dec.deg), local_roll, c_icrs
+
 
 # ###
 # old code

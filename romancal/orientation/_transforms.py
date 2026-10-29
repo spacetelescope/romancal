@@ -573,6 +573,7 @@ def t_pars_from_model(model, t_pars):
     except AttributeError:
         exp_type = None
     t_pars.exp_type = exp_type
+    t_pars.target_aperture = model.meta.pointing.target_aperture
 
     # observation parameters
     t_pars.obsstart = model.meta.exposure.start_time
@@ -581,7 +582,5 @@ def t_pars_from_model(model, t_pars):
     t_pars.velocity = (ephem.velocity_x, ephem.velocity_y, ephem.velocity_z)
 
     # Retrieve previously calculated orientation items only if they are currently not defined.
-    if t_pars.gscommanded is None:
-        t_pars.gscommanded = getattr(model.meta.guide_star, "hv_position", None)
     if t_pars.default_quaternion is None:
         t_pars.default_quaternion = getattr(model.meta.pointing, "quaternion", None)
