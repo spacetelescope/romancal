@@ -18,10 +18,10 @@ jobs:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-changelog-entry-needed') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-python@v7.0.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: 3.12
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - run: pip install .
@@ -32,7 +32,7 @@ jobs:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'allow-manual-changelog-edit') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - name: prevent direct changes to `CHANGES.rst` (write a towncrier fragment in `changes/` instead; you can override this with the `allow-manual-changelog-edit` label)
