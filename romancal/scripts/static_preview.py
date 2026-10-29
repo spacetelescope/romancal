@@ -21,12 +21,6 @@ def command():
     parser = argparse.ArgumentParser()
     parser.add_argument("INPUT", type=Path, help="path to ASDF file with 2D image data")
     parser.add_argument("OUTPUT", type=Path, help="path to output image file")
-    parser.add_argument(
-        "--percentile",
-        type=float,
-        default=90,
-        help="central percentage of pixel values spanned by the color stretch (default: 90, i.e. from the 5th to the 95th percentile)",
-    )
 
     subparsers = parser.add_subparsers(dest="subcommand")
 
@@ -39,6 +33,12 @@ def command():
         nargs="+",
         default=(1080, 1080),
         help="desired pixel shape of output image",
+    )
+    preview_parser.add_argument(
+        "--percentile",
+        type=float,
+        default=96,
+        help="central percentage of pixel values spanned by the color stretch (default: 96, i.e. from the 2nd to the 98th percentile)",
     )
     preview_parser.add_argument(
         "--no-compass",
@@ -56,6 +56,12 @@ def command():
         nargs="+",
         default=(300, 300),
         help="desired pixel shape of output image",
+    )
+    thumbnail_parser.add_argument(
+        "--percentile",
+        type=float,
+        default=98,
+        help="central percentage of pixel values spanned by the color stretch (default: 98, i.e. from the 1st to the 99th percentile)",
     )
     thumbnail_parser.add_argument(
         "--compass",
