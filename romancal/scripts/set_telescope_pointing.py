@@ -49,6 +49,13 @@ def _main():
         help="Use specified file instead of retrieving the BAM reference from CRDS",
     )
     parser.add_argument(
+        "--override-distortion",
+        dest="distortion_ref",
+        type=str,
+        default=None,
+        help="Use specified file instead of retrieving the DISTORTION reference from CRDS",
+    )
+    parser.add_argument(
         "-q",
         "--quaternion",
         dest="default_quaternion",
@@ -59,21 +66,11 @@ def _main():
         help="Default orientation quaternion if no engineering database information is found.",
     )
     parser.add_argument(
-        "--save-transforms", action="store_true", help="Save transforms."
-    )
-    parser.add_argument(
         "--service",
         type=str,
         default="mast",
         choices=[name for name in AVAILABLE_SERVICES],
         help="Database service to use. Default: %(default)s",
-    )
-    parser.add_argument(
-        "--siaf",
-        dest="siaf_path",
-        type=str,
-        default=None,
-        help="Folder for alternate pysiaf XML files",
     )
     parser.add_argument(
         "--tolerance",
@@ -189,22 +186,16 @@ def _main():
         logger.info("------")
         logger.info(f"Setting pointing for {filename}")
 
-        # Create path for saving the transforms.
-        transform_path = None
-        if args.save_transforms:
-            path = Path(filename)
-            transform_path = path.with_name(f"{path.stem}_transforms.asdf")
-
         try:
             stp.add_wcs(
                 filename,
                 dry_run=args.dry_run,
-                save_transforms=transform_path,
                 # all keyword arguments below are defined in
                 # set_telescope_pointing.TransformParameters
                 allow_default=args.allow_default,
                 bam_ref=args.bam_ref,
                 default_quaternion=args.default_quaternion,
+                distorion_ref=arg.distortion_ref,
                 service_kwargs=service_kwargs,
                 tolerance=args.tolerance,
             )
