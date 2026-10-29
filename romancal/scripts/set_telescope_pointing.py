@@ -42,14 +42,6 @@ def _main():
         help="Perform all actions but do not save the results",
     )
     parser.add_argument(
-        "--gscommanded",
-        type=float,
-        nargs=2,
-        metavar=("H", "V"),
-        default=None,
-        help="Commanded position of the guide start in (H,V) space",
-    )
-    parser.add_argument(
         "--override-bam",
         dest="bam_ref",
         type=str,
@@ -213,9 +205,7 @@ def _main():
                 allow_default=args.allow_default,
                 bam_ref=args.bam_ref,
                 default_quaternion=args.default_quaternion,
-                gscommanded=args.gscommanded,
                 service_kwargs=service_kwargs,
-                siaf_path=args.siaf_path,
                 tolerance=args.tolerance,
             )
         except (TypeError, ValueError) as exception:

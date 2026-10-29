@@ -106,7 +106,8 @@ class Transforms:
 @dataclasses.dataclass
 class TransformParameters:
     """Parameters required for the calculations."""
-
+    #: If telemetry cannot be determined, use existing information in the observation's header.
+    allow_default: bool = False
     #: Detector aperture
     aperture: str | None = None
     #: FGS Boresite Adjustment Matrix (BAM) reference file path
