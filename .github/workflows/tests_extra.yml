@@ -77,8 +77,9 @@ jobs:
       cache-path: ${{ needs.crds.outputs.path }}
       cache-key: crds-${{ needs.crds.outputs.context }}
       envs: |
-        - macos: py*-xdist
-        - linux: py3-devdeps-xdist
-        - macos: py3-devdeps-xdist
+        - macos: py312-xdist
+        - macos: py313-xdist
+        - linux: py314-devdeps-xdist
+        - macos: py314-devdeps-xdist
       artifact-path: |
         results.xml
