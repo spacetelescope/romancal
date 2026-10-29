@@ -22,10 +22,12 @@ The actual process consists of the following steps:
 
  - Copy the input product into a RampModel (if it isn't already) for processing
    through pipeline. This will create "pixeldq" and "groupdq" arrays (if they
-   don't already exist).
+   don't already exist), along with an empty "pixeldq2" array (see
+   :ref:`extra_data_quality_flags`).
 
  - Propagate the DQ flags from the reference file DQ array to the science data "PIXELDQ"
-   array using numpy's ``bitwise_or`` function.
+   array using numpy's ``bitwise_or`` function. Any "DQ2" array in the reference
+   file is propagated to "PIXELDQ2" in the same way.
 
  - Flag pixels affected by the guide window readout. All pixels in the columns
    spanned by the guide window are flagged ``GW_AFFECTED_DATA``. The pixels
@@ -50,15 +52,23 @@ non-matching names is simply into a new 'extras' component of the metadata. This
 allows processing to proceed and preserves the original metadata, but the
 resulting files have duplicates of many entries.
 
-The "data" arrays in the uncal files contain the difference between
+The "data" arrays in older uncal files contain the difference between
 the total values measured in the telescope and the "reference read"
 measured immediately before the science reads.  Steps like the
 linearity correction step need to operate on the full pixel values,
 including the reference read contribution.  Accordingly, the DQ
-initialization step also adds the reference read and the
+initialization step adds the reference read and the
 reference_amp33 read to the data and amp33 pixels, respectively, so
 that the ramp model always contains the total number of DN present
 in the detector. Additionally, if an encoding offset was added to the
 pixel values onboard (used to ensure no negative pixel values after reference
 read subtraction), then the offset value is also subtracted from the data
 and amp33 arrays.
+
+Newer uncal files may have had these corrections applied when the L1 file
+was made.  If ``meta.instrument.l1_reference_read_added`` is True, the
+reference read is not added, and if
+``meta.instrument.l1_data_encoding_offset_removed`` is True, the encoding
+offset is not subtracted.  Files without these keywords are treated as if
+they were False.  In all cases, the reference_read and reference_amp33
+arrays are not propagated to the ramp model.

@@ -98,8 +98,8 @@ class RomanSourceCatalog:
         measurements. The image is assumed to be background subtracted.
 
     kernel_fwhm : float
-        The full-width at half-maximum (FWHM) of the DAOFind 2D Gaussian
-        kernel. This kernel is used to calculate the DAOFind sharpness
+        The full-width at half-maximum (FWHM), in pixels, of the DAOFind
+        2D Gaussian kernel. This kernel is used to calculate the DAOFind sharpness
         and roundness properties. DAOFind uses a special kernel that
         sums to zero.
 
@@ -164,6 +164,8 @@ class RomanSourceCatalog:
         flux_unit=DEFAULT_FLUX_UNIT,
         cat_type="prompt",
         ee_spline=None,
+        det_template=None,
+        det_significance=None,
     ):
         if not isinstance(model, ImageModel | MosaicModel):
             raise ValueError("The input model must be an ImageModel or MosaicModel.")
@@ -181,6 +183,8 @@ class RomanSourceCatalog:
         self.flux_unit = u.Unit(self.flux_unit_str)
         self.cat_type = cat_type
         self.ee_spline = ee_spline
+        self.det_template = det_template
+        self.det_significance = det_significance
 
         self.n_sources = len(segment_img.labels)
         self.wcs = self.model.meta.wcs
@@ -305,7 +309,7 @@ class RomanSourceCatalog:
             core_indices = core_indices[this_cell_idx]
             in_core[core_indices] = True
 
-        projection_idx = sc.projection_regions[0]
+        projection_idx = int(sc.projection_regions[0])
         pattern = r"x(\d+)y(\d+)"
         match = re.search(pattern, skycell_name)
         if not match:
@@ -388,15 +392,75 @@ class RomanSourceCatalog:
 
         return flags
 
+    def _flag_dtype(self, column):
+        """
+        The catalog dtype for a segment flag column.
+
+        Use the column's schema definition if there is one, then that of
+        ``image_flags`` (``image_flags2`` may not be in the schema yet),
+        and otherwise ``uint32`` to match the DQ arrays.
+        """
+        for name in (column, "image_flags"):
+            definition = self.cat_model.get_column_definition(name)
+            if definition is not None:
+                return np.dtype(definition["datatype"])
+        return np.dtype(np.uint32)
+
+    def _segment_flags(self, dq, column):
+        """
+        Bitwise-or a pixel-level DQ array over each source segment.
+
+        Parameters
+        ----------
+        dq : `numpy.ndarray` or None
+            Pixel-level data quality array matching the segmentation image,
+            or None if the model has no such array.
+
+        column : str
+            The catalog column name, used to look up its dtype.
+
+        Returns
+        -------
+        `numpy.ndarray`
+            Per-source flags with the column's dtype.  All zero if ``dq``
+            is None.
+        """
+        flags = np.zeros(self.n_sources, dtype=np.uint32)
+        if dq is not None:
+            labels = self.segment_img.data.ravel()
+            m = labels > 0
+            # segment_img.labels is sorted, so searchsorted maps each
+            # labeled pixel onto its row in the output catalog
+            index = np.searchsorted(self.segment_img.labels, labels[m])
+            np.bitwise_or.at(flags, index, dq.ravel()[m].astype(np.uint32))
+
+        dtype = self._flag_dtype(column)
+        if dtype == np.int32:
+            # reinterpret rather than cast, so that a set bit 31 keeps its
+            # bit pattern (it reads as negative) rather than overflowing
+            return flags.view(np.int32)
+        return flags.astype(dtype, copy=False)
+
     @lazyproperty
     def image_flags(self):
         """
         Data quality bit flag.
 
         Non-zero if a pixel within the segment was flagged in one of the
+        input images.  Zero for models that carry no ``dq`` array.
+        """
+        return self._segment_flags(self.model.get("dq", None), "image_flags")
+
+    @lazyproperty
+    def image_flags2(self):
+        """
+        Extra data quality bit flag.
+
+        The ``dq2`` counterpart of `image_flags`.  Non-zero if a pixel
+        within the segment was flagged in ``dq2`` in one of the
         input images.
         """
-        return np.zeros(self.n_sources, dtype=np.int32)
+        return self._segment_flags(self.model.get("dq2", None), "image_flags2")
 
     @lazyproperty
     def dust_ebv(self):
@@ -578,6 +642,8 @@ class RomanSourceCatalog:
             self.model,
             self._xypos_finite,
             self._pixel_area_map,
+            self.segment_img,
+            self.label,
             ee_spline=self.ee_spline,
             requested_properties=self.column_names,
         )
@@ -600,10 +666,14 @@ class RomanSourceCatalog:
         )
 
     def _make_psf_cat(self):
+        # ``_xypos_finite`` is row-for-row ``_xypos`` with any non-finite
+        # entry replaced by -1000.  A position off the image is handled
+        # without crashing: photutils returns NaN and sets the source's
+        # flags.  A non-finite position raises.
         return _PSFCatalog(
             self.model,
             self.psf_model,
-            self._xypos,
+            self._xypos_finite,
             self.mask,
             requested_properties=self.column_names,
         )
@@ -765,10 +835,21 @@ class RomanSourceCatalog:
             `~astropy.units.Quantity`.
         """
         catalog = QTable()
+        undefined = []
         for column in self.column_names:
             catalog[column] = getattr(self, column)
+            # Skip descriptions for unrecognized columns
             definition = self.cat_model.get_column_definition(column)
-            catalog[column].info.description = definition["description"]
+            if definition is None:
+                undefined.append(column)
+            else:
+                catalog[column].info.description = definition["description"]
+        if undefined:
+            log.warning(
+                f"No catalog schema definition for {', '.join(undefined)}; "
+                "these columns are written without a description and should "
+                "be added to the schema."
+            )
         self.update_metadata()
         catalog.meta.update(self.meta)
 

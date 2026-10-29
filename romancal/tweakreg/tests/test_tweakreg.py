@@ -31,6 +31,17 @@ def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(tweakreg_ima
         TweakRegStep.call([img])
 
 
+def test_tweakreg_raises_on_placeholder_wcsinfo(tweakreg_image):
+    """
+    Test that TweakReg raises before querying the reference catalog when
+    meta.wcsinfo holds placeholder values (vparity = +1).
+    """
+    img = tweakreg_image()
+    img.meta.wcsinfo.vparity = 1
+    with pytest.raises(ValueError, match="placeholder values"):
+        TweakRegStep.call([img])
+
+
 def test_tweakreg_save_valid_abs_refcat(tmp_path, tweakreg_image):
     """Test that TweakReg saves the catalog used for absolute astrometry."""
     abs_refcat = "GAIADR3"

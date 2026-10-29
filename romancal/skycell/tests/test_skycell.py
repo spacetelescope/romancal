@@ -4,7 +4,8 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from numpy.testing import assert_allclose
+import spherical_geometry.polygon as sgp
+from numpy.testing import assert_allclose, assert_array_equal
 
 from romancal.skycell import skymap
 
@@ -38,7 +39,8 @@ def skymap_subset() -> skymap.SkyMap:
     smaller subset to allow these tests
     to run without access to the full skymap from CRDS.
     """
-    return skymap.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf")
+    with skymap.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf") as skymap_subset:
+        yield skymap_subset
 
 
 @pytest.fixture()
@@ -93,6 +95,23 @@ def test_skycell_from_name(skymap_subset):
         skymap.SkyCells.from_names(["notaskycellname"], skymap=skymap_subset)
 
 
+def test_skycells_from_names_matches_full_search(skymap_subset):
+    all_names = skymap_subset.model.skycells["name"]
+
+    # skycells from several projection regions, in unsorted order
+    indices = np.array([len(all_names) - 1, 999, 0, 2500, 1000])
+    names = [str(name) for name in all_names[indices]]
+
+    skycells = skymap.SkyCells.from_names(names, skymap=skymap_subset)
+
+    assert_array_equal(skycells.indices, np.isin(all_names, names).nonzero()[0])
+    assert_array_equal(skycells.indices, np.sort(indices))
+
+    # A valid projection region with a skycell position that does not exist
+    with pytest.raises(KeyError):
+        skymap.SkyCells.from_names([names[0], "135p90x99y99"], skymap=skymap_subset)
+
+
 def test_skycell_from_asn(skymap_subset):
     skycell = skymap.SkyCells.from_asns(
         [DATA_DIRECTORY / "L3_mosaic_asn.json"], skymap=skymap_subset
@@ -134,6 +153,8 @@ def test_projregion_from_skycell(skymap_subset):
     projregion1 = skymap.ProjectionRegion(1, skymap=skymap_subset)
 
     assert len(skycell.projection_regions) == 1
+    # source catalogs pack this into 64-bit source ids
+    assert skycell.projection_regions.dtype == np.int64
     assert skycell.projection_regions[0] == projregion0.index  # this calls CRDS!
 
     assert (
@@ -261,9 +282,41 @@ def test_skycells(skymap_subset):
     assert len(skycells.polygons) == len(SAMPLE_SKYCELL_NAMES)
 
 
-def test_skycells_cores_containing_center(sample_skycells):
-    assert np.all(sample_skycells.containing(sample_skycells.radec_centers))
-    assert sample_skycells.cores_containing(sample_skycells.radec_centers) != {}
+def test_skycells_containing_centers(sample_skycells):
+    # each skycell contains its own center, and perhaps other centers too
+    containing = sample_skycells.containing(sample_skycells.radec_centers)
+    assert sorted(containing) == sorted(sample_skycells.indices.tolist())
+    for position, index in enumerate(sample_skycells.indices.tolist()):
+        assert position in containing[index]
+
+
+def test_skycells_containing(skymap_subset):
+    skycells = skymap_subset.skycells
+    rng = np.random.default_rng(3)
+    # random points around projection regions 0 and 1
+    radec = np.stack(
+        [rng.uniform(-25, 25, 200) % 360, rng.uniform(84.4, 90, 200)], axis=1
+    )
+
+    containing = skycells.containing(radec)
+
+    polygons = [
+        sgp.SingleSphericalPolygon(corners, center)
+        for corners, center in zip(
+            skycells.vectorpoint_corners, skycells.vectorpoint_centers, strict=True
+        )
+    ]
+    for point, (ra, dec) in enumerate(radec):
+        found = {index for index, points in containing.items() if point in points}
+        # a skycell that contains the point has its center within 0.055 degrees
+        separations = skymap._separation(
+            skycells.vectorpoint_centers, skymap._vectorpoints(np.array([ra, dec]))
+        )
+        nearby = np.flatnonzero(separations < 0.06)
+        expected = {
+            int(index) for index in nearby if polygons[index].contains_lonlat(ra, dec)
+        }
+        assert found == expected
 
 
 @pytest.mark.parametrize(
@@ -281,3 +334,52 @@ def test_skycells_cores_containing_center(sample_skycells):
 )
 def test_skycells_cores_containing(radec, expected, sample_skycells):
     assert sample_skycells.cores_containing(radec) == expected
+
+
+def test_skycells_cores_containing_pole(skymap_subset):
+    """the pole belongs to the skycell centered on it"""
+    pole_skycell = skymap.SkyCells.from_names(["135p90x50y50"], skymap=skymap_subset)
+    for ra in (0.0, 123.0):
+        assert skymap_subset.skycells.cores_containing([ra, 90.0]) == {
+            int(pole_skycell.indices[0]): [0]
+        }
+
+
+def test_skymap_close():
+    skymap_subset = skymap.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf")
+    # Closing a sky map that was never opened does nothing.
+    skymap_subset.close()
+
+    model = skymap_subset.model
+    skymap_subset.close()
+    assert model._asdf._closed
+
+    # The file is reopened on the next access.
+    assert skymap_subset.model is not model
+    assert len(skymap_subset.model.skycells) == len(skymap_subset.skycells)
+    skymap_subset.close()
+
+
+def test_skymap_context_manager():
+    with skymap.SkyMap(DATA_DIRECTORY / "skymap_subset.asdf") as skymap_subset:
+        model = skymap_subset.model
+        assert not model._asdf._closed
+    assert model._asdf._closed
+
+
+def test_skymap_path_setter_closes_file():
+    path = DATA_DIRECTORY / "skymap_subset.asdf"
+    skymap_subset = skymap.SkyMap(path)
+    model = skymap_subset.model
+    skymap_subset.path = path
+    assert model._asdf._closed
+    skymap_subset.close()
+
+
+def test_ra_in_range():
+    # the upper bound is exclusive, so adjacent ranges share no points
+    ra = np.array([337.5, 0.0, 22.5])
+    assert skymap._ra_in_range(ra, 337.5, 22.5).tolist() == [True, True, False]
+    assert skymap._ra_in_range(ra, 22.5, 67.5).tolist() == [False, False, True]
+    # the full circle contains everything, including values that wrap to 360
+    assert np.all(skymap._ra_in_range(np.array([0.0, 360.0, -1e-20]), 0.0, 360.0))

@@ -13,6 +13,7 @@ from roman_datamodels.dqflags import group, pixel
 from stcal.linearity.linearity import linearity_correction
 
 from romancal.datamodels.fileio import open_dataset
+from romancal.lib.dqutils import update_dq
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:
@@ -137,6 +138,12 @@ class LinearityStep(RomanStep):
             input_model.data = new_data[0, :, :, :]
             input_model.pixeldq = new_pdq
 
+            # stcal has already or-ed the linearity reference dq
+            # into pixeldq, but we repeat it here so that dq2 is picked up
+            # as well.  The inverse linearity reference should have
+            # identical flags and is ignored.
+            update_dq(input_model, lin_model)
+
         # FIXME: force all values in array to be at least vaguely sane.
         # This should not happen for good linearity corrections and linearity
         # correction flagging, but current reference files have issues that
@@ -144,8 +151,10 @@ class LinearityStep(RomanStep):
         # Full well is 65k DN.  After linearity correction we can't be more than
         # a factor of several away from this.
         # Any points larger than 1e6 should be flagged.
-        m = np.abs(input_model.data) > 1e6
-        input_model.data[m] = np.clip(input_model.data[m], -1e6, 1e6)
+        # Also ensure negative values and NaNs get caught.
+        m = ~((input_model.data > 0) & (input_model.data < 1e6))
+        input_model.data[m] = np.clip(input_model.data[m], 0, 1e6)
+        input_model.data[m] = np.nan_to_num(input_model.data[m])
         input_model.groupdq[m] |= group.DO_NOT_USE
         nbad = np.sum(m)
         log.warning(f"Flagged {nbad} spurious values outside remotely plausible range.")

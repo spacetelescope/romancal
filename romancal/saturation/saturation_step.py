@@ -26,7 +26,7 @@ class SaturationStep(RomanStep):
     class_alias = "saturation"
 
     spec = """
-        n_pix_grow_sat = integer(default=0)  # grow saturated pixels by this number to accommodate charge spilling
+        n_pix_grow_sat = integer(default=1)  # grow saturated pixels by this number to accommodate charge spilling
         backup = integer(default=0)  # number of resultants to flag before each saturated resultant
     """
 

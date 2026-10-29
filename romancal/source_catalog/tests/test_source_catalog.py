@@ -1,6 +1,5 @@
 from pathlib import Path
 from re import match
-from types import SimpleNamespace
 
 import asdf
 import astropy.units as u
@@ -9,6 +8,7 @@ import pytest
 from astropy.modeling.models import Gaussian2D
 from astropy.table import Table
 from astropy.time import Time
+from astropy.utils.decorators import lazyproperty
 from numpy.testing import assert_allclose, assert_equal
 from roman_datamodels import datamodels as rdm
 from roman_datamodels.datamodels import (
@@ -21,12 +21,15 @@ from roman_datamodels.datamodels import (
     MosaicSourceCatalogModel,
     SegmentationMapModel,
 )
+from roman_datamodels.dqflags import pixel
 
+from romancal.source_catalog._background import RomanBackground
 from romancal.source_catalog._skyvals import compute_skyvals
 from romancal.source_catalog._source_catalog import RomanSourceCatalog
 from romancal.source_catalog._unit_conversion import (
     validate_and_convert_to_flux_density,
 )
+from romancal.source_catalog._wcs_utils import pixel_area_map
 from romancal.source_catalog.source_catalog_step import SourceCatalogStep
 
 from .helpers import compare_model_and_parquet_metadata
@@ -132,6 +135,10 @@ def image_model():
         model.meta.cal_step[step_name] = "INCOMPLETE"
     model.meta.cal_logs = []
     data, err = make_test_image()
+    # A blank pixel with an implausibly small uncertainty.  Unfloored, the
+    # weight it carries would wreck the precision of the detection
+    # convolutions and no source in the frame would be found.
+    data[95, 45], err[95, 45] = 0.0, 1e-6 * np.median(err)
     model.data = data
     model.err = err
     model.meta.photometry.conversion_megajanskys = (0.3324 * u.MJy / u.sr).value
@@ -143,8 +150,8 @@ def test_forced_catalog(image_model, function_jail, ignore_parquet_metadata_path
     output_filename = "force_cat.parquet"
     _ = SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        bkg_boxsize=5.0,
+        kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
         save_results=True,
@@ -152,8 +159,8 @@ def test_forced_catalog(image_model, function_jail, ignore_parquet_metadata_path
     )
     result_force, segmentation_map = SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        bkg_boxsize=5.0,
+        kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
         save_results=True,
@@ -201,6 +208,10 @@ def test_forced_catalog(image_model, function_jail, ignore_parquet_metadata_path
         expected = np.asarray(source_segm.detection_image)
         assert_equal(np.asarray(force_segm.detection_image), expected)
         assert_equal(np.asarray(segmentation_map.detection_image), expected)
+
+    for name in ("x_centroid_err", "y_centroid_win_err", "ra_centroid_err"):
+        assert np.all(np.isfinite(catalog[name]))
+        assert np.all(catalog[name] > 0)
 
     compare_model_and_parquet_metadata(
         image_model, output_filename, ignore_parquet_metadata_paths
@@ -258,8 +269,8 @@ def _write_forcing_segm(image_model, filename, *, unit, scale=1.0):
     """
     SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        bkg_boxsize=5.0,
+        kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
         save_results=True,
@@ -278,8 +289,8 @@ def _write_forcing_segm(image_model, filename, *, unit, scale=1.0):
 def _call_forced(image_model, filename):
     return SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        bkg_boxsize=5.0,
+        kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
         save_results=False,
@@ -337,8 +348,8 @@ def test_forced_catalog_nonempty_requires_detection_image(image_model, function_
     """
     _, segm = SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        bkg_boxsize=5.0,
+        kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
         save_results=False,
@@ -353,8 +364,8 @@ def test_forced_catalog_nonempty_requires_detection_image(image_model, function_
     with pytest.raises(ValueError, match="must include a detection_image"):
         SourceCatalogStep.call(
             image_model,
-            bkg_boxsize=50,
-            kernel_fwhm=2.0,
+            bkg_boxsize=5.0,
+            kernel_fwhm=0.2,
             snr_threshold=5,
             npixels=10,
             save_results=False,
@@ -379,9 +390,9 @@ def test_forced_catalog_empty_map_without_detection_image(
     model = request.getfixturevalue(model_fixture)
     prompt_cat, prompt_segm = SourceCatalogStep.call(
         model,
-        bkg_boxsize=50,
-        kernel_fwhm=2.0,
-        snr_threshold=50,
+        bkg_boxsize=5.0,
+        kernel_fwhm=0.2,
+        snr_threshold=5000,
         npixels=10,
         fit_psf=False,
         save_results=True,
@@ -393,9 +404,9 @@ def test_forced_catalog_empty_map_without_detection_image(
 
     forced_cat, forced_segm = SourceCatalogStep.call(
         model,
-        bkg_boxsize=50,
-        kernel_fwhm=2.0,
-        snr_threshold=50,
+        bkg_boxsize=5.0,
+        kernel_fwhm=0.2,
+        snr_threshold=5000,
         npixels=10,
         fit_psf=False,
         save_results=False,
@@ -421,8 +432,8 @@ def test_forced_catalog_empty_map_with_detection_image(image_model, function_jai
     """
     _, segm = SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        bkg_boxsize=5.0,
+        kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
         fit_psf=False,
@@ -438,8 +449,8 @@ def test_forced_catalog_empty_map_with_detection_image(image_model, function_jai
 
     forced_cat, forced_segm = SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        bkg_boxsize=5.0,
+        kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
         fit_psf=False,
@@ -458,13 +469,10 @@ def test_forced_catalog_empty_map_with_detection_image(image_model, function_jai
 @pytest.mark.parametrize(
     "snr_threshold, npixels, nsources, save_results",
     (
-        (3, 10, 7, True),
-        (3, 50, 5, False),
-        (10, 10, 7, False),
-        (20, 10, 5, False),
-        (25, 10, 3, False),
-        (35, 10, 1, False),
-        (50, 10, 0, False),
+        # ``snr_threshold`` is the peak significance of the matched filter,
+        # in sigma; the fixture plants seven sources.
+        (5, 9, 7, True),
+        (5000, 9, 0, False),
     ),
 )
 def test_l2_source_catalog(
@@ -482,8 +490,8 @@ def test_l2_source_catalog(
 
     result_catalog, result_segmentation_map = SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        bkg_boxsize=5.0,
+        kernel_fwhm=0.2,
         snr_threshold=snr_threshold,
         npixels=npixels,
         save_results=save_results,
@@ -541,13 +549,10 @@ def test_l2_source_catalog(
 @pytest.mark.parametrize(
     "snr_threshold, npixels, nsources, save_results",
     (
-        (3, 10, 7, True),
-        (3, 50, 5, False),
-        (10, 10, 7, False),
-        (20, 10, 5, False),
-        (25, 10, 3, False),
-        (35, 10, 1, False),
-        (50, 10, 0, False),
+        # ``snr_threshold`` is the peak significance of the matched filter,
+        # in sigma; the fixture plants seven sources.
+        (5, 9, 7, True),
+        (5000, 9, 0, False),
     ),
 )
 def test_l3_source_catalog(
@@ -567,8 +572,8 @@ def test_l3_source_catalog(
     # create the L3 PSF for flux determination.
     result_catalog, result_segmentation_map = SourceCatalogStep.call(
         mosaic_model,
-        bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        bkg_boxsize=5.0,
+        kernel_fwhm=0.2,
         snr_threshold=snr_threshold,
         npixels=npixels,
         save_results=save_results,
@@ -623,14 +628,66 @@ def test_l3_source_catalog(
         assert np.any(cat["dec"])
 
 
+def test_centroid_errors_and_sky_orientation(image_model, function_jail):
+    """
+    The centroid errors, sky orientation, and annulus background error
+    are calculated by photutils and must be populated with valid values.
+    """
+    result_catalog, _ = SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        snr_threshold=3,
+        npixels=10,
+        save_results=False,
+    )
+    cat = result_catalog.source_catalog
+    assert len(cat) > 0
+
+    pix_names = (
+        "x_centroid_err",
+        "y_centroid_err",
+        "x_centroid_win_err",
+        "y_centroid_win_err",
+    )
+    sky_names = (
+        "ra_centroid_err",
+        "dec_centroid_err",
+        "ra_centroid_win_err",
+        "dec_centroid_win_err",
+    )
+    for names, unit in ((pix_names, u.pix), (sky_names, u.arcsec)):
+        for name in names:
+            assert cat[name].unit == unit
+            assert cat[name].dtype == np.float32
+            assert np.all(np.isfinite(cat[name]))
+            assert np.all(cat[name] > 0)
+
+    # The total sky error is the total pixel error times the pixel
+    # scale, independent of the WCS rotation
+    wcs = image_model.meta.wcs
+    pixel_scale = np.sqrt(pixel_area_map(wcs, image_model.data.shape).mean())
+    pix_err = np.hypot(cat["x_centroid_err"].value, cat["y_centroid_err"].value)
+    sky_err = np.hypot(cat["ra_centroid_err"].value, cat["dec_centroid_err"].value)
+    assert_allclose(sky_err / pix_err, pixel_scale.to_value(u.arcsec), rtol=1e-3)
+
+    assert cat["orientation_sky"].unit == u.deg
+    assert cat["orientation_sky"].dtype == np.float32
+    assert np.all(cat["orientation_sky"] > -90)
+    assert np.all(cat["orientation_sky"] <= 90)
+
+    assert cat["aper_bkg_flux_err"].dtype == np.float32
+    assert np.all(cat["aper_bkg_flux_err"] > 0)
+
+
 def test_background(mosaic_model, function_jail):
     """
     Test background fallback when Background2D fails.
     """
     result_catalog, _ = SourceCatalogStep.call(
         mosaic_model,
-        bkg_boxsize=1000,
-        kernel_fwhm=2.0,
+        bkg_boxsize=100.0,
+        kernel_fwhm=0.2,
         snr_threshold=3,
         npixels=25,
         fit_psf=False,
@@ -641,14 +698,38 @@ def test_background(mosaic_model, function_jail):
     assert isinstance(cat, Table)
 
 
+@pytest.mark.parametrize("crowded", (False, True))
+def test_background_exclude_percentile(crowded):
+    """
+    Test that boxes typical of a crowded field are kept, while a box
+    dominated by a large source is still excluded and interpolated over.
+    """
+    rng = np.random.default_rng(0)
+    data = rng.normal(10.0, 1.0, (400, 400))
+    if crowded:
+        # stars sigma clipped from ~20% of every box
+        stars = rng.random(data.shape) < 0.2
+        data[stars] += rng.uniform(10.0, 1000.0, stars.sum())
+    data += Gaussian2D(200.0, 150, 150, 15, 15)(*np.mgrid[:400, :400])
+
+    bkg = RomanBackground(data, box_size=100)._background2d
+    assert bkg.background_mesh.shape == (4, 4)
+    assert_allclose(bkg.background_mesh, 10.0, atol=0.1)
+
+    # a fixed exclude_percentile of 10 rejects every box of the crowded
+    # field and falls back to a single box
+    bkg = RomanBackground(data, box_size=100, exclude_margin=None)._background2d
+    assert bkg.background_mesh.shape == ((1, 1) if crowded else (4, 4))
+
+
 @pytest.mark.parametrize("model_fixture", ("image_model", "mosaic_model"))
 def test_source_catalog_populates_dust_ebv(model_fixture, request, function_jail):
     """Ensure prompt source catalogs include a per-source dust_ebv column."""
     model = request.getfixturevalue(model_fixture)
     result_catalog, _ = SourceCatalogStep.call(
         model,
-        bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        bkg_boxsize=5.0,
+        kernel_fwhm=0.2,
         snr_threshold=3,
         npixels=10,
         save_results=False,
@@ -672,8 +753,8 @@ def test_nested_metadata_propagated_to_catalog_and_segmentation(
 
     result_catalog, result_segmentation_map = SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        bkg_boxsize=5.0,
+        kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
         save_results=False,
@@ -699,8 +780,8 @@ def test_l2_input_model_unchanged(image_model, function_jail):
         image_model,
         snr_threshold=0.5,
         npixels=5,
-        bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        bkg_boxsize=5.0,
+        kernel_fwhm=0.2,
         save_results=False,
         fit_psf=False,
     )
@@ -709,11 +790,31 @@ def test_l2_input_model_unchanged(image_model, function_jail):
     assert_equal(original_err, image_model.err)
 
 
+def test_kron_nomask_flux(image_model):
+    """
+    ``kron_nomask_flux`` repeats the Kron sum in the same aperture with
+    neighbouring sources left in, so it can only add flux.
+    """
+    cat, _ = SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=5.0,
+        kernel_fwhm=0.2,
+        snr_threshold=5,
+        npixels=9,
+        save_results=False,
+        fit_psf=False,
+    )
+    masked = np.asarray(cat.source_catalog["kron_flux"], float)
+    unmasked = np.asarray(cat.source_catalog["kron_nomask_flux"], float)
+    # isolated sources agree to float32 round-off, blended ones gain
+    assert np.all(unmasked > masked - 1e-3 * np.abs(masked))
+
+
 def test_l2_segmentation_contains_skyvals(image_model):
     _, result_segmentation_map = SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        bkg_boxsize=5.0,
+        kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
         save_results=False,
@@ -736,8 +837,8 @@ def test_l2_segmentation_contains_skyvals(image_model):
 def test_l2_segmentation_without_skyvals_when_disabled(image_model):
     _, result_segmentation_map = SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        bkg_boxsize=5.0,
+        kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
         save_results=False,
@@ -750,32 +851,100 @@ def test_l2_segmentation_without_skyvals_when_disabled(image_model):
     assert "healpix11_cov" not in result_segmentation_map
 
 
-def test_skyvals_coverage_includes_source_pixels(monkeypatch):
-    class WCS:
-        def pixel_to_world_values(self, x, y):
-            return np.asarray(x) * 180.0, np.asarray(y) * 0.0
+def test_skyvals_coverage_includes_source_pixels(image_model):
+    """
+    Purpose: sky medians exclude segmented source pixels, while healpix11_cov
+    still covers those pixels when they are unmasked.
+    """
+    # Positive pixel_area so get_pixel_area_sr does not fall back to a WCS estimate.
+    image_model.meta.photometry.pixel_area = 1.0e-12
+    ny, nx = image_model.data.shape
+    image_model.data = np.full((ny, nx), 20.0, dtype=np.float32)
+    image_model.data[5, 5] = 999.0
+    image_model.err = np.ones((ny, nx), dtype=np.float32)
 
-    input_model = SimpleNamespace(
-        data=np.array([[10.0, 20.0]], dtype=np.float32),
-        err=np.ones((1, 2), dtype=np.float32),
-        meta=SimpleNamespace(wcs=WCS()),
+    segmentation = np.zeros((ny, nx), dtype=np.uint32)
+    segmentation[5, 5] = 1
+    bad_pixel_mask = np.zeros((ny, nx), dtype=bool)
+
+    skyvals, healpix11_cov = compute_skyvals(image_model, segmentation, bad_pixel_mask)
+
+    assert skyvals.shape[0] > 0
+    # Source pixel value must not enter sky medians.
+    np.testing.assert_array_equal(skyvals["data"], 20.0)
+    assert healpix11_cov.shape[0] > 0
+
+    # Source-only footprint still contributes to healpix11_cov.
+    source_only_mask = np.ones((ny, nx), dtype=bool)
+    source_only_mask[5, 5] = False
+    _, healpix11_source = compute_skyvals(image_model, segmentation, source_only_mask)
+    assert healpix11_source.shape[0] >= 1
+    assert np.all(np.isin(healpix11_source, healpix11_cov))
+
+
+def test_skyvals_empty_when_all_pixels_masked(image_model):
+    """
+    Purpose: fully masked inputs return empty skyvals and healpix11_cov.
+    """
+    image_model.meta.photometry.pixel_area = 1.0e-12
+    bad_pixel_mask = np.ones(image_model.data.shape, dtype=bool)
+    segmentation = np.zeros(image_model.data.shape, dtype=np.uint32)
+
+    skyvals, healpix11_cov = compute_skyvals(image_model, segmentation, bad_pixel_mask)
+
+    assert skyvals.shape == (0,)
+    assert skyvals.dtype == SKYVALS_DTYPE
+    assert healpix11_cov.shape == (0,)
+    assert healpix11_cov.dtype == np.int64
+
+
+def test_skyvals_chunked_matches_single_pass(image_model):
+    """
+    Purpose: row-chunked WCS/HEALPix aggregation matches a single-pass run so
+    chunking does not change skyvals contents.
+    """
+    image_model.meta.photometry.pixel_area = 1.0e-12
+    rng = np.random.default_rng(0)
+    image_model.data = rng.normal(5.0, 1.0, size=image_model.data.shape).astype(
+        np.float32
     )
-    segmentation = np.array([[1, 0]], dtype=np.uint32)
-    bad_pixel_mask = np.zeros((1, 2), dtype=bool)
+    image_model.err = np.full_like(image_model.data, 0.5, dtype=np.float32)
 
-    monkeypatch.setattr(
-        "romancal.source_catalog._skyvals.get_pixel_area_sr", lambda model: 1.0
+    segmentation = np.zeros(image_model.data.shape, dtype=np.uint32)
+    segmentation[1, 1] = 1
+    segmentation[3, 4] = 2
+    bad_pixel_mask = np.zeros(image_model.data.shape, dtype=bool)
+    bad_pixel_mask[0, 0] = True
+
+    sky_chunked, hp11_chunked = compute_skyvals(
+        image_model, segmentation, bad_pixel_mask, chunk_rows=1
     )
-    skyvals, healpix11_cov = compute_skyvals(input_model, segmentation, bad_pixel_mask)
+    sky_single, hp11_single = compute_skyvals(
+        image_model, segmentation, bad_pixel_mask, chunk_rows=10_000
+    )
 
-    assert skyvals.shape == (1,)
-    assert skyvals["data"][0] == 20.0
-    assert healpix11_cov.shape == (2,)
+    assert sky_chunked.dtype == sky_single.dtype
+    np.testing.assert_array_equal(sky_chunked["healpix17"], sky_single["healpix17"])
+    np.testing.assert_array_equal(sky_chunked["data"], sky_single["data"])
+    np.testing.assert_array_equal(sky_chunked["err"], sky_single["err"])
+    np.testing.assert_array_equal(sky_chunked["covfrac"], sky_single["covfrac"])
+    np.testing.assert_array_equal(np.sort(hp11_chunked), np.sort(hp11_single))
+
+
+def test_skyvals_rejects_invalid_chunk_rows(image_model):
+    """
+    Purpose: chunk_rows must be a positive integer.
+    """
+    segmentation = np.zeros(image_model.data.shape, dtype=np.uint32)
+    bad_pixel_mask = np.zeros(image_model.data.shape, dtype=bool)
+    with pytest.raises(ValueError, match="chunk_rows must be >= 1"):
+        compute_skyvals(image_model, segmentation, bad_pixel_mask, chunk_rows=0)
 
 
 def test_l2_skyvals_values_and_covfrac_reasonable(image_model):
     """
-    Verify skyvals statistics are sensible on a controlled input image.
+    Purpose: skyvals medians recover a controlled background and covfrac stays
+    in [0, 1] with some near-full healpixels on a realistic L2 image.
     """
     rng = np.random.default_rng(seed=9)
     image_model.data = (rng.normal(0, 1, size=image_model.data.shape) + 100.0).astype(
@@ -785,8 +954,8 @@ def test_l2_skyvals_values_and_covfrac_reasonable(image_model):
 
     _, result_segmentation_map = SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        bkg_boxsize=5.0,
+        kernel_fwhm=0.2,
         snr_threshold=5,
         npixels=10,
         save_results=False,
@@ -818,8 +987,8 @@ def test_l3_input_model_unchanged(mosaic_model, function_jail):
         mosaic_model,
         snr_threshold=0.5,
         npixels=5,
-        bkg_boxsize=50,
-        kernel_fwhm=2.0,
+        bkg_boxsize=5.0,
+        kernel_fwhm=0.2,
         save_results=False,
         fit_psf=False,
     )
@@ -849,8 +1018,8 @@ def test_psf_photometry(function_jail, image_model):
     """
     result_catalog, _ = SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=20,
-        kernel_fwhm=2.0,
+        bkg_boxsize=2.0,
+        kernel_fwhm=0.2,
         snr_threshold=3,
         npixels=10,
         save_results=False,
@@ -874,6 +1043,33 @@ def test_psf_photometry(function_jail, image_model):
             assert not np.any(np.isnan(cat[colname]))  # and contains no nans
 
 
+def test_nonfinite_centroid_does_not_stop_the_step(
+    function_jail, image_model, monkeypatch
+):
+    """Verify that a source with a garbage guess won't crash the pipeline."""
+    real = RomanSourceCatalog._xypos.fget
+
+    @lazyproperty
+    def one_nan(self):
+        xypos = real(self).copy()
+        xypos[0] = np.nan
+        return xypos
+
+    monkeypatch.setattr(RomanSourceCatalog, "_xypos", one_nan)
+
+    result_catalog, _ = SourceCatalogStep.call(
+        image_model,
+        bkg_boxsize=2.0,
+        kernel_fwhm=0.2,
+        snr_threshold=3,
+        npixels=10,
+        save_results=False,
+    )
+    cat = result_catalog.source_catalog
+    assert np.isnan(cat["x_psf"][0])
+    assert np.all(np.isfinite(cat["x_psf"][1:]))
+
+
 @pytest.mark.parametrize("fit_psf", [True, False])
 def test_do_psf_photometry_column_names(function_jail, image_model, fit_psf):
     """
@@ -882,8 +1078,8 @@ def test_do_psf_photometry_column_names(function_jail, image_model, fit_psf):
     """
     result_catalog, _ = SourceCatalogStep.call(
         image_model,
-        bkg_boxsize=20,
-        kernel_fwhm=2.0,
+        bkg_boxsize=2.0,
+        kernel_fwhm=0.2,
         snr_threshold=3,
         npixels=10,
         save_results=False,
@@ -941,3 +1137,84 @@ def test_dust_ebv_property_returns_nan_on_failure(monkeypatch):
     assert result.dtype == np.float32
     assert result.shape == (3,)
     assert np.all(np.isnan(result))
+
+
+def test_l2_catalog_propagates_dq_to_image_flags(image_model, function_jail):
+    """image_flags/image_flags2 collect DQ bits over each source segment."""
+    shape = image_model.data.shape
+    image_model.dq = np.zeros(shape, dtype=np.uint32)
+    image_model.dq2 = np.zeros(shape, dtype=np.uint32)
+    # flag the bottom half of the image only
+    half = shape[0] // 2
+    image_model.dq[half:, :] = pixel.NO_LIN_CORR
+    image_model.dq2[half:, :] = 1 << 5
+
+    result_catalog, _ = SourceCatalogStep.call(
+        image_model,
+        snr_threshold=0.5,
+        npixels=5,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        save_results=False,
+        fit_psf=False,
+    )
+
+    catalog = result_catalog.source_catalog
+    assert len(catalog) > 0
+
+    # only look at the outer thirds, so that no segment can straddle the
+    # boundary between the flagged and unflagged halves
+    third = shape[0] / 3
+    clean = catalog["y_centroid"] < third
+    flagged = catalog["y_centroid"] > 2 * third
+    # the test image must exercise both cases for this to mean anything
+    assert clean.any() and flagged.any()
+
+    assert not catalog["image_flags"][clean].any()
+    assert not catalog["image_flags2"][clean].any()
+    assert (catalog["image_flags"][flagged] == int(pixel.NO_LIN_CORR)).all()
+    assert (catalog["image_flags2"][flagged] == 1 << 5).all()
+
+
+@pytest.mark.parametrize("dtype", (np.int32, np.uint32))
+def test_l2_catalog_image_flags_dtype_follows_schema(
+    image_model, dtype, monkeypatch, function_jail
+):
+    """
+    The flag columns take the schema's dtype, image_flags2 falls back to
+    that of image_flags, and a set bit 31 survives either way.
+    """
+    original = ImageSourceCatalogModel.get_column_definition
+
+    def get_column_definition(self, name):
+        if name == "image_flags2":
+            return None
+        definition = original(self, name)
+        if name == "image_flags":
+            definition = {**definition, "datatype": np.dtype(dtype)}
+        return definition
+
+    monkeypatch.setattr(
+        ImageSourceCatalogModel, "get_column_definition", get_column_definition
+    )
+
+    shape = image_model.data.shape
+    image_model.dq = np.full(shape, 1 << 31, dtype=np.uint32)
+    image_model.dq2 = np.full(shape, 1 << 31, dtype=np.uint32)
+
+    result_catalog, _ = SourceCatalogStep.call(
+        image_model,
+        snr_threshold=0.5,
+        npixels=5,
+        bkg_boxsize=50,
+        kernel_fwhm=2.0,
+        save_results=False,
+        fit_psf=False,
+    )
+
+    catalog = result_catalog.source_catalog
+    assert len(catalog) > 0
+    for column in ("image_flags", "image_flags2"):
+        flags = np.asarray(catalog[column])
+        assert flags.dtype == dtype
+        assert (flags.view(np.uint32) == 1 << 31).all()

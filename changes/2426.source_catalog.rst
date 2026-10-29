@@ -1,3 +1,0 @@
-Convert fluxes, aperture radii, sizes, and position angles using the local
-pixel solid angle and local North direction from the WCS rather than single
-image-center values.

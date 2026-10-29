@@ -246,6 +246,9 @@ def test_create_cosmoscat():
     assert np.allclose(np.sort(cat["ra"]), np.sort(mcat["ra"]), rtol=1.0e-6)
     assert np.allclose(np.sort(cat["dec"]), np.sort(mcat["dec"]), rtol=1.0e-6)
 
+    # romanisim's source_id should not be passed through
+    assert "source_id" not in cat.colnames
+
     # Ensure correct number of point sources
     assert np.sum(cat["type"] == "PSF") == int(len(XPOS_IDX) / 4)
     assert np.sum(cat["n"] == -1) == int(len(XPOS_IDX) / 4)

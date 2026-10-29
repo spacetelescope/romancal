@@ -129,6 +129,11 @@ def make_cosmoslike_catalog(cen, ra, dec, exptimes, filters=None, seed=None, **k
         cen, radius=1.0, bandpasses=filters, cat_area=(np.pi), seed=seed, **kwargs
     )
 
+    # romanisim's source_id points back to its input catalog, which is not
+    # useful for injection; drop it so the stars and galaxies share columns.
+    if "source_id" in gal_cat.colnames:
+        gal_cat.remove_column("source_id")
+
     # Drop entries with zero flux in the J-band
     gal_cat = gal_cat[gal_cat["F129"] > 0]
 
