@@ -5,10 +5,7 @@ from pathlib import Path
 from textwrap import dedent
 
 import asdf
-import astropy.table
-import astropy.time
 import deepdiff
-import gwcs
 import numpy as np
 import roman_datamodels as rdm
 from astropy.units import Quantity
@@ -20,6 +17,7 @@ from deepdiff.operator import BaseOperator
 from gwcs.wcstools import grid_from_bounding_box
 
 from romancal.associations._load_asn import load_asn
+from romancal.regtest._differ import Diff, DiffSettings
 
 # from romancal.lib.suffix import replace_suffix
 
@@ -479,31 +477,7 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
     diff_result : DiffResult
         result of the comparison
     """
-    exclude_paths = []
-    ignore = ignore or []
-    for path in ignore:
-        key_path = "".join([f"['{k}']" for k in path.split(".")])
-        exclude_paths.append(f"root{key_path}")
-    operators = [
-        NDArrayTypeOperator(
-            rtol,
-            atol,
-            equal_nan,
-            types=[asdf.tags.core.NDArrayType, np.ndarray],
-            exclude_paths=exclude_paths,
-        ),
-        TimeOperator(types=[astropy.time.Time], exclude_paths=exclude_paths),
-        TableOperator(
-            rtol,
-            atol,
-            equal_nan,
-            types=[astropy.table.Table],
-            exclude_paths=exclude_paths,
-        ),
-        WCSOperator(
-            rtol, atol, equal_nan, types=[gwcs.WCS], exclude_paths=exclude_paths
-        ),
-    ]
+    settings = DiffSettings(rtol, atol, equal_nan, ignore or [])
     with asdf.open(result) as af0:
         with asdf.config_context() as cfg:
             # Disable validation of the truth file to allow for more
@@ -512,16 +486,4 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
             # versioned for every change between releases).
             cfg.validate_on_read = False
             with asdf.open(truth) as af1:
-                # swap the inputs here so DeepDiff(truth, result)
-                # this will create output with 'new_value' referring to
-                # the value in the result and 'old_value' referring to the truth
-                diff = deepdiff.DeepDiff(
-                    af1.tree,
-                    af0.tree,
-                    ignore_nan_inequality=equal_nan,
-                    custom_operators=operators,
-                    exclude_paths=exclude_paths,
-                    math_epsilon=atol,
-                    ignore_type_in_groups=[asdf.tags.core.NDArrayType, np.ndarray],
-                )
-                return DiffResult(diff, result, truth)
+                return Diff(af1.tree, af0.tree, settings)
