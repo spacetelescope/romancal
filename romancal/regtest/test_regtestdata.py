@@ -31,7 +31,7 @@ def test_compare_asdf(tmp_path, modification, base_image, ignore_asdf_paths):
     if modification == "large":
         assert not diff.identical, diff.report()
         assert "arrays_differ" in diff.diff
-        assert "root['roman']['data']" in diff.diff["arrays_differ"]
+        assert "roman.data" in diff.diff["arrays_differ"]
     else:
         assert diff.identical, diff.report()
 
@@ -92,7 +92,7 @@ def test_model_difference(tmp_path):
     diff = compare_asdf(fn0, fn1)
     assert not diff.identical
     assert (
-        """'type_changes': {"root['roman']": {'new_type': <class 'roman_datamodels._stnode.DistortionRef'>"""
+        """'type_changes': {"roman": {'new_type': <class 'roman_datamodels._stnode.DistortionRef'>"""
         in diff.report()
     )
 
@@ -143,8 +143,8 @@ def test_n_diffs(tmp_path, n_diffs):
     diff = compare_asdf(fn0, fn1)
     assert not diff.identical, diff.report()
     assert "arrays_differ" in diff.diff
-    assert "root['v']" in diff.diff["arrays_differ"]
-    assert n_diffs == diff.diff["arrays_differ"]["root['v']"]["n_diffs"]
+    assert "v" in diff.diff["arrays_differ"]
+    assert n_diffs == diff.diff["arrays_differ"]["v"]["n_diffs"]
 
 
 @pytest.mark.parametrize(
@@ -166,7 +166,7 @@ def test_non_numeric_arrays(tmp_path, v0, v1):
     diff = compare_asdf(fn0, fn1)
     assert not diff.identical
     assert "tables_differ" in diff.diff
-    table_diff = diff.diff["tables_differ"]["root['t']"]
+    table_diff = diff.diff["tables_differ"]["t"]
     assert table_diff["column_values"]["a"]["n_diffs"] == 2
 
 
@@ -185,7 +185,7 @@ def test_table_meta_array(tmp_path):
 
     diff = compare_asdf(fn0, fn1)
     assert not diff.identical
-    assert "metas_differ" in diff.diff["tables_differ"]["root['t']"]
+    assert "metas_differ" in diff.diff["tables_differ"]["t"]
 
 
 def test_ignored_paths_not_compared(tmp_path):

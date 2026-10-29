@@ -250,7 +250,7 @@ class Diff:
                 self._record("times_differ", path, details)
         elif isinstance(truth, (np.ndarray, asdf.tags.core.NDArrayType)):
             if details := self._diff_arrays(truth, result, path):
-                self._record("tables_differ", path, details)
+                self._record("arrays_differ", path, details)
         elif isinstance(truth, Mapping):
             self._diff_mappings(truth, result, path)
         elif isinstance(truth, Sequence) and not isinstance(truth, (str, bytes)):
