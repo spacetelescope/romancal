@@ -5,11 +5,14 @@ compare_asdf has order (truth, result) so t1 is truth t2 is result
 
 import copy
 import numbers
+import pprint
 from collections.abc import Mapping, Sequence, Set
 from dataclasses import dataclass
+from textwrap import dedent
 
 import asdf
 import numpy as np
+import roman_datamodels as rdm
 from astropy.table import Table
 from astropy.time import Time
 from gwcs import WCS
@@ -19,6 +22,27 @@ from gwcs.wcstools import grid_from_bounding_box
 def _wcs_to_ra_dec(wcs):
     x, y = grid_from_bounding_box(wcs.bounding_box)
     return wcs(x, y)
+
+
+def _get_model_info(tree):
+    node = tree.get("roman", {})
+    if "roman" not in tree:
+        model_type = "Unknown"
+    else:
+        # look up datamodel from node
+        model_type = str(type(rdm.open(asdf.AsdfFile({"roman": node}))))
+    crds_context = (
+        node.get("meta", {})
+        .get("ref_file", {})
+        .get("crds", {})
+        .get("context", "Unknown context")
+    )
+    filename = node.get("meta", {}).get("filename", "Unknown filename")
+    return {
+        "model type": model_type,
+        "crds_context": crds_context,
+        "filename": filename,
+    }
 
 
 @dataclass
@@ -31,6 +55,9 @@ class DiffSettings:
 
 class Diff:
     def __init__(self, truth, result, settings):
+        # capture file information: model type, crds context
+        self._truth_info = _get_model_info(truth)
+        self._result_info = _get_model_info(result)
         self.settings = settings
         # keys=diff types: arrays_differ, etc
         # values=dict of {path: {result: ..., truth: ...}}
@@ -265,5 +292,16 @@ class Diff:
                 self._record("values_differ", path, details)
 
     def report(self):
-        # TODO
-        return str(self.diff)
+        title = dedent(
+            f"""
+            Diff report for:
+                result file: {self._result_info["filename"]}
+                    model type: {self._result_info["model type"]}
+                    crds_context: {self._result_info["crds_context"]}
+                truth file: {self._truth_info["filename"]}
+                    model type: {self._truth_info["model type"]}
+                    crds_context: {self._truth_info["crds_context"]}
+            """
+        )
+        report = pprint.pformat(self.diff)
+        return f"{title}\n{report}"

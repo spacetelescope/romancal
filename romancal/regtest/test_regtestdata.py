@@ -92,7 +92,7 @@ def test_model_difference(tmp_path):
     diff = compare_asdf(fn0, fn1)
     assert not diff.identical
     assert (
-        """'type_changes': {"roman": {'new_type': <class 'roman_datamodels._stnode.DistortionRef'>"""
+        """'types_differ': {'roman': {'result': <class 'roman_datamodels._stnode.DistortionRef'>"""
         in diff.report()
     )
 
