@@ -305,7 +305,7 @@ def update_wcs_from_telem(model, t_pars: tlib.TransformParameters):
 
     # Update model meta.
     logger.info("Updated WCS meta information: %s", wcs_meta)
-    olib.update_meta(model, wcs_meta, quality)
+    olib.update_meta(model, t_pars, wcs_meta, quality)
 
     return wcs_meta
 

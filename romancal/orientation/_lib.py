@@ -3,6 +3,7 @@
 import logging
 from collections import namedtuple
 from math import cos, sin
+from pathlib import Path
 
 from crds import getreferences
 import numpy as np
@@ -217,7 +218,7 @@ def hv_to_fgs(aperture_name, h, v, siaf_path=None):
     return x_fgs, y_fgs
 
 
-def update_meta(model, wcs_meta, quality):
+def update_meta(model, t_pars, wcs_meta, quality):
     """Update model's meta info with the given pointing.
 
     The following meta are update:
@@ -238,6 +239,9 @@ def update_meta(model, wcs_meta, quality):
     ----------
     model : `~roman.datamodels.DataModel`
         The model to update. Updates are done in-place.
+
+    t_pars : `TransformParameters`
+        The transformation parameters. Parameters are updated during processing.
 
     wcs_meta : dict
         The major meta blocks with the update information.
@@ -260,6 +264,9 @@ def update_meta(model, wcs_meta, quality):
     for k, v in wcs_meta["wcsinfo"].items():
         if hasattr(model.meta.wcsinfo, k) or k in model.meta.wcsinfo:
             setattr(model.meta.wcsinfo, k, v)
+
+    model.meta.ref_file.bam = Path(t_pars.bam_ref).name
+    model.meta.ref_file.distortion = Path(t_pars.distortion_ref).name
 
 
 def vector_to_angle(v):
