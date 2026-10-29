@@ -67,7 +67,7 @@ class Diff:
         details = {}
         if ra_diff := self._diff_arrays(ra_truth, ra_result, path):
             details["ra"] = ra_diff
-        if dec_diff := self._diff_arrays(dec_truth, ra_result, path):
+        if dec_diff := self._diff_arrays(dec_truth, dec_result, path):
             details["dec"] = dec_diff
         return details
 
