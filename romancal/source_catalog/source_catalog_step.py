@@ -104,7 +104,7 @@ class SourceCatalogStep(RomanStep):
 
     class_alias = "source_catalog"
 
-    reference_file_types: ClassVar = ["apcorr"]
+    reference_file_types: ClassVar = ["apcorr", "epsf"]
 
     spec = """
         bkg_boxsize = float(default=55.0)     # background mesh box size in arcsec
