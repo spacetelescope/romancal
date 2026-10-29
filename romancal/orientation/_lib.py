@@ -4,6 +4,7 @@ import logging
 from collections import namedtuple
 from math import cos, sin
 
+from crds import getreferences
 import numpy as np
 
 from . import _siaf as siaf_lib
@@ -141,6 +142,39 @@ def calc_position_angle(point, ref):
 
     logger.debug("Given reference: %s, point: %s, then PA: %s", ref, point, point_pa)
     return point_pa
+
+
+def fetch_references(t_pars):
+    """Fetch and load reference files.
+
+    Fetch and load the necessary reference files.
+    Currently this includes the BAM and DISTORTION references.
+
+    If the reference file paths are not already defined, the references
+    are fetched from CRDS and the TransformParameters is updated.
+    The parameters used for fetching will be found in TransformParameters.crds_pars
+
+    Parameters
+    ----------
+    t_pars : TransformParameters
+        References are located locally or fetched from CRDS. The path information is
+        updated in place.
+
+        If fetching is needed, `t_pars.crds_pars` is used for the fetching.
+    """
+    reftypes = {'bam': 'bam_ref',
+                'distortion': 'distortion_ref'}
+    reftypes_to_fetch = []
+    for reftype in reftypes:
+        if not getattr(t_pars, reftypes[reftype], None):
+            reftypes_to_fetch.append(reftype)
+    refpaths = dict()
+    if reftypes_to_fetch:
+        refpaths = getreferences(t_pars.crds_pars, reftypes_to_fetch, observatory='roman')
+    for reftype in refpaths:
+        setattr(t_pars, reftypes[reftype], refpaths[reftype])
+    for reftype in reftypes:
+        logger.info('%s reference: %s', reftype.upper(), getattr(t_pars, reftypes[reftype]))
 
 
 def hv_to_fgs(aperture_name, h, v, siaf_path=None):
