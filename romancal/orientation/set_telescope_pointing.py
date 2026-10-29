@@ -135,16 +135,13 @@ def add_wcs(
                 "\n\tFailing WCS processing."
             )
 
-        t_pars, transforms = update_wcs(model, **transform_kwargs)
+        wcs_meta = update_wcs(model, **transform_kwargs)
 
         if dry_run:
             logger.info("Dry run requested; results are not saved.")
         else:
             logger.info("Saving updated model %s", filename)
             model.save(filename)
-            if transforms and save_transforms:
-                logger.info("Saving transform matrices to %s", save_transforms)
-                transforms.write_to_asdf(save_transforms)
 
     logger.info("...update completed")
 
@@ -171,12 +168,11 @@ def update_wcs(
         dict to use to initialize the `TransformParameters` object.
         See `TransformParameters` for more information.`
 
+
     Returns
     -------
-    t_pars, transforms : TransformParameters, Transforms
-        The parameters and transforms calculated. May be
-        None for either if telemetry calculations were not
-        performed.
+    wcs_meta : dict
+        The various wcs-related meta keywords calculated for.
     """
     # Configure transformation parameters.
     t_pars = tlib.TransformParameters(**transform_kwargs)
@@ -184,6 +180,6 @@ def update_wcs(
     logger.log(DEBUG_FULL, "TransformParameters: %s", t_pars)
 
     # Calculate WCS.
-    transforms = wlib.update_wcs_from_telem(model, t_pars)
+    wcs_meta = wlib.update_wcs_from_telem(model, t_pars)
 
-    return t_pars, transforms
+    return wcs_meta

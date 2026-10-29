@@ -240,6 +240,76 @@ def project_v2v3_with_roll(v2_arcsec, v3_arcsec, v2v3_frame):
     return float(c_icrs.ra.deg), float(c_icrs.dec.deg), local_roll, c_icrs
 
 
+def update_wcs_from_telem(model, t_pars: tlib.TransformParameters):
+    """
+    Update WCS pointing information.
+
+    Given a `roman.datamodels.DataModel`, determine the simple WCS parameters
+    from the SIAF keywords in the model and the engineering parameters
+    that contain information about the telescope pointing.
+
+    It presumes all the accessed keywords are present.
+
+    Parameters
+    ----------
+    model : `~roman.datamodels.DataModel`
+        The model to update. The update is done in-place.
+
+    t_pars : `TransformParameters`
+        The transformation parameters. Parameters are updated during processing.
+
+    Returns
+    -------
+    wcs_meta : dict
+        The various wcs-related meta keywords calculated for.
+    """
+    logger.info("Updating wcs from telemetry.")
+
+    # Unknown pointing quality.
+    quality = None
+
+    # Get the pointing information
+    try:
+        t_pars.update_from_engdb()
+    except ValueError as exception:
+        logger.error("Cannot retrieve valid engineering orientation data")
+        if t_pars.default_quaternion is None or not t_pars.allow_default:
+            logger.error("Use of default orientation has been disabled. Aborting.")
+            raise
+        else:
+            logger.warning("Exception is %s", exception)
+            obstime = Time(
+                (t_pars.obsstart.mjd + t_pars.obsend.mjd) / 2.0, format="mjd"
+            )
+            logger.warning(
+                "Using provided default quaternion: %s", t_pars.default_quaternion
+            )
+            logger.warning("    at time %s", obstime.iso)
+            logger.info("Setting pointing quality to PLANNED")
+            t_pars.pointing = plib.Pointing(
+                q=t_pars.default_quaternion, obstime=obstime
+            )
+            quality = "PLANNED"
+    else:
+        logger.info("Successful read of engineering quaternions:")
+        logger.info("\tPointing: %s", t_pars.pointing)
+        quality = "CALCULATED"
+
+    # Attempt to calculate WCS information
+    try:
+        wcs_meta = calc_wcs(t_pars)
+        logger.info("Setting pointing quality to %s", quality)
+    except olib.EXPECTED_ERRORS:
+        logger.error("WCS calculation has failed")
+        raise
+
+    # Update model meta.
+    logger.info("Updated WCS meta information: %s", wcs_meta)
+    olib.update_meta(model, t_pars, wcs_meta, quality)
+
+    return wcs_meta
+
+
 # ###
 # old code
 # ###
@@ -283,78 +353,6 @@ def wcsinfo_from_siaf(aperture, vinfo, siaf_path=None):
         ra=skycoord[0], dec=skycoord[1], pa=pa_v3, s_region=s_region_keyword
     )
     return wcsinfo
-
-
-def update_wcs_from_telem(model, t_pars: tlib.TransformParameters):
-    """
-    Update WCS pointing information.
-
-    Given a `roman.datamodels.DataModel`, determine the simple WCS parameters
-    from the SIAF keywords in the model and the engineering parameters
-    that contain information about the telescope pointing.
-
-    It presumes all the accessed keywords are present.
-
-    Parameters
-    ----------
-    model : `~roman.datamodels.DataModel`
-        The model to update. The update is done in-place.
-
-    t_pars : `TransformParameters`
-        The transformation parameters. Parameters are updated during processing.
-
-    Returns
-    -------
-    transforms : Transforms or None
-        If available, the transformation matrices.
-    """
-    logger.info("Updating wcs from telemetry.")
-
-    # Initialization. If provided, provide a default Pointing.
-    transforms = None  # Assume no transforms are calculated.
-    quality = None  # Unknown pointing quality.
-
-    # Get the pointing information
-    try:
-        t_pars.update_from_engdb()
-    except ValueError as exception:
-        logger.error("Cannot retrieve valid engineering orientation data")
-        if t_pars.default_quaternion is None or not t_pars.allow_default:
-            logger.error("Use of default orientation has been disabled. Aborting.")
-            raise
-        else:
-            logger.warning("Exception is %s", exception)
-            obstime = Time(
-                (t_pars.obsstart.mjd + t_pars.obsend.mjd) / 2.0, format="mjd"
-            )
-            logger.warning(
-                "Using provided default quaternion: %s", t_pars.default_quaternion
-            )
-            logger.warning("    at time %s", obstime.iso)
-            logger.info("Setting pointing quality to PLANNED")
-            t_pars.pointing = plib.Pointing(
-                q=t_pars.default_quaternion, obstime=obstime
-            )
-            quality = "PLANNED"
-    else:
-        logger.info("Successful read of engineering quaternions:")
-        logger.info("\tPointing: %s", t_pars.pointing)
-        quality = "CALCULATED"
-
-    # Attempt to calculate WCS information
-    try:
-        wcsinfo, vinfo, transforms = calc_wcs(t_pars)
-        logger.info("Setting pointing quality to %s", quality)
-    except olib.EXPECTED_ERRORS:
-        logger.error("WCS calculation has failed")
-        raise
-
-    # Update model meta.
-    logger.info("Aperture WCS info: %s", wcsinfo)
-    logger.info("V1 WCS info: %s", vinfo)
-    olib.update_meta(model, t_pars, wcsinfo, vinfo, quality, siaf_path=t_pars.siaf_path)
-
-    return transforms
 
 
 def calc_wcs_over_time(obsstart, obsend, t_pars: tlib.TransformParameters):
