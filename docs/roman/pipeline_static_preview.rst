@@ -7,7 +7,7 @@ following requirements for each ``ImageModel``:
 - 1080p x 1080p preview image
 - 300p x 300p thumbnail image
 - output as PNG files
-- 90th percentile linear histogram stretch
+- linear histogram stretch spanning the central 96% (preview) or 98% (thumbnail) of pixel values
 - using ``afmhot`` colormap
 - overlay indicating orientation
 
@@ -33,26 +33,42 @@ default options to the static preview requirements.
 .. code-block:: shell
 
 	❯ roman_static_preview input.asdf output.png preview --help
-	usage: roman_static_preview INPUT OUTPUT preview [-h] [--no-compass] SHAPE [SHAPE ...]
+	usage: roman_static_preview INPUT OUTPUT preview [-h] [--percentile PERCENTILE] [--no-compass]
+	                                                 SHAPE [SHAPE ...]
 
 	positional arguments:
-	  SHAPE         desired pixel shape of output image
+	  SHAPE                 desired pixel shape of output image
 
 	options:
-	  -h, --help    show this help message and exit
-	  --no-compass  do not draw a north arrow on the image
+	  -h, --help            show this help message and exit
+	  --percentile PERCENTILE
+	                        central percentage of pixel values spanned by the color stretch (default:
+	                        96, i.e. from the 2nd to the 98th percentile)
+	  --no-compass          do not draw a north arrow on the image
 
 .. code-block:: shell
 
 	❯ roman_static_preview thumbnail --help
-	usage: roman_static_preview INPUT OUTPUT thumbnail [-h] [--compass] SHAPE [SHAPE ...]
+	usage: roman_static_preview INPUT OUTPUT thumbnail [-h] [--percentile PERCENTILE] [--compass]
+	                                                   SHAPE [SHAPE ...]
 
 	positional arguments:
-	  SHAPE       desired pixel shape of output image
+	  SHAPE                 desired pixel shape of output image
 
 	options:
-	  -h, --help  show this help message and exit
-	  --compass   draw a north arrow on the image
+	  -h, --help            show this help message and exit
+	  --percentile PERCENTILE
+	                        central percentage of pixel values spanned by the color stretch (default:
+	                        98, i.e. from the 1st to the 99th percentile)
+	  --compass             draw a north arrow on the image
+
+The color stretch spans the central 96% of pixel values for previews (from the 2nd to the
+98th percentile) and 98% for thumbnails (from the 1st to the 99th percentile); pass
+``--percentile`` to change it.
+
+.. code-block:: shell
+
+	roman_static_preview input.asdf output.png preview --percentile 99 1080 1080
 
 Examples
 --------
