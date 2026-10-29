@@ -120,6 +120,7 @@ def test_flag_large_events_withsnowball():
         sat_required_snowball=True,
         min_sat_radius_extend=0.5,
         sat_expand=2,
+        flag_4_neighbors=False,
     )
     assert np.std(m_image.data) < 1e-5
     n_jump_expanded = np.sum(m_image.dq == pixel.JUMP_DET)
@@ -141,6 +142,7 @@ def test_flag_large_events_withsnowball():
         override_gain=m_gain,
         override_readnoise=m_rnoise,
         expand_large_events=False,
+        flag_4_neighbors=False,
     )
     assert np.std(m_image.data) < 1e-5
     n_jump_original = np.sum(m_image.dq == pixel.JUMP_DET)
@@ -158,6 +160,46 @@ def test_flag_large_events_withsnowball():
     jidx = m_image.jump_indices
     assert jidx.shape == (n_jump_original, 3)
     assert np.all(jidx[:, 0] == 10)
+
+
+@pytest.mark.parametrize(
+    "flag_4_neighbors, min_sig, max_sig, neighbors_flagged",
+    [
+        (False, 10, 1000, False),
+        (True, 10, 1000, True),
+        (True, 1e5, 1e6, False),  # limits above the jump significance
+        (True, 1, 5, False),  # limits below the jump significance
+    ],
+)
+def test_flag_4_neighbors(flag_4_neighbors, min_sig, max_sig, neighbors_flagged):
+    """Test that the neighbors of jumps are flagged when requested"""
+    resultants = create_linear_ramp(n_resultants=20, nrows=100, ncols=100)
+    model, m_gain, m_rnoise, m_dark = make_data(resultants, 6, 0.01, False)
+    # A block of jumps in resultant 10.
+    model.data[10:, 46:57, 46:57] += 300
+
+    # The block is flagged; if neighbors are flagged, so is the block grown by
+    # one pixel up, down, left and right (not the diagonal corners).
+    expected = np.zeros(model.data.shape[-2:], dtype=bool)
+    expected[46:57, 46:57] = True
+    if neighbors_flagged:
+        expected[45:58, 46:57] = True
+        expected[46:57, 45:58] = True
+    expected = expected[4:-4, 4:-4]  # trim the reference pixels
+
+    m_image = RampFitStep.call(
+        model,
+        algorithm="likely",
+        override_gain=m_gain,
+        override_readnoise=m_rnoise,
+        flag_4_neighbors=flag_4_neighbors,
+        min_jump_to_flag_neighbors=min_sig,
+        max_jump_to_flag_neighbors=max_sig,
+    )
+
+    np.testing.assert_array_equal((m_image.dq & pixel.JUMP_DET) != 0, expected)
+    # Neighbors are flagged in the same resultant as the jump.
+    assert np.all(m_image.jump_indices[:, 0] == 10)
 
 
 def test_jump_indices():
