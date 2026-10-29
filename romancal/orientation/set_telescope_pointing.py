@@ -62,6 +62,7 @@ import logging
 
 import roman_datamodels as rdm
 
+from . import _lib as olib
 from . import _transforms as tlib
 from . import _wcs as wlib
 
@@ -177,6 +178,7 @@ def update_wcs(
     # Configure transformation parameters.
     t_pars = tlib.TransformParameters(**transform_kwargs)
     tlib.t_pars_from_model(model, t_pars)
+    olib.fetch_references(t_pars)
     logger.log(DEBUG_FULL, "TransformParameters: %s", t_pars)
 
     # Calculate WCS.

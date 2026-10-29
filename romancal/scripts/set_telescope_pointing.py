@@ -195,7 +195,7 @@ def _main():
                 allow_default=args.allow_default,
                 bam_ref=args.bam_ref,
                 default_quaternion=args.default_quaternion,
-                distorion_ref=arg.distortion_ref,
+                distortion_ref=args.distortion_ref,
                 service_kwargs=service_kwargs,
                 tolerance=args.tolerance,
             )
