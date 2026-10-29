@@ -1,0 +1,3 @@
+Add a ``--percentile`` option to ``roman_static_preview``, defaulting to a 96%
+stretch for previews and 98% for thumbnails, and fix the script passing the
+builtin ``input`` instead of the input file.
