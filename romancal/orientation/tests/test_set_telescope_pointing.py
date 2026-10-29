@@ -49,19 +49,11 @@ TRANSFORM_KWARGS = {
     'bam_ref': DATA_PATH / 'roman_wfi_bam_0007.asdf',
     'distortion_ref': DATA_PATH / 'roman_wfi_distortion_0078.asdf',
     "pointing": plib.Pointing(
-        fgs_q=np.array(
-            [
-                -0.18596734175399293,
-                0.6837984564491885,
-                -0.1800546332580956,
-                0.6822141509826322,
-            ]
-        ),
-        obstime=Time(1757680438.0280416, format="unix"),
-        q=np.array([-0.33879082, 0.62326573, -0.36611627, 0.60226181]),
+        obstime=Time(1790057901.121, format="unix"),
+        q=np.array([-0.7118218303725413, -0.1163575361747678, 0.6786490188532825, 0.13858612769623332]),
     ),
     'target_aperture': 'WFI_CEN',
-    "velocity": (-5.473753741352352, -27.480586797035414, -11.875972151015253),
+    "velocity": (0.35121860071119626, 27.235876615565928, 11.79987217049065),
 }
 
 # Some tests depend on the default engineering database to be available. Check now.
