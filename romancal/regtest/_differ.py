@@ -169,7 +169,7 @@ class Diff:
 
         details["n_diffs"] = n_diffs
 
-        abs_diff = np.abs(truth - result)
+        abs_diff = np.abs(result - truth)
         # check for all nan difference to avoid errors in other comparisons
         if not np.any(np.isfinite(abs_diff)):
             details["all_nonfinite_diffs"] = True
@@ -184,7 +184,7 @@ class Diff:
             # 0 / 0 == nan and produces an 'invalid' error
             # 1 / 0 == inf and produces a 'divide' error
             # ignore these here for computing the fractional diff
-            fractional_diff = np.abs(truth / result)
+            fractional_diff = np.abs(result / truth)
 
         if np.any(np.isfinite(abs_diff)):
             index = np.unravel_index(np.nanargmax(fractional_diff), truth.shape)
