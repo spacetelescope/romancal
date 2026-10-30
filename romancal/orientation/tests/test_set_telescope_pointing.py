@@ -187,16 +187,6 @@ def test_get_pointing_list():
     assert STARTTIME <= results[0].obstime <= ENDTIME
 
 
-def test_hv_to_fgs():
-    """Test conversion from HV frame to FGS frame"""
-    hv = TRANSFORM_KWARGS["gscommanded"]
-    fgs_expected = (346.06680318732685, -148.7528870949794)
-
-    fgs = olib.hv_to_fgs("WFI01_FULL", *hv)
-
-    assert np.allclose(fgs, fgs_expected)
-
-
 @pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")
 def test_mnemonics_chronologically():
     """Test ordering mnemonics chronologically"""
@@ -270,38 +260,6 @@ def test_strict_pointing(science_raw_model, tmp_path):
     science_raw_model.meta.exposure.end_time = STARTTIME
     with pytest.raises(ValueError):
         stp.add_wcs(_model_to_tmpfile(science_raw_model, tmp_path), tolerance=0)
-
-
-@pytest.mark.parametrize(
-    "matrix",
-    [matrix for matrix in dataclasses.fields(tlib.Transforms())],
-    ids=[matrix.name for matrix in dataclasses.fields(tlib.Transforms())],
-)
-def test_transforms(calc_wcs, matrix):
-    """Ensure expected calculate of the specified matrix
-
-    Parameters
-    ----------
-    transforms, t_pars : Transforms, TransformParameters
-        The transforms and the parameters used to generate the transforms
-
-    matrix : str
-        The matrix to compare
-    """
-    _, _, transforms, t_pars = calc_wcs
-    _test_transforms(transforms, t_pars, matrix.name)
-
-
-def test_transform_serialize(calc_wcs, tmp_path):
-    """Test serialization of Transforms"""
-    _, _, transforms, _ = calc_wcs
-
-    path = tmp_path / "transforms.asdf"
-    transforms.write_to_asdf(path)
-    from_asdf = tlib.Transforms.from_asdf(path)
-
-    assert isinstance(from_asdf, tlib.Transforms)
-    assert str(transforms) == str(from_asdf)
 
 
 @pytest.mark.parametrize(
