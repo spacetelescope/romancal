@@ -65,7 +65,6 @@ class Diff:
         return not bool(self.diff)
 
     def _skip_path(self, path):
-        # TODO worth indexing ignores to allow a simple in here?
         return ".".join(path) in self.settings.ignore_paths
 
     def _record(self, diff_type, path, details):
@@ -113,8 +112,7 @@ class Diff:
     def _diff_times(self, truth, result, path):
         if truth == result:
             return
-        difference = truth - result
-        return {"truth": truth, "result": result, "difference": difference}
+        return {"truth": truth, "result": result}
 
     def _diff_arrays(self, truth, result, path):
         details = {}
@@ -214,7 +212,6 @@ class Diff:
                 self._record("dictionary_item_added", child, str(result[key]))
 
     def _diff_sequences(self, truth, result, path):
-        # TODO use zip_longest?
         for index in range(max(len(truth), len(result))):
             # handle integer path elements
             child = (*path, str(index))
