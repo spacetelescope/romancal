@@ -1,8 +1,3 @@
-"""
-t1 is item from first argument, t2 is item from second argument
-compare_asdf has order (truth, result) so t1 is truth t2 is result
-"""
-
 import copy
 import numbers
 import pprint
@@ -109,7 +104,7 @@ class Diff:
 
         # compare metas (ignoring some specific paths)
         meta_settings = copy.copy(self.settings)
-        meta_settings.ignore_paths = ["date", "version", "versions"]
+        meta_settings.ignore_paths = {"date", "version", "versions"}
         meta_diff = Diff(truth.meta, result.meta, meta_settings)
         if not meta_diff.identical:
             details["metas_differ"] = meta_diff.diff
@@ -127,14 +122,17 @@ class Diff:
             truth_attr = getattr(truth, attr, None)
             result_attr = getattr(result, attr, None)
             if truth_attr != result_attr:
-                details[attr] = [truth_attr, result_attr]
+                details[attr] = {"truth": truth_attr, "result": result_attr}
         if truth.dtype.names or result.dtype.names:
             if truth.dtype.names != result.dtype.names:
-                details["names"] = [truth.dtype.names, result.dtype.names]
+                details["names"] = {
+                    "truth": truth.dtype.names,
+                    "result": result.dtype.names,
+                }
             if not details:
+                per_column_details = {}
                 # only compare values if no other difference exists
                 for name in truth.dtype.names:
-                    per_column_details = {}
                     child = (*path, name)
                     if self._skip_path(child):
                         continue
@@ -174,6 +172,11 @@ class Diff:
         details["n_diffs"] = n_diffs
 
         abs_diff = np.abs(truth - result)
+        # check for all nan difference to avoid errors in other comparisons
+        if not np.any(np.isfinite(abs_diff)):
+            details["all_nonfinite_diffs"] = True
+            return details
+
         index = np.unravel_index(np.nanargmax(abs_diff), truth.shape)
         details["worst_abs_diff"] = {
             "index": index,
@@ -184,11 +187,14 @@ class Diff:
             # 1 / 0 == inf and produces a 'divide' error
             # ignore these here for computing the fractional diff
             fractional_diff = np.abs(truth / result)
-        index = np.unravel_index(np.nanargmax(fractional_diff), truth.shape)
-        details["worst_fractional_diff"] = {
-            "index": index,
-            "value": fractional_diff[index],
-        }
+
+        if np.any(np.isfinite(abs_diff)):
+            index = np.unravel_index(np.nanargmax(fractional_diff), truth.shape)
+            details["worst_fractional_diff"] = {
+                "index": index,
+                "value": fractional_diff[index],
+            }
+        # np.quantiles(new - old, [0.0001, 0.001, 0.01, 0.1, 0.16, 0.5, 0.84, 0.9, 0.99, 0.999, 0.9999])
         return details
 
     def _diff_mappings(self, truth, result, path):
@@ -208,6 +214,7 @@ class Diff:
                 self._record("dictionary_item_added", child, str(result[key]))
 
     def _diff_sequences(self, truth, result, path):
+        # TODO use zip_longest?
         for index in range(max(len(truth), len(result))):
             # handle integer path elements
             child = (*path, str(index))
@@ -255,6 +262,8 @@ class Diff:
             return
 
         # avoid repeats
+        # TODO fix to avoid marking scalars as seen
+        # TODO fix issue where an object appearing in >1 path (1 ignored) can result in false equality (is this an issue?)
         seen_key = (id(truth), id(result))
         if seen_key in self._seen:
             return
