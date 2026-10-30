@@ -27,6 +27,16 @@ The ramp fitting step has the following optional argument that can be set by the
 
 * ``--maximum_cores``: string/integer specifying the cores for multiprocessing. Can be an integer, 'half', 'quarter', or 'all'
 
+* ``--flag_4_neighbors``: boolean specifying whether to flag the four
+  perpendicular neighbors of each jump as jumps, in the same resultant.
+  The default is False.
+
+* ``--max_jump_to_flag_neighbors``: float specifying the jump significance, in
+  sigma, above which neighbors are not flagged. The default is 1000.
+
+* ``--min_jump_to_flag_neighbors``: float specifying the jump significance, in
+  sigma, below which neighbors are not flagged. The default is 10.
+
 * ``--expand_large_events``: boolean to turn on Snowball detection.
 
 * ``--min_sat_area``: float specifying minimum required area for the central saturation of snowballs.

@@ -1,0 +1,3 @@
+Add ``flag_4_neighbors``, ``max_jump_to_flag_neighbors`` and
+``min_jump_to_flag_neighbors`` arguments to flag the neighbors of significant
+jumps in likelihood ramp fitting; off by default.

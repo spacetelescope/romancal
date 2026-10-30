@@ -48,6 +48,9 @@ class RampFitStep(RomanStep):
         include_var_rnoise = boolean(default=False) # include var_rnoise in output (can be reconstructed from err and other variances)
         record_jumps = boolean(default=True) # record which resultant each jump was flagged in as a jump_indices extension (likely algorithm only)
         maximum_cores = string(default='1') # cores for multiprocessing. Can be an integer, 'half', 'quarter', or 'all'
+        flag_4_neighbors = boolean(default=False) # flag the four perpendicular neighbors of each jump
+        max_jump_to_flag_neighbors = float(default=1000) # maximum jump sigma that will trigger neighbor flagging
+        min_jump_to_flag_neighbors = float(default=10) # minimum jump sigma that will trigger neighbor flagging
         expand_large_events = boolean(default=False) # Turns on Snowball detection
         min_sat_area = float(default=1.0) # minimum required area for the central saturation of snowballs
         min_jump_area = float(default=6.0) # minimum area to trigger large events processing
@@ -92,6 +95,9 @@ class RampFitStep(RomanStep):
         elif algorithm == "likely":
             jump_kw = dict(
                 maximum_cores=self.maximum_cores,
+                flag_4_neighbors=self.flag_4_neighbors,
+                max_jump_to_flag_neighbors=self.max_jump_to_flag_neighbors,
+                min_jump_to_flag_neighbors=self.min_jump_to_flag_neighbors,
                 expand_large_events=self.expand_large_events,
                 min_sat_area=self.min_sat_area,
                 min_jump_area=self.min_jump_area,
@@ -348,6 +354,9 @@ def _setup_jump_data(
     result,
     rnoise_m,
     gain_m,
+    flag_4_neighbors=False,
+    max_jump_to_flag_neighbors=1000,
+    min_jump_to_flag_neighbors=10,
     expand_large_events=False,
     min_jump_area=6,
     min_sat_area=1,
@@ -371,6 +380,17 @@ def _setup_jump_data(
 
     gain_m : GainModel
         Gain reference model
+
+    flag_4_neighbors : bool
+        if True, flag the four perpendicular neighbors of each jump
+
+    max_jump_to_flag_neighbors : float
+        jumps more significant than this (in sigma) do not have their neighbors
+        flagged
+
+    min_jump_to_flag_neighbors : float
+        jumps less significant than this (in sigma) do not have their neighbors
+        flagged
 
     expand_large_events : bool
         if True, identify and flag potential snowballs
@@ -407,6 +427,12 @@ def _setup_jump_data(
 
     # Instantiate a JumpData class and populate it based on the input RampModel.
     jump_data = JumpData(result, gain_m.data, rnoise_m.data, pixel)
+
+    # Setup neighbor flagging.  Set flag_4_neighbors explicitly: the JumpData
+    # default is True.
+    jump_data.flag_4_neighbors = flag_4_neighbors
+    jump_data.max_jump_to_flag_neighbors = max_jump_to_flag_neighbors
+    jump_data.min_jump_to_flag_neighbors = min_jump_to_flag_neighbors
 
     # Setup snowball detection
     sat_expand = sat_expand * 2
