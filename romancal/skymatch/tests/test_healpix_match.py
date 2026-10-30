@@ -164,7 +164,7 @@ def test_skymatch_step_offset_file_missing_member(tmp_path):
 
 def test_match_healpix_empty_samples():
     """Purpose: empty samples list returns empty epsilon and names."""
-    eps, names = match_healpix_skyvals([])  # noqa: F841
+    eps, names = match_healpix_skyvals([])
     assert len(eps) == 0
     assert names == []
 
@@ -228,7 +228,7 @@ def test_match_healpix_no_overlap():
     assert all(eps == 0)
 
 
-def test_match_healpix_coverage_no_overlap(): 
+def test_match_healpix_coverage_no_overlap():
     """Purpose: coarse coverage skips pairs with no overlap."""
     pix = np.arange(100, 200, dtype=np.int64)
     unc = np.full(pix.shape, 0.01, dtype=np.float64)
@@ -258,7 +258,7 @@ def test_match_healpix_recenter_false():
     assert len(eps) == 2
 
 
-def test_match_healpix_min_overlap(): 
+def test_match_healpix_min_overlap():
     """Purpose: min_overlap_cells filters pairs below threshold."""
     pix = np.arange(100, 200, dtype=np.int64)
     unc = np.full(pix.shape, 0.01, dtype=np.float64)
@@ -268,7 +268,9 @@ def test_match_healpix_min_overlap():
         {"pixel": pix, "value": sky0, "unc": unc},
         {"pixel": pix, "value": sky1, "unc": unc},
     ]
-    eps, names = match_healpix_skyvals(samples, names=["a", "b"], min_overlap_cells=1000)
+    eps, names = match_healpix_skyvals(
+        samples, names=["a", "b"], min_overlap_cells=1000
+    )
     assert len(eps) == 2
 
 
@@ -280,7 +282,9 @@ def test_pipeline_level_array():
 
 def test_offset_as_pipeline_level(tmp_path):
     """Purpose: write_offset_table with as_pipeline_level=True."""
-    path = write_offset_table(tmp_path / "off.parquet", ["a"], [0.01], as_pipeline_level=True)
+    path = write_offset_table(
+        tmp_path / "off.parquet", ["a"], [0.01], as_pipeline_level=True
+    )
     table = load_offset_table(path)
     # When as_pipeline_level=True: level=0.01, epsilon=-0.01
     assert lookup_offset("a", table) == pytest.approx(0.01)
@@ -359,8 +363,8 @@ def test_load_offset_file_column(tmp_path):
 def test_load_offset_alt_columns(tmp_path):
     """Purpose: load_offset_table handles epsilon/offset/offsets columns."""
     for col in ["epsilon", "offset", "offsets"]:
-        table = Table({"filename": ["exp1"], col: [0.05]})  # noqa: F841
-        path = tmp_path / f"test_{col}.parquet"  # noqa: F841
+        table = Table({"filename": ["exp1"], col: [0.05]})
+        path = tmp_path / f"test_{col}.parquet"
         table.write(path, format="parquet", overwrite=True)
         result = load_offset_table(path)
         assert "exp1" in result
@@ -369,9 +373,11 @@ def test_load_offset_alt_columns(tmp_path):
 def test_skymatch_step_subtract(tmp_path):
     """Purpose: SkyMatchStep with subtract=True modifies data."""
     off = write_offset_table(tmp_path / "offsets.parquet", ["img_a"], [0.05])
-    lib = ModelLibrary([
-        _mk_image("img_a_cal.asdf", 10.0),
-    ])
+    lib = ModelLibrary(
+        [
+            _mk_image("img_a_cal.asdf", 10.0),
+        ]
+    )
     result = SkyMatchStep.call(lib, offset_file=str(off), subtract=True)
     with result:
         models = list(result)
@@ -426,7 +432,9 @@ def test_load_skyval_missing_columns(tmp_path):
     with pytest.raises(ValueError, match="missing healpix17/pixel"):
         load_skyval_parquet(path)
 
-    Table({"healpix17": [1], "data": [0.1]}).write(path, format="parquet", overwrite=True)
+    Table({"healpix17": [1], "data": [0.1]}).write(
+        path, format="parquet", overwrite=True
+    )
     with pytest.raises(ValueError, match="missing err/unc"):
         load_skyval_parquet(path)
 
@@ -438,7 +446,9 @@ def test_load_offset_missing_columns(tmp_path):
     with pytest.raises(ValueError, match="missing filename column"):
         load_offset_table(path)
 
-    Table({"filename": ["a"], "foo": [1.0]}).write(path, format="parquet", overwrite=True)
+    Table({"filename": ["a"], "foo": [1.0]}).write(
+        path, format="parquet", overwrite=True
+    )
     with pytest.raises(ValueError, match="missing level/epsilon/offset"):
         load_offset_table(path)
 
