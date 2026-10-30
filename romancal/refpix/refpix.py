@@ -32,18 +32,6 @@ def _compute_dynamic_weights(
     and correspond to bilinear interpolation among these four options along the left and 
     right weight axes.
     """
-    n_res, n_rows, n_cols = datamodel.data.shape
-
-    # Gracefully fallback to static weights for trivially small unit test arrays 
-    # (e.g. 2x2 mock data) that lack enough physical columns to isolate 4-pixel borders.
-    if n_cols < 8 or n_rows < 8:
-        log.debug("Array too small for dynamic border analysis; defaulting to static weights.")
-        return {
-            'left_only': np.zeros((n_rows,), dtype=np.float32),
-            'right_only': np.zeros((n_rows,), dtype=np.float32),
-            'all_valid': np.ones((n_rows,), dtype=np.float32),
-            'amp33_only': np.zeros((n_rows,), dtype=np.float32)
-        }
 
     # 1. Isolate and collapse Left and Right reference columns
     # Using nanmean to match fundamental refpix correction math
