@@ -252,20 +252,10 @@ def update_meta(model, t_pars, wcs_meta, quality):
     """
     model.meta.pointing.pointing_engineering_source = quality
 
-    for k, v in wcs_meta["pointing"].items():
-        if hasattr(model.meta.pointing, k) or k in model.meta.pointing:
-            setattr(model.meta.pointing, k, v)
-
-    for k, v in wcs_meta["velocity_aberration"].items():
-        if (
-                hasattr(model.meta.velocity_aberration, k)
-                or k in model.meta.velocity_aberration
-        ):
-            setattr(model.meta.velocity_aberration, k, v)
-
-    for k, v in wcs_meta["wcsinfo"].items():
-        if hasattr(model.meta.wcsinfo, k) or k in model.meta.wcsinfo:
-            setattr(model.meta.wcsinfo, k, v)
+    for section in wcs_meta:
+        section_meta = getattr(model.meta, section)
+        for k, v in wcs_meta[section].items():
+            setattr(section_meta, k, v)
 
     model.meta.ref_file.bam = Path(t_pars.bam_ref).name
     model.meta.ref_file.distortion = Path(t_pars.distortion_ref).name
