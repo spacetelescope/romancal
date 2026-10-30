@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pytest
-from pathlib import Path
 from roman_datamodels.datamodels import SegmentationMapModel
 
 from romancal.scripts.export_skyvals_parquet import (
