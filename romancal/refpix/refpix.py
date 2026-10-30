@@ -18,25 +18,39 @@ log.setLevel(logging.DEBUG)
 
 def _compute_dynamic_weights(
     datamodel: RampModel,
-    sigma_thresh: float = 2.5,
+    sigma_thresh: float = 3.5,
     sigma_width: float = 1.0,
-    smooth_sigma: float = 8.0,
+    smooth_sigma: float = 12.0,
 ) -> dict:
     """
-    Dynamically computes row-by-row weights for the 4 reference pixel states.
-    Uses max-likelihood read-noise slope fitting, Gaussian slope smoothing, 
-    and a continuous sigma-tapered validity mapping.
+    We have four different kinds of fits---using all of the border reference pixels, 
+    using only the left reference pixels, using only the right reference pixels, 
+    and using no border reference pixels. We want to weight these 4 kinds of fits 
+    according to how consistent the border pixels are with typical fluctuations in the border. 
+    We derive left and right weights between 0 and 1, and then get 4 weights that sum to one 
+    and correspond to bilinear interpolation among these four options along the left and 
+    right weight axes.
     """
-    n_res, n_rows, _ = datamodel.data.shape
+    n_res, n_rows, n_cols = datamodel.data.shape
+
+    # Gracefully fallback to static weights for trivially small unit test arrays 
+    # (e.g. 2x2 mock data) that lack enough physical columns to isolate 4-pixel borders.
+    if n_cols < 8 or n_rows < 8:
+        log.debug("Array too small for dynamic border analysis; defaulting to static weights.")
+        return {
+            'left_only': np.zeros((n_rows,), dtype=np.float32),
+            'right_only': np.zeros((n_rows,), dtype=np.float32),
+            'all_valid': np.ones((n_rows,), dtype=np.float32),
+            'amp33_only': np.zeros((n_rows,), dtype=np.float32)
+        }
 
     # 1. Isolate and collapse Left and Right reference columns
-    # Using nanmean per Tim's feedback to match fundamental refpix correction math
+    # Using nanmean to match fundamental refpix correction math
     left_refs = np.nanmean(datamodel.data[:, :, :4], axis=2).astype(np.float32)
     right_refs = np.nanmean(datamodel.data[:, :, -4:], axis=2).astype(np.float32)
 
     # 2. Vectorized Uniform Weight Linear Ramp Fit (Slopes in DN / resultant)
     # This is the maximum likelihood slope in the read noise limit.
-    # read_pattern is a list of lists of the read numbers that constitute each resultant.
     ni = np.array([len(t) for t in datamodel.meta.exposure.read_pattern])
     ti = np.array([np.mean(t) for t in datamodel.meta.exposure.read_pattern])
     N = np.sum(ni)
@@ -49,8 +63,8 @@ def _compute_dynamic_weights(
     left_slopes = np.sum(left_refs * ml_weights[:, None], axis=0)
     right_slopes = np.sum(right_refs * ml_weights[:, None], axis=0)
 
-    # 3. Tim's signed slope smoothing (catches coherent one-sided drifts)
-    # RESTORED: Spatial median centering is mathematically required. Healthy ref pixels 
+    # 3. Signed slope smoothing (catches coherent one-sided drifts)
+    # Spatial median centering is mathematically required. Healthy ref pixels 
     # accumulate a positive baseline drift over the ramp. Without this, the global 
     # DC drift inflates the MAD noise floor and results in 0 detections.
     left_dev = left_slopes - np.nanmedian(left_slopes)
@@ -61,6 +75,8 @@ def _compute_dynamic_weights(
 
     # The factor of 1.5 is the (approximate) ratio of the median absolute deviation
     # to the standard deviation assuming Gaussianity.
+    # The 1e-12 floor is intended to do no harm in the all zero / constant / 
+    # reference-pixel-not-simulated case.
     left_noise = max(1.5 * np.nanmedian(np.abs(left_smooth)), 1e-12)
     right_noise = max(1.5 * np.nanmedian(np.abs(right_smooth)), 1e-12)
 
@@ -69,6 +85,8 @@ def _compute_dynamic_weights(
 
     # 4. Continuous validity weight: tapers from 1 (valid) to 0 (corrupted)
     # across [sigma_thresh - (sigma_width/2), sigma_thresh + (sigma_width/2)]
+    # For example, with default sigma_thresh = 3.5, sigma_width = 1.0, 
+    # 4-sigma outliers get no weight while 3-sigma outliers get full weight.
     w_left_valid = np.clip((sigma_thresh - left_snr) / sigma_width + 0.5, 0.0, 1.0)
     w_right_valid = np.clip((sigma_thresh - right_snr) / sigma_width + 0.5, 0.0, 1.0)
 
@@ -100,10 +118,10 @@ def run_steps(
     remove_trends: bool = True,
     cosine_interpolate: bool = True,
     fft_interpolate: bool = True,
-    dynamic_weights: str = 'dynamic',
-    sigma_thresh: float = 2.5,
+    weight_mode: str = 'dynamic',
+    sigma_thresh: float = 3.5,
     sigma_width: float = 1.0,
-    smooth_sigma: float = 8.0,
+    smooth_sigma: float = 12.0,
 ) -> RampModel:
     """
     Organize the steps to run the reference pixel correction.
@@ -134,7 +152,7 @@ def run_steps(
     )
 
     # 3. Compute dynamic weights ONCE on the unmutated ramp before the resultant loop
-    if dynamic_weights != 'default':
+    if weight_mode == 'dynamic':
         weights = _compute_dynamic_weights(
             datamodel, 
             sigma_thresh=sigma_thresh, 
@@ -153,41 +171,37 @@ def run_steps(
         f"fft_interpolate={fft_interpolate})."
     )
 
+    def _get_corrected_state(standard_view, coeffs_state, orig_data):
+        """Helper to apply a specific coefficient state to a single resultant."""
+        standard_view.data[:] = orig_data.copy()
+        ch = standard_view.channels
+        if remove_trends:
+            ch = ch.remove_trends()
+        if cosine_interpolate:
+            ch = ch.cosine_interpolate()
+        if fft_interpolate:
+            ch = ch.fft_interpolate()
+        return ch.apply_correction(coeffs_state).data.copy()
+
     for resultant in range(datamodel.data.shape[0]):
         standard = StandardView.from_datamodel(datamodel, resultant)
 
         if offset is not None:
             standard.remove_offset(offset)
 
-        if dynamic_weights == 'default':
-            channel = standard.channels
-            if remove_trends:
-                channel = channel.remove_trends()
-            if cosine_interpolate:
-                channel = channel.cosine_interpolate()
-            if fft_interpolate:
-                channel = channel.fft_interpolate()
-            standard = channel.apply_correction(coeffs_default)
+        orig_data = standard.data.copy()
+
+        if weight_mode == 'static':
+            # Run the single default correction pipeline without blending overhead
+            standard.data[:] = _get_corrected_state(standard, coeffs_default, orig_data)
         else:
-            original_data = standard.data.copy()
+            # Generate the 4 coefficient states and blend via dynamic validity weights
+            left_data = _get_corrected_state(standard, coeffs_left, orig_data)
+            right_data = _get_corrected_state(standard, coeffs_right, orig_data)
+            amp33_data = _get_corrected_state(standard, coeffs_amp33, orig_data)
+            default_data = _get_corrected_state(standard, coeffs_default, orig_data)
 
-            def _get_corrected_state(coeffs_state):
-                standard.data[:] = original_data.copy()
-                ch = standard.channels
-                if remove_trends:
-                    ch = ch.remove_trends()
-                if cosine_interpolate:
-                    ch = ch.cosine_interpolate()
-                if fft_interpolate:
-                    ch = ch.fft_interpolate()
-                return ch.apply_correction(coeffs_state).data.copy()
-
-            left_data = _get_corrected_state(coeffs_left)
-            right_data = _get_corrected_state(coeffs_right)
-            amp33_data = _get_corrected_state(coeffs_amp33)
-            default_data = _get_corrected_state(coeffs_default)
-
-            # Dictionary unpacked directly into the blend per Tim's request
+            # Dictionary unpacked directly into the blend
             standard.data[:] = (
                 (left_data * weights['left_only'][:, None])
                 + (right_data * weights['right_only'][:, None])
