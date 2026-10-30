@@ -250,6 +250,8 @@ def update_meta(model, t_pars, wcs_meta, quality):
     quality : str
         Indicator of the success of the pointing determination.
     """
+    model.meta.pointing.pointing_engineering_source = quality
+
     for k, v in wcs_meta["pointing"].items():
         if hasattr(model.meta.pointing, k) or k in model.meta.pointing:
             setattr(model.meta.pointing, k, v)
