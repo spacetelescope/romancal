@@ -36,6 +36,59 @@ def test_compare_asdf(tmp_path, modification, base_image, ignore_asdf_paths):
         assert diff.identical, diff.report()
 
 
+def test_compare_asdf_corner_cases(tmp_path):
+    truth_shared = {"x": 1}
+    result_shared = {"x": 2}
+    truth = {
+        # repeat comparisons with shared objects
+        "shared": {
+            "a": truth_shared,
+            "b": truth_shared,
+        },
+        # repeat comparisons with scalars (always have the same id)
+        "scalar": {
+            "a": 1,
+            "b": 1,
+        },
+        # all nan comparison
+        "nan": np.array([np.nan], dtype=np.float64),
+    }
+    truth["recursive"] = truth
+    result = {
+        "shared": {
+            "a": result_shared,
+            "b": result_shared,
+        },
+        "scalar": {
+            "a": 2,
+            "b": 2,
+        },
+        "nan": np.array([1], dtype=np.float64),
+    }
+    result["recursive"] = result
+
+    truth_filename = tmp_path / "truth.asdf"
+    result_filename = tmp_path / "result.asdf"
+
+    asdf.AsdfFile(truth).write_to(truth_filename)
+    asdf.AsdfFile(result).write_to(result_filename)
+
+    # ignore one of the shared objects
+    diff = compare_asdf(result_filename, truth_filename, ignore=["shared.a.x"])
+    assert not diff.identical
+
+    # shared difference found, ignore is ignored
+    assert "shared.b.x" in diff.diff["values_differ"]
+    assert "shared.a.x" not in diff.diff["values_differ"]
+
+    # both scalar differences found
+    assert "scalar.a" in diff.diff["values_differ"]
+    assert "scalar.b" in diff.diff["values_differ"]
+
+    # nan difference found
+    assert "nan" in diff.diff["arrays_differ"]
+
+
 @pytest.mark.parametrize(
     "modification",
     [
