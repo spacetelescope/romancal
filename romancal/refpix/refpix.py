@@ -6,6 +6,7 @@ import numpy as np
 
 from scipy.ndimage import gaussian_filter1d
 from roman_datamodels.dqflags import pixel
+from romancal.ramp_fitting.ramp_fit_step import slopes_uniform_weights
 
 if TYPE_CHECKING:
     from roman_datamodels.datamodels import RampModel, RefpixRefModel
@@ -51,25 +52,7 @@ def _compute_dynamic_weights(
 
     # 2. Vectorized Uniform Weight Linear Ramp Fit (Slopes in DN / resultant)
     # This is the maximum likelihood slope in the read noise limit.
-    if (
-        hasattr(datamodel.meta, "exposure")
-        and hasattr(datamodel.meta.exposure, "read_pattern")
-        and datamodel.meta.exposure.read_pattern is not None
-        and len(datamodel.meta.exposure.read_pattern) == n_res
-    ):
-        ni = np.array([len(t) for t in datamodel.meta.exposure.read_pattern])
-        ti = np.array([np.mean(t) for t in datamodel.meta.exposure.read_pattern])
-    else:
-        # Fallback for unit tests with incomplete mock data
-        ni = np.ones(n_res)
-        ti = np.arange(1, n_res + 1)
-
-    N = np.sum(ni)
-    Nt = np.sum(ni * ti)
-    Ntt = np.sum(ni * ti**2)
-    
-    # Calculate exact optimal weights for the slope fit
-    ml_weights = (N * ni * ti - Nt * ni) / (N * Ntt - Nt**2)
+    ml_weights = slopes_uniform_weights(datamodel, return_weights=True)
 
     left_slopes = np.sum(left_refs * ml_weights[:, None], axis=0)
     right_slopes = np.sum(right_refs * ml_weights[:, None], axis=0)

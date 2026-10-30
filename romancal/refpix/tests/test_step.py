@@ -16,6 +16,13 @@ def test_refpix_step(
     cosine_interpolate,
     fft_interpolate,
 ):
+    
+    # We need to ensure that there is a read pattern compatible with
+    # the size of the data array.
+    nreads = datamodel.data.shape[0]
+    datamodel.meta.exposure.read_pattern = [[i] for i in range(1, nreads + 1)]
+    datamodel.meta.exposure.frame_time = 1.
+    
     # Setup and run the correction outside of the step, this is
     # already regression tested.
     regression_datamodel = datamodel.copy()
