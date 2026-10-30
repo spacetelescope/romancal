@@ -82,8 +82,9 @@ def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, tweakreg_image):
         (0.1 * u.deg, 1, 1),
     ],
 )
+@pytest.mark.parametrize("sigma_stat", ["rmse", "mae", "mad"])
 def test_tweakreg_rotated_plane(
-    tmp_path, tweakreg_image, theta, offset_x, offset_y, gaia_coords
+    tmp_path, tweakreg_image, theta, offset_x, offset_y, sigma_stat, gaia_coords
 ):
     """
     Test that TweakReg returns accurate results.
@@ -112,7 +113,7 @@ def test_tweakreg_rotated_plane(
         overwrite=True,
     )
 
-    TweakRegStep.call([img], abs_minobj=3)
+    TweakRegStep.call([img], abs_minobj=3, sigma_stat=sigma_stat)
 
     # get world coords for Gaia sources using "wrong WCS"
     original_ref_source = [
