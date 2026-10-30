@@ -2,6 +2,7 @@ import copy
 import numbers
 import pprint
 from collections.abc import Mapping, Sequence, Set
+from contextlib import contextmanager
 from dataclasses import dataclass
 from textwrap import dedent
 
@@ -259,62 +260,60 @@ class Diff:
             isinstance(value, Sequence) and not isinstance(value, (str, bytes))
         )
 
-    def _is_seen(self, truth, result):
+    @contextmanager
+    def _seen_context(self, truth, result):
         # only track containers
-        if not self._is_container(truth):
-            return False
-        seen_key = (id(truth), id(result))
-        if seen_key in self._seen:
-            return True
-        self._seen.add(seen_key)
-
-    def _remove_seen(self, truth, result):
-        seen_key = (id(truth), id(result))
-        if seen_key not in self._seen:
-            return
-        self._seen.remove(seen_key)
+        if isinstance(truth, Mapping) or (
+            isinstance(truth, Sequence) and not isinstance(truth, (str, bytes))
+        ):
+            key = (id(truth), id(result))
+            if key in self._seen:
+                yield True
+            else:
+                self._seen.add(key)
+                yield False
+                self._seen.remove(key)
+        else:
+            yield False
 
     def _diff(self, truth, result, path):
         if self._skip_path(path):
             return
 
         # avoid cycles for recursive containers
-        if self._is_seen(truth, result):
-            return
+        with self._seen_context(truth, result) as seen:
+            if seen:
+                return
+            # compare types
+            if details := self._diff_types(truth, result, path):
+                self._record("types_differ", path, details)
+                return
 
-        # compare types
-        if details := self._diff_types(truth, result, path):
-            self._record("types_differ", path, details)
-            return
-
-        # at this point, can assume types are the same
-        if isinstance(truth, WCS):
-            if details := self._diff_wcses(truth, result, path):
-                self._record("wcs_differ", path, details)
-        elif isinstance(truth, Table):
-            if details := self._diff_tables(truth, result, path):
-                self._record("tables_differ", path, details)
-        elif isinstance(truth, Time):
-            if details := self._diff_times(truth, result, path):
-                self._record("times_differ", path, details)
-        elif isinstance(truth, (np.ndarray, asdf.tags.core.NDArrayType)):
-            if details := self._diff_arrays(truth, result, path):
-                self._record("arrays_differ", path, details)
-        elif isinstance(truth, Mapping):
-            self._diff_mappings(truth, result, path)
-        elif isinstance(truth, Sequence) and not isinstance(truth, (str, bytes)):
-            self._diff_sequences(truth, result, path)
-        elif isinstance(truth, Set):
-            self._diff_sets(truth, result, path)
-        elif isinstance(truth, numbers.Number):
-            if details := self._diff_numbers(truth, result, path):
-                self._record("values_differ", path, details)
-        else:
-            if details := self._diff_default(truth, result, path):
-                self._record("values_differ", path, details)
-
-        if self._is_container(truth):
-            self._remove_seen(truth, result)
+            # at this point, can assume types are the same
+            if isinstance(truth, WCS):
+                if details := self._diff_wcses(truth, result, path):
+                    self._record("wcs_differ", path, details)
+            elif isinstance(truth, Table):
+                if details := self._diff_tables(truth, result, path):
+                    self._record("tables_differ", path, details)
+            elif isinstance(truth, Time):
+                if details := self._diff_times(truth, result, path):
+                    self._record("times_differ", path, details)
+            elif isinstance(truth, (np.ndarray, asdf.tags.core.NDArrayType)):
+                if details := self._diff_arrays(truth, result, path):
+                    self._record("arrays_differ", path, details)
+            elif isinstance(truth, Mapping):
+                self._diff_mappings(truth, result, path)
+            elif isinstance(truth, Sequence) and not isinstance(truth, (str, bytes)):
+                self._diff_sequences(truth, result, path)
+            elif isinstance(truth, Set):
+                self._diff_sets(truth, result, path)
+            elif isinstance(truth, numbers.Number):
+                if details := self._diff_numbers(truth, result, path):
+                    self._record("values_differ", path, details)
+            else:
+                if details := self._diff_default(truth, result, path):
+                    self._record("values_differ", path, details)
 
     def report(self):
         title = dedent(
