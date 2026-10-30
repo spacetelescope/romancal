@@ -30,8 +30,8 @@ stp.logger.addHandler(logging.StreamHandler())
 DATA_PATH = Path(__file__).parent / "data"
 
 # Setup for some times
-STARTTIME = Time("2025-09-12T12:33:28", format="isot")
-ENDTIME = Time("2025-09-12T12:34:28", format="isot")
+STARTTIME = Time("2026-09-22T06:18:21.121", format="isot")
+ENDTIME = Time("2026-09-22T06:19:30.696", format="isot")
 BADSTARTTIME = Time("2020-02-02T02:02:02", format="isot")
 BADENDTIME = Time("2020-02-02T02:12:02", format="isot")
 DEFAULT_RADECREF = (51.15438730803445, 7.304183829772105)
@@ -181,7 +181,7 @@ def test_get_pointing_list():
     assert len(results) > 0
     assert np.isclose(
         results[0].q,
-        np.array([-0.70264233, -0.09766397, 0.68678001, 0.15839417]),
+        np.array([-0.71182157, -0.11635775,  0.67864924,  0.13858621]),
         rtol=1.0e-2,
     ).all()
     assert STARTTIME <= results[0].obstime <= ENDTIME
