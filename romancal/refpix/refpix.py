@@ -107,6 +107,12 @@ def run_steps(
 ) -> RampModel:
     """
     Organize the steps to run the reference pixel correction.
+    Apart from the offset, the correction is independent between resultants, so
+    the ramp is corrected one resultant at a time. The intermediate channel view
+    and correction arrays are each larger than the ramp itself, so doing this
+    keeps the peak memory usage proportional to a single resultant rather than
+    to the whole ramp. The offset is fit over all of the resultants, so it has to be accumulated
+    # before any of them are corrected.
     """
     if zero_bad_ref_pix:
         _mask_bad_ref_pixels(datamodel)
@@ -158,6 +164,9 @@ def run_steps(
             weights['all_valid'] += 1.0
         elif weight_mode == 'none':
             weights['amp33_only'] += 1.0
+        else:
+            raise ValueError(f"Unsupported weight_mode: {weight_mode}")
+            
 
     offset = None
     if remove_offset:

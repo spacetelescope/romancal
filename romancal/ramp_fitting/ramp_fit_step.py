@@ -287,7 +287,7 @@ def likely(
         readnoise_model.data * SQRT2,
         gain_model.data,
         jump_data=jump_data,
-        #skip_jump_detect=not use_jump,
+        skip_jump_detect=not use_jump,
     )
 
     # Flag pixels that have only a single resultant.
@@ -515,6 +515,10 @@ def slopes_uniform_weights(input_model, return_weights=False):
     ----------
     input_model : RampModel
         Model containing ramps.
+        
+    return_weights : bool, optional
+        If True, return the computed weights array instead of the slopes. 
+        Default is False.
 
     Returns
     -------
