@@ -49,7 +49,7 @@ signal levels between images, and the resample step will subtract the "level"
 values from each input image when combining them into a mosaic.
 
 User-supplied offset tables
---------------------------
+---------------------------
 Mosaic associations may include a product-level ``skymatch_offsets_file``
 pointing at a parquet offsets table produced by the HEALPix sky-offset
 solver (see ``romancal.skymatch.healpix_match`` and
