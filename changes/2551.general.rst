@@ -1,0 +1,1 @@
+Require drizzle 3.0 for the fix to rare crashes in polygon scanning near skycell edges.
