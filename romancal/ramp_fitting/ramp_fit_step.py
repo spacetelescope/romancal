@@ -515,9 +515,9 @@ def slopes_uniform_weights(input_model, return_weights=False):
     ----------
     input_model : RampModel
         Model containing ramps.
-        
+
     return_weights : bool, optional
-        If True, return the computed weights array instead of the slopes. 
+        If True, return the computed weights array instead of the slopes.
         Default is False.
 
     Returns
@@ -540,7 +540,7 @@ def slopes_uniform_weights(input_model, return_weights=False):
     Nt = np.sum(ni * ti)
     Ntt = np.sum(ni * ti**2)
     weights = (N * ni * ti - Nt * ni) / (N * Ntt - Nt**2)
-    
+
     if return_weights:
         return weights
 
