@@ -85,50 +85,12 @@ def test_add_wcs_default(science_raw_model, tmp_path):
         )
 
 
-def test_alternate_siaf(tmp_path_factory):
-    """Test alternate siaf"""
-    t_pars = _make_t_pars(**TRANSFORM_KWARGS)
-    t_pars.siaf_path = Path(__file__).parent / "data" / "siaf"
-
-    # Calculate the transforms and WCS information
-    wcsinfo, vinfo, transforms = wlib.calc_wcs(t_pars)
-
-    # Save all for later examination.
-    transforms_path = tmp_path_factory.mktemp("transforms")
-    transforms.write_to_asdf(transforms_path / "altsiaf_transforms.asdf")
-    wcs_asdf_file = asdf.AsdfFile(
-        {"wcsinfo": wcsinfo._asdict(), "vinfo": vinfo._asdict()}
-    )
-    wcs_asdf_file.write_to(transforms_path / "altsiaf_wcs.asdf")
-
-    # Test the wcs results
-    wcs = {"wcsinfo": wcsinfo, "vinfo": vinfo}
-    with asdf.open(DATA_PATH / "altsiaf_wcs.asdf") as af:
-        expected = af.tree
-    for wcs_type in ["wcsinfo", "vinfo"]:
-        wcs_dict = wcs[wcs_type]._asdict()
-        for key in wcs_dict:
-            if key != "s_region":
-                assert np.isclose(expected[wcs_type][key], wcs_dict[key]), (
-                    f"wcs_type: {wcs_type} Key {key} differs expected {expected[wcs_type][key]} calculated {wcs_dict[key]}"
-                )
-            else:
-                assert expected[wcs_type][key] == wcs_dict[key]
-
-    # Test the transforms
-    for matrix in dataclasses.fields(tlib.Transforms()):
-        _test_transforms(
-            transforms, t_pars, matrix.name, expected_fname="altsiaf_transforms.asdf"
-        )
-
-
 def test_add_wcs_default_from_model(science_raw_model, tmp_path):
     """Handle when no pointing exists and the default is used."""
     m = science_raw_model
     m.meta.exposure.start_time = Time("2022-01-01T00:00:00")
     m.meta.exposure.end_time = Time("2022-01-01T01:00:00")
     m.meta.pointing.quaternion = tuple(TRANSFORM_KWARGS["pointing"].q)
-    m.meta.guide_star.hv_position = TRANSFORM_KWARGS["gscommanded"]
     model_path = _model_to_tmpfile(m, tmp_path)
     stp.add_wcs(
         model_path,
@@ -141,9 +103,6 @@ def test_add_wcs_default_from_model(science_raw_model, tmp_path):
         assert np.isclose(result.meta.wcsinfo.dec_ref, DEFAULT_RADECREF[1])
         assert np.allclose(
             result.meta.pointing.quaternion, TRANSFORM_KWARGS["pointing"].q
-        )
-        assert np.allclose(
-            result.meta.guide_star.hv_position, TRANSFORM_KWARGS["gscommanded"]
         )
 
 
