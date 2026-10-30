@@ -54,10 +54,10 @@ class Diff:
         self._truth_info = _get_model_info(truth)
         self._result_info = _get_model_info(result)
         self.settings = settings
+        self._seen = set()
         # keys=diff types: arrays_differ, etc
         # values=dict of {path: {result: ..., truth: ...}}
         self.diff = {}
-        self._seen = set()
         self._diff(truth, result, ())
 
     @property
@@ -254,17 +254,33 @@ class Diff:
         # convert values to strings to avoid carrying object references through the default path
         return {"truth": str(truth), "result": str(result)}
 
+    def _is_container(self, value):
+        return isinstance(value, Mapping) or (
+            isinstance(value, Sequence) and not isinstance(value, (str, bytes))
+        )
+
+    def _is_seen(self, truth, result):
+        # only track containers
+        if not self._is_container(truth):
+            return False
+        seen_key = (id(truth), id(result))
+        if seen_key in self._seen:
+            return True
+        self._seen.add(seen_key)
+
+    def _remove_seen(self, truth, result):
+        seen_key = (id(truth), id(result))
+        if seen_key not in self._seen:
+            return
+        self._seen.remove(seen_key)
+
     def _diff(self, truth, result, path):
         if self._skip_path(path):
             return
 
-        # avoid repeats
-        # TODO fix to avoid marking scalars as seen
-        # TODO fix issue where an object appearing in >1 path (1 ignored) can result in false equality (is this an issue?)
-        seen_key = (id(truth), id(result))
-        if seen_key in self._seen:
+        # avoid cycles for recursive containers
+        if self._is_seen(truth, result):
             return
-        self._seen.add(seen_key)
 
         # compare types
         if details := self._diff_types(truth, result, path):
@@ -296,6 +312,9 @@ class Diff:
         else:
             if details := self._diff_default(truth, result, path):
                 self._record("values_differ", path, details)
+
+        if self._is_container(truth):
+            self._remove_seen(truth, result)
 
     def report(self):
         title = dedent(
