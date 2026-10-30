@@ -24,11 +24,11 @@ log.setLevel(logging.DEBUG)
 
 __all__ = [
     "SkyMatchStep",
-    "match_healpix_skyvals",
-    "pipeline_level_from_epsilon",
     "load_offset_table",
     "lookup_offset",
+    "match_healpix_skyvals",
     "normalize_exposure_key",
+    "pipeline_level_from_epsilon",
     "resolve_offsets_path_from_asn",
     "write_offset_table",
     "write_skyval_parquet",
