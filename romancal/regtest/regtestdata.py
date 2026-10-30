@@ -2,10 +2,8 @@ import os
 import pprint
 from contextlib import chdir
 from pathlib import Path
-from textwrap import dedent
 
 import asdf
-import roman_datamodels as rdm
 from ci_watson.artifactory_helpers import (
     get_bigdata,
     get_bigdata_root,
@@ -238,51 +236,6 @@ class RegtestData:
             return cls(**af.tree)
 
 
-class DiffResult:
-    def __init__(self, diff, result, truth):
-        self.diff = diff
-        self.result = result
-        self.truth = truth
-
-    @property
-    def identical(self):
-        return not self.diff
-
-    @staticmethod
-    def _file_info(file):
-        try:
-            with rdm.open(file) as model:
-                model_type = type(model).__name__
-                crds_context = (
-                    model.get("meta", {})
-                    .get("ref_file", {})
-                    .get("crds", {})
-                    .get("context", "Unknown context")
-                )
-        except Exception:
-            model_type = "Not a model"
-            crds_context = "Unknown context"
-        return model_type, crds_context
-
-    def report(self, **kwargs):
-        result_model_type, result_crds_context = self._file_info(self.result)
-        truth_model_type, truth_crds_context = self._file_info(self.truth)
-        title = dedent(
-            f"""
-            Diff report for:
-                result file: {self.result}
-                    model type: {result_model_type}
-                    crds_context: {result_crds_context}
-                truth file: {self.truth}
-                    model type: {truth_model_type}
-                    crds_context: {truth_crds_context}
-            """
-        )
-        report = pprint.pformat(self.diff)
-
-        return f"{title}\n{report}"
-
-
 def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=True):
     """
     Compare 2 asdf files: result and truth. Note that this comparison is
@@ -313,7 +266,7 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
     Returns
     -------
 
-    diff_result : DiffResult
+    diff_result : Diff
         result of the comparison
     """
     settings = DiffSettings(rtol, atol, equal_nan, ignore or [])
