@@ -161,7 +161,6 @@ def calc_wcs(t_pars: tlib.TransformParameters):
     # 5. ASDF METADATA ASSEMBLY
     wcs_meta = {
         "pointing": {
-            "pointing_engineering_source": "CALCULATED",
             "quaternion": [float(x) for x in t_pars.pointing.q],
             "bam_quaternion": q_bam,
             "ra_v1": true_ra_v1,
