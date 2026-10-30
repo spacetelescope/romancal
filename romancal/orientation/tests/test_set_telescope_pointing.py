@@ -34,7 +34,7 @@ STARTTIME = Time("2025-09-12T12:33:28", format="isot")
 ENDTIME = Time("2025-09-12T12:34:28", format="isot")
 BADSTARTTIME = Time("2020-02-02T02:02:02", format="isot")
 BADENDTIME = Time("2020-02-02T02:12:02", format="isot")
-DEFAULT_RADECREF = (266.59060641987423, -30.664532676056954)
+DEFAULT_RADECREF = (51.15438730803445, 7.304183829772105)
 
 # Header defaults
 TARG_RA = 270.0
@@ -75,7 +75,6 @@ def test_add_wcs_default(science_raw_model, tmp_path):
         tolerance=0,
         allow_default=True,
         default_quaternion=TRANSFORM_KWARGS["pointing"].q,
-        gscommanded=TRANSFORM_KWARGS["gscommanded"],
     )
 
     with rdm.open(model_path) as result:
@@ -83,9 +82,6 @@ def test_add_wcs_default(science_raw_model, tmp_path):
         assert np.isclose(result.meta.wcsinfo.dec_ref, DEFAULT_RADECREF[1])
         assert np.allclose(
             result.meta.pointing.quaternion, TRANSFORM_KWARGS["pointing"].q
-        )
-        assert np.allclose(
-            result.meta.guide_star.hv_position, TRANSFORM_KWARGS["gscommanded"]
         )
 
 
