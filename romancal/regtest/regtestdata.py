@@ -269,7 +269,7 @@ def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=T
     diff_result : Diff
         result of the comparison
     """
-    settings = DiffSettings(rtol, atol, equal_nan, ignore or [])
+    settings = DiffSettings(rtol, atol, equal_nan, set(ignore or []))
     with asdf.open(result) as af0:
         with asdf.config_context() as cfg:
             # Disable validation of the truth file to allow for more
