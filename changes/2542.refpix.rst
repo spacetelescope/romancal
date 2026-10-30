@@ -1,0 +1,1 @@
+Fixed refpix crosstalk weighting and integrated uniform weights from ramp fitting. Implement dynamic row-by-row reference pixel correction for DR15 voltage sags
