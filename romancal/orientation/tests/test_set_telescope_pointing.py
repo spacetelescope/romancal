@@ -146,18 +146,15 @@ def test_get_mnemonics():
 @pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")
 def test_get_pointing():
     """Ensure that the averaging works.
-
-    Note: The expected quaternion is from mastdev during Q26B21 development.
-    This will most likely change again.
     """
     try:
         pointing = plib.get_pointing(STARTTIME, ENDTIME)
     except ValueError as exception:
         pytest.xfail(reason=str(exception))
 
-    assert np.isclose(pointing.obstime.value, 1757680438.0280416)
+    assert np.isclose(pointing.obstime.value, 1790057935.6530108)
     assert np.allclose(
-        pointing.q, np.array([-0.70264027, -0.09765787, 0.6867813, 0.1584015])
+        pointing.q, np.array([-0.71182183, -0.11635754,  0.67864902,  0.13858613])
     )
 
 
