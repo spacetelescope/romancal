@@ -68,6 +68,10 @@ class TimeDomainCatalogStep(RomanStep):
     bkg_boxsize : int, optional
         Edge length, in pixels, of the background mesh boxes.
 
+    data_release_id : str, optional
+        The data release identifier recorded in the catalog metadata.
+        Not recorded if not given.
+
     suffix : str, optional
         Suffix appended to the output filename.  Default ``'fcat'``.
     """
@@ -80,12 +84,12 @@ class TimeDomainCatalogStep(RomanStep):
         forced_catalogs = force_list(default=list())  # catalogs of positions
         id_columns = force_list(default=list("flagged_spatial_id"))  # id column of each catalog
         bkg_boxsize = integer(default=1000)   # background mesh box size in pixels
+        data_release_id = string(default=None)  # data release identifier
         suffix = string(default='fcat')       # Default suffix for output files
     """
 
     def save_model(self, model, **kwargs):
         kwargs["ext"] = "parquet"
-        kwargs.pop("idx", None)
         return super().save_model(model, **kwargs)
 
     def process(self, dataset):
@@ -107,9 +111,12 @@ class TimeDomainCatalogStep(RomanStep):
         cat_model = make_catalog_model(model, datamodels.TimeDomainSourceCatalogModel)
         cat_model.meta.forced_psf_catalogs = list(self.forced_catalogs)
         cat_model.meta.id_columns = id_columns
+        if self.data_release_id is not None:
+            cat_model.meta.data_release_id = self.data_release_id
 
         sources = read_forced_catalogs(self.forced_catalogs, id_columns)
-        sources = add_pixel_positions(sources, model)
+        add_pixel_positions(sources, model)
+        sources = sources[np.isfinite(sources["x"])]
         log.info("%d input sources land on the image", len(sources))
 
         if len(sources) == 0 or np.all(mask):

@@ -76,7 +76,7 @@ def pixel_scale_arcsec(model):
 
 def subtract_background(model, mask, box_size):
     """
-    Estimate the 2D background and subtract it from ``model.data``.
+    Estimate the 2D background and subtract it from ``model.data``, in place.
 
     Parameters
     ----------
@@ -184,7 +184,9 @@ def make_catalog_model(model, cat_model_cls):
         "filename": model.meta.filename,
         "file_date": model.meta.file_date,
     }
-    # copy over the data release id since there is no association input
+    # If a data_release_id is present, copy it over.
+    # Note that L2 products do not have a data_release_id and this
+    # must be populated elsewhere.
     if "data_release_id" in model.meta:
         cat_model.meta.data_release_id = model.meta.data_release_id
     return cat_model

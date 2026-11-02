@@ -157,3 +157,41 @@ def copy_model_arrays(model):
         raise TypeError("model must be an ImageModel or MosaicModel")
 
     return copied_model
+
+
+def flag_column(flags, cat_model, column):
+    """
+    Convert DQ-derived flags to the dtype of a catalog flag column.
+
+    The dtype is that of the column's schema definition if there is
+    one, then that of ``image_flags`` (``image_flags2`` may not be in
+    the schema yet), and otherwise ``uint32`` to match the DQ arrays.
+
+    Parameters
+    ----------
+    flags : `~numpy.ndarray` of uint32
+        The flags.
+
+    cat_model : catalog data model
+        The catalog model, which supplies the column definitions.
+
+    column : str
+        The catalog column name.
+
+    Returns
+    -------
+    flags : `~numpy.ndarray`
+        The flags with the column's dtype.
+    """
+    dtype = np.dtype(np.uint32)
+    for name in (column, "image_flags"):
+        definition = cat_model.get_column_definition(name)
+        if definition is not None:
+            dtype = np.dtype(definition["datatype"])
+            break
+    flags = np.asarray(flags, dtype=np.uint32)
+    if dtype == np.int32:
+        # reinterpret rather than cast, so that a set bit 31 keeps its
+        # bit pattern (it reads as negative) rather than overflowing
+        return flags.view(np.int32)
+    return flags.astype(dtype, copy=False)

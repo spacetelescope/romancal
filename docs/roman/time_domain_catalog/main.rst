@@ -4,18 +4,17 @@ Description
 :Class: `romancal.time_domain_catalog.TimeDomainCatalogStep`
 :Alias: time_domain_catalog
 
-This step measures the fluxes of sources in a Level 2 image at fixed
-sky positions taken from input catalogs, such as catalogs of sources
-detected in deep coadds.  Running it on each exposure of a field gives
-light curves of those sources.
+This step measures the fluxes of sources in a Level 2 image at arbitrary
+locations provided in an input catalog.  For example, it can be used to
+find the fluxes of sources at the location of sources identified in deep
+coadds, to produce light curves.
 
-The image is masked, background subtracted, and converted to flux
-density in the same way as in the :ref:`source catalog step
-<source_catalog_step>`.  The ``ra`` and ``dec`` of each input source
-(ICRS, degrees; proper motion is ignored) are converted to pixel
-positions with the image WCS, and sources that do not land on the
-image are dropped.  Each remaining source then gets three
-measurements:
+The step begins by calibrating the image in the same way as the
+:ref:`source catalog step <source_catalog_step>`, performing masking,
+background subtraction, and flux conversion.  The ``ra`` and ``dec`` of
+each input source (ICRS, degrees) are converted to pixel
+positions with the image WCS.  Sources that land off the image are dropped.
+The remaining sources get three measurements:
 
 * a PSF fit in which the position and flux are both free
   (``x_psf``, ``y_psf``, ``ra_psf``, ``dec_psf``, ``psf_flux``, and
@@ -39,9 +38,10 @@ Input catalogs
 Any number of input catalogs may be given, in any format that
 `astropy.table.Table.read` can read.  Each must have ``ra`` and ``dec``
 columns and an ID column, named by ``id_columns``.  The output ``id``
-column holds the ID of each source, and ``source_catalog_index`` is
-the index of the catalog it came from in
-``meta.forced_psf_catalogs``.  When the ID column is
+column records the ID of each source.  The list of input PSF catalogs
+used for forced photometry is stored in ``meta.forced_psf_catalogs``,
+and ``source_catalog_index`` records which input catalog each source
+came from.  When the ID column is
 ``flagged_spatial_id``, sources outside the core of their skycell are
 dropped so that sources in skycell overlap regions are measured only
 once.

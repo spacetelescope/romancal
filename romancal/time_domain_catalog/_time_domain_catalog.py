@@ -9,12 +9,11 @@ import numpy as np
 from astropy.table import QTable, Table
 
 from romancal.source_catalog._aperture import ApertureCatalog
+from romancal.source_catalog._source_catalog import SKYCELL_OVERLAP_BIT
+from romancal.source_catalog._utils import flag_column
 from romancal.source_catalog.psf import _PSFCatalog
 
 log = logging.getLogger(__name__)
-
-# Bit of flagged_spatial_id marking sources outside their skycell core
-SKYCELL_OVERLAP_BIT = 2**59
 
 # Half-width, in pixels, of the box over which DQ flags are combined
 # into image_flags; matches the default PSF fit shape of (5, 5)
@@ -174,7 +173,9 @@ def _as_degrees(column):
 
 def add_pixel_positions(sources, model):
     """
-    Add pixel positions of the sources and drop those off the image.
+    Add pixel positions of the sources, in place.
+
+    Sources that land off the image get NaN positions.
 
     Parameters
     ----------
@@ -184,10 +185,6 @@ def add_pixel_positions(sources, model):
     model : `ImageModel`
         The image, whose WCS maps sky to pixel positions.
 
-    Returns
-    -------
-    sources : `~astropy.table.Table`
-        The sources on the image, with ``x`` and ``y`` columns added.
     """
     x, y = model.meta.wcs.invert(
         sources["ra"].value, sources["dec"].value, with_bounding_box=False
@@ -196,10 +193,8 @@ def add_pixel_positions(sources, model):
     y = np.atleast_1d(y)
     ny, nx = model.data.shape
     on_image = (x >= -0.5) & (x < nx - 0.5) & (y >= -0.5) & (y < ny - 0.5)
-    sources = sources[on_image]
-    sources["x"] = x[on_image].astype(np.float32)
-    sources["y"] = y[on_image].astype(np.float32)
-    return sources
+    sources["x"] = np.where(on_image, x, np.nan).astype(np.float32)
+    sources["y"] = np.where(on_image, y, np.nan).astype(np.float32)
 
 
 def image_flags(model, x, y):
@@ -217,8 +212,8 @@ def image_flags(model, x, y):
     Returns
     -------
     flags : dict
-        ``image_flags`` and ``image_flags2``: the bitwise or of ``dq``
-        and ``dq2`` over a box around each source.
+        ``image_flags`` and ``image_flags2``: the uint32 bitwise or of
+        ``dq`` and ``dq2`` over a box around each source.
     """
     ny, nx = model.data.shape
     xi = np.round(np.asarray(x)).astype(int)
@@ -235,8 +230,7 @@ def image_flags(model, x, y):
                     yy = yi + dy
                     good = (xx >= 0) & (xx < nx) & (yy >= 0) & (yy < ny)
                     values[good] |= dq[yy[good], xx[good]].astype(np.uint32)
-        # reinterpret rather than cast so that bit 31 survives
-        flags[name] = values.view(np.int32)
+        flags[name] = values
     return flags
 
 
@@ -259,6 +253,8 @@ def assemble_catalog(cat_model, columns):
     catalog = QTable()
     for name in COLUMNS:
         catalog[name] = columns[name]
+        if name in ("image_flags", "image_flags2"):
+            catalog[name] = flag_column(columns[name], cat_model, name)
         definition = cat_model.get_column_definition(name)
         if definition is not None:
             catalog[name].info.description = definition["description"]

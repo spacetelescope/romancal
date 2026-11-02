@@ -5,13 +5,13 @@ from astropy.table import Table
 from numpy.testing import assert_allclose, assert_equal
 from roman_datamodels.datamodels import TimeDomainSourceCatalogModel
 
+from romancal.source_catalog._source_catalog import SKYCELL_OVERLAP_BIT
 from romancal.source_catalog.source_catalog_step import SourceCatalogStep
 from romancal.source_catalog.tests.test_source_catalog import (  # noqa: F401
     image_model,
 )
 from romancal.time_domain_catalog import TimeDomainCatalogStep
 from romancal.time_domain_catalog._time_domain_catalog import (
-    SKYCELL_OVERLAP_BIT,
     read_forced_catalogs,
 )
 
@@ -37,15 +37,17 @@ def test_time_domain_catalog(image_model, function_jail):  # noqa: F811
         forced_catalogs=["sources.ecsv"],
         id_columns=["label"],
         bkg_boxsize=BKG_BOXSIZE,
+        data_release_id="r1",
         save_results=True,
-        output_file="td.parquet",
+        output_file="test.parquet",
     )
     assert isinstance(result, TimeDomainSourceCatalogModel)
     assert result.meta.forced_psf_catalogs == ["sources.ecsv"]
     assert result.meta.id_columns == ["label"]
+    assert result.meta.data_release_id == "r1"
 
-    # saving validates against the schema
-    td = Table.read("td_fcat.parquet")
+    # saving the catalog has validated it against the schema
+    td = Table.read("test_fcat.parquet")
     assert_equal(td["id"], cat["label"])
     assert_equal(td["source_catalog_index"], 0)
 
@@ -64,10 +66,11 @@ def test_no_sources_on_image(image_model, function_jail):  # noqa: F811
         forced_catalogs=["far.ecsv"],
         id_columns=["id"],
         save_results=True,
-        output_file="td.parquet",
+        output_file="test.parquet",
     )
     assert len(result.source_catalog) == 0
-    assert len(Table.read("td_fcat.parquet")) == 0
+    assert "data_release_id" not in result.meta
+    assert len(Table.read("test_fcat.parquet")) == 0
 
 
 def test_read_forced_catalogs(function_jail):
