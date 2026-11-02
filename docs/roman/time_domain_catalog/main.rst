@@ -28,9 +28,8 @@ The remaining sources get three measurements:
   are applied.
 
 Each source is fit independently in both PSF fits; unlike in the
-source catalog step, neighboring sources are neither fit simultaneously
-nor masked.  Input catalogs may therefore overlap: a source that appears
-in more than one catalog gets the same measurements each time.  The
+source catalog step, neighboring sources are not fit simultaneously
+or masked.  The
 ``image_flags`` and ``image_flags2`` columns
 are the bitwise or of the ``dq`` and ``dq2`` arrays over the 5x5 pixel
 box around each input position.

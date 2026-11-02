@@ -620,8 +620,7 @@ class _PSFCatalog:
         Prefix added to the output column names.
 
     group_sources : bool, optional
-        If `True`, fit nearby sources simultaneously. If `False`, fit
-        each source independently, ignoring its neighbors.
+        If `True`, fit nearby sources simultaneously.
     """
 
     def __init__(
