@@ -265,23 +265,25 @@ def test_strict_pointing(science_raw_model, tmp_path):
 @pytest.mark.parametrize(
     "attr, expected",
     [
-        ("meta.pointing.dec_v1", -30.177183927606528),
-        ("meta.pointing.pa_aperture", 90.60111674247034),
-        ("meta.pointing.pa_v3", 90.4289479321644),
-        (
-            "meta.pointing.quaternion",
-            [-0.33879082, 0.62326573, -0.36611627, 0.60226181],
-        ),
-        ("meta.pointing.ra_v1", 267.0168676146806),
-        ("meta.pointing.target_dec", -30.604540841887303),
-        ("meta.pointing.target_ra", 266.7250048091743),
-        ("meta.wcsinfo.dec_ref", -30.53927896286344),
-        ("meta.wcsinfo.ra_ref", 266.67803540698276),
-        ("meta.wcsinfo.roll_ref", 90.60111674247034),
-        (
-            "meta.wcsinfo.s_region",
-            "POLYGON ICRS  266.704474362 -30.623991336 266.579827226 -30.560011007 266.651764709 -30.453928832 266.777049827 -30.518088819",
-        ),
+        ('meta.pointing.pa_aperture', 37.254360755726026),
+        ('meta.pointing.pointing_engineering_source', 'CALCULATED'),
+        ('meta.pointing.ra_v1', 81.6686302053683),
+        ('meta.pointing.dec_v1', -69.0573058072646),
+        ('meta.pointing.pa_v3', 96.50516177723279),
+        ('meta.pointing.target_aperture', 'WFI_CEN'),
+        ('meta.pointing.target_ra', 80.71792831161615),
+        ('meta.pointing.target_dec', -69.48825559984326),
+        ('meta.pointing.quaternion', [-0.7118218303725413, -0.1163575361747678, 0.6786490188532825, 0.13858612769623332]),
+        ('meta.pointing.bam_quaternion', [-0.18541749359303772, 0.6841636922799866, -0.17893482160935997, 0.6822922576514541]),
+        ('meta.wcsinfo.aperture_name', 'WFI01_FULL'),
+        ('meta.wcsinfo.v2_ref', 1454.084),
+        ('meta.wcsinfo.v3_ref', -1163.304),
+        ('meta.wcsinfo.vparity', -1),
+        ('meta.wcsinfo.v3yangle', -59.99960999999999),
+        ('meta.wcsinfo.ra_ref', 80.62509480141252),
+        ('meta.wcsinfo.dec_ref', -69.41888112525045),
+        ('meta.wcsinfo.roll_ref', 97.48207857439513),
+        ('meta.wcsinfo.s_region', 'POLYGON ICRS 80.660542428 -69.505413811 80.379206263 -69.428991757 80.590285491 -69.331370896 80.872760513 -69.407782240'),
     ],
 )
 def test_update_meta(attr, expected, updated_model):
@@ -380,7 +382,7 @@ def updated_model(calc_wcs):
             }
         }
     )
-    olib.update_meta(m, wcs_meta, "CALCULATED")
+    olib.update_meta(m, t_pars, wcs_meta, "CALCULATED")
     return m
 
 
