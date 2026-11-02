@@ -9,8 +9,6 @@ from astropy.time import Time
 from crds import getreferences
 import numpy as np
 
-from . import _siaf as siaf_lib
-
 __all__ = []
 
 # Setup logging
@@ -74,35 +72,6 @@ def angle_to_vector(alpha, delta):
     v2 = sin(delta)
 
     return [v0, v1, v2]
-
-
-def attitude_from_v1(vinfo, siaf_path=None):
-    """Calculate observatory attitude matrix based on V1 pointing
-
-    Return the attitude matrix used by `pysiaf.Aperture.set_attitude_matrix`
-    to enable transformations to/from the 'sky' frame.
-
-    Parameters
-    ----------
-    vinfo : `WCSRef`
-        The WCS information for V1, the boresight.
-
-    siaf_path : str
-        The folder where the SIAF xml information resides.
-
-    Returns
-    -------
-    attitude : np.array((3, 3), dtype=float)
-        The attitude matrix.
-    """
-    from pysiaf.utils.rotations import attitude_matrix
-
-    siaf = siaf_lib.open_siaf(basepath=siaf_path)
-    boresight = siaf["BORESIGHT"]
-    v_refpoint = boresight.reference_point(to_frame="tel")
-    attitude = attitude_matrix(*v_refpoint, vinfo.ra, vinfo.dec, vinfo.pa)
-
-    return attitude
 
 
 def calc_position_angle(point, ref):

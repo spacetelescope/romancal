@@ -11,9 +11,6 @@ import romancal.orientation._pointing as plib
 import romancal.orientation._v1_calculate as v1c
 import romancal.orientation.tests.test_set_telescope_pointing as tstp
 
-# pysiaf is not a required dependency. If not present, ignore all this.
-pysiaf = pytest.importorskip("pysiaf")
-
 DATA_PATH = Path(__file__).parent / "data"
 
 
