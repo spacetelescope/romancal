@@ -8,12 +8,10 @@ from astropy.time import Time
 from astropy import units as u
 import numpy as np
 import roman_datamodels as rdm
-from stcal.alignment.util import compute_s_region_keyword
 from scipy.spatial.transform import Rotation as R
 
 from . import _lib as olib
 from . import _pointing as plib
-from . import _siaf as siaf_lib
 from . import _transforms as tlib
 
 __all__ = []
@@ -238,6 +236,45 @@ def calc_wcs_over_time(obsstart, obsend, t_pars: tlib.TransformParameters):
     return obstimes, wcs_metas
 
 
+def extract_sca_wcs_params(distortion_path):
+    """
+    Extracts V2Ref, V3Ref, V3IdlYAngle, VIdlParity, detector name, and the
+    4 corner (V2, V3) coordinates using roman_datamodels.
+    """
+    corners_x_0idx = np.array([3.5, 4091.5, 4091.5, 3.5])
+    corners_y_0idx = np.array([3.5, 3.5, 4091.5, 4091.5])
+
+    with rdm.open(distortion_path) as dm:
+        detector = str(dm.meta.instrument.detector)
+        dist_mod = dm.coordinate_distortion_transform
+
+        # Direct parameter access on the CompoundModel
+        v2_ref = float(dist_mod.offset_10.value)
+        v3_ref = float(dist_mod.offset_11.value)
+
+        # Ideal -> V2/V3 rotation & parity parameters (submodels 8 and 9)
+        c10_v2 = float(dist_mod.c1_0_8.value)  # p * cos(ya)
+        c01_v2 = float(dist_mod.c0_1_8.value)  # sin(ya)
+        c10_v3 = float(dist_mod.c1_0_9.value)  # -p * sin(ya)
+        c01_v3 = float(dist_mod.c0_1_9.value)  # cos(ya)
+
+        v3_idl_yangle = float(np.rad2deg(np.arctan2(c01_v2, c01_v3)))
+        det_rot = (c10_v2 * c01_v3) - (c01_v2 * c10_v3)
+        v_idl_parity = int(np.round(det_rot))
+
+        corners_v2, corners_v3 = dist_mod(corners_x_0idx, corners_y_0idx)
+
+        return {
+            "detector": detector,
+            "v2_ref": v2_ref,
+            "v3_ref": v3_ref,
+            "v3yangle": v3_idl_yangle,
+            "vparity": v_idl_parity,
+            "corners_v2": np.array(corners_v2, dtype=float),
+            "corners_v3": np.array(corners_v3, dtype=float),
+        }
+
+
 def get_angles_from_quaternion(q_inst2b):
     """
     Recover Roman focal-plane geometry angles from an Instrument -> Body quaternion.
@@ -355,87 +392,3 @@ def update_wcs_from_telem(model, t_pars: tlib.TransformParameters):
     olib.update_meta(model, t_pars, wcs_meta, quality)
 
     return wcs_meta
-
-
-# ###
-# old code
-# ###
-def wcsinfo_from_siaf(aperture, vinfo, siaf_path=None):
-    """Calculate aperture reference point WCS from V-frame WCS and SIAF
-
-    Parameters
-    ----------
-    aperture : str
-        The aperture in use
-
-    vinfo : WCSRef
-        The V-frame WCS
-
-    siaf_path : str
-        The folder where the SIAF xml information resides.
-
-    Returns
-    -------
-    wcsinfo : WCSRef
-        The WCS for the aperture's reference point, as defined by its SIAF.
-    """
-    from pysiaf.utils.rotations import sky_posangle
-
-    siaf = siaf_lib.open_siaf(basepath=siaf_path)
-    wfi = siaf[aperture.upper()]
-
-    # For transformations between the telescope frame and all other frames,
-    # an attitude matrix is created using the V-frame WCS information.
-    attitude = olib.attitude_from_v1(vinfo, siaf_path=siaf_path)
-    wfi.set_attitude_matrix(attitude)
-    skycoord = wfi.reference_point(to_frame="sky")
-    pa_v3 = sky_posangle(attitude, *skycoord)
-
-    # Compute S_REGION keyword
-    corners = wfi.corners("sky")
-    footprint = np.array([corners[0], corners[1]]).T
-    s_region_keyword = compute_s_region_keyword(footprint)
-
-    wcsinfo = olib.WCSRef(
-        ra=skycoord[0], dec=skycoord[1], pa=pa_v3, s_region=s_region_keyword
-    )
-    return wcsinfo
-
-
-def extract_sca_wcs_params(distortion_path):
-    """
-    Extracts V2Ref, V3Ref, V3IdlYAngle, VIdlParity, detector name, and the
-    4 corner (V2, V3) coordinates using roman_datamodels.
-    """
-    corners_x_0idx = np.array([3.5, 4091.5, 4091.5, 3.5])
-    corners_y_0idx = np.array([3.5, 3.5, 4091.5, 4091.5])
-
-    with rdm.open(distortion_path) as dm:
-        detector = str(dm.meta.instrument.detector)
-        dist_mod = dm.coordinate_distortion_transform
-
-        # Direct parameter access on the CompoundModel
-        v2_ref = float(dist_mod.offset_10.value)
-        v3_ref = float(dist_mod.offset_11.value)
-
-        # Ideal -> V2/V3 rotation & parity parameters (submodels 8 and 9)
-        c10_v2 = float(dist_mod.c1_0_8.value)  # p * cos(ya)
-        c01_v2 = float(dist_mod.c0_1_8.value)  # sin(ya)
-        c10_v3 = float(dist_mod.c1_0_9.value)  # -p * sin(ya)
-        c01_v3 = float(dist_mod.c0_1_9.value)  # cos(ya)
-
-        v3_idl_yangle = float(np.rad2deg(np.arctan2(c01_v2, c01_v3)))
-        det_rot = (c10_v2 * c01_v3) - (c01_v2 * c10_v3)
-        v_idl_parity = int(np.round(det_rot))
-
-        corners_v2, corners_v3 = dist_mod(corners_x_0idx, corners_y_0idx)
-
-        return {
-            "detector": detector,
-            "v2_ref": v2_ref,
-            "v3_ref": v3_ref,
-            "v3yangle": v3_idl_yangle,
-            "vparity": v_idl_parity,
-            "corners_v2": np.array(corners_v2, dtype=float),
-            "corners_v3": np.array(corners_v3, dtype=float),
-        }
