@@ -8,7 +8,6 @@ from textwrap import dedent
 
 import asdf
 import numpy as np
-import roman_datamodels as rdm
 from astropy.table import Table
 from astropy.time import Time
 from gwcs import WCS
@@ -21,21 +20,12 @@ def _wcs_to_ra_dec(wcs):
 
 
 def _get_model_info(tree):
-    node = tree.get("roman", {})
-    if "roman" not in tree:
-        model_type = "Unknown"
-    else:
-        # look up datamodel from node
-        model_type = str(type(rdm.open(asdf.AsdfFile({"roman": node}))))
+    node = tree.get("roman", {}).get("meta", {})
     crds_context = (
-        node.get("meta", {})
-        .get("ref_file", {})
-        .get("crds", {})
-        .get("context", "Unknown context")
+        node.get("ref_file", {}).get("crds", {}).get("context", "Unknown context")
     )
-    filename = node.get("meta", {}).get("filename", "Unknown filename")
+    filename = node.get("filename", "Unknown filename")
     return {
-        "model type": model_type,
         "crds_context": crds_context,
         "filename": filename,
     }
@@ -51,7 +41,7 @@ class DiffSettings:
 
 class Diff:
     def __init__(self, truth, result, settings):
-        # capture file information: model type, crds context
+        # capture file information: crds context
         self._truth_info = _get_model_info(truth)
         self._result_info = _get_model_info(result)
         self.settings = settings
@@ -317,10 +307,8 @@ class Diff:
             f"""
             Diff report for:
                 result file: {self._result_info["filename"]}
-                    model type: {self._result_info["model type"]}
                     crds_context: {self._result_info["crds_context"]}
                 truth file: {self._truth_info["filename"]}
-                    model type: {self._truth_info["model type"]}
                     crds_context: {self._truth_info["crds_context"]}
             """
         )
