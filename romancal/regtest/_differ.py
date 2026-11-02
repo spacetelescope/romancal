@@ -188,7 +188,9 @@ class Diff:
             fractional_diff = np.abs(result / truth)
 
         if np.any(np.isfinite(fractional_diff)):
-            index = np.unravel_index(np.nanargmax(np.abs(fractional_diff-1)), truth.shape)
+            index = np.unravel_index(
+                np.nanargmax(np.abs(fractional_diff - 1)), truth.shape
+            )
             details["worst_fractional_diff"] = {
                 "index": index,
                 "value": fractional_diff[index],
