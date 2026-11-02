@@ -187,8 +187,8 @@ class Diff:
             # ignore these here for computing the fractional diff
             fractional_diff = np.abs(result / truth)
 
-        if np.any(np.isfinite(abs_diff)):
-            index = np.unravel_index(np.nanargmax(fractional_diff), truth.shape)
+        if np.any(np.isfinite(fractional_diff)):
+            index = np.unravel_index(np.nanargmax(np.abs(fractional_diff-1)), truth.shape)
             details["worst_fractional_diff"] = {
                 "index": index,
                 "value": fractional_diff[index],
@@ -198,7 +198,7 @@ class Diff:
 
     def _diff_mappings(self, truth, result, path):
         for key in truth:
-            child = (*path, key)
+            child = (*path, str(key))
             if self._skip_path(child):
                 continue
             if key in result:
