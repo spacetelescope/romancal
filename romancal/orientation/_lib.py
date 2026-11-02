@@ -5,6 +5,7 @@ from collections import namedtuple
 from math import cos, sin
 from pathlib import Path
 
+from astropy.time import Time
 from crds import getreferences
 import numpy as np
 
@@ -216,6 +217,38 @@ def hv_to_fgs(aperture_name, h, v, siaf_path=None):
     x_fgs, y_fgs = x_wc, -y_wc
 
     return x_fgs, y_fgs
+
+
+def mk_crds_pars(obstime, detector='WFI01', optical_element='F062'):
+    """Create CRDS parameters from the transformation parameters.
+
+    Parameters
+    ----------
+    obstime : astropy.time.Time or None
+        Time of observation. If undefined, current time is used.
+
+    detector : str
+        The detector to use. Form should be "WFIXX"
+        where "XX" is the zero-padded number of the detector.
+
+    optical_element : str
+        The optical element to use.
+
+    Returns
+    -------
+    crds_pars : dict
+        Dictionary of parameters needed for CRDS reference file retrieval.
+    """
+    if not obstime:
+        obstime = Time.now()
+
+    pars = {
+        'ROMAN.META.INSTRUMENT.DETECTOR': detector,
+        'ROMAN.META.INSTRUMENT.NAME': detector[:3],
+        'ROMAN.META.INSTRUMENT.OPTICAL_ELEMENT': optical_element,
+        'ROMAN.META.EXPOSURE.START_TIME': obstime.isot,
+    }
+    return pars
 
 
 def update_meta(model, t_pars, wcs_meta, quality):
