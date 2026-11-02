@@ -19,9 +19,6 @@ from romancal.orientation import _transforms as tlib
 from romancal.orientation import _wcs as wlib
 from romancal.orientation import set_telescope_pointing as stp
 
-# pysiaf is not a required dependency. If not present, ignore all this.
-pysiaf = pytest.importorskip("pysiaf")
-
 # Ensure that `set_telescope_pointing` logs.
 stp.logger.setLevel(logging.DEBUG)
 stp.logger.addHandler(logging.StreamHandler())
