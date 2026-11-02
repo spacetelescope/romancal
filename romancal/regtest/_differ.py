@@ -257,11 +257,6 @@ class Diff:
         # convert values to strings to avoid carrying object references through the default path
         return {"truth": str(truth), "result": str(result)}
 
-    def _is_container(self, value):
-        return isinstance(value, Mapping) or (
-            isinstance(value, Sequence) and not isinstance(value, (str, bytes))
-        )
-
     @contextmanager
     def _seen_context(self, truth, result):
         # only track containers
