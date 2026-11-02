@@ -85,10 +85,10 @@ def calc_wcs(t_pars: tlib.TransformParameters):
     Returns
     -------
     meta : dict
-    Set of meta data that defines the wcs. The primary keys are:
-    - pointing: The pointing meta block
-    - velocity_aberration: The aberration characteristics
-    - wcsinfo: The basic WCS information
+        Set of meta data that defines the wcs. The primary keys are:
+        - pointing: The pointing meta block
+        - velocity_aberration: The aberration characteristics
+        - wcsinfo: The basic WCS information
 
     """
     # 0. LOAD REFERENCE FILES
@@ -189,6 +189,54 @@ def calc_wcs(t_pars: tlib.TransformParameters):
         },
     }
     return wcs_meta
+
+
+def calc_wcs_over_time(obsstart, obsend, t_pars: tlib.TransformParameters):
+    """
+    Calculate V1 and aperture WCS over a time period.
+
+    Parameters
+    ----------
+    obsstart, obsend : float
+        MJD observation start/end times
+
+    t_pars : `TransformParameters`
+        The transformation parameters. Parameters are updated during processing.
+
+    Returns
+    -------
+    obstimes, wcs_metas : [astropy.time.Time[,...]], [dict[...]]
+        A 2-tuple is returned with the WCS meta information for the
+        the aperture and the V1 axis.
+    """
+    # Setup structures
+    obstimes = []
+    wcs_metas = []
+
+    # Calculate WCS
+    try:
+        pointings = plib.get_pointing(
+            obsstart,
+            obsend,
+            service_kwargs=t_pars.service_kwargs,
+            tolerance=t_pars.tolerance,
+            reduce_func=t_pars.reduce_func,
+        )
+    except ValueError:
+        logger.warning(
+            "Cannot get valid engineering mnemonics from engineering database"
+        )
+        raise
+    if not isinstance(pointings, list):
+        pointings = [pointings]
+    for pointing in pointings:
+        t_pars.pointing = pointing
+        wcs_meta = calc_wcs(t_pars)
+        obstimes.append(pointing.obstime)
+        wcs_metas.append(wcs_meta)
+
+    return obstimes, wcs_metas
+
 
 def get_angles_from_quaternion(q_inst2b):
     """
@@ -352,55 +400,6 @@ def wcsinfo_from_siaf(aperture, vinfo, siaf_path=None):
         ra=skycoord[0], dec=skycoord[1], pa=pa_v3, s_region=s_region_keyword
     )
     return wcsinfo
-
-
-def calc_wcs_over_time(obsstart, obsend, t_pars: tlib.TransformParameters):
-    """
-    Calculate V1 and aperture WCS over a time period.
-
-    Parameters
-    ----------
-    obsstart, obsend : float
-        MJD observation start/end times
-
-    t_pars : `TransformParameters`
-        The transformation parameters. Parameters are updated during processing.
-
-    Returns
-    -------
-    obstimes, wcsinfos, vinfos : [astropy.time.Time[,...]], [WCSRef[,...]], [WCSRef[,...]]
-        A 3-tuple is returned with the WCS pointings for
-        the aperture and the V1 axis.
-    """
-    # Setup structures
-    obstimes = []
-    wcsinfos = []
-    vinfos = []
-
-    # Calculate WCS
-    try:
-        pointings = plib.get_pointing(
-            obsstart,
-            obsend,
-            service_kwargs=t_pars.service_kwargs,
-            tolerance=t_pars.tolerance,
-            reduce_func=t_pars.reduce_func,
-        )
-    except ValueError:
-        logger.warning(
-            "Cannot get valid engineering mnemonics from engineering database"
-        )
-        raise
-    if not isinstance(pointings, list):
-        pointings = [pointings]
-    for pointing in pointings:
-        t_pars.pointing = pointing
-        wcsinfo, vinfo, transforms = calc_wcs(t_pars)
-        obstimes.append(pointing.obstime)
-        wcsinfos.append(wcsinfo)
-        vinfos.append(vinfo)
-
-    return obstimes, wcsinfos, vinfos
 
 
 def extract_sca_wcs_params(distortion_path):
