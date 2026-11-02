@@ -16,6 +16,7 @@ from romancal.source_catalog._calibrate import (
     make_catalog_model,
     make_image_mask,
     open_psf_model,
+    pixel_scale_arcsec,
     subtract_background,
 )
 from romancal.source_catalog._utils import copy_model_arrays
@@ -65,8 +66,8 @@ class TimeDomainCatalogStep(RomanStep):
         applies to all catalogs. Sources outside their skycell core are
         dropped when the column is ``flagged_spatial_id``.
 
-    bkg_boxsize : int, optional
-        Edge length, in pixels, of the background mesh boxes.
+    bkg_boxsize : float, optional
+        Edge length, in arcsec, of the background mesh boxes.
 
     data_release_id : str, optional
         The data release identifier recorded in the catalog metadata.
@@ -83,7 +84,7 @@ class TimeDomainCatalogStep(RomanStep):
     spec = """
         forced_catalogs = force_list(default=list())  # catalogs of positions
         id_columns = force_list(default=list("flagged_spatial_id"))  # id column of each catalog
-        bkg_boxsize = integer(default=1000)   # background mesh box size in pixels
+        bkg_boxsize = float(default=55.0)     # background mesh box size in arcsec
         data_release_id = string(default=None)  # data release identifier
         suffix = string(default='fcat')       # Default suffix for output files
     """
@@ -97,6 +98,8 @@ class TimeDomainCatalogStep(RomanStep):
         if not isinstance(input_model, datamodels.ImageModel):
             raise TypeError("TimeDomainCatalogStep requires an ImageModel.")
 
+        if len(self.forced_catalogs) == 0:
+            raise ValueError("At least one forced catalog is required.")
         id_columns = list(self.id_columns)
         if len(id_columns) == 1:
             id_columns *= len(self.forced_catalogs)
@@ -124,7 +127,8 @@ class TimeDomainCatalogStep(RomanStep):
             cat_model.source_catalog = empty_catalog(cat_model)
             return cat_model
 
-        subtract_background(model, mask, self.bkg_boxsize)
+        bkg_boxsize_px = max(round(self.bkg_boxsize / pixel_scale_arcsec(model)), 1)
+        subtract_background(model, mask, bkg_boxsize_px)
         area_map = pixel_area_map(model.meta.wcs, model.data.shape)
         convert_to_flux_density(model, area_map=area_map)
 

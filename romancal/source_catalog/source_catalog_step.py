@@ -536,4 +536,3 @@ class SourceCatalogStep(RomanStep):
         )
         segmentation_model["skyvals"] = skyvals
         segmentation_model["healpix11_cov"] = healpix11_cov
-

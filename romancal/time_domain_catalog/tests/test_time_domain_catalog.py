@@ -1,6 +1,7 @@
 """Tests for the time domain catalog step."""
 
 import numpy as np
+import pytest
 from astropy.table import Table
 from numpy.testing import assert_allclose, assert_equal
 from roman_datamodels.datamodels import TimeDomainSourceCatalogModel
@@ -15,12 +16,16 @@ from romancal.time_domain_catalog._time_domain_catalog import (
     read_forced_catalogs,
 )
 
-BKG_BOXSIZE = 50
+BKG_BOXSIZE = 5.0
 
 
 def _source_catalog(image_model):  # noqa: F811
     cat_model, _ = SourceCatalogStep.call(
-        image_model, bkg_boxsize=BKG_BOXSIZE, snr_threshold=5, npixels=10
+        image_model,
+        bkg_boxsize=BKG_BOXSIZE,
+        kernel_fwhm=0.2,
+        snr_threshold=5,
+        npixels=10,
     )
     cat = cat_model.source_catalog
     cat["ra"] = cat["ra_psf"]
@@ -71,6 +76,12 @@ def test_no_sources_on_image(image_model, function_jail):  # noqa: F811
     assert len(result.source_catalog) == 0
     assert "data_release_id" not in result.meta
     assert len(Table.read("test_fcat.parquet")) == 0
+
+
+def test_no_forced_catalogs(image_model):  # noqa: F811
+    """At least one forced catalog is required."""
+    with pytest.raises(ValueError, match="forced catalog"):
+        TimeDomainCatalogStep.call(image_model)
 
 
 def test_read_forced_catalogs(function_jail):
