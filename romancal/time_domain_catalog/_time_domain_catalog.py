@@ -184,10 +184,12 @@ def add_pixel_positions(sources, model):
 
     model : `ImageModel`
         The image, whose WCS maps sky to pixel positions.
-
     """
+    # The bounding box makes gwcs drop sources outside the ra/dec range of
+    # the image footprint before inverting.  Without it, distant sources
+    # (~1 deg away, or near the antipode) can invert onto the image.
     x, y = model.meta.wcs.invert(
-        sources["ra"].value, sources["dec"].value, with_bounding_box=False
+        sources["ra"].value, sources["dec"].value, with_bounding_box=True
     )
     x = np.atleast_1d(x)
     y = np.atleast_1d(y)
