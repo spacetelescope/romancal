@@ -219,7 +219,7 @@ def hv_to_fgs(aperture_name, h, v, siaf_path=None):
     return x_fgs, y_fgs
 
 
-def mk_crds_pars(obstime, detector='WFI01', optical_element='F062'):
+def mk_crds_pars(obstime=None, detector='WFI01', optical_element='F062'):
     """Create CRDS parameters from the transformation parameters.
 
     Parameters
