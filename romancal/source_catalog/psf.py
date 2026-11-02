@@ -618,6 +618,10 @@ class _PSFCatalog:
 
     prefix : str, optional
         Prefix added to the output column names.
+
+    group_sources : bool, optional
+        If `True`, fit nearby sources simultaneously. If `False`, fit
+        each source independently, ignoring its neighbors.
     """
 
     def __init__(
@@ -630,6 +634,7 @@ class _PSFCatalog:
         requested_properties=None,
         fixed_positions=False,
         prefix="",
+        group_sources=True,
     ):
         self.model = model
         self.psf_ref_model = psf_ref_model
@@ -637,6 +642,7 @@ class _PSFCatalog:
         self.mask = mask
         self.fixed_positions = fixed_positions
         self.prefix = prefix
+        self.group_sources = group_sources
 
         if requested_properties is None:
             self.properties = list(self.available_properties)
@@ -707,7 +713,7 @@ class _PSFCatalog:
         sources.
         """
         # Define minimum separation before sources are fit simultaneously
-        grouper = SourceGrouper(min_separation=5)  # pixels
+        grouper = SourceGrouper(min_separation=5) if self.group_sources else None
 
         # Keep each fitted position within this many pixels of its
         # initial position along each axis, which is the half-width of

@@ -84,6 +84,23 @@ def test_no_forced_catalogs(image_model):  # noqa: F811
         TimeDomainCatalogStep.call(image_model)
 
 
+def test_duplicate_sources(image_model, function_jail):  # noqa: F811
+    """Sources given twice are fit independently and get the same fluxes."""
+    _source_catalog(image_model)
+    result = TimeDomainCatalogStep.call(
+        image_model,
+        forced_catalogs=["sources.ecsv", "sources.ecsv"],
+        id_columns=["label"],
+        bkg_boxsize=BKG_BOXSIZE,
+    )
+    cat = result.source_catalog
+    first = cat[cat["source_catalog_index"] == 0]
+    second = cat[cat["source_catalog_index"] == 1]
+    assert len(first) == len(second) > 0
+    for name in ("psf_flux", "forced_psf_flux"):
+        assert_allclose(second[name], first[name])
+
+
 def test_read_forced_catalogs(function_jail):
     """Catalogs are concatenated and skycell overlap sources dropped."""
     Table(

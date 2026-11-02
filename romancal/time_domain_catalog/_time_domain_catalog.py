@@ -96,13 +96,19 @@ def measure_sources(model, mask, sources, psf_ref, area_map):
 
     xypos = np.transpose([sources["x"], sources["y"]])
     log.info("Fitting PSFs with free positions")
-    floating = _PSFCatalog(model, psf_ref, xypos, mask)
+    floating = _PSFCatalog(model, psf_ref, xypos, mask, group_sources=False)
     for name in FLOATING_PSF_COLUMNS:
         columns[name] = getattr(floating, name)
 
     log.info("Fitting PSFs with fixed positions")
     fixed = _PSFCatalog(
-        model, psf_ref, xypos, mask, fixed_positions=True, prefix="forced_"
+        model,
+        psf_ref,
+        xypos,
+        mask,
+        fixed_positions=True,
+        prefix="forced_",
+        group_sources=False,
     )
     for name in FIXED_PSF_COLUMNS:
         columns[name] = getattr(fixed, name)
