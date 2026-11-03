@@ -1,13 +1,10 @@
 """Test the MAST Engineering interface"""
 
 import logging
-from pathlib import Path
 
-import pytest
-
-from astropy.table import Table
-from astropy.time import Time
 import numpy as np
+import pytest
+from astropy.time import Time
 
 from romancal.lib.engdb import engdb_mast
 from romancal.lib.engdb.engdb_lib import EngDB_Value
@@ -34,28 +31,32 @@ def test_get_meta(engdb, mnemonic, expected):
     n = results["Count"]
     assert n == len(results["TlmMnemonics"]), "No meta for mnemonics found"
     if expected == "something":
-        assert n != 0, f"Unexpected database contents. Check state of database. Count: {n}, expected: {expected}"
+        assert n != 0, (
+            f"Unexpected database contents. Check state of database. Count: {n}, expected: {expected}"
+        )
     else:
-        assert n == expected, f"Unexpected database contents. Check state of database. Count: {n}, expected: {expected}"
+        assert n == expected, (
+            f"Unexpected database contents. Check state of database. Count: {n}, expected: {expected}"
+        )
 
 
 def test_get_records(engdb):
     """Test getting records"""
     records = engdb._get_records(*QUERY)
     assert len(records)
-    assert np.allclose(records['EUValue'], 0.756946)
-    assert (records['MJD'] >= (Time(QUERY[1]).mjd - 60.)).all()
-    assert (records['MJD'] <= (Time(QUERY[2]).mjd + 60.)).all()
+    assert np.allclose(records["EUValue"], 0.756946)
+    assert (records["MJD"] >= (Time(QUERY[1]).mjd - 60.0)).all()
+    assert (records["MJD"] <= (Time(QUERY[2]).mjd + 60.0)).all()
 
 
 @pytest.mark.parametrize(
     "contents",
     [
-        'TlmMnemonic',
-        'EUValue',
-        'ObsTime',
-        'ReqSTime',
-        'ReqETime',
+        "TlmMnemonic",
+        "EUValue",
+        "ObsTime",
+        "ReqSTime",
+        "ReqETime",
     ],
 )
 def test_get_records_response(engdb, contents):
@@ -68,7 +69,7 @@ def test_get_value_justvalues(engdb):
     """Test just getting values"""
     values = engdb.get_values(*QUERY, include_bracket_values=True)
     assert len(values) > 1
-    assert np.allclose(values, 0.7569, rtol=1.e-4)
+    assert np.allclose(values, 0.7569, rtol=1.0e-4)
 
 
 def test_get_values_obstimes(engdb):

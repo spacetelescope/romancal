@@ -12,7 +12,6 @@ for a list of exposures.
 
 import argparse
 import logging
-from pathlib import Path
 
 import romancal.orientation._lib as olib
 import romancal.orientation.set_telescope_pointing as stp

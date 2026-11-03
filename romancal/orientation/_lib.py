@@ -40,22 +40,25 @@ def fetch_references(t_pars):
 
         If fetching is needed, `t_pars.crds_pars` is used for the fetching.
     """
-    reftypes = {'bam': 'bam_ref',
-                'distortion': 'distortion_ref'}
+    reftypes = {"bam": "bam_ref", "distortion": "distortion_ref"}
     reftypes_to_fetch = []
     for reftype in reftypes:
         if not getattr(t_pars, reftypes[reftype], None):
             reftypes_to_fetch.append(reftype)
     refpaths = dict()
     if reftypes_to_fetch:
-        refpaths = getreferences(t_pars.crds_pars, reftypes_to_fetch, observatory='roman')
+        refpaths = getreferences(
+            t_pars.crds_pars, reftypes_to_fetch, observatory="roman"
+        )
     for reftype in refpaths:
         setattr(t_pars, reftypes[reftype], refpaths[reftype])
     for reftype in reftypes:
-        logger.info('%s reference: %s', reftype.upper(), getattr(t_pars, reftypes[reftype]))
+        logger.info(
+            "%s reference: %s", reftype.upper(), getattr(t_pars, reftypes[reftype])
+        )
 
 
-def mk_crds_pars(obstime=None, detector='WFI01', optical_element='F062'):
+def mk_crds_pars(obstime=None, detector="WFI01", optical_element="F062"):
     """Create CRDS parameters from the transformation parameters.
 
     Parameters
@@ -79,10 +82,10 @@ def mk_crds_pars(obstime=None, detector='WFI01', optical_element='F062'):
         obstime = Time.now()
 
     pars = {
-        'ROMAN.META.INSTRUMENT.DETECTOR': detector,
-        'ROMAN.META.INSTRUMENT.NAME': detector[:3],
-        'ROMAN.META.INSTRUMENT.OPTICAL_ELEMENT': optical_element,
-        'ROMAN.META.EXPOSURE.START_TIME': obstime.isot,
+        "ROMAN.META.INSTRUMENT.DETECTOR": detector,
+        "ROMAN.META.INSTRUMENT.NAME": detector[:3],
+        "ROMAN.META.INSTRUMENT.OPTICAL_ELEMENT": optical_element,
+        "ROMAN.META.EXPOSURE.START_TIME": obstime.isot,
     }
     return pars
 
