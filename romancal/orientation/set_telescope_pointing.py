@@ -136,7 +136,7 @@ def add_wcs(
                 "\n\tFailing WCS processing."
             )
 
-        wcs_meta = update_wcs(model, **transform_kwargs)
+        t_pars, wcs_meta = update_wcs(model, **transform_kwargs)
 
         if dry_run:
             logger.info("Dry run requested; results are not saved.")
@@ -172,8 +172,9 @@ def update_wcs(
 
     Returns
     -------
-    wcs_meta : dict
-        The various wcs-related meta keywords calculated for.
+    t_pars, wcs_meta : `TransformParameters`, dict
+        A 2-tuple containing the transform parameters used to calculate the WCS information
+        and the various wcs-related meta keywords that have been calculated.
     """
     # Configure transformation parameters.
     t_pars = tlib.TransformParameters(**transform_kwargs)
@@ -184,4 +185,4 @@ def update_wcs(
     # Calculate WCS.
     wcs_meta = wlib.update_wcs_from_telem(model, t_pars)
 
-    return wcs_meta
+    return t_pars, wcs_meta
