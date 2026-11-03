@@ -25,10 +25,12 @@ from astropy.stats import sigma_clipped_stats
 from astropy.table import Table
 from astropy.time import Time
 from astropy.visualization import simple_norm
-from photutils.psf import EPSFBuilder, EPSFStars, extract_stars
+from photutils.psf import EPSFBuilder, extract_stars
 from photutils.psf.flags import PSF_FLAGS
 from roman_datamodels.datamodels import EpsfRefModel
 from scipy.spatial import cKDTree
+
+from romancal.source_catalog._background import RomanBackground
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -209,6 +211,13 @@ def cli(argv=None):
         action="store_false",
         dest="mask_extended",
         help="""Allow extended sources.""",
+    )
+    pick_star_parser.add_argument(
+        "--bkg-boxsize",
+        type=int,
+        default=None,
+        help="""Box size in pixels for a 2D background. Default: subtract
+                the global sigma-clipped median.""",
     )
     pick_star_parser.add_argument(
         "--reject-psf-flags",
@@ -416,6 +425,7 @@ def pick_stars(
     max_psferr=None,
     mask_extended=True,
     reject_psf_flags=REJECT_PSF_FLAGS,
+    bkg_boxsize=None,
 ):
     """Pick stars out of an image based on various criteria.
 
@@ -473,6 +483,11 @@ def pick_stars(
         Reject objects with any of these ``psf_flags`` bits set, or with
         non-finite PSF position errors.
 
+    bkg_boxsize : int or None
+        Box size in pixels for a 2D background estimated as in the
+        source catalog step. If None, subtract the global sigma-clipped
+        median.
+
     Returns
     -------
     stars : EPSFStars
@@ -483,7 +498,7 @@ def pick_stars(
     """
     logger.info("Picking stars from catalog of %s objects.", len(catalog))
 
-    # Global background; data in the masked pixels are never used.
+    # Background; data in the masked pixels are never used.
     dq = np.asarray(model.dq)
     err = background_noise(model)
     data = np.asarray(model.data, dtype=float)
@@ -491,8 +506,11 @@ def pick_stars(
     pixmask |= ~np.isfinite(err) | (err <= 0)
     if mask_dq is not None:
         pixmask |= (dq & mask_dq) > 0
-    _, median_val, _ = sigma_clipped_stats(data[~pixmask], sigma=2.0)
-    data = np.where(pixmask, 0.0, data - median_val)
+    if bkg_boxsize is None:
+        _, background, _ = sigma_clipped_stats(data[~pixmask], sigma=2.0)
+    else:
+        background = RomanBackground(data, bkg_boxsize, mask=pixmask).background
+    data = np.where(pixmask, 0.0, data - background)
     err = np.where(pixmask, 1.0, err)
 
     # Catalog level cuts
@@ -511,9 +529,7 @@ def pick_stars(
     }
     if reject_psf_flags is not None:
         psf_flags = np.ma.filled(np.ma.asarray(catalog["psf_flags"]), reject_psf_flags)
-        cuts["psf fit"] = ((psf_flags & reject_psf_flags) == 0) & np.isfinite(
-            psf_err
-        )
+        cuts["psf fit"] = ((psf_flags & reject_psf_flags) == 0) & np.isfinite(psf_err)
     if mask_extended:
         cuts["point source"] = ~_filled(catalog["is_extended"], True).astype(bool)
     if min_snr is not None:
@@ -535,7 +551,7 @@ def pick_stars(
     sat_flag = _DQ.SATURATED
     hcore = core_size // 2
     for idx in np.flatnonzero(keep):
-        ix, iy = int(round(x[idx])), int(round(y[idx]))
+        ix, iy = round(x[idx]), round(y[idx])
         h = int(hsize)
         stamp = (slice(iy - h, iy + h + 1), slice(ix - h, ix + h + 1))
         core = (slice(iy - hcore, iy + hcore + 1), slice(ix - hcore, ix + hcore + 1))
@@ -600,9 +616,7 @@ def background_noise(model):
         var_rnoise = np.asarray(var_rnoise, dtype=float)
     else:
         var_rnoise = np.nanmedian(np.asarray(model.err, dtype=float) ** 2 - var_poisson)
-        logger.info(
-            "No var_rnoise; using median err**2 - var_poisson = %s", var_rnoise
-        )
+        logger.info("No var_rnoise; using median err**2 - var_poisson = %s", var_rnoise)
     sigma = np.sqrt(var_rnoise + sky_var)
     return np.broadcast_to(sigma, model.data.shape).copy()
 

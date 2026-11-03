@@ -26,7 +26,9 @@ def image_and_catalog():
     for i, (y, x) in enumerate(
         (y, x) for y in range(20, 181, 40) for x in range(20, 181, 40)
     ):
-        rows.append((i + 1, x + rng.uniform(-0.5, 0.5), y + rng.uniform(-0.5, 0.5), 1e4))
+        rows.append(
+            (i + 1, x + rng.uniform(-0.5, 0.5), y + rng.uniform(-0.5, 0.5), 1e4)
+        )
     rows += [
         (26, 40.3, 60.2, 1e4),
         (27, 80.1, 60.4, 1e4),
