@@ -116,7 +116,7 @@ def run_steps(
     and correction arrays are each larger than the ramp itself, so doing this
     keeps the peak memory usage proportional to a single resultant rather than
     to the whole ramp. The offset is fit over all of the resultants, so it has to be accumulated
-    # before any of them are corrected.
+    before any of them are corrected.
     """
     if zero_bad_ref_pix:
         _mask_bad_ref_pixels(datamodel)
