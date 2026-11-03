@@ -30,7 +30,7 @@ STARTTIME = Time("2026-09-22T06:18:21.121", format="isot")
 ENDTIME = Time("2026-09-22T06:19:30.696", format="isot")
 BADSTARTTIME = Time("2020-02-02T02:02:02", format="isot")
 BADENDTIME = Time("2020-02-02T02:12:02", format="isot")
-DEFAULT_RADECREF = (50.91111013270113, 7.608200661712088)
+DEFAULT_RADECREF = (80.73771580167708, -69.37882680328173)
 
 # Header defaults
 TARG_RA = 270.0
@@ -367,6 +367,9 @@ def updated_model(calc_wcs):
     m = rdm.datamodels.ScienceRawModel.create_fake_data(
         {
             "meta": {
+                'ephemeris': {'velocity_x': TRANSFORM_KWARGS['velocity'][0],
+                              'velocity_y': TRANSFORM_KWARGS['velocity'][1],
+                              'velocity_z': TRANSFORM_KWARGS['velocity'][2]},
                 "exposure": {"start_time": STARTTIME, "end_time": ENDTIME},
                 "pointing": {
                     "target_aperture": "WFI_CEN",

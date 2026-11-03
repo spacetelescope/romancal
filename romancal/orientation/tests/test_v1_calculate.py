@@ -19,10 +19,16 @@ def test_from_models_mast(tmp_path):
     model = ScienceRawModel.create_fake_data(
         {
             "meta": {
-                "exposure": {
-                    "start_time": tstp.STARTTIME,
-                    "end_time": tstp.ENDTIME,
+                'ephemeris': {'velocity_x': tstp.TRANSFORM_KWARGS['velocity'][0],
+                              'velocity_y': tstp.TRANSFORM_KWARGS['velocity'][1],
+                              'velocity_z': tstp.TRANSFORM_KWARGS['velocity'][2]},
+                "exposure": {"start_time": tstp.STARTTIME, "end_time": tstp.ENDTIME},
+                "pointing": {
+                    "target_aperture": "WFI_CEN",
+                    "target_ra": tstp.TARG_RA,
+                    "target_dec": tstp.TARG_DEC,
                 },
+                "wcsinfo": {"aperture_name": "WFI02_FULL"},
             }
         }
     )
