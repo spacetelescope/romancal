@@ -25,6 +25,8 @@ def _compute_dynamic_weights(
     smooth_sigma: float = 12.0,
 ) -> dict:
     """
+    Compute weights for each of four different reference pixel corrections.
+
     We have four different kinds of fits---using all of the border reference pixels,
     using only the left reference pixels, using only the right reference pixels,
     and using no border reference pixels. We want to weight these 4 kinds of fits
