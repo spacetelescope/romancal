@@ -209,7 +209,7 @@ def run_steps(
 
         orig_data = standard.data.copy()
 
-        if weight_mode == "static":
+        if weight_mode == "default":
             # Run the single default correction pipeline without blending overhead
             standard.data[:] = _get_corrected_state(standard, coeffs_default, orig_data)
         else:
