@@ -18,7 +18,7 @@ def image_and_catalog():
 
     Labels 1-25 are isolated, unflagged stars. Label 26 is saturated,
     27 has a DO_NOT_USE core, 28 has a DO_NOT_USE wing pixel, 29 is
-    faint, and 30/31 are a blended pair.
+    faint, 30/31 are a blended pair, and 32 is a single hot pixel.
     """
     rng = np.random.default_rng(42)
     yy, xx = np.mgrid[: SHAPE[0], : SHAPE[1]]
@@ -36,6 +36,7 @@ def image_and_catalog():
         (29, 160.2, 60.3, 30.0),
         (30, 40.2, 140.1, 1e4),
         (31, 43.2, 140.3, 5e3),
+        (32, 120.0, 140.0, 1e4),
     ]
     cat = Table(rows=rows, names=["label", "x", "y", "flux"])
 
@@ -46,6 +47,12 @@ def image_and_catalog():
         data += Gaussian2D(amp, row["x"], row["y"], sigma, sigma)(xx, yy)
     err = np.full(SHAPE, 1.0)
     data += rng.normal(0, 1.0, SHAPE)
+
+    # Label 32 is a single hot pixel, not a star.
+    data -= Gaussian2D(
+        cat["flux"][-1] / (2 * np.pi * sigma**2), 120.0, 140.0, sigma, sigma
+    )(xx, yy)
+    data[140, 120] += 1e4
 
     dq = np.zeros(SHAPE, dtype=np.uint32)
     dq[60, 40] = pixel.SATURATED
@@ -94,6 +101,7 @@ def test_pick_stars_default(image_and_catalog):
     assert 28 in labels  # DO_NOT_USE wing pixel is masked, not rejected
     assert 29 not in labels  # faint
     assert not {30, 31} & labels  # blended
+    assert 32 not in labels  # hot pixel
 
 
 def test_pick_stars_masks_wing_pixel(image_and_catalog):
@@ -110,6 +118,7 @@ def test_pick_stars_masks_wing_pixel(image_and_catalog):
         ({"reject_core_dq": None}, 27),
         ({"min_snr": None}, 29),
         ({"max_contamination": None}, 30),
+        ({"max_peak_fraction": None}, 32),
     ],
 )
 def test_pick_stars_options(image_and_catalog, kwargs, label):
