@@ -157,6 +157,7 @@ addopts = [
     "-ra",              # Show summary of all failures/errorsproduct_names
 ]
 markers = [
+    "bigdata: Run tests that require intranet access",
     "soctests: run only the SOC tests in the suite.",
 ]
 
