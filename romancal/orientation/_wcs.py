@@ -99,6 +99,19 @@ def calc_wcs(t_pars: tlib.TransformParameters):
     if aperture_name is None:
         aperture_name = f"{sca_info['detector']}_FULL"
 
+    # Check that observatory velocity is "reasonable" for a given definition of reasonable.
+    velocity = np.array(t_pars.velocity)
+    if (
+        None in velocity
+        or np.all(velocity == 0.0)
+        or (np.abs(velocity) > olib.MAX_OBSERVATORY_SPEED).any()
+    ):
+        logger.warning(
+            "Velocity: %s is either unspecified or contains unreasonable values. Assuming zero velocity.",
+            velocity,
+        )
+        velocity = np.zeros(velocity.shape)
+
     # 1. APPARENT ATTITUDE FRAME (From Telemetry qbj)
     # The physical orientation of the telescope capturing aberrated photons
     att_matrix_app = R.from_quat(t_pars.pointing.q).as_matrix()
@@ -109,21 +122,21 @@ def calc_wcs(t_pars: tlib.TransformParameters):
 
     # 2. TRUE (ABERRATION CORRECTED) SKY POSITIONS
     true_ra_v1, true_dec_v1, true_pa_v3, _ = true_point_and_roll(
-        0.0, 0.0, app_v2v3_frame, t_pars.velocity
+        0.0, 0.0, app_v2v3_frame, velocity
     )
 
     # 3. GLOBAL TARGET POINTING VIA BAM QUATERNION
     tgt_ya_deg, tgt_v2_ref, tgt_v3_ref = get_angles_from_quaternion(q_bam)
 
     tgt_true_ra, tgt_true_dec, true_roll_target, tgt_true_coord = true_point_and_roll(
-        tgt_v2_ref, tgt_v3_ref, app_v2v3_frame, t_pars.velocity
+        tgt_v2_ref, tgt_v3_ref, app_v2v3_frame, velocity
     )
     pa_aperture_true = (true_roll_target + tgt_ya_deg) % 360.0
 
     # Velocity Aberration Scale Factor using True Target SkyCoord (forward velocity)
     u_tgt_true = tgt_true_coord.cartesian.xyz.value
     _, global_scale_factor = apply_vector_velocity_aberration(
-        u_tgt_true, t_pars.velocity
+        u_tgt_true, velocity
     )
 
     # Apparent Reference Coordinates at Target
@@ -133,11 +146,11 @@ def calc_wcs(t_pars: tlib.TransformParameters):
 
     # 4. SCA-SPECIFIC WCS VIA DISTORTION REFERENCE FILE
     true_ra_ref, true_dec_ref, true_roll_ref, _ = true_point_and_roll(
-        sca_info["v2_ref"], sca_info["v3_ref"], app_v2v3_frame, t_pars.velocity
+        sca_info["v2_ref"], sca_info["v3_ref"], app_v2v3_frame, velocity
     )
 
     corners_coord = v2v3_to_true_icrs(
-        sca_info["corners_v2"], sca_info["corners_v3"], app_v2v3_frame, t_pars.velocity
+        sca_info["corners_v2"], sca_info["corners_v3"], app_v2v3_frame, velocity
     )
 
     polygon_str = " ".join(

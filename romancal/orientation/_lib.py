@@ -8,6 +8,10 @@ from crds import getreferences
 
 __all__ = []
 
+# Maximum absolute speed of the observatory. Used for sanity check for any
+# individual component of the velocity.
+MAX_OBSERVATORY_SPEED = 500  # km/s
+
 # Setup logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
