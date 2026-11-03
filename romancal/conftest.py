@@ -29,14 +29,6 @@ if TYPE_CHECKING:
 collect_ignore = ["lib/dqflags.py"]
 
 
-@pytest.fixture
-def slow(request):
-    """Setup slow fixture for tests to identify if --slow
-    has been specified
-    """
-    return request.config.getoption("--slow")
-
-
 @pytest.fixture(scope="session")
 def dms_logger():
     """Set up a 'DMS' logger for use in tests.

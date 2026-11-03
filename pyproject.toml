@@ -59,7 +59,6 @@ test = [
     "pytest>=9.0",
     "pytest-cov>=2.3.1",
     "pytest-doctestplus>=1.0.0",
-    "pytest-skip-slow>=1.1.0",
     "pysiaf>=0.13.0",
     "stpreview>=0.6.0",
 ]
