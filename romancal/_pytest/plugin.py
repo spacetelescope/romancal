@@ -29,14 +29,12 @@ def pytest_addoption(parser):
     parser.addini(
         "inputs_root",
         "Root dir (or data repository name) for test input files.",
-        type="args",
         default=None,
     )
 
     parser.addini(
         "results_root",
         "Root dir (or data repository name) for test result/output files.",
-        type="args",
         default=None,
     )
 

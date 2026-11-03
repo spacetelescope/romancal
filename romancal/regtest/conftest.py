@@ -10,23 +10,6 @@ from romancal.regtest.regtestdata import RegtestData
 TODAYS_DATE = datetime.now().strftime("%Y-%m-%d")
 
 
-@pytest.fixture(scope="session")
-def artifactory_repos(pytestconfig):
-    """Provides Artifactory inputs_root and results_root"""
-    inputs_root = pytestconfig.getini("inputs_root")
-    if not inputs_root:
-        inputs_root = "roman-pipeline"
-    else:
-        inputs_root = inputs_root[0]
-
-    results_root = pytestconfig.getini("results_root")
-    if not results_root:
-        results_root = "roman-pipeline-results/regression-tests/runs/"
-    else:
-        results_root = results_root[0]
-    return inputs_root, results_root
-
-
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     """Create request.node.report_setup and request.node.report_call to be
@@ -68,13 +51,13 @@ def pytest_collection_modifyitems(config, items):
 
 
 @pytest.fixture(scope="function", autouse=True)
-def generate_artifactory_json(request, artifactory_repos):
+def generate_artifactory_json(request):
     """Pytest fixture that leaves behind JSON upload and okify specfiles
     if the rtdata or rtdata_module fixtures are used in either a test or a
     module-scoped fixture that runs a pipeline and provides the results to a
     series of test.
     """
-    inputs_root, results_root = artifactory_repos
+    results_root = request.config.getini("results_root")
 
     def artifactory_result_path():
         # Generate the Artifactory result path
@@ -188,28 +171,25 @@ def generate_upload_schema(pattern, target, recursive=False):
     return {"files": files}
 
 
-def _rtdata_fixture_implementation(artifactory_repos, request):
+def _rtdata_fixture_implementation(request):
     """Provides the RemoteResource class"""
-    # TODO envopt comes from ci_watson
-    # inputs_root, results_root are in both ci_watson and here
-    # envopt is read in ci_watson via request.config.getoption (read from command line)
-    # inputs_root and results_root are read here via pytestconfig.getini but must
-    # first be registered (in ci_watson) using pytest.addoption parser.addini (env
-    # is also registered, as is bigdata)
-    inputs_root, results_root = artifactory_repos
-    rtdata = RegtestData(request.config.getoption("env"), inputs_root, results_root)
+    rtdata = RegtestData(
+        request.config.getoption("env"),
+        request.config.getini("inputs_root"),
+        request.config.getini("results_root"),
+    )
 
     yield rtdata
 
 
 @pytest.fixture(scope="function")
-def rtdata(artifactory_repos, request, function_jail):
-    yield from _rtdata_fixture_implementation(artifactory_repos, request)
+def rtdata(request, function_jail):
+    yield from _rtdata_fixture_implementation(request)
 
 
 @pytest.fixture(scope="module")
-def rtdata_module(artifactory_repos, request, module_jail):
-    yield from _rtdata_fixture_implementation(artifactory_repos, request)
+def rtdata_module(request, module_jail):
+    yield from _rtdata_fixture_implementation(request)
 
 
 @pytest.fixture
