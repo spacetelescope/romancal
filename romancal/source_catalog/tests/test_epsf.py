@@ -126,12 +126,12 @@ def test_pick_stars_psf_flags(image_and_catalog, flag, kept):
 
 
 def test_background_noise(image_and_catalog):
-    """Noise is read noise plus sky, with a fallback without var_rnoise."""
+    """Noise is read noise plus sky Poisson noise, independent of flux."""
     model, _ = image_and_catalog
-    model.var_poisson[:] = 0.5
-    model.var_poisson[100, 100] = 100.0  # bright pixel
-    model.var_rnoise[:] = 2.0
-    model.err = np.sqrt(model.var_poisson + model.var_rnoise)
-    np.testing.assert_allclose(_epsf.background_noise(model), np.sqrt(2.5))
+    data = np.full(SHAPE, 2.0, dtype=np.float32)
+    data[100, 100] = 1000.0  # bright pixel
+    model.data = data
+    model.var_poisson = 0.5 * data
+    model.err = np.sqrt(model.var_poisson + 3.0)
     delattr(model, "var_rnoise")
-    np.testing.assert_allclose(_epsf.background_noise(model), np.sqrt(2.5))
+    np.testing.assert_allclose(_epsf.background_noise(model), 2.0, rtol=1e-3)

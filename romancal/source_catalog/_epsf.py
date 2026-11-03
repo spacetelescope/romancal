@@ -30,7 +30,12 @@ from photutils.psf.flags import PSF_FLAGS
 from roman_datamodels.datamodels import EpsfRefModel
 from scipy.spatial import cKDTree
 
+from romancal.resample._utils import compute_var_sky
 from romancal.source_catalog._background import RomanBackground
+from romancal.source_catalog.source_catalog_step import (
+    SourceCatalogStep,
+    _pixel_scale,
+)
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -214,10 +219,10 @@ def cli(argv=None):
     )
     pick_star_parser.add_argument(
         "--bkg-boxsize",
-        type=int,
+        type=float,
         default=None,
-        help="""Box size in pixels for a 2D background. Default: subtract
-                the global sigma-clipped median.""",
+        help="""Background mesh box size in arcsec. Default: the source
+                catalog step default.""",
     )
     pick_star_parser.add_argument(
         "--reject-psf-flags",
@@ -483,10 +488,9 @@ def pick_stars(
         Reject objects with any of these ``psf_flags`` bits set, or with
         non-finite PSF position errors.
 
-    bkg_boxsize : int or None
-        Box size in pixels for a 2D background estimated as in the
-        source catalog step. If None, subtract the global sigma-clipped
-        median.
+    bkg_boxsize : float or None
+        Background mesh box size in arcsec, as in the source catalog
+        step. If None, use the source catalog step default.
 
     Returns
     -------
@@ -507,9 +511,9 @@ def pick_stars(
     if mask_dq is not None:
         pixmask |= (dq & mask_dq) > 0
     if bkg_boxsize is None:
-        _, background, _ = sigma_clipped_stats(data[~pixmask], sigma=2.0)
-    else:
-        background = RomanBackground(data, bkg_boxsize, mask=pixmask).background
+        bkg_boxsize = SourceCatalogStep().bkg_boxsize
+    bkg_boxsize_px = max(round(bkg_boxsize / _pixel_scale(model)), 1)
+    background = RomanBackground(data, bkg_boxsize_px, mask=pixmask).background
     data = np.where(pixmask, 0.0, data - background)
     err = np.where(pixmask, 1.0, err)
 
@@ -594,7 +598,8 @@ def background_noise(model):
 
     Uncertainties that include source Poisson noise give bright pixels
     low weight, which makes the star fits depend on the flux. Instead
-    use read noise plus sky Poisson noise.
+    use the sky variance used by resample: read noise plus the Poisson
+    variance scaled to the median sky level.
 
     Parameters
     ----------
@@ -604,21 +609,12 @@ def background_noise(model):
     Returns
     -------
     sigma : np.ndarray
-        Standard deviation per pixel. The read noise is ``var_rnoise``
-        when the model has it, and otherwise the median of
-        ``err**2 - var_poisson``. The sky Poisson variance is the median
-        of ``var_poisson``.
+        Standard deviation per pixel; NaN where the sky variance is not
+        positive.
     """
-    var_poisson = np.asarray(model.var_poisson, dtype=float)
-    sky_var = np.nanmedian(var_poisson)
-    var_rnoise = model.get("var_rnoise")
-    if var_rnoise is not None:
-        var_rnoise = np.asarray(var_rnoise, dtype=float)
-    else:
-        var_rnoise = np.nanmedian(np.asarray(model.err, dtype=float) ** 2 - var_poisson)
-        logger.info("No var_rnoise; using median err**2 - var_poisson = %s", var_rnoise)
-    sigma = np.sqrt(var_rnoise + sky_var)
-    return np.broadcast_to(sigma, model.data.shape).copy()
+    var_sky = np.asarray(compute_var_sky(model), dtype=float)
+    with np.errstate(invalid="ignore"):
+        return np.where(var_sky > 0, np.sqrt(var_sky), np.nan)
 
 
 def neighbor_contamination(catalog, x, y, radius, flux_col="segment_flux"):
