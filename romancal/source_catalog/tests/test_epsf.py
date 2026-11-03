@@ -54,6 +54,8 @@ def image_and_catalog():
     model = ImageModel.create_fake_data(shape=SHAPE)
     model.data = data.astype(np.float32)
     model.err = err.astype(np.float32)
+    model.var_poisson = np.zeros(SHAPE, dtype=np.float32)
+    model.var_rnoise = (err**2).astype(np.float32)
     model.dq = dq
 
     snr = cat["flux"] / (np.sqrt(4 * np.pi) * sigma)
@@ -119,3 +121,15 @@ def test_pick_stars_psf_flags(image_and_catalog, flag, kept):
     model, catalog = image_and_catalog
     catalog["psf_flags"][0] = flag
     assert (1 in picked_labels(model, catalog)) == kept
+
+
+def test_background_noise(image_and_catalog):
+    """Noise is read noise plus sky, with a fallback without var_rnoise."""
+    model, _ = image_and_catalog
+    model.var_poisson[:] = 0.5
+    model.var_poisson[100, 100] = 100.0  # bright pixel
+    model.var_rnoise[:] = 2.0
+    model.err = np.sqrt(model.var_poisson + model.var_rnoise)
+    np.testing.assert_allclose(_epsf.background_noise(model), np.sqrt(2.5))
+    delattr(model, "var_rnoise")
+    np.testing.assert_allclose(_epsf.background_noise(model), np.sqrt(2.5))

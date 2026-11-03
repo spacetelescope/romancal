@@ -485,9 +485,10 @@ def pick_stars(
 
     # Global background; data in the masked pixels are never used.
     dq = np.asarray(model.dq)
-    err = np.asarray(model.err, dtype=float)
+    err = background_noise(model)
     data = np.asarray(model.data, dtype=float)
-    pixmask = ~np.isfinite(data) | ~np.isfinite(err) | (err <= 0)
+    pixmask = ~np.isfinite(data) | ~np.isfinite(model.err)
+    pixmask |= ~np.isfinite(err) | (err <= 0)
     if mask_dq is not None:
         pixmask |= (dq & mask_dq) > 0
     _, median_val, _ = sigma_clipped_stats(data[~pixmask], sigma=2.0)
@@ -570,6 +571,40 @@ def pick_stars(
         "Found %s valid stars with maximum PSF error of %s", len(stars), max_psferr
     )
     return stars, max_psferr
+
+
+def background_noise(model):
+    """Per-pixel noise that does not depend on the source flux.
+
+    Uncertainties that include source Poisson noise give bright pixels
+    low weight, which makes the star fits depend on the flux. Instead
+    use read noise plus sky Poisson noise.
+
+    Parameters
+    ----------
+    model : roman_datamodels.datamodels.ImageModel
+        L2 model
+
+    Returns
+    -------
+    sigma : np.ndarray
+        Standard deviation per pixel. The read noise is ``var_rnoise``
+        when the model has it, and otherwise the median of
+        ``err**2 - var_poisson``. The sky Poisson variance is the median
+        of ``var_poisson``.
+    """
+    var_poisson = np.asarray(model.var_poisson, dtype=float)
+    sky_var = np.nanmedian(var_poisson)
+    var_rnoise = model.get("var_rnoise")
+    if var_rnoise is not None:
+        var_rnoise = np.asarray(var_rnoise, dtype=float)
+    else:
+        var_rnoise = np.nanmedian(np.asarray(model.err, dtype=float) ** 2 - var_poisson)
+        logger.info(
+            "No var_rnoise; using median err**2 - var_poisson = %s", var_rnoise
+        )
+    sigma = np.sqrt(var_rnoise + sky_var)
+    return np.broadcast_to(sigma, model.data.shape).copy()
 
 
 def neighbor_contamination(catalog, x, y, radius, flux_col="segment_flux"):
