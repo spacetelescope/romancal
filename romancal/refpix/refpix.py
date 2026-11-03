@@ -151,7 +151,7 @@ def run_steps(
             sigma_width=sigma_width,
             smooth_sigma=smooth_sigma,
         )
-    elif weight_mode != "static":
+    else:
         # Scaffolding for unit tests forcing specific states ('left', 'right', 'default', 'none')
         n_rows = datamodel.data.shape[1]
         weights = {
