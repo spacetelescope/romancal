@@ -107,26 +107,19 @@ def calc_wcs(t_pars: tlib.TransformParameters):
 
     app_v2v3_frame, _, _, _ = build_v2v3_skyoffset_frame(v1_app, v3_app)
 
-    # 2. TRUE ATTITUDE FRAME (Inverse Velocity Aberration)
-    # Apply -v_xyz_kms to back out the aberration and recover the ICRS catalog frame
-    v_xyz_kms_inv = -np.array(t_pars.velocity, dtype=float)
-    v1_true, _ = apply_vector_velocity_aberration(v1_app, v_xyz_kms_inv)
-    v3_true_approx, _ = apply_vector_velocity_aberration(v3_app, v_xyz_kms_inv)
-
-    # Re-orthogonalize V3 against V1 to enforce a rigid 90-degree body frame
-    v3_true = v3_true_approx - np.dot(v3_true_approx, v1_true) * v1_true
-    v3_true /= np.linalg.norm(v3_true)
-
-    true_v2v3_frame, true_ra_v1, true_dec_v1, true_pa_v3 = build_v2v3_skyoffset_frame(
-        v1_true, v3_true
+    # 2. TRUE (UN-ABERRATED) SKY POSITIONS
+    # Aberration is not a rigid rotation, so each V2/V3 point of interest is
+    # projected through the apparent frame and un-aberrated individually.
+    # Roll angles come from a short step along +V3 at each point.
+    true_ra_v1, true_dec_v1, true_pa_v3, _ = true_point_and_roll(
+        0.0, 0.0, app_v2v3_frame, t_pars.velocity
     )
 
     # 3. GLOBAL TARGET POINTING VIA BAM QUATERNION
     tgt_ya_deg, tgt_v2_ref, tgt_v3_ref = get_angles_from_quaternion(q_bam)
 
-    # Project True Sky Coordinates for APT alignment
-    tgt_true_ra, tgt_true_dec, true_roll_target, tgt_true_coord = (
-        project_v2v3_with_roll(tgt_v2_ref, tgt_v3_ref, true_v2v3_frame)
+    tgt_true_ra, tgt_true_dec, true_roll_target, tgt_true_coord = true_point_and_roll(
+        tgt_v2_ref, tgt_v3_ref, app_v2v3_frame, t_pars.velocity
     )
     pa_aperture_true = (true_roll_target + tgt_ya_deg) % 360.0
 
@@ -141,16 +134,14 @@ def calc_wcs(t_pars: tlib.TransformParameters):
         lon=tgt_v2_ref * u.arcsec, lat=tgt_v3_ref * u.arcsec, frame=app_v2v3_frame
     ).transform_to("icrs")
 
-    # 4. SCA-SPECIFIC WCS PROJECTIONS VIA DISTORTION REFERENCE FILE (True Frame)
-    true_ra_ref, true_dec_ref, true_roll_ref, _ = project_v2v3_with_roll(
-        sca_info["v2_ref"], sca_info["v3_ref"], true_v2v3_frame
+    # 4. SCA-SPECIFIC WCS VIA DISTORTION REFERENCE FILE
+    true_ra_ref, true_dec_ref, true_roll_ref, _ = true_point_and_roll(
+        sca_info["v2_ref"], sca_info["v3_ref"], app_v2v3_frame, t_pars.velocity
     )
 
-    corners_coord = SkyCoord(
-        lon=sca_info["corners_v2"] * u.arcsec,
-        lat=sca_info["corners_v3"] * u.arcsec,
-        frame=true_v2v3_frame,
-    ).transform_to("icrs")
+    corners_coord = v2v3_to_true_icrs(
+        sca_info["corners_v2"], sca_info["corners_v3"], app_v2v3_frame, t_pars.velocity
+    )
 
     polygon_str = " ".join(
         [
@@ -306,25 +297,71 @@ def get_angles_from_quaternion(q_inst2b):
     return float(ya_deg), float(by_arcsec), float(bz_arcsec)
 
 
-def project_v2v3_with_roll(v2_arcsec, v3_arcsec, v2v3_frame):
+def v2v3_to_true_icrs(v2_arcsec, v3_arcsec, app_v2v3_frame, velocity):
     """
-    Transforms (V2, V3) in arcsec to ICRS (RA, Dec) and computes the local V3
-    position angle (roll) using astropy SkyCoord.
-    """
-    c_ref = SkyCoord(
-        lon=v2_arcsec * u.arcsec, lat=v3_arcsec * u.arcsec, frame=v2v3_frame
-    )
-    c_icrs = c_ref.transform_to("icrs")
+    Un-aberrated ICRS positions of V2/V3 points.
 
-    # Infinitesimal step along local +V3 meridian (+lat in SkyOffsetFrame)
-    c_north_v3 = SkyCoord(
-        lon=v2_arcsec * u.arcsec,
-        lat=(v3_arcsec + 1e-3) * u.arcsec,
-        frame=v2v3_frame,
+    Parameters
+    ----------
+    v2_arcsec, v3_arcsec : float or array-like
+        V2/V3 positions in arcsec.
+
+    app_v2v3_frame : `~astropy.coordinates.SkyOffsetFrame`
+        The apparent (aberrated) V2/V3 frame from the attitude quaternion.
+
+    velocity : array-like
+        Observatory barycentric velocity (km/s).
+
+    Returns
+    -------
+    coord : `~astropy.coordinates.SkyCoord`
+        True ICRS positions, one per input point.
+    """
+    app = SkyCoord(
+        lon=np.atleast_1d(v2_arcsec) * u.arcsec,
+        lat=np.atleast_1d(v3_arcsec) * u.arcsec,
+        frame=app_v2v3_frame,
     ).transform_to("icrs")
+    vecs = app.cartesian.xyz.value.T
+    v_inv = -np.asarray(velocity, dtype=float)
+    true = np.array([apply_vector_velocity_aberration(v, v_inv)[0] for v in vecs])
+    ra = np.rad2deg(np.arctan2(true[:, 1], true[:, 0])) % 360.0
+    dec = np.rad2deg(np.arcsin(np.clip(true[:, 2], -1.0, 1.0)))
+    return SkyCoord(ra=ra * u.deg, dec=dec * u.deg, frame="icrs")
 
-    local_roll = float(c_icrs.position_angle(c_north_v3).deg % 360.0)
-    return float(c_icrs.ra.deg), float(c_icrs.dec.deg), local_roll, c_icrs
+
+def true_point_and_roll(v2_arcsec, v3_arcsec, app_v2v3_frame, velocity, step=1.0):
+    """
+    True ICRS position of a V2/V3 point and the position angle of +V3 there.
+
+    Parameters
+    ----------
+    v2_arcsec, v3_arcsec : float
+        V2/V3 position in arcsec.
+
+    app_v2v3_frame : `~astropy.coordinates.SkyOffsetFrame`
+        The apparent (aberrated) V2/V3 frame from the attitude quaternion.
+
+    velocity : array-like
+        Observatory barycentric velocity (km/s).
+
+    step : float
+        Step along +V3 (arcsec) used to measure the roll.
+
+    Returns
+    -------
+    ra, dec, roll, coord : float, float, float, `~astropy.coordinates.SkyCoord`
+        True position (deg), +V3 position angle East of North (deg), and the
+        position as a scalar SkyCoord.
+    """
+    c = v2v3_to_true_icrs(
+        [v2_arcsec, v2_arcsec],
+        [v3_arcsec, v3_arcsec + step],
+        app_v2v3_frame,
+        velocity,
+    )
+    roll = float(c[0].position_angle(c[1]).deg % 360.0)
+    return float(c[0].ra.deg), float(c[0].dec.deg), roll, c[0]
 
 
 def update_wcs_from_telem(model, t_pars: tlib.TransformParameters):

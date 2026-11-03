@@ -30,7 +30,7 @@ STARTTIME = Time("2026-09-22T06:18:21.121", format="isot")
 ENDTIME = Time("2026-09-22T06:19:30.696", format="isot")
 BADSTARTTIME = Time("2020-02-02T02:02:02", format="isot")
 BADENDTIME = Time("2020-02-02T02:12:02", format="isot")
-DEFAULT_RADECREF = (51.15438730803445, 7.304183829772105)
+DEFAULT_RADECREF = (50.91111013270113, 7.608200661712088)
 
 # Header defaults
 TARG_RA = 270.0
@@ -264,14 +264,14 @@ def test_strict_pointing(science_raw_model, tmp_path):
 @pytest.mark.parametrize(
     "attr, expected",
     [
-        ("meta.pointing.pa_aperture", 37.254360755726026),
+        ("meta.pointing.pa_aperture", 37.24854770366899),
         ("meta.pointing.pointing_engineering_source", "CALCULATED"),
         ("meta.pointing.ra_v1", 81.6686302053683),
         ("meta.pointing.dec_v1", -69.0573058072646),
-        ("meta.pointing.pa_v3", 96.50516177723279),
+        ("meta.pointing.pa_v3", 96.49949482075951),
         ("meta.pointing.target_aperture", "WFI_CEN"),
-        ("meta.pointing.target_ra", 80.71792831161615),
-        ("meta.pointing.target_dec", -69.48825559984326),
+        ("meta.pointing.target_ra", 80.71805432662013),
+        ("meta.pointing.target_dec", -69.48828716074138),
         (
             "meta.pointing.quaternion",
             [
@@ -295,12 +295,12 @@ def test_strict_pointing(science_raw_model, tmp_path):
         ("meta.wcsinfo.v3_ref", -1163.304),
         ("meta.wcsinfo.vparity", -1),
         ("meta.wcsinfo.v3yangle", -59.99960999999999),
-        ("meta.wcsinfo.ra_ref", 80.62509480141252),
-        ("meta.wcsinfo.dec_ref", -69.41888112525045),
-        ("meta.wcsinfo.roll_ref", 97.48207857439513),
+        ("meta.wcsinfo.ra_ref", 80.62520113957764),
+        ("meta.wcsinfo.dec_ref", -69.41891635642607),
+        ("meta.wcsinfo.roll_ref", 97.47628097051559),
         (
             "meta.wcsinfo.s_region",
-            "POLYGON ICRS 80.660542428 -69.505413811 80.379206263 -69.428991757 80.590285491 -69.331370896 80.872760513 -69.407782240",
+            "POLYGON ICRS 80.660673638 -69.505447319 80.379316363 -69.429035688 80.590366858 -69.331407820 80.872862715 -69.407808726",
         ),
     ],
 )
