@@ -210,6 +210,7 @@ class CatalogSchema:
         psf_flags_colnames = [
             "psf_flags",
             "psf_gof",
+            "psf_cfit",
         ]
         dust_colnames = [
             "dust_ebv",

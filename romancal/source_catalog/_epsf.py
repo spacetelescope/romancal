@@ -177,11 +177,11 @@ def cli(argv=None):
         help="Keep stars with saturated pixels in their stamps.",
     )
     pick_star_parser.add_argument(
-        "--max-peak-fraction",
+        "--max-psf-cfit",
         type=float,
-        default=0.7,
-        help="""Maximum fraction of the central 3x3 flux in the brightest
-                pixel; rejects hot pixels and cosmic rays. Default: %(default)s""",
+        default=0.2,
+        help="""Maximum catalog psf_cfit; rejects hot pixels and cosmic rays.
+                Default: %(default)s""",
     )
     pick_star_parser.add_argument(
         "--max-masked-fraction",
@@ -430,7 +430,7 @@ def pick_stars(
     core_size=3,
     reject_saturated=True,
     max_masked_fraction=0.2,
-    max_peak_fraction=0.7,
+    max_psf_cfit=0.2,
     min_snr=50.0,
     max_contamination=0.05,
     contamination_radius=6.5,
@@ -471,11 +471,11 @@ def pick_stars(
     max_masked_fraction : float or None
         Reject stars with more than this fraction of their stamp masked.
 
-    max_peak_fraction : float or None
-        Reject sources whose brightest pixel holds more than this
-        fraction of the flux in the central 3 x 3 pixels. Real stars are
-        below about 0.55 in all filters; single hot pixels and cosmic
-        rays are above 0.8.
+    max_psf_cfit : float or None
+        Maximum catalog ``psf_cfit``, the PSF fit residual in the central
+        pixel divided by the fitted flux. Stars are below about 0.1;
+        single hot pixels and cosmic rays are typically above 1. Not
+        applied if the catalog has no ``psf_cfit`` column.
 
     min_snr : float or None
         Minimum ``psf_flux / psf_flux_err``.
@@ -550,6 +550,11 @@ def pick_stars(
         cuts["psf fit"] = ((psf_flags & reject_psf_flags) == 0) & np.isfinite(psf_err)
     if mask_extended:
         cuts["point source"] = ~_filled(catalog["is_extended"], True).astype(bool)
+    if max_psf_cfit is not None:
+        if "psf_cfit" in catalog.colnames:
+            cuts["psf cfit"] = ~(_filled(catalog["psf_cfit"]) > max_psf_cfit)
+        else:
+            logger.info("Catalog has no psf_cfit; not cutting on it.")
     if min_snr is not None:
         snr = _filled(catalog["psf_flux"]) / _filled(catalog["psf_flux_err"])
         cuts["snr"] = snr >= min_snr
@@ -581,10 +586,6 @@ def pick_stars(
             pixmask[stamp].mean() > max_masked_fraction
         ):
             keep[idx] = False
-        elif max_peak_fraction is not None:
-            core3 = data[iy - 1 : iy + 2, ix - 1 : ix + 2]
-            total = core3.sum()
-            keep[idx] = total > 0 and core3.max() <= max_peak_fraction * total
     logger.debug("After pixel cuts: %s", keep.sum())
 
     # With all gross undesirable detections removed,

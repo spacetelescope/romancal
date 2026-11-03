@@ -702,6 +702,7 @@ class _PSFCatalog:
         name_map["flux_fit"] = "psf_flux"
         name_map["flux_err"] = "psf_flux_err"
         name_map["reduced_chi2"] = "psf_gof"
+        name_map["cfit"] = "psf_cfit"
         name_map["flags"] = "psf_flags"
 
         return name_map

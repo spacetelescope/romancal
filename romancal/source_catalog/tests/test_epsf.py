@@ -82,6 +82,8 @@ def image_and_catalog():
             "psf_flags": np.zeros(len(cat), dtype=int),
             "is_extended": np.zeros(len(cat), dtype=bool),
             "segment_flux": cat["flux"],
+            # The hot pixel (last row) is badly fit by a PSF.
+            "psf_cfit": np.where(cat["label"] == 32, 2.0, 0.0),
         }
     )
     return model, catalog
@@ -118,7 +120,7 @@ def test_pick_stars_masks_wing_pixel(image_and_catalog):
         ({"reject_core_dq": None}, 27),
         ({"min_snr": None}, 29),
         ({"max_contamination": None}, 30),
-        ({"max_peak_fraction": None}, 32),
+        ({"max_psf_cfit": None}, 32),
     ],
 )
 def test_pick_stars_options(image_and_catalog, kwargs, label):
@@ -144,3 +146,10 @@ def test_background_noise(image_and_catalog):
     model.err = np.sqrt(model.var_poisson + 3.0)
     delattr(model, "var_rnoise")
     np.testing.assert_allclose(_epsf.background_noise(model), 2.0, rtol=1e-3)
+
+
+def test_pick_stars_without_psf_cfit(image_and_catalog):
+    """Catalogs without psf_cfit are not cut on it."""
+    model, catalog = image_and_catalog
+    catalog.remove_column("psf_cfit")
+    assert 32 in picked_labels(model, catalog)
