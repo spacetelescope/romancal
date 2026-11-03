@@ -81,7 +81,11 @@ def image_and_catalog():
             "psf_flux_err": cat["flux"] / snr,
             "psf_flags": np.zeros(len(cat), dtype=int),
             "is_extended": np.zeros(len(cat), dtype=bool),
-            "segment_flux": cat["flux"],
+            "kron_flux": cat["flux"],
+            # The blended pair sees each other's flux without masking.
+            "kron_nomask_flux": np.where(
+                np.isin(cat["label"], [30, 31]), 2 * cat["flux"], cat["flux"]
+            ),
             # The hot pixel (last row) is badly fit by a PSF.
             "psf_cfit": np.where(cat["label"] == 32, 2.0, 0.0),
         }
@@ -119,7 +123,7 @@ def test_pick_stars_masks_wing_pixel(image_and_catalog):
         ({"reject_saturated": False}, 26),
         ({"reject_core_dq": None}, 27),
         ({"min_snr": None}, 29),
-        ({"max_contamination": None}, 30),
+        ({"max_kron_contamination": None}, 30),
         ({"max_psf_cfit": None}, 32),
     ],
 )

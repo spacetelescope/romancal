@@ -28,7 +28,6 @@ from astropy.visualization import simple_norm
 from photutils.psf import EPSFBuilder, extract_stars
 from photutils.psf.flags import PSF_FLAGS
 from roman_datamodels.datamodels import EpsfRefModel
-from scipy.spatial import cKDTree
 
 from romancal.resample._utils import compute_var_sky
 from romancal.source_catalog._background import RomanBackground
@@ -150,7 +149,10 @@ def cli(argv=None):
     # `pick_star` arguments
     pick_star_parser = parser.add_argument_group("pick_star", "Star picking options.")
     pick_star_parser.add_argument(
-        "--stamp-size", type=int, default=9, help="Size of the extracted stars cutouts."
+        "--stamp-size",
+        type=int,
+        default=21,
+        help="Size of the extracted stars cutouts. Default: %(default)s",
     )
     pick_star_parser.add_argument(
         "--mask-dq",
@@ -196,17 +198,11 @@ def cli(argv=None):
         help="Minimum psf_flux / psf_flux_err. Default: %(default)s",
     )
     pick_star_parser.add_argument(
-        "--max-contamination",
+        "--max-kron-contamination",
         type=float,
-        default=0.05,
-        help="""Maximum summed neighbor flux within --contamination-radius,
-                relative to the star flux. Default: %(default)s""",
-    )
-    pick_star_parser.add_argument(
-        "--contamination-radius",
-        type=float,
-        default=6.5,
-        help="Radius in pixels for --max-contamination. Default: %(default)s",
+        default=0.5,
+        help="""Maximum kron_nomask_flux / kron_flux - 1, the fraction of
+                neighbor flux in the Kron aperture. Default: %(default)s""",
     )
     pick_star_parser.add_argument(
         "--max-psferr",
@@ -424,7 +420,7 @@ def make_epsf_reference(epsf, detector, optical_element, meta=None):
 def pick_stars(
     model,
     catalog,
-    stamp_size=9,
+    stamp_size=21,
     mask_dq=_DQ.DO_NOT_USE,
     reject_core_dq=_DQ.DO_NOT_USE,
     core_size=3,
@@ -432,8 +428,7 @@ def pick_stars(
     max_masked_fraction=0.2,
     max_psf_cfit=0.2,
     min_snr=50.0,
-    max_contamination=0.05,
-    contamination_radius=6.5,
+    max_kron_contamination=0.5,
     max_psferr=None,
     mask_extended=True,
     reject_psf_flags=REJECT_PSF_FLAGS,
@@ -480,15 +475,12 @@ def pick_stars(
     min_snr : float or None
         Minimum ``psf_flux / psf_flux_err``.
 
-    max_contamination : float or None
-        Maximum summed flux of catalog neighbors within
-        ``contamination_radius``, relative to the star's flux. Fluxes are
-        taken from ``segment_flux``.
-
-    contamination_radius : float
-        Radius in pixels used for ``max_contamination``. It does not
-        grow with ``stamp_size``; fainter neighbors in the wings of
-        larger stamps are removed by the sigma clipping in EPSFBuilder.
+    max_kron_contamination : float or None
+        Maximum ``kron_nomask_flux / kron_flux - 1``, the flux from
+        neighboring sources in the Kron aperture relative to the source's
+        own Kron flux. Fainter neighbors in the wings of larger stamps
+        are removed by the sigma clipping in EPSFBuilder. Not applied if
+        the catalog has no ``kron_nomask_flux`` column.
 
     max_psferr : float or None
         Maximum  sqrt(x_psf_err**2 + y_psf_err**2) allowed.
@@ -558,11 +550,14 @@ def pick_stars(
     if min_snr is not None:
         snr = _filled(catalog["psf_flux"]) / _filled(catalog["psf_flux_err"])
         cuts["snr"] = snr >= min_snr
-    if max_contamination is not None:
-        cuts["contamination"] = (
-            neighbor_contamination(catalog, x, y, contamination_radius)
-            <= max_contamination
-        )
+    if max_kron_contamination is not None:
+        if "kron_nomask_flux" in catalog.colnames:
+            kron_ratio = _filled(catalog["kron_nomask_flux"]) / _filled(
+                catalog["kron_flux"]
+            )
+            cuts["kron contamination"] = kron_ratio - 1 <= max_kron_contamination
+        else:
+            logger.info("Catalog has no kron_nomask_flux; not cutting on it.")
     keep = np.ones(len(catalog), dtype=bool)
     for name, cut in cuts.items():
         keep &= cut
@@ -632,43 +627,6 @@ def background_noise(model):
     var_sky = np.asarray(compute_var_sky(model), dtype=float)
     with np.errstate(invalid="ignore"):
         return np.where(var_sky > 0, np.sqrt(var_sky), np.nan)
-
-
-def neighbor_contamination(catalog, x, y, radius, flux_col="segment_flux"):
-    """Summed flux of catalog neighbors relative to each source's flux.
-
-    Parameters
-    ----------
-    catalog : astropy.table.Table
-        Source catalog.
-
-    x, y : np.ndarray
-        Source positions in pixels.
-
-    radius : float
-        Neighbors within this distance in pixels are counted.
-
-    flux_col : str
-        Catalog column with the flux of each source.
-
-    Returns
-    -------
-    contamination : np.ndarray
-        Sum of neighbor fluxes divided by the source flux. Sources with
-        non-positive or non-finite flux are assigned inf.
-    """
-    flux = _filled(catalog[flux_col])
-    good = np.isfinite(x) & np.isfinite(y)
-    pos = np.column_stack([x, y])
-    tree = cKDTree(pos[good])
-    gflux = np.clip(np.nan_to_num(flux[good]), 0, None)
-    contamination = np.full(len(catalog), np.inf)
-    gidx = np.flatnonzero(good)
-    neighbor_lists = tree.query_ball_point(pos[good], radius)
-    for k, (i, neighbors) in enumerate(zip(gidx, neighbor_lists, strict=True)):
-        if flux[i] > 0:
-            contamination[i] = (gflux[neighbors].sum() - gflux[k]) / flux[i]
-    return contamination
 
 
 def _filled(column, fill_value=np.nan):
