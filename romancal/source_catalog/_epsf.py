@@ -44,10 +44,6 @@ DEBUG_FULL = logging.DEBUG - 1
 LOGLEVELS = [logging.INFO, logging.DEBUG, DEBUG_FULL]
 _DQ = rdm.dqflags.pixel
 
-# DQ flags of pixels not to use in ePSF stamps. HOT pixels, which also
-# carry UNRELIABLE_SLOPE, show up in catalogs as sharp point sources.
-BAD_DQ = _DQ.DO_NOT_USE | _DQ.HOT | _DQ.UNRELIABLE_SLOPE
-
 # psf_flags bits that make a PSF fit unusable for picking ePSF stars.
 # N_PIXELS_FIT_PARTIAL is left out; masked pixels are handled by pick_stars.
 REJECT_PSF_FLAGS = (
@@ -159,13 +155,13 @@ def cli(argv=None):
     pick_star_parser.add_argument(
         "--mask-dq",
         type=int,
-        default=int(BAD_DQ),
+        default=int(_DQ.DO_NOT_USE),
         help="DQ flags of pixels to mask in the stamps. Default: %(default)s",
     )
     pick_star_parser.add_argument(
         "--reject-core-dq",
         type=int,
-        default=int(BAD_DQ),
+        default=int(_DQ.DO_NOT_USE),
         help="Reject stars with these DQ flags in their core. Default: %(default)s",
     )
     pick_star_parser.add_argument(
@@ -422,8 +418,8 @@ def pick_stars(
     model,
     catalog,
     stamp_size=9,
-    mask_dq=BAD_DQ,
-    reject_core_dq=BAD_DQ,
+    mask_dq=_DQ.DO_NOT_USE,
+    reject_core_dq=_DQ.DO_NOT_USE,
     core_size=3,
     reject_saturated=True,
     max_masked_fraction=0.2,
