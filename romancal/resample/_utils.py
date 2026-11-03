@@ -19,7 +19,7 @@ def compute_var_sky(model) -> None:
     """
 
     dnu = (model["dq"] & pixel.DO_NOT_USE) != 0
-    median_data = np.median(model["data"][~dnu])
+    median_data = np.nanmedian(model["data"][~dnu])
     ok_data = model["data"] != 0
 
     var_rnoise = compute_var_rnoise(model)
