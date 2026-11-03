@@ -198,9 +198,8 @@ def cli(argv=None):
     pick_star_parser.add_argument(
         "--contamination-radius",
         type=float,
-        default=None,
-        help="""Radius in pixels for --max-contamination. Default: half the
-                stamp diagonal plus one pixel.""",
+        default=6.5,
+        help="Radius in pixels for --max-contamination. Default: %(default)s",
     )
     pick_star_parser.add_argument(
         "--max-psferr",
@@ -426,7 +425,7 @@ def pick_stars(
     max_masked_fraction=0.2,
     min_snr=50.0,
     max_contamination=0.05,
-    contamination_radius=None,
+    contamination_radius=6.5,
     max_psferr=None,
     mask_extended=True,
     reject_psf_flags=REJECT_PSF_FLAGS,
@@ -472,9 +471,10 @@ def pick_stars(
         ``contamination_radius``, relative to the star's flux. Fluxes are
         taken from ``segment_flux``.
 
-    contamination_radius : float or None
-        Radius in pixels used for ``max_contamination``. If None, half
-        the stamp diagonal plus one pixel.
+    contamination_radius : float
+        Radius in pixels used for ``max_contamination``. It does not
+        grow with ``stamp_size``; fainter neighbors in the wings of
+        larger stamps are removed by the sigma clipping in EPSFBuilder.
 
     max_psferr : float or None
         Maximum  sqrt(x_psf_err**2 + y_psf_err**2) allowed.
@@ -540,8 +540,6 @@ def pick_stars(
         snr = _filled(catalog["psf_flux"]) / _filled(catalog["psf_flux_err"])
         cuts["snr"] = snr >= min_snr
     if max_contamination is not None:
-        if contamination_radius is None:
-            contamination_radius = hsize * np.sqrt(2) + 1
         cuts["contamination"] = (
             neighbor_contamination(catalog, x, y, contamination_radius)
             <= max_contamination
