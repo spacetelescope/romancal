@@ -107,10 +107,7 @@ def calc_wcs(t_pars: tlib.TransformParameters):
 
     app_v2v3_frame, _, _, _ = build_v2v3_skyoffset_frame(v1_app, v3_app)
 
-    # 2. TRUE (UN-ABERRATED) SKY POSITIONS
-    # Aberration is not a rigid rotation, so each V2/V3 point of interest is
-    # projected through the apparent frame and un-aberrated individually.
-    # Roll angles come from a short step along +V3 at each point.
+    # 2. TRUE (ABERRATION CORRECTED) SKY POSITIONS
     true_ra_v1, true_dec_v1, true_pa_v3, _ = true_point_and_roll(
         0.0, 0.0, app_v2v3_frame, t_pars.velocity
     )
