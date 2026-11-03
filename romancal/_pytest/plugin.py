@@ -37,10 +37,6 @@ def pytest_addoption(parser):
     )
 
 
-def pytest_configure(config):
-    config.getini("markers").append("bigdata: Run tests that require intranet access")
-
-
 def pytest_runtest_setup(item):
     if "bigdata" in item.keywords and not item.config.getvalue("bigdata"):
         pytest.skip("need --bigdata option to run")
