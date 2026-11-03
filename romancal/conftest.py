@@ -69,7 +69,7 @@ def function_jail(tmp_path) -> Generator[Path, None, None]:
 def module_jail(request, tmp_path_factory):
     """Run test in a pristine temporary working directory, scoped to module.
 
-    This fixture is the same as _jail in ci_watson, but scoped to module
+    This fixture is the same as function_jail, but scoped to module
     instead of function.  This allows a fixture using it to produce files in a
     temporary directory, and then have the tests access them.
     """

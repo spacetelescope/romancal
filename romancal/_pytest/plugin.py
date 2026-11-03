@@ -3,8 +3,6 @@ These are automatically available when ``ci_watson`` is used as a
 pytest plugin.
 """
 
-import os
-
 import pytest
 
 from romancal._pytest.resource_tracker import ResourceTracker
@@ -46,17 +44,6 @@ def pytest_configure(config):
 def pytest_runtest_setup(item):
     if "bigdata" in item.keywords and not item.config.getvalue("bigdata"):
         pytest.skip("need --bigdata option to run")
-
-
-@pytest.fixture(scope="function")
-def _jail(tmp_path):
-    """Perform test in a pristine temporary working directory."""
-    old_dir = os.getcwd()
-    os.chdir(tmp_path)
-    try:
-        yield str(tmp_path)
-    finally:
-        os.chdir(old_dir)
 
 
 @pytest.fixture(scope="module")
