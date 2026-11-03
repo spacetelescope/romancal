@@ -20,19 +20,21 @@ import warnings
 import matplotlib.pyplot as plt
 import numpy as np
 import roman_datamodels as rdm
-from astropy.nddata import NDData
+from astropy.nddata import NDData, StdDevUncertainty
 from astropy.stats import sigma_clipped_stats
 from astropy.table import Table
 from astropy.time import Time
 from astropy.visualization import simple_norm
 from photutils.psf import EPSFBuilder, EPSFStars, extract_stars
 from roman_datamodels.datamodels import EpsfRefModel
+from scipy.spatial import cKDTree
 
 # Setup logging
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 DEBUG_FULL = logging.DEBUG - 1
 LOGLEVELS = [logging.INFO, logging.DEBUG, DEBUG_FULL]
+_DQ = rdm.dqflags.pixel
 
 
 def build_epsf(stars, max_psferr=None, **kwargs_epsfbuilder):
@@ -127,31 +129,54 @@ def cli(argv=None):
         "--stamp-size", type=int, default=9, help="Size of the extracted stars cutouts."
     )
     pick_star_parser.add_argument(
-        "--allow-nans",
-        action="store_false",
-        dest="mask_nans",
-        help="Allows stars with NaNs",
-    )
-    pick_star_parser.add_argument(
         "--mask-dq",
         type=int,
-        default=(rdm.dqflags.pixel.DO_NOT_USE + rdm.dqflags.pixel.SATURATED),
-        help="Pixel data quality flags used to mask questionable pixels from the data. Default: %(default)s",
+        default=int(_DQ.DO_NOT_USE),
+        help="DQ flags of pixels to mask in the stamps. Default: %(default)s",
     )
     pick_star_parser.add_argument(
-        "--min-flux",
+        "--reject-core-dq",
+        type=int,
+        default=int(_DQ.DO_NOT_USE),
+        help="Reject stars with these DQ flags in their core. Default: %(default)s",
+    )
+    pick_star_parser.add_argument(
+        "--core-size",
+        type=int,
+        default=3,
+        help="Size of the core used by --reject-core-dq. Default: %(default)s",
+    )
+    pick_star_parser.add_argument(
+        "--allow-saturated",
+        action="store_false",
+        dest="reject_saturated",
+        help="Keep stars with saturated pixels in their stamps.",
+    )
+    pick_star_parser.add_argument(
+        "--max-masked-fraction",
+        type=float,
+        default=0.2,
+        help="Maximum masked fraction of a stamp. Default: %(default)s",
+    )
+    pick_star_parser.add_argument(
+        "--min-snr",
+        type=float,
+        default=50.0,
+        help="Minimum psf_flux / psf_flux_err. Default: %(default)s",
+    )
+    pick_star_parser.add_argument(
+        "--max-contamination",
+        type=float,
+        default=0.05,
+        help="""Maximum summed neighbor flux within --contamination-radius,
+                relative to the star flux. Default: %(default)s""",
+    )
+    pick_star_parser.add_argument(
+        "--contamination-radius",
         type=float,
         default=None,
-        help="""Minimum flux to consider.
-                                  Flux is determined by the `photoutils.psf.extract_stars` function. Default: %(default)s""",
-    )
-    pick_star_parser.add_argument(
-        "--min-stdev",
-        type=float,
-        default=0.3,
-        help="""Minimum standard deviation with a stamp to be valid.
-                                  The stats are calculated using sigma-clipped determination over each object's stamp.
-                                  Default: %(default)s""",
+        help="""Radius in pixels for --max-contamination. Default: half the
+                stamp diagonal plus one pixel.""",
     )
     pick_star_parser.add_argument(
         "--max-psferr",
@@ -172,7 +197,7 @@ def cli(argv=None):
         "--allow-failed-psffit",
         action="store_false",
         dest="mask_failed_psffit",
-        help="""Removed objects that have a bad PSF fit. Indicated by the x/y_psf_err being 0.""",
+        help="""Keep objects with nonzero psf_flags.""",
     )
 
     # `build_epsf` arguments
@@ -363,10 +388,14 @@ def pick_stars(
     model,
     catalog,
     stamp_size=9,
-    mask_nans=True,
-    mask_dq=(rdm.dqflags.pixel.DO_NOT_USE + rdm.dqflags.pixel.SATURATED),
-    min_flux=500.0,
-    min_stdev=None,
+    mask_dq=_DQ.DO_NOT_USE,
+    reject_core_dq=_DQ.DO_NOT_USE,
+    core_size=3,
+    reject_saturated=True,
+    max_masked_fraction=0.2,
+    min_snr=50.0,
+    max_contamination=0.05,
+    contamination_radius=None,
     max_psferr=None,
     mask_extended=True,
     mask_failed_psffit=True,
@@ -384,29 +413,47 @@ def pick_stars(
     stamp_size : int
         Size of the extracted stars cutouts.
 
-    mask_nans : bool
-        Remove stars that have NaNs.
-
     mask_dq : int or None
-        Pixel data quality flags used to mask questionable pixels from the data.
+        Pixels with any of these DQ flags are masked (not used) in the
+        stamps. Non-finite pixels are always masked.
 
-    min_flux : float or None
-        Minimum flux to consider. Flux is determined by the `photoutils.psf.extract_stars` function.
+    reject_core_dq : int or None
+        Stars with any of these DQ flags in the central
+        ``core_size`` x ``core_size`` pixels are rejected.
 
-    min_stdev : float or None
-        Minimum standard deviation with a stamp to be valid.
-        The stats are calculated using sigma-clipped determination over each object's stamp.
+    core_size : int
+        Size of the core region used by ``reject_core_dq``.
+
+    reject_saturated : bool
+        Reject stars with any SATURATED pixel in their stamp. Saturated
+        pixels are measured from early resultants only and so see
+        different jitter than unsaturated pixels.
+
+    max_masked_fraction : float or None
+        Reject stars with more than this fraction of their stamp masked.
+
+    min_snr : float or None
+        Minimum ``psf_flux / psf_flux_err``.
+
+    max_contamination : float or None
+        Maximum summed flux of catalog neighbors within
+        ``contamination_radius``, relative to the star's flux. Fluxes are
+        taken from ``segment_flux``.
+
+    contamination_radius : float or None
+        Radius in pixels used for ``max_contamination``. If None, half
+        the stamp diagonal plus one pixel.
 
     max_psferr : float or None
         Maximum  sqrt(x_psf_err**2 + y_psf_err**2) allowed.
         If None, sigma-clipped stats to remove anything larger than
-        two times the deviation of the psf errors for all objects.
+        the median plus two times the deviation of the psf errors.
 
     mask_extended : bool
         Remove extended sources.
 
     mask_failed_psffit : bool
-        Removed objects that have a bad PSF fit. Indicated by the x/y_psf_err being 0.
+        Remove objects with nonzero ``psf_flags``.
 
     Returns
     -------
@@ -414,106 +461,139 @@ def pick_stars(
         The stars to use for ePSF determination.
 
     max_psferr : float
-        Two * deviation of the individual stars' psf error estimates, determined using sigma-clipped statistics.
+        The maximum psf error used.
     """
     logger.info("Picking stars from catalog of %s objects.", len(catalog))
 
-    # Massage the data
-    mean_val, median_val, std_val = sigma_clipped_stats(model.data, sigma=2.0)
-    data = model.data - median_val
-
-    # Create simplified table
-    hsize = (stamp_size - 1) / 2
-    x = catalog["x_centroid"]
-    y = catalog["y_centroid"]
-    is_extended = catalog["is_extended"]
-    label = catalog["label"]
-    psf_err = np.sqrt(catalog["x_psf_err"] ** 2 + catalog["y_psf_err"] ** 2)
-    mask = (
-        (x > hsize)
-        & (x < (data.shape[1] - 1 - hsize))
-        & (y > hsize)
-        & (y < (data.shape[0] - 1 - hsize))
-    )
-    if mask_extended:
-        mask = [m & (not ie) for m, ie in zip(mask, is_extended, strict=True)]
-    if mask_failed_psffit:
-        mask = [m & (psferr != 0.0) for m, psferr in zip(mask, psf_err, strict=True)]
-
-    stars_tbl = Table()
-    stars_tbl["x"] = x[mask]
-    stars_tbl["y"] = y[mask]
-    stars_tbl["label"] = label[mask]
-    stars_tbl["psf_err"] = psf_err[mask]
-
-    # Extract stars
-    stars = extract_stars(NDData(data), stars_tbl, size=stamp_size)
-    for star, label, psf_err in zip(
-        stars, stars_tbl["label"], stars_tbl["psf_err"], strict=True
-    ):
-        star.label = label
-        star.psf_err = psf_err
-        star.stats = sigma_clipped_stats(star.data, sigma=2.0)
-
-    # Throw out stars with bad values
-    if mask_nans:
-        ignore_mask = [np.any(np.isnan(star)) for star in stars]
-    else:
-        ignore_mask = [False] * len(stars)
-
-    # Throw out stars with bad dq flags
+    # Global background; data in the masked pixels are never used.
+    dq = np.asarray(model.dq)
+    err = np.asarray(model.err, dtype=float)
+    data = np.asarray(model.data, dtype=float)
+    pixmask = ~np.isfinite(data) | ~np.isfinite(err) | (err <= 0)
     if mask_dq is not None:
+        pixmask |= (dq & mask_dq) > 0
+    _, median_val, _ = sigma_clipped_stats(data[~pixmask], sigma=2.0)
+    data = np.where(pixmask, 0.0, data - median_val)
+    err = np.where(pixmask, 1.0, err)
 
-        def dq_mask(dq, star, mask_dq):
-            bb = star.bbox
-            dq = dq[bb.iymin : bb.iymax, bb.ixmin : bb.ixmax]
-            mask = (dq & mask_dq).any()
-            return mask
+    # Catalog level cuts
+    x = _filled(catalog["x_psf"])
+    y = _filled(catalog["y_psf"])
+    use_centroid = ~np.isfinite(x) | ~np.isfinite(y)
+    x[use_centroid] = _filled(catalog["x_centroid"])[use_centroid]
+    y[use_centroid] = _filled(catalog["y_centroid"])[use_centroid]
+    psf_err = np.hypot(_filled(catalog["x_psf_err"]), _filled(catalog["y_psf_err"]))
+    hsize = (stamp_size - 1) / 2
+    ny, nx = data.shape
+    cuts = {
+        "in image": (
+            (x > hsize) & (x < nx - 1 - hsize) & (y > hsize) & (y < ny - 1 - hsize)
+        ),
+    }
+    if mask_failed_psffit:
+        cuts["psf fit"] = (_filled(catalog["psf_flags"], 1) == 0) & np.isfinite(
+            psf_err
+        )
+    if mask_extended:
+        cuts["point source"] = ~_filled(catalog["is_extended"], True).astype(bool)
+    if min_snr is not None:
+        snr = _filled(catalog["psf_flux"]) / _filled(catalog["psf_flux_err"])
+        cuts["snr"] = snr >= min_snr
+    if max_contamination is not None:
+        if contamination_radius is None:
+            contamination_radius = hsize * np.sqrt(2) + 1
+        cuts["contamination"] = (
+            neighbor_contamination(catalog, x, y, contamination_radius)
+            <= max_contamination
+        )
+    keep = np.ones(len(catalog), dtype=bool)
+    for name, cut in cuts.items():
+        keep &= cut
+        logger.debug("After %s cut: %s", name, keep.sum())
 
-        ignore_mask = [
-            mask or dq_mask(model.dq, star, mask_dq)
-            for mask, star in zip(ignore_mask, stars, strict=True)
-        ]
-
-    # Only bright
-    if min_flux is not None:
-        ignore_mask = [
-            mask or star.estimate_flux() < min_flux
-            for mask, star in zip(ignore_mask, stars, strict=True)
-        ]
-
-    # Only significant detections
-    if min_stdev is not None:
-        ignore_mask = [
-            mask or star.stats[2] < min_stdev
-            for mask, star in zip(ignore_mask, stars, strict=True)
-        ]
+    # Pixel level cuts
+    sat_flag = _DQ.SATURATED
+    hcore = core_size // 2
+    for idx in np.flatnonzero(keep):
+        ix, iy = int(round(x[idx])), int(round(y[idx]))
+        h = int(hsize)
+        stamp = (slice(iy - h, iy + h + 1), slice(ix - h, ix + h + 1))
+        core = (slice(iy - hcore, iy + hcore + 1), slice(ix - hcore, ix + hcore + 1))
+        if pixmask[core].all():
+            keep[idx] = False
+        elif reject_core_dq is not None and (dq[core] & reject_core_dq).any():
+            keep[idx] = False
+        elif reject_saturated and (dq[stamp] & sat_flag).any():
+            keep[idx] = False
+        elif max_masked_fraction is not None and (
+            pixmask[stamp].mean() > max_masked_fraction
+        ):
+            keep[idx] = False
+    logger.debug("After pixel cuts: %s", keep.sum())
 
     # With all gross undesirable detections removed,
     # make a final sweep using the psf error.
     if max_psferr is None:
-        all_psf_errs = [
-            star.psf_err
-            for mask, star in zip(ignore_mask, stars, strict=True)
-            if not mask
-        ]
-        _, median, stddev = sigma_clipped_stats(all_psf_errs)
+        _, median, stddev = sigma_clipped_stats(psf_err[keep])
         max_psferr = median + (2 * stddev)
-    ignore_mask = [
-        mask or star.psf_err > max_psferr
-        for mask, star in zip(ignore_mask, stars, strict=True)
-    ]
+    keep &= psf_err <= max_psferr
 
-    # Filter the stars based on the ignore mask
-    stars = EPSFStars(
-        [star for mask, star in zip(ignore_mask, stars, strict=True) if not mask]
-    )
+    # Extract stars
+    stars_tbl = Table()
+    stars_tbl["x"] = x[keep]
+    stars_tbl["y"] = y[keep]
+    stars_tbl["id"] = np.asarray(catalog["label"])[keep]
+    nddata = NDData(data, mask=pixmask, uncertainty=StdDevUncertainty(err))
+    stars = extract_stars(nddata, stars_tbl, size=stamp_size)
 
     # That's all folks
     logger.info(
         "Found %s valid stars with maximum PSF error of %s", len(stars), max_psferr
     )
     return stars, max_psferr
+
+
+def neighbor_contamination(catalog, x, y, radius, flux_col="segment_flux"):
+    """Summed flux of catalog neighbors relative to each source's flux.
+
+    Parameters
+    ----------
+    catalog : astropy.table.Table
+        Source catalog.
+
+    x, y : np.ndarray
+        Source positions in pixels.
+
+    radius : float
+        Neighbors within this distance in pixels are counted.
+
+    flux_col : str
+        Catalog column with the flux of each source.
+
+    Returns
+    -------
+    contamination : np.ndarray
+        Sum of neighbor fluxes divided by the source flux. Sources with
+        non-positive or non-finite flux are assigned inf.
+    """
+    flux = _filled(catalog[flux_col])
+    good = np.isfinite(x) & np.isfinite(y)
+    pos = np.column_stack([x, y])
+    tree = cKDTree(pos[good])
+    gflux = np.clip(np.nan_to_num(flux[good]), 0, None)
+    contamination = np.full(len(catalog), np.inf)
+    gidx = np.flatnonzero(good)
+    neighbor_lists = tree.query_ball_point(pos[good], radius)
+    for k, (i, neighbors) in enumerate(zip(gidx, neighbor_lists, strict=True)):
+        if flux[i] > 0:
+            contamination[i] = (gflux[neighbors].sum() - gflux[k]) / flux[i]
+    return contamination
+
+
+def _filled(column, fill_value=np.nan):
+    """Return a catalog column as a plain array, filling masked values."""
+    values = np.ma.filled(np.ma.asarray(column), fill_value)
+    return np.asarray(getattr(values, "value", values), dtype=float)
 
 
 def plot_epsfstar(star, ax=plt, title=None, finalize=False, **kwargs_simple_norm):
