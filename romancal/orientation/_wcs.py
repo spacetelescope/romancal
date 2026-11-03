@@ -3,11 +3,11 @@
 import logging
 
 import asdf
-from astropy.coordinates import SkyCoord, SkyOffsetFrame
-from astropy.time import Time
-from astropy import units as u
 import numpy as np
 import roman_datamodels as rdm
+from astropy import units as u
+from astropy.coordinates import SkyCoord, SkyOffsetFrame
+from astropy.time import Time
 from scipy.spatial.transform import Rotation as R
 
 from . import _lib as olib
@@ -42,6 +42,7 @@ def apply_vector_velocity_aberration(u_vec, v_xyz_kms):
 
     scale_factor = 1.0 + beta_dot_u
     return u_app, float(scale_factor)
+
 
 def build_v2v3_skyoffset_frame(v1_vec, v3_vec):
     """
@@ -131,7 +132,9 @@ def calc_wcs(t_pars: tlib.TransformParameters):
 
     # Velocity Aberration Scale Factor using True Target SkyCoord (forward velocity)
     u_tgt_true = tgt_true_coord.cartesian.xyz.value
-    _, global_scale_factor = apply_vector_velocity_aberration(u_tgt_true, t_pars.velocity)
+    _, global_scale_factor = apply_vector_velocity_aberration(
+        u_tgt_true, t_pars.velocity
+    )
 
     # Apparent Reference Coordinates at Target
     tgt_app_coord = SkyCoord(

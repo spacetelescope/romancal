@@ -28,10 +28,12 @@ def test_from_models_mast(tmp_path):
     )
 
     try:
-        v1_table = v1c.v1_calculate_from_models([model],
-                                                bam_ref=DATA_PATH / 'roman_wfi_bam_0007.asdf',
-                                                distortion_ref=DATA_PATH / 'roman_wfi_distortion_0078.asdf',
-                                                reduce_func=plib.all_pointings)
+        v1_table = v1c.v1_calculate_from_models(
+            [model],
+            bam_ref=DATA_PATH / "roman_wfi_bam_0007.asdf",
+            distortion_ref=DATA_PATH / "roman_wfi_distortion_0078.asdf",
+            reduce_func=plib.all_pointings,
+        )
     except ValueError as exception:
         pytest.skip(
             f"MAST engineering database not available, possibly no token specified: {exception}"
@@ -51,10 +53,13 @@ def test_from_models_mast(tmp_path):
 def test_over_time_mast(tmp_path):
     """Test v1_calculate_over_time for basic running"""
     try:
-        v1_table = v1c.v1_calculate_over_time(tstp.STARTTIME, tstp.ENDTIME,
-                                              bam_ref=DATA_PATH / 'roman_wfi_bam_0007.asdf',
-                                              distortion_ref=DATA_PATH / 'roman_wfi_distortion_0078.asdf',
-                                              reduce_func=plib.all_pointings)
+        v1_table = v1c.v1_calculate_over_time(
+            tstp.STARTTIME,
+            tstp.ENDTIME,
+            bam_ref=DATA_PATH / "roman_wfi_bam_0007.asdf",
+            distortion_ref=DATA_PATH / "roman_wfi_distortion_0078.asdf",
+            reduce_func=plib.all_pointings,
+        )
     except ValueError as exception:
         pytest.skip(
             f"MAST engineering database not available, possibly no token specified: {exception}"

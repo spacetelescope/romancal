@@ -5,9 +5,9 @@ Test suite for engdb_tools
 import logging
 import os
 
+import numpy as np
 import pytest
 from astropy.time import Time
-import numpy as np
 
 from romancal.lib.engdb import engdb_tools
 

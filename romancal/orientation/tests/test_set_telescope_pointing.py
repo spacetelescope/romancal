@@ -2,7 +2,6 @@
 Test suite for set_telescope_pointing
 """
 
-import dataclasses
 import logging
 from pathlib import Path
 
@@ -43,13 +42,20 @@ TARG_DEC = 66.0
 # in the truth file `data/transforms.asdf` and the resulting WCS results in `data/wcs.asdf`
 TRANSFORM_KWARGS = {
     "aperture": "WFI01_FULL",
-    'bam_ref': DATA_PATH / 'roman_wfi_bam_0007.asdf',
-    'distortion_ref': DATA_PATH / 'roman_wfi_distortion_0078.asdf',
+    "bam_ref": DATA_PATH / "roman_wfi_bam_0007.asdf",
+    "distortion_ref": DATA_PATH / "roman_wfi_distortion_0078.asdf",
     "pointing": plib.Pointing(
         obstime=Time(1790057901.121, format="unix"),
-        q=np.array([-0.7118218303725413, -0.1163575361747678, 0.6786490188532825, 0.13858612769623332]),
+        q=np.array(
+            [
+                -0.7118218303725413,
+                -0.1163575361747678,
+                0.6786490188532825,
+                0.13858612769623332,
+            ]
+        ),
     ),
-    'target_aperture': 'WFI_CEN',
+    "target_aperture": "WFI_CEN",
     "velocity": (0.35121860071119626, 27.235876615565928, 11.79987217049065),
 }
 
@@ -142,8 +148,7 @@ def test_get_mnemonics():
 
 @pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")
 def test_get_pointing():
-    """Ensure that the averaging works.
-    """
+    """Ensure that the averaging works."""
     try:
         pointing = plib.get_pointing(STARTTIME, ENDTIME)
     except ValueError as exception:
@@ -151,7 +156,7 @@ def test_get_pointing():
 
     assert np.isclose(pointing.obstime.value, 1790057935.6530108)
     assert np.allclose(
-        pointing.q, np.array([-0.71182183, -0.11635754,  0.67864902,  0.13858613])
+        pointing.q, np.array([-0.71182183, -0.11635754, 0.67864902, 0.13858613])
     )
 
 
@@ -175,7 +180,7 @@ def test_get_pointing_list():
     assert len(results) > 0
     assert np.isclose(
         results[0].q,
-        np.array([-0.71182157, -0.11635775,  0.67864924,  0.13858621]),
+        np.array([-0.71182157, -0.11635775, 0.67864924, 0.13858621]),
         rtol=1.0e-2,
     ).all()
     assert STARTTIME <= results[0].obstime <= ENDTIME
@@ -234,7 +239,7 @@ def test_wcs(calc_wcs):
     """
     wcs_meta, t_pars = calc_wcs
     with asdf.open(DATA_PATH / "wcs.asdf") as af:
-        expected = af.tree['wcs_meta']
+        expected = af.tree["wcs_meta"]
 
     wcs_meta_flat = _flatten_dict(wcs_meta)
     expected_flat = _flatten_dict(expected)
@@ -259,25 +264,44 @@ def test_strict_pointing(science_raw_model, tmp_path):
 @pytest.mark.parametrize(
     "attr, expected",
     [
-        ('meta.pointing.pa_aperture', 37.254360755726026),
-        ('meta.pointing.pointing_engineering_source', 'CALCULATED'),
-        ('meta.pointing.ra_v1', 81.6686302053683),
-        ('meta.pointing.dec_v1', -69.0573058072646),
-        ('meta.pointing.pa_v3', 96.50516177723279),
-        ('meta.pointing.target_aperture', 'WFI_CEN'),
-        ('meta.pointing.target_ra', 80.71792831161615),
-        ('meta.pointing.target_dec', -69.48825559984326),
-        ('meta.pointing.quaternion', [-0.7118218303725413, -0.1163575361747678, 0.6786490188532825, 0.13858612769623332]),
-        ('meta.pointing.bam_quaternion', [-0.18541749359303772, 0.6841636922799866, -0.17893482160935997, 0.6822922576514541]),
-        ('meta.wcsinfo.aperture_name', 'WFI01_FULL'),
-        ('meta.wcsinfo.v2_ref', 1454.084),
-        ('meta.wcsinfo.v3_ref', -1163.304),
-        ('meta.wcsinfo.vparity', -1),
-        ('meta.wcsinfo.v3yangle', -59.99960999999999),
-        ('meta.wcsinfo.ra_ref', 80.62509480141252),
-        ('meta.wcsinfo.dec_ref', -69.41888112525045),
-        ('meta.wcsinfo.roll_ref', 97.48207857439513),
-        ('meta.wcsinfo.s_region', 'POLYGON ICRS 80.660542428 -69.505413811 80.379206263 -69.428991757 80.590285491 -69.331370896 80.872760513 -69.407782240'),
+        ("meta.pointing.pa_aperture", 37.254360755726026),
+        ("meta.pointing.pointing_engineering_source", "CALCULATED"),
+        ("meta.pointing.ra_v1", 81.6686302053683),
+        ("meta.pointing.dec_v1", -69.0573058072646),
+        ("meta.pointing.pa_v3", 96.50516177723279),
+        ("meta.pointing.target_aperture", "WFI_CEN"),
+        ("meta.pointing.target_ra", 80.71792831161615),
+        ("meta.pointing.target_dec", -69.48825559984326),
+        (
+            "meta.pointing.quaternion",
+            [
+                -0.7118218303725413,
+                -0.1163575361747678,
+                0.6786490188532825,
+                0.13858612769623332,
+            ],
+        ),
+        (
+            "meta.pointing.bam_quaternion",
+            [
+                -0.18541749359303772,
+                0.6841636922799866,
+                -0.17893482160935997,
+                0.6822922576514541,
+            ],
+        ),
+        ("meta.wcsinfo.aperture_name", "WFI01_FULL"),
+        ("meta.wcsinfo.v2_ref", 1454.084),
+        ("meta.wcsinfo.v3_ref", -1163.304),
+        ("meta.wcsinfo.vparity", -1),
+        ("meta.wcsinfo.v3yangle", -59.99960999999999),
+        ("meta.wcsinfo.ra_ref", 80.62509480141252),
+        ("meta.wcsinfo.dec_ref", -69.41888112525045),
+        ("meta.wcsinfo.roll_ref", 97.48207857439513),
+        (
+            "meta.wcsinfo.s_region",
+            "POLYGON ICRS 80.660542428 -69.505413811 80.379206263 -69.428991757 80.590285491 -69.331370896 80.872760513 -69.407782240",
+        ),
     ],
 )
 def test_update_meta(attr, expected, updated_model):
@@ -309,9 +333,7 @@ def calc_wcs(tmp_path_factory):
 
     # Save all for later examination.
     wcs_meta_path = tmp_path_factory.mktemp("transforms")
-    wcs_asdf_file = asdf.AsdfFile(
-        {'wcs_meta': wcs_meta}
-    )
+    wcs_asdf_file = asdf.AsdfFile({"wcs_meta": wcs_meta})
     wcs_asdf_file.write_to(wcs_meta_path / "wcs.asdf")
 
     return wcs_meta, t_pars

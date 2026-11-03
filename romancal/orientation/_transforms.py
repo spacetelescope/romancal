@@ -6,7 +6,6 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-
 from . import _lib as olib
 from . import _pointing as plib
 
@@ -21,6 +20,7 @@ LOGLEVELS = [logging.INFO, logging.DEBUG, olib.DEBUG_FULL]
 @dataclasses.dataclass
 class TransformParameters:
     """Parameters required for the calculations."""
+
     #: If telemetry cannot be determined, use existing information in the observation's header.
     allow_default: bool = False
     #: Detector aperture
