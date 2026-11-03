@@ -188,7 +188,7 @@ def generate_upload_schema(pattern, target, recursive=False):
     return {"files": files}
 
 
-def _rtdata_fixture_implementation(artifactory_repos, envopt, request):
+def _rtdata_fixture_implementation(artifactory_repos, request):
     """Provides the RemoteResource class"""
     # TODO envopt comes from ci_watson
     # inputs_root, results_root are in both ci_watson and here
@@ -197,19 +197,19 @@ def _rtdata_fixture_implementation(artifactory_repos, envopt, request):
     # first be registered (in ci_watson) using pytest.addoption parser.addini (env
     # is also registered, as is bigdata)
     inputs_root, results_root = artifactory_repos
-    rtdata = RegtestData(envopt, inputs_root, results_root)
+    rtdata = RegtestData(request.config.getoption("env"), inputs_root, results_root)
 
     yield rtdata
 
 
 @pytest.fixture(scope="function")
-def rtdata(artifactory_repos, envopt, request, function_jail):
-    yield from _rtdata_fixture_implementation(artifactory_repos, envopt, request)
+def rtdata(artifactory_repos, request, function_jail):
+    yield from _rtdata_fixture_implementation(artifactory_repos, request)
 
 
 @pytest.fixture(scope="module")
-def rtdata_module(artifactory_repos, envopt, request, module_jail):
-    yield from _rtdata_fixture_implementation(artifactory_repos, envopt, request)
+def rtdata_module(artifactory_repos, request, module_jail):
+    yield from _rtdata_fixture_implementation(artifactory_repos, request)
 
 
 @pytest.fixture

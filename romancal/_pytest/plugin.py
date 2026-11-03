@@ -61,12 +61,6 @@ def _jail(tmp_path):
         os.chdir(old_dir)
 
 
-@pytest.fixture(scope="session")
-def envopt(request):
-    """Get the ``--env`` command-line option specifying test environment"""
-    return request.config.getoption("env")
-
-
 @pytest.fixture(scope="module")
 def resource_tracker():
     """Fixture to return the current module-scoped ResourceTracker.
