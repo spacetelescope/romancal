@@ -1,5 +1,4 @@
 import os
-import pprint
 import shutil
 import sys
 import time
@@ -7,15 +6,6 @@ from contextlib import chdir
 from pathlib import Path
 
 import asdf
-import astropy.table
-import astropy.time
-import deepdiff
-import gwcs
-import numpy as np
-import roman_datamodels as rdm
-from astropy.units import Quantity
-from deepdiff.operator import BaseOperator
-from gwcs.wcstools import grid_from_bounding_box
 
 from romancal.associations._load_asn import load_asn
 from romancal.regtest._differ import Diff, DiffSettings
