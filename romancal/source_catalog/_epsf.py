@@ -26,6 +26,7 @@ from astropy.table import Table
 from astropy.time import Time
 from astropy.visualization import simple_norm
 from photutils.psf import EPSFBuilder, EPSFStars, extract_stars
+from photutils.psf.flags import PSF_FLAGS
 from roman_datamodels.datamodels import EpsfRefModel
 from scipy.spatial import cKDTree
 
@@ -35,6 +36,22 @@ logger.addHandler(logging.NullHandler())
 DEBUG_FULL = logging.DEBUG - 1
 LOGLEVELS = [logging.INFO, logging.DEBUG, DEBUG_FULL]
 _DQ = rdm.dqflags.pixel
+
+# psf_flags bits that make a PSF fit unusable for picking ePSF stars.
+# N_PIXELS_FIT_PARTIAL is left out; masked pixels are handled by pick_stars.
+REJECT_PSF_FLAGS = (
+    PSF_FLAGS.POSITION_OUTSIDE_IMAGE
+    | PSF_FLAGS.NON_POSITIVE_FLUX
+    | PSF_FLAGS.NO_CONVERGENCE
+    | PSF_FLAGS.NO_COVARIANCE
+    | PSF_FLAGS.PARAMETER_NEAR_BOUND
+    | PSF_FLAGS.NO_OVERLAP
+    | PSF_FLAGS.FULLY_MASKED
+    | PSF_FLAGS.TOO_FEW_PIXELS
+    | PSF_FLAGS.NON_FINITE_POSITION
+    | PSF_FLAGS.NON_FINITE_FLUX
+    | PSF_FLAGS.POSITION_OUTSIDE_FIT_REGION
+)
 
 
 def build_epsf(stars, max_psferr=None, **kwargs_epsfbuilder):
@@ -194,10 +211,10 @@ def cli(argv=None):
         help="""Allow extended sources.""",
     )
     pick_star_parser.add_argument(
-        "--allow-failed-psffit",
-        action="store_false",
-        dest="mask_failed_psffit",
-        help="""Keep objects with nonzero psf_flags.""",
+        "--reject-psf-flags",
+        type=int,
+        default=int(REJECT_PSF_FLAGS),
+        help="Reject objects with these psf_flags bits set. Default: %(default)s",
     )
 
     # `build_epsf` arguments
@@ -398,7 +415,7 @@ def pick_stars(
     contamination_radius=None,
     max_psferr=None,
     mask_extended=True,
-    mask_failed_psffit=True,
+    reject_psf_flags=REJECT_PSF_FLAGS,
 ):
     """Pick stars out of an image based on various criteria.
 
@@ -452,8 +469,9 @@ def pick_stars(
     mask_extended : bool
         Remove extended sources.
 
-    mask_failed_psffit : bool
-        Remove objects with nonzero ``psf_flags``.
+    reject_psf_flags : int or None
+        Reject objects with any of these ``psf_flags`` bits set, or with
+        non-finite PSF position errors.
 
     Returns
     -------
@@ -490,8 +508,9 @@ def pick_stars(
             (x > hsize) & (x < nx - 1 - hsize) & (y > hsize) & (y < ny - 1 - hsize)
         ),
     }
-    if mask_failed_psffit:
-        cuts["psf fit"] = (_filled(catalog["psf_flags"], 1) == 0) & np.isfinite(
+    if reject_psf_flags is not None:
+        psf_flags = np.ma.filled(np.ma.asarray(catalog["psf_flags"]), reject_psf_flags)
+        cuts["psf fit"] = ((psf_flags & reject_psf_flags) == 0) & np.isfinite(
             psf_err
         )
     if mask_extended:
