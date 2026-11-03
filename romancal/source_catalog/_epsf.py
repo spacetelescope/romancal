@@ -660,7 +660,7 @@ def _filled(column, fill_value=np.nan):
     return np.asarray(getattr(values, "value", values), dtype=float)
 
 
-def plot_epsfstar(star, ax=plt, title=None, finalize=False, **kwargs_simple_norm):
+def plot_epsfstar(star, ax=None, title=None, finalize=False, **kwargs_simple_norm):
     """Plot EPSFStar.
 
     Parameters
@@ -668,8 +668,8 @@ def plot_epsfstar(star, ax=plt, title=None, finalize=False, **kwargs_simple_norm
     star : EPSFStar or other array-like object
         The 2D data to plot
 
-    ax : matplotlib.Axes
-        The axis to plot on.
+    ax : matplotlib.Axes or None
+        The axis to plot on. If None, use the current axis.
 
     finalize : bool
         Close out the plot.
@@ -680,11 +680,13 @@ def plot_epsfstar(star, ax=plt, title=None, finalize=False, **kwargs_simple_norm
     if not len(kwargs_simple_norm):
         kwargs_simple_norm = {"stretch": "log", "percent": 99.0}
     norm = simple_norm(star, **kwargs_simple_norm)
+    if ax is None:
+        ax = plt.gca()
     if title is not None:
         ax.set_title(title)
     ax.imshow(star, norm=norm, origin="lower", cmap="viridis")
     if finalize:
-        ax.show()
+        plt.show()
 
 
 def plot_epsfstars(stars, ncols=5, title_func=None, **kwargs_simple_norm):
@@ -708,19 +710,17 @@ def plot_epsfstars(stars, ncols=5, title_func=None, **kwargs_simple_norm):
     if title_func is None:
         title_func = lambda axis, idx, star: f"Star {idx}"
 
-    nstars = len(stars)
     nrows = math.ceil(len(stars) / ncols)
     fig, ax = plt.subplots(
         nrows=nrows,
         ncols=ncols,
-        figsize=(20, 4 * nstars),
-        squeeze=True,
+        figsize=(4 * ncols, 4 * nrows),
+        squeeze=False,
         layout="compressed",
     )
-    if ncols > 1:
-        ax = ax.ravel()
+    ax = ax.ravel()
 
-    for idx, (axis, star) in enumerate(zip(ax, stars)):
+    for idx, (axis, star) in enumerate(zip(ax, stars, strict=False)):
         plot_epsfstar(
             star, ax=axis, title=title_func(axis, idx, star), **kwargs_simple_norm
         )
