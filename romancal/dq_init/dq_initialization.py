@@ -113,10 +113,13 @@ def do_dqinit(model, mask, expand_gw_flagging=0):
 
     npix = output_model.pixeldq.shape[0]
     if x_start >= 0 and x_start < npix and y_start >= 0 and y_start < npix:
-        # set pixeldq array to GW_AFFECTED_DATA (2**4) for the given range
+        # set pixeldq array to GW_AFFECTED_DATA (2**4) for the columns
+        # and rows containing the guide window
         output_model.pixeldq[:, x_start:x_stop] = pixel.GW_AFFECTED_DATA
+        output_model.pixeldq[y_start:y_stop, :] |= pixel.GW_AFFECTED_DATA
         log.info(
-            f"Flagging rows from: {x_start} to {x_stop} as affected by guide window read"
+            f"Flagging columns {x_start} through {x_stop - 1} and rows "
+            f"{y_start} through {y_stop - 1} as affected by guide window read"
         )
 
         # expand guide window if requested
