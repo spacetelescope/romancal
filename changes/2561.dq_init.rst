@@ -1,0 +1,2 @@
+Flag the rows spanned by the guide window as ``GW_AFFECTED_DATA``, in
+addition to the columns.
