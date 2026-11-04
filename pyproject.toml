@@ -29,7 +29,7 @@ dependencies = [
     # "roman_datamodels@git+https://github.com/spacetelescope/roman_datamodels@main",
     "romanisim>=0.14,<0.16",
     # "romanisim@git+https://github.com/spacetelescope/romanisim@main",
-    "asdf>=4.1.0,<6",
+    "asdf>=4.1.0,<7",
     "crds>=13.2.7,<15",  # this version range should always match the one in sdp deps
     "drizzle>=3.0.0,<3.1.0",
     "gwcs>=1.0.1,<2",
