@@ -118,8 +118,8 @@ def do_dqinit(model, mask, expand_gw_flagging=0):
         output_model.pixeldq[:, x_start:x_stop] = pixel.GW_AFFECTED_DATA
         output_model.pixeldq[y_start:y_stop, :] |= pixel.GW_AFFECTED_DATA
         log.info(
-            f"Flagging columns {x_start} to {x_stop} and rows {y_start} to "
-            f"{y_stop} as affected by guide window read"
+            f"Flagging columns {x_start} through {x_stop - 1} and rows "
+            f"{y_start} through {y_stop - 1} as affected by guide window read"
         )
 
         # expand guide window if requested
