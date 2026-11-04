@@ -248,8 +248,8 @@ def calc_wcs_over_time(obsstart, obsend, t_pars: tlib.TransformParameters):
 def extract_sca_wcs_params(distortion_path):
     """Extracts WCS refrence parameters and corner footprints using roman_datamodels.
     """
-    corners_x_0idx = np.array([3.5, 4091.5, 4091.5, 3.5])
-    corners_y_0idx = np.array([3.5, 3.5, 4091.5, 4091.5])
+    corners_x_0idx = np.array([-0.5, 4087.5, 4087.5, -0.5])
+    corners_y_0idx = np.array([-0.5, -0.5, 4087.5, 4087.5])
 
     with rdm.open(distortion_path) as dm:
         detector = str(dm.meta.instrument.detector)
