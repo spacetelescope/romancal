@@ -300,7 +300,7 @@ def test_strict_pointing(science_raw_model, tmp_path):
         ("meta.wcsinfo.roll_ref", 97.47628097051559),
         (
             "meta.wcsinfo.s_region",
-            'POLYGON ICRS 80.660744006 -69.505616219 80.379384214 -69.429205499 80.590434179 -69.331579227 80.872932680 -69.407979480',
+            "POLYGON ICRS 80.660744006 -69.505616219 80.379384214 -69.429205499 80.590434179 -69.331579227 80.872932680 -69.407979480",
         ),
     ],
 )
@@ -367,9 +367,11 @@ def updated_model(calc_wcs):
     m = rdm.datamodels.ScienceRawModel.create_fake_data(
         {
             "meta": {
-                'ephemeris': {'velocity_x': TRANSFORM_KWARGS['velocity'][0],
-                              'velocity_y': TRANSFORM_KWARGS['velocity'][1],
-                              'velocity_z': TRANSFORM_KWARGS['velocity'][2]},
+                "ephemeris": {
+                    "velocity_x": TRANSFORM_KWARGS["velocity"][0],
+                    "velocity_y": TRANSFORM_KWARGS["velocity"][1],
+                    "velocity_z": TRANSFORM_KWARGS["velocity"][2],
+                },
                 "exposure": {"start_time": STARTTIME, "end_time": ENDTIME},
                 "pointing": {
                     "target_aperture": "WFI_CEN",

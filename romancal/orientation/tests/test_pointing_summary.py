@@ -39,11 +39,22 @@ def model_path(module_jail):
     model = ScienceRawModel.create_fake_data(
         {
             "meta": {
-                'ephemeris': {'velocity_x': 0., 'velocity_y': 0., 'velocity_z': 0., },
+                "ephemeris": {
+                    "velocity_x": 0.0,
+                    "velocity_y": 0.0,
+                    "velocity_z": 0.0,
+                },
                 "exposure": {"start_time": GOOD_STARTTIME, "end_time": GOOD_ENDTIME},
-                "pointing": {'dec_v1': -66.60547869, 'ra_v1': 91.08142005,
-                             "target_dec": TARG_DEC, "target_ra": TARG_RA,},
-                'wcsinfo': {'dec_ref': -66.59540224, 'ra_ref': 90.70377653, }
+                "pointing": {
+                    "dec_v1": -66.60547869,
+                    "ra_v1": 91.08142005,
+                    "target_dec": TARG_DEC,
+                    "target_ra": TARG_RA,
+                },
+                "wcsinfo": {
+                    "dec_ref": -66.59540224,
+                    "ra_ref": 90.70377653,
+                },
             }
         }
     )

@@ -246,8 +246,7 @@ def calc_wcs_over_time(obsstart, obsend, t_pars: tlib.TransformParameters):
 
 
 def extract_sca_wcs_params(distortion_path):
-    """Extracts WCS refrence parameters and corner footprints using roman_datamodels.
-    """
+    """Extracts WCS refrence parameters and corner footprints using roman_datamodels."""
     corners_x_0idx = np.array([-0.5, 4087.5, 4087.5, -0.5])
     corners_y_0idx = np.array([-0.5, -0.5, 4087.5, 4087.5])
 
@@ -310,7 +309,7 @@ def get_angles_from_quaternion(q_inst2b):
 
 
 def v2v3_to_true_icrs(v2_arcsec, v3_arcsec, app_v2v3_frame, velocity):
-    """ Un-aberrated ICRS positions of V2/V3 points.
+    """Un-aberrated ICRS positions of V2/V3 points.
 
     Parameters
     ----------
