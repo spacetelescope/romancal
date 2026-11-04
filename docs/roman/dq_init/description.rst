@@ -30,7 +30,7 @@ The actual process consists of the following steps:
    file is propagated to "PIXELDQ2" in the same way.
 
  - Flag pixels affected by the guide window readout. All pixels in the columns
-   spanned by the guide window are flagged ``GW_AFFECTED_DATA``. The pixels
+   and rows spanned by the guide window are flagged ``GW_AFFECTED_DATA``. The pixels
    within the guide window rectangle itself are additionally flagged
    ``DO_NOT_USE``. The ``expand_gw_flagging`` step argument extends this
    ``DO_NOT_USE`` region by a given number of pixels in each direction.
