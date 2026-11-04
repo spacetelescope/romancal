@@ -1,0 +1,2 @@
+Factor shared image calibration into a module used by both the source catalog
+and time domain catalog steps.
