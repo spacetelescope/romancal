@@ -1,4 +1,4 @@
-"""Orientation Direct Cosine Matrix (DCM) transformations and utilities"""
+"""Transformation parameters used in the orientation calculations."""
 
 import dataclasses
 import logging

@@ -64,8 +64,6 @@ def build_v2v3_skyoffset_frame(v1_vec, v3_vec):
     )
     pa_v3 = float(v1_coord.position_angle(v3_step_coord).deg % 360.0)
 
-    # SkyOffsetFrame positive rotation is CCW (West of North).
-    # Passing +pa_v3 aligns +lat with +V3 (East of North) and +lon with +V2.
     v2v3_frame = SkyOffsetFrame(origin=v1_coord, rotation=pa_v3 * u.deg)
     return v2v3_frame, ra_v1, dec_v1, pa_v3
 
@@ -121,13 +119,21 @@ def calc_wcs(t_pars: tlib.TransformParameters):
 
     app_v2v3_frame, _, _, _ = build_v2v3_skyoffset_frame(v1_app, v3_app)
 
-    # 2. TRUE (ABERRATION CORRECTED) SKY POSITIONS
+    # 2. TRUE (UN-ABERRATED) V1 BORESIGHT & FRAME
     true_ra_v1, true_dec_v1, true_pa_v3, _ = true_point_and_roll(
         0.0, 0.0, app_v2v3_frame, velocity
     )
 
-    # 3. GLOBAL TARGET POINTING VIA BAM QUATERNION
-    tgt_ya_deg, tgt_v2_ref, tgt_v3_ref = get_angles_from_quaternion(q_bam)
+    # 3. GLOBAL TARGET POINTING (DYNAMIC APERTURE RESOLUTION)
+    # Default to WFI_CEN via BAM if target_aperture is WFI_CEN or unspecified.
+    if t_pars.target_aperture is None or t_pars.target_aperture.upper() == "WFI_CEN":
+        tgt_ya_deg, tgt_v2_ref, tgt_v3_ref = get_angles_from_quaternion(q_bam)
+    else:
+        # If target points to a specific SCA or custom aperture, use its local reference V2/V3
+        # and assume nominal WFI boresight clocking (tgt_ya_deg from BAM).
+        tgt_ya_deg, _, _ = get_angles_from_quaternion(q_bam)
+        tgt_v2_ref = sca_info["v2_ref"]
+        tgt_v3_ref = sca_info["v3_ref"]
 
     tgt_true_ra, tgt_true_dec, true_roll_target, tgt_true_coord = true_point_and_roll(
         tgt_v2_ref, tgt_v3_ref, app_v2v3_frame, velocity
@@ -240,9 +246,7 @@ def calc_wcs_over_time(obsstart, obsend, t_pars: tlib.TransformParameters):
 
 
 def extract_sca_wcs_params(distortion_path):
-    """
-    Extracts V2Ref, V3Ref, V3IdlYAngle, VIdlParity, detector name, and the
-    4 corner (V2, V3) coordinates using roman_datamodels.
+    """Extracts WCS refrence parameters and corner footprints using roman_datamodels.
     """
     corners_x_0idx = np.array([3.5, 4091.5, 4091.5, 3.5])
     corners_y_0idx = np.array([3.5, 3.5, 4091.5, 4091.5])
@@ -251,11 +255,10 @@ def extract_sca_wcs_params(distortion_path):
         detector = str(dm.meta.instrument.detector)
         dist_mod = dm.coordinate_distortion_transform
 
-        # Direct parameter access on the CompoundModel
         v2_ref = float(dist_mod.offset_10.value)
         v3_ref = float(dist_mod.offset_11.value)
 
-        # Ideal -> V2/V3 rotation & parity parameters (submodels 8 and 9)
+        # c10_v2 /V3 rotation & parity parameters (submodels 8 and 9)
         c10_v2 = float(dist_mod.c1_0_8.value)  # p * cos(ya)
         c01_v2 = float(dist_mod.c0_1_8.value)  # sin(ya)
         c10_v3 = float(dist_mod.c1_0_9.value)  # -p * sin(ya)
@@ -307,8 +310,7 @@ def get_angles_from_quaternion(q_inst2b):
 
 
 def v2v3_to_true_icrs(v2_arcsec, v3_arcsec, app_v2v3_frame, velocity):
-    """
-    Un-aberrated ICRS positions of V2/V3 points.
+    """ Un-aberrated ICRS positions of V2/V3 points.
 
     Parameters
     ----------
@@ -340,8 +342,7 @@ def v2v3_to_true_icrs(v2_arcsec, v3_arcsec, app_v2v3_frame, velocity):
 
 
 def true_point_and_roll(v2_arcsec, v3_arcsec, app_v2v3_frame, velocity, step=1.0):
-    """
-    True ICRS position of a V2/V3 point and the position angle of +V3 there.
+    """True ICRS position of a V2/V3 point and the position angle of +V3 there.
 
     Parameters
     ----------
