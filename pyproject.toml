@@ -84,9 +84,6 @@ repository = "https://github.com/spacetelescope/romancal"
 [project.entry-points."stpipe.steps"]
 romancal = "romancal.stpipe.integration:get_steps"
 
-[project.entry-points.pytest11]
-pytest_romancal = "romancal._pytest.plugin"
-
 [project.scripts]
 asn_from_list = "romancal.associations.asn_from_list:_cli"
 roman_pointing_summary = "romancal.scripts.pointing_summary:_main"
