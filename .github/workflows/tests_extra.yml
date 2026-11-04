@@ -79,7 +79,8 @@ jobs:
       envs: |
         - macos: py312-xdist
         - macos: py313-xdist
-        - linux: py314-devdeps-xdist
-        - macos: py314-devdeps-xdist
+        - macos: py314-xdist
+        - linux: py315-devdeps-xdist
+        - macos: py315-devdeps-xdist
       artifact-path: |
         results.xml
