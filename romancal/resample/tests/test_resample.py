@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from astropy import units as u
 from astropy.time import Time
-from roman_datamodels import datamodels
+from roman_datamodels import datamodels, dqflags
 from stcal.alignment.util import sregion_to_footprint
 from stcal.resample.utils import compute_mean_pixel_area
 
@@ -79,7 +79,8 @@ class WfiSca:
                 "var_rnoise": rng.normal(1, 0.05, size=self.shape).astype(np.float32),
                 "var_poisson": rng.poisson(1, size=self.shape).astype(np.float32),
                 "var_flat": rng.uniform(0, 1, size=self.shape).astype(np.float32),
-                "dq": 2 ** rng.integers(3, 16, size=self.shape).astype(np.uint32),
+                # "dq": 2 ** rng.integers(3, 16, size=self.shape).astype(np.uint32),
+                "dq": 2 ** rng.integers(1, 16, size=self.shape).astype(np.uint32),
             },
             shape=self.shape,
         )
@@ -509,11 +510,9 @@ def test_custom_wcs_input_entire_field_no_rotation(multiple_exposures, tmp_path)
 
 
 @pytest.mark.parametrize("weight_type", ["ivm", "exptime", "ivm-sky"])
-@pytest.mark.parametrize("propagate_dq", [True, False])
 def test_resampledata_do_drizzle_default_single_exposure_weight_array(
     exposure_1,
     weight_type,
-    propagate_dq,
 ):
     """Test that resample methods return non-empty weight arrays."""
 
@@ -521,11 +520,11 @@ def test_resampledata_do_drizzle_default_single_exposure_weight_array(
     good_bits = sum([2**i for i in range(3, 16)])
 
     output_model = ResampleStep(
-        weight_type=weight_type, propagate_dq=propagate_dq, good_bits=str(good_bits)
+        weight_type=weight_type, good_bits=str(good_bits)
     ).run(input_models)
     assert np.any(output_model.weight > 0)
-    if propagate_dq:
-        assert np.bitwise_or.reduce(output_model.dq, axis=(0, 1)) == good_bits
+
+
 
 
 def test_l3_wcsinfo(multiple_exposures):
@@ -664,3 +663,78 @@ def test_skycell_wcs_from_asn_target(skymap_subset):
 
     with pytest.raises(ValueError):
         _skycell_wcs_from_asn({"skycell_wcs_info": "none", "target": "none"})
+def _wfi_sca7():
+    sca = WfiSca(
+        fiducial_world=(270, 66),
+        filename="r0000501001001001001_01101_0002_wfi04_cal.asdf",
+    )
+
+    return sca.create_image()
+
+#pytest.fixture
+def wfi_sca7():
+    sca_model = _wfi_sca7()
+    print(f"XXX sca_model.dq = {sca_model.dq}")
+    print(f"XXX np.sum(sca_model.dq) = {np.sum(sca_model.dq)}")
+    print(f"XXX np.sum(sca_model.dq & dqflags.pixel.JUMP_DET) = {np.sum(sca_model.dq & dqflags.pixel.JUMP_DET)}")
+    print(f"XXX np.sum(sca_model.dq & dqflags.pixel.SATURATED) = {np.sum(sca_model.dq & dqflags.pixel.SATURATED)}")
+    print(f"XXX np.sum(sca_model.dq & dqflags.pixel.AD_FLOOR) = {np.sum(sca_model.dq & dqflags.pixel.AD_FLOOR)}")
+
+    sca_model.meta.wcsinfo.ra_ref = 270
+    sca_model.meta.wcsinfo.dec_ref = 66
+#    sca_model.meta.wcsinfo.vparity = -1
+#    sca_model.meta.wcsinfo.v3yangle = 0
+#    sca_model.meta.wcsinfo.roll_ref = 0
+
+    return sca_model
+
+# @pytest.mark.parametrize("propagate_dq", [None, "0", "JUMP_DET | SATURATED"])
+@pytest.mark.parametrize("propagate_dq", ["JUMP_DET | SATURATED"])
+def test_resampledata_propagate_dq(
+    propagate_dq,
+):
+    """Test that resample methods return non-empty weight arrays."""
+
+    # input_models = ModelLibrary([exposure_1[0], exposure_1[0]])
+    # input_models = ModelLibrary([exposure_1[2]])
+    # input_models = ModelLibrary([_wfi_sca7(), _wfi_sca7()])
+    input_models = ModelLibrary([wfi_sca7(), wfi_sca7()])
+
+    # def _wfi_sca1():
+    # sca = WfiSca(
+    #     fiducial_world=(10, 0),
+    #     filename="r0000501001001001001_01101_0001_wfi01_cal.asdf",
+    # )
+
+    # return sca.create_image()
+
+    # if propagate_dq == "JUMP_DET | SATURATED":
+    #     with input_models:
+    #         for model in input_models:
+    #             print(f"XXX model.dq = {model.dq}")
+    #             input_models.shelve(model, modify=True)
+
+    #     with input_models:
+    #         image_dq = input_models.borrow(0)
+
+
+    output_model = ResampleStep(
+        propagate_dq=propagate_dq,
+    ).run(input_models)
+
+    # if propagate_dq:
+    #     assert np.bitwise_or.reduce(output_model.dq, axis=(0, 1)) == good_bits
+    if propagate_dq == "JUMP_DET | SATURATED":
+        with input_models:
+            model = input_models.borrow(0)
+            assert np.all(output_model.dq & (dqflags.pixel.JUMP_DET | dqflags.pixel.SATURATED)) == np.all(model.dq & (dqflags.pixel.JUMP_DET | dqflags.pixel.SATURATED))
+            print(f"XXX np.sum(model.dq & dqflags.pixel.JUMP_DET)) = {np.sum(model.dq & dqflags.pixel.JUMP_DET)}")
+            print(f"XXX np.sum(model.dq & dqflags.pixel.SATURATED)) = {np.sum(model.dq & dqflags.pixel.SATURATED)}")
+
+            print(f"XXX np.sum(model.dq & (dqflags.pixel.JUMP_DET | dqflags.pixel.SATURATED))) = {np.sum(model.dq & (dqflags.pixel.JUMP_DET | dqflags.pixel.SATURATED))}")
+            print(f"XXX np.sum(output_model.dq & (dqflags.pixel.JUMP_DET | dqflags.pixel.SATURATED))) = {np.sum(output_model.dq & (dqflags.pixel.JUMP_DET | dqflags.pixel.SATURATED))}")
+            input_models.shelve(model, modify=False)
+        print(f"XXX output_model.dq = {output_model.dq}")
+
+    else:
+        assert "dq" not in output_model

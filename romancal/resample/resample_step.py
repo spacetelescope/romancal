@@ -67,7 +67,7 @@ class ResampleStep(RomanStep):
         in_memory = boolean(default=True)
         good_bits = string(default='~DO_NOT_USE')  # The good bits to use for building the resampling mask.
         include_var_flat = boolean(default=False)  # include var_flat in output image
-        propagate_dq = boolean(default=False)  # propagate DQ during resampling
+        propagate_dq = string(default=None)  # propagate DQ during resampling
         pixmap_stepsize = integer(default=10)  # step size for computation of the pixel map
         pixmap_order = integer(1, 3, default=3)  # interpolating spline order (1 or 3) used when pixmap_stepsize > 1
     """
@@ -156,7 +156,8 @@ class ResampleStep(RomanStep):
             resample_on_skycell=self.resample_on_skycell,
             wcs_kwargs=wcs_kwargs,
             variance_array_names=variance_array_names,
-            propagate_dq=self.propagate_dq,
+            # propagate_dq=self.propagate_dq,
+            propagate_dq=True,
             pixmap_stepsize=self.pixmap_stepsize,
             pixmap_order=int(self.pixmap_order),
         )

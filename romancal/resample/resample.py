@@ -3,6 +3,8 @@ import math
 from collections.abc import Mapping
 
 import numpy as np
+from astropy.nddata.bitmask import bitfield_to_boolean_mask, interpret_bit_flags
+
 from roman_datamodels import datamodels, dqflags
 from stcal.alignment.util import compute_scale, wcs_from_sregions
 from stcal.resample import Resample
@@ -174,7 +176,7 @@ class ResampleData(Resample):
         resample_on_skycell,
         wcs_kwargs=None,
         variance_array_names=None,
-        propagate_dq=False,
+        propagate_dq=None,
         pixmap_stepsize=1,
         pixmap_order=1,
     ):
@@ -238,9 +240,9 @@ class ResampleData(Resample):
             `romancal.resample.make_output_wcs`
             for supported options.
 
-        propagate_dq : bool
-            If `True`, propagate DQ during resampling. DQ flags are propagated
-            by bitwise OR of all input DQ flags that contribute
+        propagate_dq : int, str, None
+            If not 0 or not None, propagate DQ during resampling. DQ flags are
+            propagated by bitwise OR of all specified DQ flags that contribute
             to a given output pixel.
 
         pixmap_stepsize : float
@@ -305,6 +307,23 @@ class ResampleData(Resample):
         if variance_array_names:
             self.variance_array_names = variance_array_names
 
+        prop_dq_flag = False
+        if propagate_dq:
+            print("\nXXXX")
+            print(f"\nXXXXX Propagating DQ with flag: {propagate_dq}")
+
+            self._propagate_dq = True
+
+            try:
+                self.propagate_dq = int(propagate_dq)
+                if self.propagate_dq:
+                    prop_dq_flag = True
+            except ValueError:
+                prop_dq_flag = True
+
+
+
+
         super().__init__(
             output_wcs,
             n_input_models=len(input_models),
@@ -316,7 +335,7 @@ class ResampleData(Resample):
             enable_ctx=enable_ctx,
             enable_var=enable_var,
             compute_err=compute_err,
-            propagate_dq=propagate_dq,
+            propagate_dq=prop_dq_flag,
             pixmap_stepsize=pixmap_stepsize,
             pixmap_order=pixmap_order,
         )
@@ -458,7 +477,33 @@ class ResampleData(Resample):
             output_model.context = self.output_model["con"].astype(np.uint32)
 
         if self.propagate_dq:
-            output_model.dq = self.output_model["dq"].astype(np.uint32)
+            print("\nXXXX")
+            print(f"\nXXXXX Propagating DQ with flag: {self.propagate_dq}")
+
+            try:
+                self._propagate_dq = int(self.propagate_dq)
+            except ValueError:
+                self._propagate_dq = interpret_bit_flags(self.propagate_dq, flag_name_map=self.dq_flag_name_map)
+
+            if self._propagate_dq:
+                print(f'XXX self.dq_flag_name_map = {self.dq_flag_name_map}')
+                print(f"XXX self.output_model['dq'].shape = {self.output_model['dq'].shape}")
+                print(f"XXX self.output_model['dq'] = {self.output_model['dq']}")
+                print(f"XXX self._propagate_dq = {self._propagate_dq}")
+
+                dq_mask = bitfield_to_boolean_mask(
+                    self.output_model["dq"],
+                    self._propagate_dq,
+                    # good_mask_value=1,
+                    dtype=np.uint32,
+                    # flag_name_map=self.dq_flag_name_map,
+                )
+                print(f"XXX dq_mask.shape = {dq_mask.shape}")
+                print(f"XXX dq_mask = {dq_mask}")
+                # output_model.dq = self.output_model["dq"][dq_mask].astype(np.uint32)
+
+                output_model.dq = dq_mask.astype(np.uint32)
+                print(f"XXX output_model.dq.shape = {output_model.dq.shape}")
 
         for arr_name in ["err", *self.variance_array_names]:
             if arr_name in self.output_model:
