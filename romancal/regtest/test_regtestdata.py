@@ -31,9 +31,62 @@ def test_compare_asdf(tmp_path, modification, base_image, ignore_asdf_paths):
     if modification == "large":
         assert not diff.identical, diff.report()
         assert "arrays_differ" in diff.diff
-        assert "root['roman']['data']" in diff.diff["arrays_differ"]
+        assert "roman.data" in diff.diff["arrays_differ"]
     else:
         assert diff.identical, diff.report()
+
+
+def test_compare_asdf_corner_cases(tmp_path):
+    truth_shared = {"x": 1}
+    result_shared = {"x": 2}
+    truth = {
+        # repeat comparisons with shared objects
+        "shared": {
+            "a": truth_shared,
+            "b": truth_shared,
+        },
+        # repeat comparisons with scalars (always have the same id)
+        "scalar": {
+            "a": 1,
+            "b": 1,
+        },
+        # all nan comparison
+        "nan": np.array([np.nan], dtype=np.float64),
+    }
+    truth["recursive"] = truth
+    result = {
+        "shared": {
+            "a": result_shared,
+            "b": result_shared,
+        },
+        "scalar": {
+            "a": 2,
+            "b": 2,
+        },
+        "nan": np.array([1], dtype=np.float64),
+    }
+    result["recursive"] = result
+
+    truth_filename = tmp_path / "truth.asdf"
+    result_filename = tmp_path / "result.asdf"
+
+    asdf.AsdfFile(truth).write_to(truth_filename)
+    asdf.AsdfFile(result).write_to(result_filename)
+
+    # ignore one of the shared objects
+    diff = compare_asdf(result_filename, truth_filename, ignore=["shared.a.x"])
+    assert not diff.identical
+
+    # shared difference found, ignore is ignored
+    assert "shared.b.x" in diff.diff["values_differ"]
+    assert "shared.a.x" not in diff.diff["values_differ"]
+
+    # both scalar differences found
+    assert "scalar.a" in diff.diff["values_differ"]
+    assert "scalar.b" in diff.diff["values_differ"]
+
+    # nan difference found
+    assert "nan" in diff.diff["arrays_differ"]
 
 
 @pytest.mark.parametrize(
@@ -92,7 +145,7 @@ def test_model_difference(tmp_path):
     diff = compare_asdf(fn0, fn1)
     assert not diff.identical
     assert (
-        """'type_changes': {"root['roman']": {'new_type': <class 'roman_datamodels._stnode.DistortionRef'>"""
+        """'types_differ': {'roman': {'result': <class 'roman_datamodels._stnode.DistortionRef'>"""
         in diff.report()
     )
 
@@ -143,8 +196,8 @@ def test_n_diffs(tmp_path, n_diffs):
     diff = compare_asdf(fn0, fn1)
     assert not diff.identical, diff.report()
     assert "arrays_differ" in diff.diff
-    assert "root['v']" in diff.diff["arrays_differ"]
-    assert n_diffs == diff.diff["arrays_differ"]["root['v']"]["n_diffs"]
+    assert "v" in diff.diff["arrays_differ"]
+    assert n_diffs == diff.diff["arrays_differ"]["v"]["n_diffs"]
 
 
 @pytest.mark.parametrize(
@@ -166,7 +219,7 @@ def test_non_numeric_arrays(tmp_path, v0, v1):
     diff = compare_asdf(fn0, fn1)
     assert not diff.identical
     assert "tables_differ" in diff.diff
-    table_diff = diff.diff["tables_differ"]["root['t']"]
+    table_diff = diff.diff["tables_differ"]["t"]
     assert table_diff["column_values"]["a"]["n_diffs"] == 2
 
 
@@ -185,7 +238,7 @@ def test_table_meta_array(tmp_path):
 
     diff = compare_asdf(fn0, fn1)
     assert not diff.identical
-    assert "metas_differ" in diff.diff["tables_differ"]["root['t']"]
+    assert "metas_differ" in diff.diff["tables_differ"]["t"]
 
 
 def test_ignored_paths_not_compared(tmp_path):

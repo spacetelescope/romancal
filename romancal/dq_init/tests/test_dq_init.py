@@ -384,9 +384,13 @@ def test_dqinit_gw_expansion():
     x_stop += 1
     y_stop += 1
 
-    # All rows in the GW column range should be flagged GW_AFFECTED_DATA
+    # All pixels in the GW columns and rows should be flagged GW_AFFECTED_DATA
     assert np.all(pq[:, x_start:x_stop] & pixel.GW_AFFECTED_DATA != 0)
+    assert np.all(pq[y_start:y_stop, :] & pixel.GW_AFFECTED_DATA != 0)
     assert pq[0, x_start - 1] & pixel.GW_AFFECTED_DATA == 0
+    assert pq[0, x_stop] & pixel.GW_AFFECTED_DATA == 0
+    assert pq[y_start - 1, 0] & pixel.GW_AFFECTED_DATA == 0
+    assert pq[y_stop, 0] & pixel.GW_AFFECTED_DATA == 0
 
     # Expanded rectangle should have both DO_NOT_USE and GW_AFFECTED_DATA set
     combined = pixel.DO_NOT_USE | pixel.GW_AFFECTED_DATA
