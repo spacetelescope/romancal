@@ -1,3 +1,184 @@
+1.2.0 (2026-10-15)
+==================
+
+Breaking Changes
+----------------
+
+- Bump minimum Python version to 3.12. (`#2464
+  <https://github.com/spacetelescope/romancal/issues/2464>`_)
+
+
+``skycell``
+-----------
+
+- Improve skycell matching speed and correctness; skycells extending beyond
+  their
+  projection region's bounds are no longer missed, and each point on the sky
+  belongs to exactly one skycell core. (`#2484
+  <https://github.com/spacetelescope/romancal/issues/2484>`_)
+- Reduce the memory and run time of ``SkyCells.from_names`` by searching only
+  the
+  named projection regions instead of every skycell name in the sky map. This
+  lowers the peak memory of ``source_catalog`` on mosaics by about 1.7 GB.
+  (`#2508 <https://github.com/spacetelescope/romancal/issues/2508>`_)
+- Add ``SkyMap.close`` and context manager support so that the sky map
+  reference
+  file can be closed. (`#2509
+  <https://github.com/spacetelescope/romancal/issues/2509>`_)
+
+
+``dq_init`` (WFI-Image, WFI-Prism, WFI-Grism)
+---------------------------------------------
+
+- Skip adding the reference read and removing the data encoding offset in
+  ``dq_init`` when the L1 metadata ``meta.instrument.l1_reference_read_added``
+  or ``meta.instrument.l1_data_encoding_offset_removed`` indicate these were
+  already done when the L1 file was made. (`#2506
+  <https://github.com/spacetelescope/romancal/issues/2506>`_)
+
+
+``refpix`` (WFI-Image, WFI-Prism, WFI-Grism)
+--------------------------------------------
+
+- Reduce peak memory usage of the reference pixel correction step dramatically
+  by
+  processing resultants individually. The step no longer writes its corrected
+  reference pixels back to ``amp33`` or ``border_ref_pix_left`` / ``_right``,
+  leaving all of them as ``dq_init`` extracted them. Also fix the arguments
+  passed
+  from ``RefPixStep`` to ``run_steps``, which were each shifted by one
+  position. (`#2427 <https://github.com/spacetelescope/romancal/issues/2427>`_)
+- Use sigma clipping in the reference pixel trend fit to reject outliers.
+  (`#2496 <https://github.com/spacetelescope/romancal/issues/2496>`_)
+
+
+``linearity`` (WFI-Image, WFI-Prism, WFI-Grism)
+-----------------------------------------------
+
+- Mask negative and NaN values arising from the linearity correction step.
+  These should be very rare and result from reference file issues/pathological
+  pixels but can propagate NaNs to Level 2. (`#2489
+  <https://github.com/spacetelescope/romancal/issues/2489>`_)
+
+
+``ramp_fitting`` (WFI-Image, WFI-Prism, WFI-Grism)
+--------------------------------------------------
+
+- Reduce peak memory usage of ramp fitting by not materializing a ramp-sized
+  temporary while computing the uniform-weighted slopes. (`#2430
+  <https://github.com/spacetelescope/romancal/issues/2430>`_)
+- Respect ``use_ramp_jump_detection`` in likelihood-based ramp fitting, and
+  keep
+  ``dumo`` finite where the slope is NaN. (`#2480
+  <https://github.com/spacetelescope/romancal/issues/2480>`_)
+
+
+``skymatch``
+------------
+
+- Reorder to not load all models into memory if ``on_disk=True``. (`#2497
+  <https://github.com/spacetelescope/romancal/issues/2497>`_)
+
+
+``source_catalog``
+------------------
+
+- Added HEALPix-based sky summary arrays to L2 segmentation-map products from
+  ``source_catalog``. The new ``skyvals`` extension stores per-healpixel
+  ``healpix17``/``data``/``err``/``covfrac`` values, and ``healpix11_cov``
+  stores coarse coverage indices for downstream sky-matching workflows. (`#2401
+  <https://github.com/spacetelescope/romancal/issues/2401>`_)
+- Convert fluxes, aperture radii, sizes, and position angles using the local
+  pixel solid angle and local North direction from the WCS rather than single
+  image-center values. (`#2426
+  <https://github.com/spacetelescope/romancal/issues/2426>`_)
+- Use photutils 3.1 to calculate the centroid error columns (replacing the
+  zero-valued placeholders), ``orientation_sky``, and the standard error of the
+  annulus background median. ``orientation_sky`` is now in the range (-90, 90]
+  degrees instead of [0, 360).
+
+  Pixels belonging to neighboring sources in the segmentation image are now
+  excluded from the circular aperture photometry, using the same ``"mask"``
+  aperture mask method as the segmentation catalog. Pixels belonging to any
+  source, including the source being measured, are excluded from the annulus
+  background.
+
+  Constrain the PSF-fit positions to lie within 2.5 pixels of the source
+  centroids, which stops the PSF model from drifting across extended
+  sources without converging and speeds up the PSF photometry. A fit that
+  ends at the limit has bit 32 set in ``psf_flags``. Like bit 8, it is set
+  almost exclusively for extended sources. (`#2455
+  <https://github.com/spacetelescope/romancal/issues/2455>`_)
+- Record the unit of the detection image saved in the segmentation map file
+  in a new ``detection_image_unit`` key. The saved image is converted to flux
+  density units in place, and forced photometry previously applied the unit
+  conversion to it a second time. A segmentation file from an earlier version
+  of ``SourceCatalogStep`` lacks the key, so its detection image is assumed
+  to be in nJy and a warning is logged. The ``detection_image`` array is no
+  longer saved in the segmentation map file when no sources are detected.
+  (`#2456 <https://github.com/spacetelescope/romancal/issues/2456>`_)
+- Allow forced photometry on zero-source single-band prompt catalogs
+  to return an empty forced catalog instead of failing when the
+  forcing segmentation has no labels and no detection_image. (`#2462
+  <https://github.com/spacetelescope/romancal/issues/2462>`_)
+- Close epsf reference file after use. (`#2473
+  <https://github.com/spacetelescope/romancal/issues/2473>`_)
+- Reduced peak memory in ``source_catalog`` skyvals by converting image
+  coordinates to HEALPix in row chunks instead of the full image at once.
+  (`#2502 <https://github.com/spacetelescope/romancal/issues/2502>`_)
+
+
+``multiband_catalog``
+---------------------
+
+- Added support for injecting sources onto NaN pixels. (`#2368
+  <https://github.com/spacetelescope/romancal/issues/2368>`_)
+- Masked non-finite data, not just non-finite errors, when building the
+  multiband detection image. (`#2443
+  <https://github.com/spacetelescope/romancal/issues/2443>`_)
+- Always persist ``detection_image`` on multiband segmentation maps so forced
+  photometry can recompute shape parameters that match the deep catalog, and
+  raise a clear error when ``forced_segmentation`` is missing
+  ``detection_image``
+  (`#2434 <https://github.com/spacetelescope/romancal/issues/2434>`_). (`#2444
+  <https://github.com/spacetelescope/romancal/issues/2444>`_)
+- Fixed L3→L3 metadata blending for multiband source catalogs so multi-filter
+  products set top-level ``optical_element`` to ``None``, blend ``coadd_info``
+  with min/mean/max rules (including ``max_exposure_time``), and record the
+  association name in ``meta.image.filename``
+  (`#2425 <https://github.com/spacetelescope/romancal/issues/2425>`_). (`#2446
+  <https://github.com/spacetelescope/romancal/issues/2446>`_)
+- Save the multiband detection image in the segmentation map file in flux
+  density units with a ``detection_image_unit`` key, without holding a copy
+  of the image. Fix the unit conversion of the multiband detection image,
+  which was applied twice because the image was used as both the data and
+  the convolved data. (`#2456
+  <https://github.com/spacetelescope/romancal/issues/2456>`_)
+- Close epsf reference file after use. (`#2473
+  <https://github.com/spacetelescope/romancal/issues/2473>`_)
+
+
+Other Changes
+-------------
+
+- Bump the minimum Python version to 3.12, the minimum astropy version to 7.0,
+  and the minimum scipy version to 1.15, as required by photutils 3.1. (`#2455
+  <https://github.com/spacetelescope/romancal/issues/2455>`_)
+- Add a second pixel data quality array ``dq2`` (``pixeldq2`` on ramps)
+  alongside the existing ``dq``, carrying extra data quality flags. A new
+  ``update_dq`` helper combines reference file ``dq`` and ``dq2`` into the
+  science model, inferring reference pixel border trimming from the array
+  shapes. The array is created empty by ``dq_init`` and carried through ramp
+  fitting. Reference files that supply no ``dq2`` array leave ``dq2`` zero,
+  so this does not by itself change how any data are processed. Files that
+  predate ``dq2`` gain an empty array, either through ``update_version``
+  (with a ``MigrationWarning``) or when a step first propagates reference
+  file flags into them (with a log message). (`#2475
+  <https://github.com/spacetelescope/romancal/issues/2475>`_)
+- Added migration support for the ACM keyword and BAM reference file entry.
+  (`#2498 <https://github.com/spacetelescope/romancal/issues/2498>`_)
+
+
 1.1.0 (2026-08-10)
 ==================
 
@@ -136,6 +317,20 @@ General
   ``pytest-astropy``
   0.12.0 pulls in a ``--slow`` option that collides with ``ci-watson``. (`#2405
   <https://github.com/spacetelescope/romancal/issues/2405>`_)
+
+
+1.0.3 (2026-10-19)
+==================
+
+``wfi18_transient`` (WFI-Image, WFI-Prism, WFI-Grism)
+-----------------------------------------------------
+
+- Fit the WFI18 first-read transient with 4 resultants, using the last pair of
+  resultants to find weakly illuminated pixels; previously 4-resultant
+  exposures
+  fell back on masking. Also fix the selection of weakly illuminated pixels,
+  which compared each pixel against the median of its column rather than its
+  row. (`#2504 <https://github.com/spacetelescope/romancal/issues/2504>`_)
 
 
 1.0.2 (2026-09-08)

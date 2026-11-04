@@ -31,6 +31,17 @@ def test_tweakreg_raises_attributeerror_on_missing_tweakreg_catalog(tweakreg_ima
         TweakRegStep.call([img])
 
 
+def test_tweakreg_raises_on_placeholder_wcsinfo(tweakreg_image):
+    """
+    Test that TweakReg raises before querying the reference catalog when
+    meta.wcsinfo holds placeholder values (vparity = +1).
+    """
+    img = tweakreg_image()
+    img.meta.wcsinfo.vparity = 1
+    with pytest.raises(ValueError, match="placeholder values"):
+        TweakRegStep.call([img])
+
+
 def test_tweakreg_save_valid_abs_refcat(tmp_path, tweakreg_image):
     """Test that TweakReg saves the catalog used for absolute astrometry."""
     abs_refcat = "GAIADR3"
@@ -71,8 +82,9 @@ def test_tweakreg_raises_error_on_invalid_abs_refcat(tmp_path, tweakreg_image):
         (0.1 * u.deg, 1, 1),
     ],
 )
+@pytest.mark.parametrize("sigma_stat", ["rmse", "mae", "mad"])
 def test_tweakreg_rotated_plane(
-    tmp_path, tweakreg_image, theta, offset_x, offset_y, gaia_coords
+    tmp_path, tweakreg_image, theta, offset_x, offset_y, sigma_stat, gaia_coords
 ):
     """
     Test that TweakReg returns accurate results.
@@ -101,7 +113,7 @@ def test_tweakreg_rotated_plane(
         overwrite=True,
     )
 
-    TweakRegStep.call([img], abs_minobj=3)
+    TweakRegStep.call([img], abs_minobj=3, sigma_stat=sigma_stat)
 
     # get world coords for Gaia sources using "wrong WCS"
     original_ref_source = [

@@ -1,0 +1,1 @@
+Set the default value of Source Injection to true in Multiband Catalog and updates the related tests.

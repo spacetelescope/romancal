@@ -9,7 +9,7 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 
 
 @pytest.fixture(scope="module")
-def run_multiband_catalog(old_rtdata_module, request, resource_tracker):
+def run_multiband_catalog(old_rtdata_module, request):
     rtdata = old_rtdata_module
 
     # The filenames changed for B22
@@ -30,13 +30,8 @@ def run_multiband_catalog(old_rtdata_module, request, resource_tracker):
         rtdata.input,
         "--update_version=True",
     ]
-    with resource_tracker.track():
-        RomanStep.from_cmdline(args)
+    RomanStep.from_cmdline(args)
     return rtdata
-
-
-def test_log_tracked_resources(log_tracked_resources, run_multiband_catalog):
-    log_tracked_resources()
 
 
 @pytest.fixture(scope="module")

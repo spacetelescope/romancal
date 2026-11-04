@@ -35,6 +35,12 @@ def command():
         help="desired pixel shape of output image",
     )
     preview_parser.add_argument(
+        "--percentile",
+        type=float,
+        default=96,
+        help="central percentage of pixel values spanned by the color stretch (default: 96, i.e. from the 2nd to the 98th percentile)",
+    )
+    preview_parser.add_argument(
         "--no-compass",
         action="store_true",
         help="do not draw a north arrow on the image",
@@ -52,6 +58,12 @@ def command():
         help="desired pixel shape of output image",
     )
     thumbnail_parser.add_argument(
+        "--percentile",
+        type=float,
+        default=98,
+        help="central percentage of pixel values spanned by the color stretch (default: 98, i.e. from the 1st to the 99th percentile)",
+    )
+    thumbnail_parser.add_argument(
         "--compass",
         action="store_true",
         help="draw a north arrow on the image",
@@ -59,6 +71,7 @@ def command():
 
     arguments = parser.parse_args()
 
+    input = arguments.INPUT
     output = arguments.OUTPUT
     if output is None:
         output = Path.cwd()
@@ -81,7 +94,7 @@ def command():
         data,
         output,
         shape=arguments.SHAPE,
-        normalization=percentile_normalization(data, percentile=90),
+        normalization=percentile_normalization(data, percentile=arguments.percentile),
         colormap="afmhot",
         north_arrow_angle=north_pole_angle(wcs).degree - 90
         if arguments.subcommand == "preview"

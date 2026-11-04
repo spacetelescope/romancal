@@ -9,7 +9,7 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
 
 
 @pytest.fixture(scope="module")
-def run_elp(old_rtdata_module, resource_tracker):
+def run_elp(old_rtdata_module):
     rtdata = old_rtdata_module
 
     input_data = "r0000101001001001001_0001_wfi01_f158_uncal.asdf"
@@ -24,8 +24,7 @@ def run_elp(old_rtdata_module, resource_tracker):
         rtdata.input,
         "--update_version=True",
     ]
-    with resource_tracker.track():
-        ExposurePipeline.from_cmdline(args)
+    ExposurePipeline.from_cmdline(args)
 
     return rtdata
 
@@ -33,10 +32,6 @@ def run_elp(old_rtdata_module, resource_tracker):
 @pytest.fixture(scope="module")
 def output_filename(run_elp):
     return run_elp.output
-
-
-def test_log_tracked_resources(log_tracked_resources, run_elp):
-    log_tracked_resources()
 
 
 def test_output_exists(output_filename):

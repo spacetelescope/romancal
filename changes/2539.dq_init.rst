@@ -1,0 +1,2 @@
+Flag the last row and column of the guide window, treating the window stop
+values as inclusive.

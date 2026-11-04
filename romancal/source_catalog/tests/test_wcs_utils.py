@@ -11,7 +11,10 @@ from astropy.modeling import models
 from photutils.segmentation import SegmentationImage
 
 from romancal.source_catalog._segment import SegmentCatalog
-from romancal.source_catalog._wcs_utils import north_angle_at, pixel_area_map
+from romancal.source_catalog._wcs_utils import (
+    pixel_area_map,
+    pixel_to_sky_errors,
+)
 from romancal.tests.wcs_helpers import create_wcs_object
 
 # Pixel scale in degrees, roughly the WFI native scale
@@ -206,39 +209,51 @@ def test_segment_geometry_tracks_local_pixel_area():
     )
 
 
-def test_north_angle_matches_a_tangent_point_reference():
+def _sky_offsets(wcs, x, y, dx, dy):
     """
-    At the tangent point of an undistorted WCS with no rotation, North
-    lies along +y, i.e. at 90 degrees from the +x axis.
+    The (East, North) offsets in arcsec from pixel (x, y) to
+    (x + dx, y + dy), measured with astropy's spherical routines.
     """
-    shape = (128, 128)
-    wcs = _make_wcs(shape, crval=(30.0, 10.0))
-    # The fiducial is at pixel (0, 0)
-    angle = north_angle_at(wcs, np.array([0.0]), np.array([0.0]))
-    assert u.isclose(angle[0], 90.0 * u.deg, atol=1e-3 * u.deg)
+    start = SkyCoord(*wcs(x, y, with_bounding_box=False), unit="deg")
+    end = SkyCoord(*wcs(x + dx, y + dy, with_bounding_box=False), unit="deg")
+    return [offset.to_value(u.arcsec) for offset in start.spherical_offsets_to(end)]
 
 
-def test_north_angle_varies_around_an_enclosed_pole():
+def test_sky_errors_match_spherical_offsets():
     """
-    The angle to north should vary dramatically among locations in a
-    field centered on the pole.
+    On a distorted WCS, the sky errors must match independent pixel
+    errors propagated through offsets measured by astropy.
     """
-    shape = (256, 256)
-    # Coarse pixels so that the array spans a usable area around the
-    # pole, which the fiducial places at pixel (0, 0)
-    wcs = _make_wcs(shape, pscale=10.0 / 3600.0, crval=(0.0, 90.0))
+    wcs = _make_wcs((256, 256), distorted=True)
+    x = np.array([10.0, 128.0, 240.0])
+    y = np.array([200.0, 128.0, 30.0])
+    x_err = np.array([0.02, 0.1, 0.3])
+    y_err = np.array([0.05, 0.1, 0.01])
 
-    n = 32
-    radius = 100.0
-    theta = np.linspace(0, 2 * np.pi, n, endpoint=False)
-    angle = north_angle_at(
-        wcs, radius * np.cos(theta), radius * np.sin(theta)
-    ).to_value(u.deg)
+    east_err, north_err = pixel_to_sky_errors(wcs, x, y, x_err, y_err)
 
-    # The angles must sweep a large angle.
-    spread = np.degrees(np.ptp(np.unwrap(np.radians(angle))))
-    assert spread > 180
+    # Offsets are linear over these small steps
+    east_x, north_x = _sky_offsets(wcs, x, y, x_err, 0.0)
+    east_y, north_y = _sky_offsets(wcs, x, y, 0.0, y_err)
+    assert u.allclose(east_err, np.hypot(east_x, east_y) * u.arcsec, rtol=1e-4)
+    assert u.allclose(north_err, np.hypot(north_x, north_y) * u.arcsec, rtol=1e-4)
 
-    # Every angle must be finite: the forward-only formulation does not
-    # break down near the pole
-    assert np.all(np.isfinite(angle))
+
+def test_sky_errors_nan_outside_bounding_box():
+    """
+    Positions outside the WCS bounding box, where pixel_to_world gives
+    NaN, must have NaN sky errors. Positions in the outermost half pixel
+    are inside the bounding box and must have finite errors.
+    """
+    wcs = _make_wcs((256, 256), distorted=True)
+    x = np.array([-0.5, -0.3, 255.3, 255.5, -0.6, 255.6, 128.0, 128.0])
+    y = np.array([128.0, 128.0, 128.0, 128.0, 128.0, 128.0, -0.6, 255.6])
+    err = np.full(x.shape, 0.1)
+
+    east_err, north_err = pixel_to_sky_errors(wcs, x, y, err, err)
+
+    outside = ~np.isfinite(wcs.pixel_to_world(x, y).ra.deg)
+    assert outside.tolist() == [False] * 4 + [True] * 4
+    for sky_err in (east_err, north_err):
+        assert np.all(np.isfinite(sky_err[~outside]))
+        assert np.all(np.isnan(sky_err[outside]))

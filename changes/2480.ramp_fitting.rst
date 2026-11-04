@@ -1,2 +1,0 @@
-Respect ``use_ramp_jump_detection`` in likelihood-based ramp fitting, and keep
-``dumo`` finite where the slope is NaN.

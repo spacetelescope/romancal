@@ -1,0 +1,1 @@
+Pin scipy to not allow version 2.

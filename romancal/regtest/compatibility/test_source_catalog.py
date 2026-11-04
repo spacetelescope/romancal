@@ -17,7 +17,7 @@ pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
     ],
     ids=["L3skycell", "L3", "L2"],
 )
-def run_source_catalog(old_rtdata_module, request, resource_tracker):
+def run_source_catalog(old_rtdata_module, request):
     rtdata = old_rtdata_module
 
     inputfn = request.param
@@ -33,18 +33,13 @@ def run_source_catalog(old_rtdata_module, request, resource_tracker):
         rtdata.input,
         "--update_version=True",
     ]
-    with resource_tracker.track():
-        RomanStep.from_cmdline(args)
+    RomanStep.from_cmdline(args)
     return rtdata
 
 
 @pytest.fixture(scope="module")
 def output_filename(run_source_catalog):
     return run_source_catalog.output
-
-
-def test_log_tracked_resources(log_tracked_resources, run_source_catalog):
-    log_tracked_resources()
 
 
 def test_output_exists(output_filename):

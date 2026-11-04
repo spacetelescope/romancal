@@ -17,8 +17,8 @@ data. The background and background noise are estimated using the
 class from `Photutils
 <https://photutils.readthedocs.io/en/stable/index.html>`_. This class
 calculates the background by measuring the sigma-clipped median within
-user-defined boxes of a specified size (``bkg_boxsize``). The background
-RMS noise is then estimated using the sigma-clipped standard deviation
+user-defined boxes of a specified angular size (``bkg_boxsize``, in
+arcsec). The background RMS noise is then estimated using the sigma-clipped standard deviation
 within the same boxes.
 
 
@@ -31,27 +31,75 @@ assigns an integer label to each pixel in an image, such that pixels
 with the same label correspond to the same source. Source extraction is
 then performed using the `Photutils segmentation <https://photutils.readthedocs.io/en/latest/user_guide/segmentation.html>`_ tools.
 
-The background-subtracted image is convolved with a Gaussian kernel
-to smooth the noise and enhance the detectability of objects with a
-shape similar to the kernel. The Gaussian kernel is defined by
-the ``kernel_fwhm`` parameter, which specifies the full-width at half-maximum
-(FWHM) of the kernel. The kernel is normalized to have a total
-flux of 1.0.
+We convolve the background-subtracted image with a variety of templates
+corresponding to different sizes of sources, using a matched filter
+approach that provides the optimal SNR for matching sources.  The
+templates are all Gaussians: a point-source template whose FWHM is set
+by the ``kernel_fwhm`` parameter, together with larger ones standing in
+for galaxies, whose FWHM are set by the ``template_fwhm`` parameter.
+Their sizes are angular rather than in pixels, so that the same physical
+scales are searched whatever the pixel scale of the image; the default
+bank is 0.2 and 0.6 arcsec FWHM.  ``template_fwhm`` takes any number
+of sizes, and an empty list detects with the PSF alone.  Broader
+templates are more sensitive to faint, extended emission, but in tests on
+simulated images a 2.4 arcsec template detected the haloes of bright
+galaxies over large areas and absorbed their faint neighbors, lowering
+completeness, so it is not included by default.  Each
+filter is applied with inverse-variance weighting, so it produces
+the maximum-likelihood amplitude of that template divided by its own
+uncertainty: a signal-to-noise ratio image.  These SNR images are further
+normalized by their empirical RMS in order to account for calibration
+errors in the uncertainty maps; these normalizations tend to be around one
+for small kernels and larger for large extended profiles which are more sensitive
+and where leakage of halo light from sources into the background images
+is more prominent.  Masked pixels are used in the SNR images but assigned
+zero weight, so the SNR image
+is still defined where individual pixels are bad; for example, the saturated core
+of a bright star has a well defined value in the SNR image.
 
-Detected sources must consist of a minimum number of connected pixels
-(``npixels``), each exceeding a specified threshold value in
-the convolved image. The threshold level is defined as a per-pixel
-multiple (``snr_threshold``) of the background RMS image.
+Before each convolution a local background is subtracted, estimated at a
+scale set by that template, in order to make the point source SNR image
+less sensitive to the wings of nearby galaxies.  The background is measured
+on the direct image using `Photutils Background2D
+<https://photutils.readthedocs.io/en/latest/api/photutils.background.Background2D.html>`_,
+which takes a sigma-clipped median in boxes four times the template FWHM
+across and then median-filters that mesh over a three-by-three window of
+boxes, so the scale actually removed is about twelve template FWHM.  This
+is the same estimator the step uses to subtract the sky, at a box set by
+the template rather than by ``bkg_boxsize``.  It is
+measured on the pixels rather than on the convolved image because a
+convolution spreads a single corrupt pixel over the whole kernel footprint,
+where a median can no longer reject it.
 
-Overlapping sources are deblended using the `Photutils deblender
+Sources are then found on the per-pixel maximum over the SNR images.
+This maximum is itself an SNR image, recording the best SNR any
+template can offer at each pixel. Pixels above ``snr_threshold`` in the
+max SNR image form the detection footprint, and overlapping sources are
+separated there by the `Photutils deblender
 <https://photutils.readthedocs.io/en/latest/user_guide/segmentation.html
-#source-deblending>`_. The deblending algorithm first applies
-a multi-thresholding approach to identify potentially
-overlapping sources, then uses `watershed segmentation
-<https://en.wikipedia.org/wiki/Watershed_(image_processing)>`_ to
-separate them. For successful deblending, the sources must be separated
-enough that there is a saddle point between them. Currently, the
-``deblend`` keyword must be set to deblend sources.
+#source-deblending>`_, which applies a multi-thresholding approach and
+then `watershed segmentation
+<https://en.wikipedia.org/wiki/Watershed_(image_processing)>`_. For
+successful deblending, sources must be separated enough that there
+is a saddle point between them.  Because we deblend one combined max SNR image,
+rather than each filter separately, every pixel belongs to at most
+one source and we avoid challenges surrounding harmonizing multiple sets
+of overlapping catalog sources detected on different filters.
+
+Each source is then given a segment that extends out to an isophote
+appropriate to the template that achieved the highest SNR for that source.
+The segment derived from the max SNR image is intersected with the isophote
+corresponding to the SNR image for its peak template.  This leads stars
+to keep compact isophotes while galaxies extend to fainter isophotes.
+These intersected segments are then grown by one pixel and accumulated
+onto an overall segmentation image in
+order of decreasing significance.  The first segment to claim a pixel
+(the most significant one) retains it throughout the accumulation.  Any segment left with fewer than
+``npixels`` usable pixels is dropped. The template that detected each
+source and its peak significance are recorded in the catalog as
+``det_template`` and ``det_significance``. Very crowded fields can yield
+more detections than are worth measuring; setting ``max_sources`` keeps
+only that many of the most significant.  By default all are kept.
 
 
 Source Photometry and Properties
@@ -69,23 +117,43 @@ and orientation of the major axis.
 The image moments are computed in the pixel frame. Properties that are
 reported in sky units (``semimajor``, ``semiminor``, ``fwhm``,
 ``kron_radius``, ``segment_area``, and ``nn_distance``) are converted
-using the pixel scale local to each source, and ``orientation_sky`` is
-measured from the direction of north local to each source rather than
-from a single direction for the whole image.
+using the pixel scale local to each source.
 
-Only the size and rotation of the local pixel are accounted for, not its
-shape. Where pixels are not square, the sky-frame axis lengths and
-position angle carry a residual error of order the departure from
-squareness (1-3% for Roman). ``ellipticity`` and ``orientation_pix``
-are pixel-frame quantities and are not corrected at all.
+``orientation_sky`` is the position angle of the major axis measured
+from North toward East, in the range (-90, 90] degrees. It is calculated
+by :external+photutils:py:class:`photutils.segmentation.SourceCatalog`,
+which transports the pixel-frame covariance matrix to the sky with the
+WCS Jacobian evaluated at each source. This accounts for the local WCS
+rotation, parity, and distortion.
+
+The centroid errors (e.g., ``x_centroid_err`` and ``ra_centroid_err``)
+are also calculated by ``SourceCatalog`` by propagating the input error
+array through the centroid calculation. The sky centroid errors are the
+great-circle errors along the Right Ascension and Declination directions
+in arcsec. The centroid errors are zero where the input errors are zero.
+They are NaN where the input errors are NaN or where the source is
+completely masked.
+
+The PSF sky position errors (``ra_psf_err`` and ``dec_psf_err``) are
+constructed from the fitted pixel position errors (``x_psf_err`` and ``y_psf_err``),
+transformed to sky coordinates using the WCS Jacobian evaluated at each source.  The covariance
+between the fitted x and y positions is neglected.
+
+For the sizes, only the area of the local pixel is accounted for, not
+its shape. Where pixels are not square, the sky-frame axis lengths carry
+a residual error of order the departure from squareness (1-3% for
+Roman). ``ellipticity`` and ``orientation_pix`` are pixel-frame
+quantities and are not corrected at all.
 
 Circular aperture photometry is performed at several aperture sizes
 (:math:`r` = 0.1, 0.2, 0.4, 0.8, 1.6 arcsec) for each source. These
 radii are converted to pixels using the pixel scale local to each
-source.  Because a single aperture can only be measured at one radius at
+source. Because a single aperture can only be measured at one radius at
 a time, sources are grouped into batches that share a common radius,
 chosen so that no source's aperture radius is wrong by more than about
-one part in :math:`10^{4}`.
+one part in :math:`10^{4}`. Pixels assigned to neighboring sources in
+the segmentation image are excluded from the circular apertures, using
+the same ``"mask"`` aperture mask method as the Kron photometry.
 
 The ``circle_pix`` and ``annulus_pix`` entries in the catalog metadata
 report the mean radius over all sources rather than the exact radius
@@ -103,7 +171,16 @@ by setting the ``fit_psf`` keyword. Enabling this option fits a model
 PSF to each source to measure its position and flux. The PSF model is
 generated using reference files on CRDS. PSF photometry is performed
 using the :external+photutils:py:class:`photutils.psf.PSFPhotometry`
-class.
+class. The fitted position of each source is constrained to lie within
+2.5 pixels of its centroid along each axis. A fit that ends at this limit
+has bit 32 set in the ``psf_flags`` column.
+
+In practice, bits 8 and 32 of ``psf_flags`` are set almost exclusively
+for extended sources, whose light profiles the PSF model cannot
+describe. They mark PSF measurements that are not meaningful for that
+source rather than a failure of the fit, and sources with either bit
+set are nearly always also flagged by ``is_extended``. Fits of isolated
+point sources end well inside the limit.
 
 For Level 2 data, a gridded PSF model is generated for each individual
 detector using the reference files in CRDS. These PSF models account
@@ -151,10 +228,12 @@ circular annulus centered on the source. The circular annulus has an
 inner and outer radius of 2.4 and 2.8 arcsec, respectively, converted to
 pixels using the pixel scale local to each source. The local background
 flux is calculated as the sigma-clipped median value within the annulus,
-divided by the local pixel solid angle, and is
-a surface brightness (nJy/arcsec\ :sup:`2`) rather than a flux. Although
-this local background value is included in the source catalog, it is not
-subtracted from any of the measured fluxes.
+divided by the local pixel solid angle, and is a surface brightness
+(nJy/arcsec\ :sup:`2`) rather than a flux. Pixels assigned to any
+source in the segmentation image, including the source being measured,
+are excluded from the annulus. Although this local background value is
+included in the source catalog, it is not subtracted from any of the
+measured fluxes.
 
 Each source has a field, `is_extended`, intended to indicate whether the
 source is more extended than expected, were the object a point source.
@@ -223,10 +302,13 @@ The ``warning_flags`` column contains the following bit flags:
   * Level 3: sources whose rounded centroid pixel is not finite or has a
     weight of 0
 
-The ``image_flags`` column contains the following bit flags:
-
-- 0 : Good
-- 1 : One or more pixels in the source segment was flagged
+The ``image_flags`` column contains the bitwise ``or`` of the ``dq`` flags
+of every pixel in the source segment, using the flags listed in
+:ref:`data_quality_flags`. Pixels with ``DO_NOT_USE`` set are not
+included in segments, so their flags do not propagate to
+``image_flags``.  The ``image_flags2`` column is treated analogously,
+using the ``dq2`` array and the flags listed in
+:ref:`extra_data_quality_flags`.
 
 The ``psf_flags`` column contains the following bit flags defined by the
 :external+photutils:py:class:`photutils.psf.PSFPhotometry` class:

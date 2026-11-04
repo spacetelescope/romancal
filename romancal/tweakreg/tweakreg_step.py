@@ -55,8 +55,9 @@ class TweakRegStep(RomanStep):
         separation = float(default=1.0) # Minimum object separation in arcsec
         tolerance = float(default=0.7) # Matching tolerance for xyxymatch in arcsec
         fitgeometry = option('shift', 'rshift', 'rscale', 'general', default='general') # Fitting geometry
-        nclip = integer(min=0, default=3) # Number of clipping iterations in fit
+        nclip = integer(min=0, default=10) # Number of clipping iterations in fit
         sigma = float(min=0.0, default=3.0) # Clipping limit in sigma units
+        sigma_stat = option('rmse', 'mae', 'std', 'mad', default='mad') # Statistic used as sigma for clipping, in the relative and absolute fits
         abs_refcat = string(default='{DEFAULT_ABS_REFCAT}')  # Absolute reference catalog
         save_abs_catalog = boolean(default=False)  # Write out used absolute astrometric reference catalog as a separate product
         abs_minobj = integer(default=10) # Minimum number of objects acceptable for matching when performing absolute astrometry
@@ -67,7 +68,7 @@ class TweakRegStep(RomanStep):
         abs_tolerance = float(default=0.7) # Matching tolerance for xyxymatch in arcsec when performing absolute astrometry
         # Fitting geometry when performing absolute astrometry
         abs_fitgeometry = option('shift', 'rshift', 'rscale', 'general', default='general')
-        abs_nclip = integer(min=0, default=3) # Number of clipping iterations in fit when performing absolute astrometry
+        abs_nclip = integer(min=0, default=10) # Number of clipping iterations in fit when performing absolute astrometry
         abs_sigma = float(min=0.0, default=3.0) # Clipping limit in sigma units when performing absolute astrometry
         output_use_model = boolean(default=True)  # When saving use `DataModel.meta.filename`
         update_source_catalog_coordinates = boolean(default=False) # Update source catalog file with tweaked coordinates?
@@ -119,6 +120,16 @@ class TweakRegStep(RomanStep):
                     )
                     image_model.meta.cal_step.tweakreg = "SKIPPED"
                 else:
+                    # set_telescope_pointing sets vparity = -1 from the SIAF
+                    # for all WFI apertures; +1 means it never ran or failed.
+                    if image_model.meta.wcsinfo.vparity == 1:
+                        images.shelve(image_model, i, modify=False)
+                        raise ValueError(
+                            f"meta.wcsinfo for {image_model.meta.filename} has "
+                            "placeholder values (vparity=+1); the pointing was "
+                            "likely never set by set_telescope_pointing. "
+                            "Cannot align this image."
+                        )
                     try:
                         catalog = self.get_tweakreg_catalog(source_catalog, image_model)
                     except AttributeError as e:
@@ -448,6 +459,7 @@ class TweakRegStep(RomanStep):
             nclip=self.nclip,
             sigma=self.sigma,
             clip_accum=True,
+            sigma_stat=self.sigma_stat,
         )
 
     def do_absolute_alignment(self, ref_image, imcats):
@@ -480,6 +492,7 @@ class TweakRegStep(RomanStep):
             abs_fitgeometry=self.abs_fitgeometry,
             abs_nclip=self.abs_nclip,
             abs_sigma=self.abs_sigma,
+            sigma_stat=self.sigma_stat,
             abs_searchrad=self.abs_searchrad,
             abs_use2dhist=self.abs_use2dhist,
             abs_separation=self.abs_separation,

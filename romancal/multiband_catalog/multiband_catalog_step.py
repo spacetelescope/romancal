@@ -56,7 +56,7 @@ class MultibandCatalogStep(RomanStep):
         suffix = string(default='cat')        # Default suffix for output files
         fit_psf = boolean(default=True)       # fit source PSFs for accurate astrometry?
         psf_match_reference_filter = string(default=None)  # reference filter for PSF matching
-        inject_sources = boolean(default=False) # Inject sources into images
+        inject_sources = boolean(default=True) # Inject sources into images
         inject_seed = integer(default=None)   # RNG seed for injected sources
         save_debug_info = boolean(default=False)
                                    # Include image data and other data for testing

@@ -7,6 +7,8 @@ from astropy.time import Time
 from roman_datamodels.datamodels import FpsModel, RampModel, ScienceRawModel, TvacModel
 from roman_datamodels.dqflags import pixel
 
+from romancal.lib.dqutils import update_dq
+
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
@@ -64,6 +66,7 @@ def to_ramp_model(model):
     shape = model.data.shape
     ramp_model.data = model.data.astype(np.float32)
     ramp_model.pixeldq = np.zeros(shape[1:], dtype=np.uint32)
+    ramp_model.pixeldq2 = np.zeros(shape[1:], dtype=np.uint32)
 
     # check if the input model has a resultantdq from SDF
     if hasattr(ramp_model, "resultantdq"):
@@ -101,18 +104,22 @@ def do_dqinit(model, mask, expand_gw_flagging=0):
     # Convert to RampModel
     output_model = to_ramp_model(model)
 
-    # guide window range information
+    # guide window range information; the stop values are inclusive,
+    # so add 1 to use them as slice bounds
     x_start = int(output_model.meta.guide_star.window_xstart)
-    x_stop = int(output_model.meta.guide_star.window_xstop)
+    x_stop = int(output_model.meta.guide_star.window_xstop) + 1
     y_start = int(output_model.meta.guide_star.window_ystart)
-    y_stop = int(output_model.meta.guide_star.window_ystop)
+    y_stop = int(output_model.meta.guide_star.window_ystop) + 1
 
     npix = output_model.pixeldq.shape[0]
     if x_start >= 0 and x_start < npix and y_start >= 0 and y_start < npix:
-        # set pixeldq array to GW_AFFECTED_DATA (2**4) for the given range
+        # set pixeldq array to GW_AFFECTED_DATA (2**4) for the columns
+        # and rows containing the guide window
         output_model.pixeldq[:, x_start:x_stop] = pixel.GW_AFFECTED_DATA
+        output_model.pixeldq[y_start:y_stop, :] |= pixel.GW_AFFECTED_DATA
         log.info(
-            f"Flagging rows from: {x_start} to {x_stop} as affected by guide window read"
+            f"Flagging columns {x_start} through {x_stop - 1} and rows "
+            f"{y_start} through {y_stop - 1} as affected by guide window read"
         )
 
         # expand guide window if requested
@@ -131,26 +138,36 @@ def do_dqinit(model, mask, expand_gw_flagging=0):
         )
 
     # the reference read has been subtracted from the science data
-    # in the L1 files.  Add it back into the data.
+    # in older L1 files.  Add it back into the data unless the L1 says it
+    # was already added back in.
     # the TVAC files are special and there the reference read was
     # already added back in
+    reference_read_added = model.meta.instrument.get("l1_reference_read_added", False)
     reference_read = getattr(output_model, "reference_read", None)
-    if reference_read is not None and not is_tvac:
+    if reference_read is not None and not is_tvac and not reference_read_added:
         output_model.data += reference_read
-        del output_model.reference_read
     reference_amp33 = getattr(output_model, "reference_amp33", None)
-    if reference_amp33 is not None and not is_tvac:
+    if reference_amp33 is not None and not is_tvac and not reference_read_added:
         output_model.amp33 += reference_amp33
+
+    # don't propagate the reference read arrays to the ramp
+    if reference_read is not None:
+        del output_model.reference_read
+    if reference_amp33 is not None:
         del output_model.reference_amp33
 
     # If a data encoding offset was added to the data, remove it
-    # from the data and amp33 arrays
-    data_encoding_offset = getattr(model.meta.instrument, "data_encoding_offset", 0)
-    output_model.data -= data_encoding_offset
-    output_model.amp33 -= data_encoding_offset
+    # from the data and amp33 arrays, unless the L1 says it was
+    # already removed
+    if not model.meta.instrument.get("l1_data_encoding_offset_removed", False):
+        data_encoding_offset = getattr(model.meta.instrument, "data_encoding_offset", 0)
+        output_model.data -= data_encoding_offset
+        output_model.amp33 -= data_encoding_offset
+    else:
+        log.info("Data encoding offset already removed from L1 data; not removing.")
 
     if mask is not None and output_model.pixeldq.shape == mask.dq.shape:
-        output_model.pixeldq |= mask.dq
+        update_dq(output_model, mask)
         output_model.meta.cal_step.dq_init = "COMPLETE"
     else:
         log.warning("Mask data array is None or not the same shape as the science data")
