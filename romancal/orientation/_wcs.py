@@ -9,6 +9,7 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord, SkyOffsetFrame
 from astropy.time import Time
 from scipy.spatial.transform import Rotation as R
+from stcal.velocity_aberration import compute_va_effects_vector
 
 from . import _lib as olib
 from . import _pointing as plib
@@ -135,9 +136,7 @@ def calc_wcs(t_pars: tlib.TransformParameters):
 
     # Velocity Aberration Scale Factor using True Target SkyCoord (forward velocity)
     u_tgt_true = tgt_true_coord.cartesian.xyz.value
-    _, global_scale_factor = apply_vector_velocity_aberration(
-        u_tgt_true, velocity
-    )
+    global_scale_factor, _ = compute_va_effects_vector(*velocity, u_tgt_true)
 
     # Apparent Reference Coordinates at Target
     tgt_app_coord = SkyCoord(
@@ -334,7 +333,7 @@ def v2v3_to_true_icrs(v2_arcsec, v3_arcsec, app_v2v3_frame, velocity):
     ).transform_to("icrs")
     vecs = app.cartesian.xyz.value.T
     v_inv = -np.asarray(velocity, dtype=float)
-    true = np.array([apply_vector_velocity_aberration(v, v_inv)[0] for v in vecs])
+    true = np.array([compute_va_effects_vector(*v_inv, v)[1] for v in vecs])
     ra = np.rad2deg(np.arctan2(true[:, 1], true[:, 0])) % 360.0
     dec = np.rad2deg(np.arcsin(np.clip(true[:, 2], -1.0, 1.0)))
     return SkyCoord(ra=ra * u.deg, dec=dec * u.deg, frame="icrs")
