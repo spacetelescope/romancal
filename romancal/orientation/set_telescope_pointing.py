@@ -84,7 +84,6 @@ EXPECTED_MODELS = rdm.datamodels.ScienceRawModel
 def add_wcs(
     filename,
     dry_run=False,
-    save_transforms=None,
     **transform_kwargs,
 ):
     """Add WCS information to a Roman DataModel.
@@ -102,9 +101,6 @@ def add_wcs(
 
     dry_run : bool
         Run through the calculations but do not modify the file.
-
-    save_transforms : Path-like or None
-        File to save the calculated transforms to.
 
     transform_kwargs : dict
         dict to use to initialize the `TransformParameters` object.
