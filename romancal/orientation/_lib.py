@@ -5,6 +5,7 @@ from pathlib import Path
 
 from astropy.time import Time
 from crds import getreferences
+from stpipe.crds_client import get_context_used, get_svn_version
 
 __all__ = []
 
@@ -98,16 +99,29 @@ def update_meta(model, t_pars, wcs_meta, quality):
     """Update model's meta info with the given pointing.
 
     The following meta are update:
-    - meta.guide_star.hv_position
-    - meta.pointing.dec_v1
-    - meta.pointing.pa_aperture
-    - meta.pointing.pa_v3
     - meta.pointing.quaternion
+    - meta.pointing.bam_quaternion
     - meta.pointing.ra_v1
-    - meta.pointing.target_dec
+    - meta.pointing.dec_v1
+    - meta.pointing.pa_v3
+    - meta.pointing.target_aperture
     - meta.pointing.target_ra
-    - meta.wcsinfo.dec_ref
+    - meta.pointing.target_dec
+    - meta.pointing.pa_aperture
+    - meta.ref_file.bam
+    - meta.ref_file.crds.version
+    - meta.ref_file.crds.context
+    - meta.ref_file.distortion
+    - meta.velocity_aberration.ra_reference
+    - meta.velocity_aberration.dec_reference
+    - meta.velocity_aberration.scale_factor
+    - meta.wcsinfo.aperture_name": aperture_name,
+    - meta.wcsinfo.v2_ref
+    - meta.wcsinfo.v3_ref
+    - meta.wcsinfo.v3yangle
+    - meta.wcsinfo.vparity
     - meta.wcsinfo.ra_ref
+    - meta.wcsinfo.dec_ref
     - meta.wcsinfo.roll_ref
     - meta.wcsinfo.s_region
 
@@ -133,5 +147,8 @@ def update_meta(model, t_pars, wcs_meta, quality):
         for k, v in wcs_meta[section].items():
             setattr(section_meta, k, v)
 
+    # Update CRDS information.
+    model.meta.ref_file.crds.context = get_context_used('roman')
+    model.meta.ref_file.crds.version = get_svn_version()
     model.meta.ref_file.bam = Path(t_pars.bam_ref).name
     model.meta.ref_file.distortion = Path(t_pars.distortion_ref).name

@@ -41,7 +41,7 @@ The following meta values are populated:
     - meta.pointing.target_aperture
     - meta.pointing.target_ra
     - meta.pointing.target_dec
-    - meta.pa_aperture
+    - meta.pointing.pa_aperture
     - meta.velocity_aberration.ra_reference
     - meta.velocity_aberration.dec_reference
     - meta.velocity_aberration.scale_factor
