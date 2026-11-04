@@ -25,37 +25,35 @@ Programmatically, the command line is implemented by the function
 `~roman.orientation.set_telescope_pointing.add_wcs`, which calls the basic function
 `~roman.orientation.set_telescope_pointing.calc_wcs`.
 
-There are two data structures used to maintain the state of the transformation.
+There are data structure used to maintain the state of the transformation.
 `~roman.orientation.set_telescope_pointing.TransformParameters` contains the parameters
 needed to perform the transformations.
-`~roman.orientation.set_telescope_pointing.Transforms` contains the calculated
-transformation matrices.
-
-**Transformation Matrices**
-
-All the transformation matrices, as defined by
-`~roman.orientation.set_telescope_pointing.Transforms`, are Direction Cosine Matrices
-(DCM). A DCM contains the Euler rotation angles that represent the sky
-coordinates for a particular frame-of-reference. The initial DCM is provided
-through the engineering telemetry and represents how the observatory is orientated.
 
 **META Affected**
 
 The following meta values are populated:
 
-    - meta.guide_star.hv_position
-    - meta.pointing.dec_v1
-    - meta.pointing.pa_aperture
-    - meta.pointing.pa_v3
     - meta.pointing.quaternion
+    - meta.pointing.bam_quaternion
     - meta.pointing.ra_v1
-    - meta.pointing.target_dec
+    - meta.pointing.dec_v1
+    - meta.pointing.pa_v3
+    - meta.pointing.target_aperture
     - meta.pointing.target_ra
-    - meta.wcsinfo.dec_ref
+    - meta.pointing.target_dec
+    - meta.pa_aperture
+    - meta.velocity_aberration.ra_reference
+    - meta.velocity_aberration.dec_reference
+    - meta.velocity_aberration.scale_factor
+    - meta.wcsinfo.aperture_name": aperture_name,
+    - meta.wcsinfo.v2_ref
+    - meta.wcsinfo.v3_ref
+    - meta.wcsinfo.v3yangle
+    - meta.wcsinfo.vparity
     - meta.wcsinfo.ra_ref
+    - meta.wcsinfo.dec_ref
     - meta.wcsinfo.roll_ref
     - meta.wcsinfo.s_region
-
 """
 
 import logging
