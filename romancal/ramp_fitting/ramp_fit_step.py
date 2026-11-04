@@ -421,6 +421,9 @@ def _setup_jump_data(
         edge_size,
     )
 
+    # Do not flag the 4 neighbors of each jump (stcal's JWST default is True)
+    jump_data.flag_4_neighbors = False
+
     # Performance setup
     jump_data.max_cores = maximum_cores
 
