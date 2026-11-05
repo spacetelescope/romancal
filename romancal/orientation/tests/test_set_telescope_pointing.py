@@ -365,7 +365,7 @@ def test_strict_pointing(science_raw_model, tmp_path):
         ("meta.wcsinfo.v2_ref", 1454.084),
         ("meta.wcsinfo.v3_ref", -1163.304),
         ("meta.wcsinfo.vparity", -1),
-        ("meta.wcsinfo.v3yangle", -59.99960999999999),
+        ("meta.wcsinfo.v3yangle", -60.17427689758176),
         ("meta.wcsinfo.ra_ref", 80.62520113957764),
         ("meta.wcsinfo.dec_ref", -69.41891635642607),
         ("meta.wcsinfo.roll_ref", 97.47628097051559),

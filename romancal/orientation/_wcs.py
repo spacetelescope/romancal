@@ -64,6 +64,8 @@ def build_v2v3_skyoffset_frame(v1_vec, v3_vec):
     )
     pa_v3 = float(v1_coord.position_angle(v3_step_coord).deg % 360.0)
 
+    # SkyOffsetFrame positive rotation is CCW (West of North).
+    # Passing +pa_v3 aligns +lat with +V3 (East of North) and +lon with +V2.
     v2v3_frame = SkyOffsetFrame(origin=v1_coord, rotation=pa_v3 * u.deg)
     return v2v3_frame, ra_v1, dec_v1, pa_v3
 
@@ -82,7 +84,7 @@ def calc_wcs(t_pars: tlib.TransformParameters):
 
     Returns
     -------
-    meta : dict
+    wcs_meta : dict
         Set of meta data that defines the wcs. The primary keys are:
         - pointing: The pointing meta block
         - velocity_aberration: The aberration characteristics
@@ -112,7 +114,6 @@ def calc_wcs(t_pars: tlib.TransformParameters):
         velocity = np.zeros(velocity.shape)
 
     # 1. APPARENT ATTITUDE FRAME (From Telemetry qbj)
-    # The physical orientation of the telescope capturing aberrated photons
     att_matrix_app = R.from_quat(t_pars.pointing.q).as_matrix()
     v1_app = att_matrix_app[:, 0]
     v3_app = att_matrix_app[:, 2]
@@ -120,43 +121,42 @@ def calc_wcs(t_pars: tlib.TransformParameters):
     app_v2v3_frame, _, _, _ = build_v2v3_skyoffset_frame(v1_app, v3_app)
 
     # 2. TRUE (UN-ABERRATED) V1 BORESIGHT & FRAME
+    def true_point(v2, v3):
+        return v2v3_to_true_icrs(v2, v3, app_v2v3_frame, velocity)
+
     true_ra_v1, true_dec_v1, true_pa_v3, _ = true_point_and_roll(
         0.0, 0.0, app_v2v3_frame, velocity
     )
 
     # 3. GLOBAL TARGET POINTING (DYNAMIC APERTURE RESOLUTION)
-    # Default to WFI_CEN via BAM if target_aperture is WFI_CEN or unspecified.
-    if t_pars.target_aperture is None or t_pars.target_aperture.upper() == "WFI_CEN":
+    if t_pars.target_aperture.upper() == "WFI_CEN":
         tgt_ya_deg, tgt_v2_ref, tgt_v3_ref = get_angles_from_quaternion(q_bam)
     else:
-        # If target points to a specific SCA or custom aperture, use its local reference V2/V3
-        # and assume nominal WFI boresight clocking (tgt_ya_deg from BAM).
-        tgt_ya_deg, _, _ = get_angles_from_quaternion(q_bam)
-        tgt_v2_ref = sca_info["v2_ref"]
-        tgt_v3_ref = sca_info["v3_ref"]
+        tgt_sca_info = extract_sca_wcs_params(t_pars.distortion_target_ref)
+        tgt_v2_ref = tgt_sca_info["v2_ref"]
+        tgt_v3_ref = tgt_sca_info["v3_ref"]
+        tgt_ya_deg = tgt_sca_info["v3yangle"]
 
     tgt_true_ra, tgt_true_dec, true_roll_target, tgt_true_coord = true_point_and_roll(
         tgt_v2_ref, tgt_v3_ref, app_v2v3_frame, velocity
     )
     pa_aperture_true = (true_roll_target + tgt_ya_deg) % 360.0
 
-    # Velocity Aberration Scale Factor using True Target SkyCoord (forward velocity)
-    u_tgt_true = tgt_true_coord.cartesian.xyz.value
-    global_scale_factor, _ = compute_va_effects_vector(*velocity, u_tgt_true)
-
-    # Apparent Reference Coordinates at Target
+    # Apparent Reference Coordinates at Target (for DVA anchor)
     tgt_app_coord = SkyCoord(
         lon=tgt_v2_ref * u.arcsec, lat=tgt_v3_ref * u.arcsec, frame=app_v2v3_frame
     ).transform_to("icrs")
 
-    # 4. SCA-SPECIFIC WCS VIA DISTORTION REFERENCE FILE
+    # Velocity Aberration Scale Factor using True Target Vector
+    u_tgt_true = tgt_true_coord.cartesian.xyz.value
+    _, global_scale_factor = apply_vector_velocity_aberration(u_tgt_true, velocity)
+
+    # 4. SCA-SPECIFIC WCS PROJECTIONS VIA DISTORTION REFERENCE FILE
     true_ra_ref, true_dec_ref, true_roll_ref, _ = true_point_and_roll(
         sca_info["v2_ref"], sca_info["v3_ref"], app_v2v3_frame, velocity
     )
 
-    corners_coord = v2v3_to_true_icrs(
-        sca_info["corners_v2"], sca_info["corners_v3"], app_v2v3_frame, velocity
-    )
+    corners_coord = true_point(sca_info["corners_v2"], sca_info["corners_v3"])
 
     polygon_str = " ".join(
         [
@@ -195,6 +195,7 @@ def calc_wcs(t_pars: tlib.TransformParameters):
             "s_region": f"POLYGON ICRS {polygon_str}",
         },
     }
+
     return wcs_meta
 
 
@@ -245,28 +246,47 @@ def calc_wcs_over_time(obsstart, obsend, t_pars: tlib.TransformParameters):
     return obstimes, wcs_metas
 
 
-def extract_sca_wcs_params(distortion_path):
-    """Extracts WCS refrence parameters and corner footprints using roman_datamodels."""
+def extract_sca_wcs_params(distortion_asdf_path):
+    """
+    Extracts WCS reference parameters and corner footprints using roman_datamodels.
+    Evaluates the linear terms via finite differences (Jacoban) to remain
+    agnostic to the ASDF's internal compound model architecture.
+    """
+    # Active science area is 4088x4088 with reference pixels removed.
+    # Corners in 0-indexed space fall exactly on -0.5 and 4087.5
     corners_x_0idx = np.array([-0.5, 4087.5, 4087.5, -0.5])
     corners_y_0idx = np.array([-0.5, -0.5, 4087.5, 4087.5])
 
-    with rdm.open(distortion_path) as dm:
+    with rdm.open(distortion_asdf_path) as dm:
         detector = str(dm.meta.instrument.detector)
         dist_mod = dm.coordinate_distortion_transform
 
-        v2_ref = float(dist_mod.offset_10.value)
-        v3_ref = float(dist_mod.offset_11.value)
+        # 0-indexed reference pixel for a 4088x4088 array
+        x0, y0 = 2043.5, 2043.5
 
-        # c10_v2 /V3 rotation & parity parameters (submodels 8 and 9)
-        c10_v2 = float(dist_mod.c1_0_8.value)  # p * cos(ya)
-        c01_v2 = float(dist_mod.c0_1_8.value)  # sin(ya)
-        c10_v3 = float(dist_mod.c1_0_9.value)  # -p * sin(ya)
-        c01_v3 = float(dist_mod.c0_1_9.value)  # cos(ya)
+        # 1. Reference coordinates directly from the model
+        v2_ref, v3_ref = dist_mod(x0, y0)
+        v2_ref, v3_ref = float(v2_ref), float(v3_ref)
 
-        v3_idl_yangle = float(np.rad2deg(np.arctan2(c01_v2, c01_v3)))
-        det_rot = (c10_v2 * c01_v3) - (c01_v2 * c10_v3)
-        v_idl_parity = int(np.round(det_rot))
+        # 2. Finite differences for the Jacobian matrix at the reference pixel
+        v2_dx_plus, v3_dx_plus = dist_mod(x0 + 1.0, y0)
+        v2_dx_minus, v3_dx_minus = dist_mod(x0 - 1.0, y0)
+        dx_v2 = (v2_dx_plus - v2_dx_minus) / 2.0
+        dx_v3 = (v3_dx_plus - v3_dx_minus) / 2.0
 
+        v2_dy_plus, v3_dy_plus = dist_mod(x0, y0 + 1.0)
+        v2_dy_minus, v3_dy_minus = dist_mod(x0, y0 - 1.0)
+        dy_v2 = (v2_dy_plus - v2_dy_minus) / 2.0
+        dy_v3 = (v3_dy_plus - v3_dy_minus) / 2.0
+
+        # 3. Derive V3IdlYAngle and VIdlParity from the Jacobian
+        v3_idl_yangle = float(np.rad2deg(np.arctan2(dy_v2, dy_v3)))
+
+        # Parity is the sign of the determinant of the [dx, dy] Jacobian matrix
+        det_J = (dx_v2 * dy_v3) - (dy_v2 * dx_v3)
+        v_idl_parity = int(np.sign(det_J))
+
+        # 4. Evaluate Corner Footprints
         corners_v2, corners_v3 = dist_mod(corners_x_0idx, corners_y_0idx)
 
         return {
