@@ -135,25 +135,63 @@ def test_change_base_url_fail():
         )
 
 
-@pytest.mark.parametrize('override, detector, target_aperture, partial_result',
-                         [
-                             # All references pulled from CRDS with nothing for WFI_CEN target.
-                             ({'bam_ref': None, 'distortion_ref': None, 'distortion_target_ref': None},
-                              'WFI01', 'WFI_CEN',
-                              {'bam_ref': 'roman', 'distortion_ref': 'roman', 'distortion_target_ref': 'A'}),
-                             # Overrides.
-                             ({'bam_ref': 'bam_local', 'distortion_ref': 'dist_local', 'distortion_target_ref': 'targ_local'},
-                              'WFI01', 'WFI_CEN',
-                              {'bam_ref': 'bam', 'distortion_ref': 'dist', 'distortion_target_ref': 'A'}),
-                             # Different target aperture.
-                             ({'bam_ref': 'bam_local', 'distortion_ref': 'dist_local', 'distortion_target_ref': None},
-                              'WFI01', 'WFI18_FULL',
-                              {'bam_ref': 'bam', 'distortion_ref': 'dist', 'distortion_target_ref': 'roman'}),
-                             # Different target aperture with override.
-                             ({'bam_ref': 'bam_local', 'distortion_ref': 'dist_local', 'distortion_target_ref': 'targ_local'},
-                              'WFI01', 'WFI18_FULL',
-                              {'bam_ref': 'bam', 'distortion_ref': 'dist', 'distortion_target_ref': 'targ'}),
-                         ])
+@pytest.mark.parametrize(
+    "override, detector, target_aperture, partial_result",
+    [
+        # All references pulled from CRDS with nothing for WFI_CEN target.
+        (
+            {"bam_ref": None, "distortion_ref": None, "distortion_target_ref": None},
+            "WFI01",
+            "WFI_CEN",
+            {
+                "bam_ref": "roman",
+                "distortion_ref": "roman",
+                "distortion_target_ref": "A",
+            },
+        ),
+        # Overrides.
+        (
+            {
+                "bam_ref": "bam_local",
+                "distortion_ref": "dist_local",
+                "distortion_target_ref": "targ_local",
+            },
+            "WFI01",
+            "WFI_CEN",
+            {"bam_ref": "bam", "distortion_ref": "dist", "distortion_target_ref": "A"},
+        ),
+        # Different target aperture.
+        (
+            {
+                "bam_ref": "bam_local",
+                "distortion_ref": "dist_local",
+                "distortion_target_ref": None,
+            },
+            "WFI01",
+            "WFI18_FULL",
+            {
+                "bam_ref": "bam",
+                "distortion_ref": "dist",
+                "distortion_target_ref": "roman",
+            },
+        ),
+        # Different target aperture with override.
+        (
+            {
+                "bam_ref": "bam_local",
+                "distortion_ref": "dist_local",
+                "distortion_target_ref": "targ_local",
+            },
+            "WFI01",
+            "WFI18_FULL",
+            {
+                "bam_ref": "bam",
+                "distortion_ref": "dist",
+                "distortion_target_ref": "targ",
+            },
+        ),
+    ],
+)
 def test_fetch_references(override, detector, target_aperture, partial_result):
     """Test fetching references."""
     t_pars = tlib.TransformParameters(**TRANSFORM_KWARGS)
