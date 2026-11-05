@@ -8,7 +8,7 @@ from romancal.source_catalog import _epsf
 from romancal.stpipe import RomanStep
 
 # mark all tests in this module
-pytestmark = [pytest.mark.bigdata, pytest.mark.soctests]
+pytestmark = pytest.mark.bigdata
 
 INPUT = "r0000101001001001001_0001_wfi01_f158_cal.asdf"
 CATALOG = "r0000101001001001001_0001_wfi01_f158_cat.parquet"
