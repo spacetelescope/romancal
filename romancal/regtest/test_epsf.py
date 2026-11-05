@@ -62,7 +62,7 @@ def test_epsf_values(run_epsf, dms_logger):
     checks = {
         "finite": np.all(np.isfinite(psf)),
         "normalized": np.isclose(psf.sum(), oversample**2, rtol=1e-2),
-        "centered": np.all(np.abs(np.array(peak) - center) <= oversample),
+        "centered": np.all(np.array(peak) == center),
     }
     passed = all(checks.values())
     passmsg = "PASS" if passed else "FAIL"
