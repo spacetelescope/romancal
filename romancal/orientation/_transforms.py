@@ -97,11 +97,6 @@ def t_pars_from_model(model, t_pars):
 
     # Instrument details
     t_pars.aperture = model.meta.wcsinfo.aperture_name
-    try:
-        exp_type = model.meta.exposure.type.lower()
-    except AttributeError:
-        exp_type = None
-    t_pars.exp_type = exp_type
     t_pars.target_aperture = model.meta.pointing.target_aperture
 
     # observation parameters
