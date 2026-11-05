@@ -160,9 +160,11 @@ def cli(argv=None):
                 Default: %(default)s""",
     )
     pick_star_parser.add_argument(
-        "--allow-saturated",
-        action="store_true",
-        help="Keep stars with saturated pixels in their stamps.",
+        "--reject-saturated",
+        type=_str2bool,
+        default=True,
+        help="""Reject stars with saturated pixels in their stamps (True or
+                False). Default: %(default)s""",
     )
     pick_star_parser.add_argument(
         "--max-psf-cfit",
@@ -191,9 +193,11 @@ def cli(argv=None):
                 neighbor flux in the Kron aperture. Default: %(default)s""",
     )
     pick_star_parser.add_argument(
-        "--allow-extended",
-        action="store_true",
-        help="Keep sources flagged is_extended in the catalog.",
+        "--reject-extended",
+        type=_str2bool,
+        default=True,
+        help="""Reject sources flagged is_extended in the catalog (True or
+                False). Default: %(default)s""",
     )
     pick_star_parser.add_argument(
         "--bkg-boxsize",
@@ -262,17 +266,13 @@ def cli(argv=None):
         logger_handler.setFormatter(logger_format_debug)
     logger.info("epsf_from_model called with args %s", args)
 
-    kwargs_pick_stars = groups["pick_star"]
-    kwargs_pick_stars["reject_saturated"] = not kwargs_pick_stars.pop("allow_saturated")
-    kwargs_pick_stars["reject_extended"] = not kwargs_pick_stars.pop("allow_extended")
-
     # Determine ePSF
     with rdm.open(args.model) as model:
         catalog = Table.read(args.catalog)
         epsf_model, epsf, stars = epsf_from_model(
             model,
             catalog,
-            kwargs_pick_stars=kwargs_pick_stars,
+            kwargs_pick_stars=groups["pick_star"],
             kwargs_build_epsf=groups["build_epsf"],
         )
 
@@ -470,11 +470,8 @@ def pick_stars(
     logger.info("Picking stars from catalog of %s objects.", len(catalog))
 
     # Mask and subtract the background as the source catalog step does,
-    # also masking pixels without a usable noise estimate. Data in the
-    # masked pixels are never used. The noise is the sky noise used by
-    # resample, which, unlike err, does not depend on the source flux;
-    # weights that drop with flux would make the star fits depend on
-    # the flux.
+    # also masking pixels without a usable noise estimate.
+    # Use var_sky to avoid biasing weights low where signal is high.
     dq = np.asarray(model.dq)
     with np.errstate(invalid="ignore"):
         err = np.sqrt(compute_var_sky(model))
@@ -488,8 +485,9 @@ def pick_stars(
     err = np.where(pixmask, 1.0, err)
 
     # Catalog level cuts. Sources without a PSF fit position are dropped.
-    x = np.asarray(catalog["x_psf"], dtype=float)
-    y = np.asarray(catalog["y_psf"], dtype=float)
+    # Plain arrays: the columns carry a pix unit.
+    x = np.asarray(catalog["x_psf"])
+    y = np.asarray(catalog["y_psf"])
     hsize = (stamp_size - 1) / 2
     ny, nx = data.shape
     cuts = {
@@ -510,11 +508,12 @@ def pick_stars(
         cuts["kron contamination"] = kron_ratio - 1 <= max_kron_contamination
     keep = np.ones(len(catalog), dtype=bool)
     for name, cut in cuts.items():
-        keep &= np.asarray(cut)
+        keep &= cut
         logger.debug("After %s cut: %s", name, keep.sum())
 
     # Pixel level cuts
     sat_flag = _DQ.SATURATED
+    # loop over stars and check for bad flags in stamps around them.
     for idx in np.flatnonzero(keep):
         ix, iy = round(x[idx]), round(y[idx])
         h = int(hsize)
@@ -543,6 +542,15 @@ def pick_stars(
     # That's all folks
     logger.info("Found %s valid stars", len(stars))
     return stars
+
+
+def _str2bool(value):
+    """Parse a True/False command-line value."""
+    if value.lower() in ("true", "t", "yes", "1"):
+        return True
+    if value.lower() in ("false", "f", "no", "0"):
+        return False
+    raise argparse.ArgumentTypeError(f"expected True or False, got {value!r}")
 
 
 def plot_epsfstar(star, ax=None, title=None, finalize=False, **kwargs_simple_norm):

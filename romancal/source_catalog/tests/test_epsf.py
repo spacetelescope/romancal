@@ -1,5 +1,7 @@
 """Unit tests for the ePSF star selection."""
 
+from contextlib import nullcontext
+
 import numpy as np
 import pytest
 from astropy.modeling.models import Gaussian2D
@@ -92,7 +94,7 @@ def image_and_catalog():
     return model, catalog
 
 
-# Every cut set explicitly, so the tests do not depend on the defaults.
+# Test values for cut parameters
 CUTS = {
     "stamp_size": 21,
     "reject_core_dq": pixel.DO_NOT_USE,
@@ -120,13 +122,13 @@ def test_pick_stars(image_and_catalog):
 def test_pick_stars_masks_wing_pixel(image_and_catalog):
     """A bad wing pixel is masked in the stamp, not rejected."""
     stars = _epsf.pick_stars(*image_and_catalog, **CUTS)
-    (star,) = [s for s in stars if s.id_label == 28]
+    star = next(s for s in stars if s.id_label == 28)
     assert star.mask.sum() == 1
 
 
 @pytest.mark.parametrize(
     "kwargs, label",
-    [  # turning off each cut keeps the star it rejected
+    [  # test that turning off various cuts changes whether appropriate stars are rejected
         ({"reject_saturated": False}, 26),
         ({"reject_core_dq": None}, 27),
         ({"min_snr": None}, 29),
@@ -137,7 +139,7 @@ def test_pick_stars_masks_wing_pixel(image_and_catalog):
     ],
 )
 def test_pick_stars_options(image_and_catalog, kwargs, label):
-    """Each rejection can be turned off."""
+    """Each cut can be turned off."""
     model, catalog = image_and_catalog
     catalog["is_extended"][0] = True
     catalog["psf_flags"][1] = 8
@@ -164,3 +166,21 @@ def test_epsf_from_model_jitter(image_and_catalog):
     assert epsf_model.meta.jitter_minor == 6.0
     assert epsf_model.meta.jitter_position_angle == 30.0
     np.testing.assert_allclose(add_jitter(epsf_model, model), epsf_model.psf, atol=1e-6)
+
+
+@pytest.mark.parametrize("flag", ["reject-saturated", "reject-extended"])
+@pytest.mark.parametrize("value, expected", [("True", True), ("false", False)])
+def test_cli_reject_flags(monkeypatch, flag, value, expected):
+    """The --reject-* options take an explicit True or False."""
+    seen = {}
+
+    def fake_epsf_from_model(model, catalog, kwargs_pick_stars, **kwargs):
+        seen.update(kwargs_pick_stars)
+        raise SystemExit
+
+    monkeypatch.setattr(_epsf, "epsf_from_model", fake_epsf_from_model)
+    monkeypatch.setattr(_epsf.rdm, "open", lambda path: nullcontext())
+    monkeypatch.setattr(_epsf.Table, "read", lambda path: None)
+    with pytest.raises(SystemExit):
+        _epsf.cli(["model", "catalog", "out", f"--{flag}={value}"])
+    assert seen[flag.replace("-", "_")] is expected
