@@ -389,7 +389,7 @@ def test_update_meta(attr, expected, updated_model):
         assert np.allclose(value, expected)
     elif isinstance(value, float):
         assert np.isclose(value, expected)
-    elif attr == 'meta.wcsinfo.s_region':
+    elif attr == "meta.wcsinfo.s_region":
         expected_footprint = sregion_to_footprint(expected)
         value_footprint = sregion_to_footprint(value)
         assert np.allclose(expected_footprint, value_footprint)
