@@ -421,6 +421,9 @@ def _setup_jump_data(
         edge_size,
     )
 
+    # Do not flag the 4 neighbors of each jump (stcal's JWST default is True)
+    jump_data.flag_4_neighbors = False
+
     # Performance setup
     jump_data.max_cores = maximum_cores
 
@@ -519,7 +522,7 @@ def _create_image_model(input_model, image_info, include_var_rnoise=False):
     return im
 
 
-def slopes_uniform_weights(input_model):
+def slopes_uniform_weights(input_model, return_weights=False):
     """
     Compute ramp slopes using uniform (read-noise-limited) weights.
 
@@ -527,6 +530,10 @@ def slopes_uniform_weights(input_model):
     ----------
     input_model : RampModel
         Model containing ramps.
+
+    return_weights : bool, optional
+        If True, return the computed weights array instead of the slopes.
+        Default is False.
 
     Returns
     -------
@@ -548,6 +555,9 @@ def slopes_uniform_weights(input_model):
     Nt = np.sum(ni * ti)
     Ntt = np.sum(ni * ti**2)
     weights = (N * ni * ti - Nt * ni) / (N * Ntt - Nt**2)
+
+    if return_weights:
+        return weights
 
     # We want the weighted sum over reads.
     if len(input_model.data.shape) == 3:
