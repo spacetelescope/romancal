@@ -10,6 +10,7 @@ import numpy as np
 import pytest
 import roman_datamodels as rdm
 from astropy.time import Time
+from stcal.alignment.util import sregion_to_footprint
 
 from romancal.lib.engdb import engdb_mast, engdb_tools
 from romancal.orientation import _lib as olib
@@ -318,7 +319,12 @@ def test_wcs(calc_wcs):
         try:
             float(wcs_meta_flat[key])
         except (TypeError, ValueError):
-            assert expected_flat[key] == wcs_meta_flat[key]
+            if key == 'wcsinfo.s_region':
+                expected_footprint = sregion_to_footprint(expected_flat[key])
+                wcs_meta_footprint = sregion_to_footprint(wcs_meta_flat[key])
+                assert np.allclose(expected_footprint, wcs_meta_footprint)
+            else:
+                assert expected_flat[key] == wcs_meta_flat[key]
         else:
             assert np.isclose(expected_flat[key], wcs_meta_flat[key]), (
                 f"Key {key} differs expected {expected_flat[key]} calculated {wcs_meta_flat[key]}"
