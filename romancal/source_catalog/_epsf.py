@@ -21,7 +21,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import roman_datamodels as rdm
 from astropy.nddata import NDData, StdDevUncertainty
-from astropy.stats import sigma_clipped_stats
 from astropy.table import Table
 from astropy.time import Time
 from astropy.visualization import simple_norm
@@ -30,10 +29,14 @@ from photutils.psf.flags import PSF_FLAGS
 from roman_datamodels.datamodels import EpsfRefModel
 
 from romancal.resample._utils import compute_var_sky
-from romancal.source_catalog._background import RomanBackground
+from romancal.source_catalog._calibrate import (
+    make_image_mask,
+    pixel_scale_arcsec,
+    subtract_background,
+)
+from romancal.source_catalog._utils import copy_model_arrays
 from romancal.source_catalog.source_catalog_step import (
     SourceCatalogStep,
-    _pixel_scale,
 )
 
 # Setup logging
@@ -60,7 +63,7 @@ REJECT_PSF_FLAGS = (
 )
 
 
-def build_epsf(stars, max_psferr=None, **kwargs_epsfbuilder):
+def build_epsf(stars, **kwargs_epsfbuilder):
     """Create the ePSF from a list of stars.
 
     Parameters
@@ -73,7 +76,6 @@ def build_epsf(stars, max_psferr=None, **kwargs_epsfbuilder):
         are left unspecified, these defaults will be used:
         - oversample=4
         - maxiters=30
-        - center_accuracy: Value of argument `max_psferr` if max_psferr is not None.
         - progress_bar=false
 
     Returns
@@ -95,10 +97,6 @@ def build_epsf(stars, max_psferr=None, **kwargs_epsfbuilder):
             del epsfbuilder_final_kwargs["center_accuracy"]
         except KeyError:
             pass
-    if max_psferr is not None:
-        epsfbuilder_final_kwargs["center_accuracy"] = epsfbuilder_final_kwargs.get(
-            "center_accuracy", max_psferr
-        )
 
     epsfbuilder = EPSFBuilder(**epsfbuilder_final_kwargs)
     epsf_result = epsfbuilder(stars)
@@ -155,27 +153,15 @@ def cli(argv=None):
         help="Size of the extracted stars cutouts. Default: %(default)s",
     )
     pick_star_parser.add_argument(
-        "--mask-dq",
-        type=int,
-        default=int(_DQ.DO_NOT_USE),
-        help="DQ flags of pixels to mask in the stamps. Default: %(default)s",
-    )
-    pick_star_parser.add_argument(
         "--reject-core-dq",
         type=int,
         default=int(_DQ.DO_NOT_USE),
-        help="Reject stars with these DQ flags in their core. Default: %(default)s",
-    )
-    pick_star_parser.add_argument(
-        "--core-size",
-        type=int,
-        default=3,
-        help="Size of the core used by --reject-core-dq. Default: %(default)s",
+        help="""Reject stars with these DQ flags in the central 3x3 pixels.
+                Default: %(default)s""",
     )
     pick_star_parser.add_argument(
         "--allow-saturated",
-        action="store_false",
-        dest="reject_saturated",
+        action="store_true",
         help="Keep stars with saturated pixels in their stamps.",
     )
     pick_star_parser.add_argument(
@@ -205,19 +191,9 @@ def cli(argv=None):
                 neighbor flux in the Kron aperture. Default: %(default)s""",
     )
     pick_star_parser.add_argument(
-        "--max-psferr",
-        type=float,
-        default=None,
-        help="""Maximum  sqrt(x_psf_err**2 + y_psf_err**2) allowed.
-                                  If None, sigma-clipped stats to remove anything larger than
-                                  two times the deviation of the psf errors for all objects.
-                                  Default: %(default)s""",
-    )
-    pick_star_parser.add_argument(
         "--allow-extended",
-        action="store_false",
-        dest="mask_extended",
-        help="""Allow extended sources.""",
+        action="store_true",
+        help="Keep sources flagged is_extended in the catalog.",
     )
     pick_star_parser.add_argument(
         "--bkg-boxsize",
@@ -255,9 +231,8 @@ def cli(argv=None):
         "--center-accuracy",
         type=float,
         default=None,
-        help="""The desired accuracy for the centers of stars. If not specified, this will be
-                                   based on the value of `max_psferr`
-                                   Default: %(default)s""",
+        help="""The desired accuracy for the centers of stars. Default: the
+                EPSFBuilder default.""",
     )
 
     args = parser.parse_args(argv)
@@ -288,13 +263,17 @@ def cli(argv=None):
         logger_handler.setFormatter(logger_format_debug)
     logger.info("epsf_from_model called with args %s", args)
 
+    kwargs_pick_stars = groups["pick_star"]
+    kwargs_pick_stars["reject_saturated"] = not kwargs_pick_stars.pop("allow_saturated")
+    kwargs_pick_stars["reject_extended"] = not kwargs_pick_stars.pop("allow_extended")
+
     # Determine ePSF
     with rdm.open(args.model) as model:
         catalog = Table.read(args.catalog)
         epsf_model, epsf, stars = epsf_from_model(
             model,
             catalog,
-            kwargs_pick_stars=groups["pick_star"],
+            kwargs_pick_stars=kwargs_pick_stars,
             kwargs_build_epsf=groups["build_epsf"],
         )
 
@@ -342,11 +321,11 @@ def epsf_from_model(
 
     if kwargs_pick_stars is None:
         kwargs_pick_stars = dict()
-    stars, max_psferr = pick_stars(model, catalog, **kwargs_pick_stars)
+    stars = pick_stars(model, catalog, **kwargs_pick_stars)
 
     if kwargs_build_epsf is None:
         kwargs_build_epsf = dict()
-    epsf = build_epsf(stars, max_psferr, **kwargs_build_epsf)
+    epsf = build_epsf(stars, **kwargs_build_epsf)
 
     if meta is None:
         meta = dict()
@@ -421,16 +400,13 @@ def pick_stars(
     model,
     catalog,
     stamp_size=21,
-    mask_dq=_DQ.DO_NOT_USE,
     reject_core_dq=_DQ.DO_NOT_USE,
-    core_size=3,
     reject_saturated=True,
     max_masked_fraction=0.2,
     max_psf_cfit=0.2,
     min_snr=50.0,
     max_kron_contamination=0.5,
-    max_psferr=None,
-    mask_extended=True,
+    reject_extended=True,
     reject_psf_flags=REJECT_PSF_FLAGS,
     bkg_boxsize=None,
 ):
@@ -447,16 +423,9 @@ def pick_stars(
     stamp_size : int
         Size of the extracted stars cutouts.
 
-    mask_dq : int or None
-        Pixels with any of these DQ flags are masked (not used) in the
-        stamps. Non-finite pixels are always masked.
-
     reject_core_dq : int or None
-        Stars with any of these DQ flags in the central
-        ``core_size`` x ``core_size`` pixels are rejected.
-
-    core_size : int
-        Size of the core region used by ``reject_core_dq``.
+        Stars with any of these DQ flags in the central 3x3 pixels are
+        rejected.
 
     reject_saturated : bool
         Reject stars with any SATURATED pixel in their stamp. Saturated
@@ -469,8 +438,7 @@ def pick_stars(
     max_psf_cfit : float or None
         Maximum catalog ``psf_cfit``, the PSF fit residual in the central
         pixel divided by the fitted flux. Stars are below about 0.1;
-        single hot pixels and cosmic rays are typically above 1. Not
-        applied if the catalog has no ``psf_cfit`` column.
+        single hot pixels and cosmic rays are typically above 1.
 
     min_snr : float or None
         Minimum ``psf_flux / psf_flux_err``.
@@ -479,20 +447,13 @@ def pick_stars(
         Maximum ``kron_nomask_flux / kron_flux - 1``, the flux from
         neighboring sources in the Kron aperture relative to the source's
         own Kron flux. Fainter neighbors in the wings of larger stamps
-        are removed by the sigma clipping in EPSFBuilder. Not applied if
-        the catalog has no ``kron_nomask_flux`` column.
+        are removed by the sigma clipping in EPSFBuilder.
 
-    max_psferr : float or None
-        Maximum  sqrt(x_psf_err**2 + y_psf_err**2) allowed.
-        If None, sigma-clipped stats to remove anything larger than
-        the median plus two times the deviation of the psf errors.
-
-    mask_extended : bool
-        Remove extended sources.
+    reject_extended : bool
+        Reject sources flagged ``is_extended`` in the catalog.
 
     reject_psf_flags : int or None
-        Reject objects with any of these ``psf_flags`` bits set, or with
-        non-finite PSF position errors.
+        Reject objects with any of these ``psf_flags`` bits set.
 
     bkg_boxsize : float or None
         Background mesh box size in arcsec, as in the source catalog
@@ -502,34 +463,30 @@ def pick_stars(
     -------
     stars : EPSFStars
         The stars to use for ePSF determination.
-
-    max_psferr : float
-        The maximum psf error used.
     """
     logger.info("Picking stars from catalog of %s objects.", len(catalog))
 
-    # Background; data in the masked pixels are never used.
+    # Mask and subtract the background as the source catalog step does,
+    # also masking pixels without a usable noise estimate. Data in the
+    # masked pixels are never used. The noise is the sky noise used by
+    # resample, which, unlike err, does not depend on the source flux;
+    # weights that drop with flux would make the star fits depend on
+    # the flux.
     dq = np.asarray(model.dq)
-    err = background_noise(model)
-    data = np.asarray(model.data, dtype=float)
-    pixmask = ~np.isfinite(data) | ~np.isfinite(model.err)
-    pixmask |= ~np.isfinite(err) | (err <= 0)
-    if mask_dq is not None:
-        pixmask |= (dq & mask_dq) > 0
+    with np.errstate(invalid="ignore"):
+        err = np.sqrt(compute_var_sky(model))
+    pixmask = make_image_mask(model) | ~np.isfinite(err) | (err <= 0)
     if bkg_boxsize is None:
         bkg_boxsize = SourceCatalogStep().bkg_boxsize
-    bkg_boxsize_px = max(round(bkg_boxsize / _pixel_scale(model)), 1)
-    background = RomanBackground(data, bkg_boxsize_px, mask=pixmask).background
-    data = np.where(pixmask, 0.0, data - background)
+    bkg_boxsize_px = max(round(bkg_boxsize / pixel_scale_arcsec(model)), 1)
+    model = copy_model_arrays(model)
+    subtract_background(model, pixmask, bkg_boxsize_px)
+    data = np.where(pixmask, 0.0, model.data)
     err = np.where(pixmask, 1.0, err)
 
-    # Catalog level cuts
-    x = _filled(catalog["x_psf"])
-    y = _filled(catalog["y_psf"])
-    use_centroid = ~np.isfinite(x) | ~np.isfinite(y)
-    x[use_centroid] = _filled(catalog["x_centroid"])[use_centroid]
-    y[use_centroid] = _filled(catalog["y_centroid"])[use_centroid]
-    psf_err = np.hypot(_filled(catalog["x_psf_err"]), _filled(catalog["y_psf_err"]))
+    # Catalog level cuts. Sources without a PSF fit position are dropped.
+    x = np.asarray(catalog["x_psf"], dtype=float)
+    y = np.asarray(catalog["y_psf"], dtype=float)
     hsize = (stamp_size - 1) / 2
     ny, nx = data.shape
     cuts = {
@@ -538,39 +495,28 @@ def pick_stars(
         ),
     }
     if reject_psf_flags is not None:
-        psf_flags = np.ma.filled(np.ma.asarray(catalog["psf_flags"]), reject_psf_flags)
-        cuts["psf fit"] = ((psf_flags & reject_psf_flags) == 0) & np.isfinite(psf_err)
-    if mask_extended:
-        cuts["point source"] = ~_filled(catalog["is_extended"], True).astype(bool)
+        cuts["psf fit"] = (catalog["psf_flags"] & reject_psf_flags) == 0
+    if reject_extended:
+        cuts["point source"] = ~catalog["is_extended"]
     if max_psf_cfit is not None:
-        if "psf_cfit" in catalog.colnames:
-            cuts["psf cfit"] = ~(_filled(catalog["psf_cfit"]) > max_psf_cfit)
-        else:
-            logger.info("Catalog has no psf_cfit; not cutting on it.")
+        cuts["psf cfit"] = catalog["psf_cfit"] <= max_psf_cfit
     if min_snr is not None:
-        snr = _filled(catalog["psf_flux"]) / _filled(catalog["psf_flux_err"])
-        cuts["snr"] = snr >= min_snr
+        cuts["snr"] = catalog["psf_flux"] / catalog["psf_flux_err"] >= min_snr
     if max_kron_contamination is not None:
-        if "kron_nomask_flux" in catalog.colnames:
-            kron_ratio = _filled(catalog["kron_nomask_flux"]) / _filled(
-                catalog["kron_flux"]
-            )
-            cuts["kron contamination"] = kron_ratio - 1 <= max_kron_contamination
-        else:
-            logger.info("Catalog has no kron_nomask_flux; not cutting on it.")
+        kron_ratio = catalog["kron_nomask_flux"] / catalog["kron_flux"]
+        cuts["kron contamination"] = kron_ratio - 1 <= max_kron_contamination
     keep = np.ones(len(catalog), dtype=bool)
     for name, cut in cuts.items():
-        keep &= cut
+        keep &= np.asarray(cut)
         logger.debug("After %s cut: %s", name, keep.sum())
 
     # Pixel level cuts
     sat_flag = _DQ.SATURATED
-    hcore = core_size // 2
     for idx in np.flatnonzero(keep):
         ix, iy = round(x[idx]), round(y[idx])
         h = int(hsize)
         stamp = (slice(iy - h, iy + h + 1), slice(ix - h, ix + h + 1))
-        core = (slice(iy - hcore, iy + hcore + 1), slice(ix - hcore, ix + hcore + 1))
+        core = (slice(iy - 1, iy + 2), slice(ix - 1, ix + 2))
         if pixmask[core].all():
             keep[idx] = False
         elif reject_core_dq is not None and (dq[core] & reject_core_dq).any():
@@ -583,13 +529,6 @@ def pick_stars(
             keep[idx] = False
     logger.debug("After pixel cuts: %s", keep.sum())
 
-    # With all gross undesirable detections removed,
-    # make a final sweep using the psf error.
-    if max_psferr is None:
-        _, median, stddev = sigma_clipped_stats(psf_err[keep])
-        max_psferr = median + (2 * stddev)
-    keep &= psf_err <= max_psferr
-
     # Extract stars
     stars_tbl = Table()
     stars_tbl["x"] = x[keep]
@@ -599,40 +538,8 @@ def pick_stars(
     stars = extract_stars(nddata, stars_tbl, size=stamp_size)
 
     # That's all folks
-    logger.info(
-        "Found %s valid stars with maximum PSF error of %s", len(stars), max_psferr
-    )
-    return stars, max_psferr
-
-
-def background_noise(model):
-    """Per-pixel noise that does not depend on the source flux.
-
-    Uncertainties that include source Poisson noise give bright pixels
-    low weight, which makes the star fits depend on the flux. Instead
-    use the sky variance used by resample: read noise plus the Poisson
-    variance scaled to the median sky level.
-
-    Parameters
-    ----------
-    model : roman_datamodels.datamodels.ImageModel
-        L2 model
-
-    Returns
-    -------
-    sigma : np.ndarray
-        Standard deviation per pixel; NaN where the sky variance is not
-        positive.
-    """
-    var_sky = np.asarray(compute_var_sky(model), dtype=float)
-    with np.errstate(invalid="ignore"):
-        return np.where(var_sky > 0, np.sqrt(var_sky), np.nan)
-
-
-def _filled(column, fill_value=np.nan):
-    """Return a catalog column as a plain array, filling masked values."""
-    values = np.ma.filled(np.ma.asarray(column), fill_value)
-    return np.asarray(getattr(values, "value", values), dtype=float)
+    logger.info("Found %s valid stars", len(stars))
+    return stars
 
 
 def plot_epsfstar(star, ax=None, title=None, finalize=False, **kwargs_simple_norm):

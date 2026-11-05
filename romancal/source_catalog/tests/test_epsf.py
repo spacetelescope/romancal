@@ -22,10 +22,10 @@ def image_and_catalog():
     """
     rng = np.random.default_rng(42)
     yy, xx = np.mgrid[: SHAPE[0], : SHAPE[1]]
-    rows = []
+    rows = []  # label, x, y, flux
     for i, (y, x) in enumerate(
         (y, x) for y in range(20, 181, 40) for x in range(20, 181, 40)
-    ):
+    ):  # grid of 5x5 bright stars in a 200x200 image
         rows.append(
             (i + 1, x + rng.uniform(-0.5, 0.5), y + rng.uniform(-0.5, 0.5), 1e4)
         )
@@ -37,13 +37,14 @@ def image_and_catalog():
         (30, 40.2, 140.1, 1e4),
         (31, 43.2, 140.3, 5e3),
         (32, 120.0, 140.0, 1e4),
-    ]
+    ]  # extra problem cases
     cat = Table(rows=rows, names=["label", "x", "y", "flux"])
 
     sigma = 1.0
     data = np.zeros(SHAPE)
     for row in cat:
         amp = row["flux"] / (2 * np.pi * sigma**2)
+        # simple Gaussian PSF profile
         data += Gaussian2D(amp, row["x"], row["y"], sigma, sigma)(xx, yy)
     err = np.full(SHAPE, 1.0)
     data += rng.normal(0, 1.0, SHAPE)
@@ -54,6 +55,7 @@ def image_and_catalog():
     )(xx, yy)
     data[140, 120] += 1e4
 
+    # add some saturated / DO_NOT_USE stars
     dq = np.zeros(SHAPE, dtype=np.uint32)
     dq[60, 40] = pixel.SATURATED
     dq[60, 80] = pixel.DO_NOT_USE
@@ -73,10 +75,6 @@ def image_and_catalog():
             "label": cat["label"],
             "x_psf": cat["x"],
             "y_psf": cat["y"],
-            "x_centroid": cat["x"],
-            "y_centroid": cat["y"],
-            "x_psf_err": np.full(len(cat), 0.01),
-            "y_psf_err": np.full(len(cat), 0.01),
             "psf_flux": cat["flux"],
             "psf_flux_err": cat["flux"] / snr,
             "psf_flags": np.zeros(len(cat), dtype=int),
@@ -93,67 +91,62 @@ def image_and_catalog():
     return model, catalog
 
 
+# Every cut set explicitly, so the tests do not depend on the defaults.
+CUTS = {
+    "stamp_size": 21,
+    "reject_core_dq": pixel.DO_NOT_USE,
+    "reject_saturated": True,
+    "max_masked_fraction": 0.2,
+    "max_psf_cfit": 0.2,
+    "min_snr": 50.0,
+    "max_kron_contamination": 0.5,
+    "reject_extended": True,
+    "reject_psf_flags": 8,
+}
+
+
 def picked_labels(model, catalog, **kwargs):
-    stars, _ = _epsf.pick_stars(model, catalog, max_psferr=1.0, **kwargs)
+    stars = _epsf.pick_stars(model, catalog, **{**CUTS, **kwargs})
     return {int(star.id_label) for star in stars}
 
 
-def test_pick_stars_default(image_and_catalog):
-    """Isolated stars are kept; special cases are handled."""
+def test_pick_stars(image_and_catalog):
+    """Isolated stars are kept; special cases are rejected."""
     labels = picked_labels(*image_and_catalog)
-    assert set(range(1, 26)) <= labels
-    assert 26 not in labels  # saturated
-    assert 27 not in labels  # DO_NOT_USE core
-    assert 28 in labels  # DO_NOT_USE wing pixel is masked, not rejected
-    assert 29 not in labels  # faint
-    assert not {30, 31} & labels  # blended
-    assert 32 not in labels  # hot pixel
+    assert labels == set(range(1, 26)) | {28}
 
 
 def test_pick_stars_masks_wing_pixel(image_and_catalog):
-    """A bad wing pixel is masked in the stamp."""
-    stars, _ = _epsf.pick_stars(*image_and_catalog, max_psferr=1.0)
+    """A bad wing pixel is masked in the stamp, not rejected."""
+    stars = _epsf.pick_stars(*image_and_catalog, **CUTS)
     (star,) = [s for s in stars if s.id_label == 28]
     assert star.mask.sum() == 1
 
 
 @pytest.mark.parametrize(
     "kwargs, label",
-    [
+    [  # turning off each cut keeps the star it rejected
         ({"reject_saturated": False}, 26),
         ({"reject_core_dq": None}, 27),
         ({"min_snr": None}, 29),
         ({"max_kron_contamination": None}, 30),
         ({"max_psf_cfit": None}, 32),
+        ({"reject_extended": False}, 1),
+        ({"reject_psf_flags": None}, 2),
     ],
 )
 def test_pick_stars_options(image_and_catalog, kwargs, label):
     """Each rejection can be turned off."""
-    assert label in picked_labels(*image_and_catalog, **kwargs)
+    model, catalog = image_and_catalog
+    catalog["is_extended"][0] = True
+    catalog["psf_flags"][1] = 8
+    assert label not in picked_labels(model, catalog)
+    assert label in picked_labels(model, catalog, **kwargs)
 
 
-@pytest.mark.parametrize("flag, kept", [(1, True), (8, False)])
+@pytest.mark.parametrize("flag, kept", [(1, True), (8, False), (9, False)])
 def test_pick_stars_psf_flags(image_and_catalog, flag, kept):
     """Only the selected psf_flags bits reject a star."""
     model, catalog = image_and_catalog
     catalog["psf_flags"][0] = flag
-    assert (1 in picked_labels(model, catalog)) == kept
-
-
-def test_background_noise(image_and_catalog):
-    """Noise is read noise plus sky Poisson noise, independent of flux."""
-    model, _ = image_and_catalog
-    data = np.full(SHAPE, 2.0, dtype=np.float32)
-    data[100, 100] = 1000.0  # bright pixel
-    model.data = data
-    model.var_poisson = 0.5 * data
-    model.err = np.sqrt(model.var_poisson + 3.0)
-    delattr(model, "var_rnoise")
-    np.testing.assert_allclose(_epsf.background_noise(model), 2.0, rtol=1e-3)
-
-
-def test_pick_stars_without_psf_cfit(image_and_catalog):
-    """Catalogs without psf_cfit are not cut on it."""
-    model, catalog = image_and_catalog
-    catalog.remove_column("psf_cfit")
-    assert 32 in picked_labels(model, catalog)
+    assert (1 in picked_labels(model, catalog, reject_psf_flags=8)) == kept
