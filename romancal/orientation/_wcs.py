@@ -173,7 +173,6 @@ def calc_wcs(t_pars: tlib.TransformParameters):
             "ra_v1": true_ra_v1,
             "dec_v1": true_dec_v1,
             "pa_v3": true_pa_v3,
-            "target_aperture": t_pars.target_aperture,
             "target_ra": tgt_true_ra,
             "target_dec": tgt_true_dec,
             "pa_aperture": float(pa_aperture_true),
