@@ -319,7 +319,7 @@ def test_wcs(calc_wcs):
         try:
             float(wcs_meta_flat[key])
         except (TypeError, ValueError):
-            if key == 'wcsinfo.s_region':
+            if key == "wcsinfo.s_region":
                 expected_footprint = sregion_to_footprint(expected_flat[key])
                 wcs_meta_footprint = sregion_to_footprint(wcs_meta_flat[key])
                 assert np.allclose(expected_footprint, wcs_meta_footprint)
