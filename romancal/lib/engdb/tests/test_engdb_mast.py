@@ -19,7 +19,6 @@ QUERY = ("scf_ac_sdr_qbj_1", "2026-10-01T00:00:00", "2026-10-01T00:05:00")
 @pytest.mark.parametrize(
     "mnemonic, expected",
     [
-        (None, "something"),
         ("scf_ac_sdr_qbj_1", 1),
         ("ope", "something"),
         ("junkfromspace", 0),

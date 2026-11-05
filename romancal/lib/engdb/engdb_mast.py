@@ -128,15 +128,14 @@ class EngdbMast(EngdbABC):
         if check_aliveness:
             self.isalive()
 
-    def get_meta(self, search=None):
+    def get_meta(self, search):
         """
         Get the mnemonics meta info.
 
         Parameters
         ----------
-        search : str or None
+        search : str
             A partial, or full, mnemonic specification.
-            If None, meta for all available mnemonics are returned
 
         Returns
         -------
@@ -147,12 +146,9 @@ class EngdbMast(EngdbABC):
         """
 
         # Make the request
-        if search is None:
-            self._metareq.params = {}
-        else:
-            self._metareq.params = {
-                "mnemonic": search,
-            }
+        self._metareq.params = {
+            "mnemonic": search,
+        }
         prepped = self._session.prepare_request(self._metareq)
         settings = self._session.merge_environment_settings(
             prepped.url, {}, None, None, None
