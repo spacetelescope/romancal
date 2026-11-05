@@ -15,7 +15,6 @@ import argparse
 import logging
 import math
 import random
-import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -250,17 +249,16 @@ def cli(argv=None):
         }
         groups[group.title] = group_args
 
-    # Configure logging
+    # Configure logging for all of romancal, as the other scripts do.
+    romancal_logger = logging.getLogger("romancal")
     logger_handler = logging.StreamHandler()
-    logger.addHandler(logger_handler)
+    romancal_logger.addHandler(logger_handler)
     logger_format_debug = logging.Formatter(
         "%(levelname)s:%(filename)s::%(funcName)s: %(message)s"
     )
     level = LOGLEVELS[min(len(LOGLEVELS) - 1, args.verbose)]
-    logger.setLevel(level)
-    if level > logging.DEBUG:
-        warnings.simplefilter("ignore", UserWarning)
-    else:
+    romancal_logger.setLevel(level)
+    if level <= logging.DEBUG:
         logger_handler.setFormatter(logger_format_debug)
     logger.info("epsf_from_model called with args %s", args)
 
