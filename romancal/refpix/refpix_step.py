@@ -35,6 +35,10 @@ class RefPixStep(RomanStep):
     # interpolation of the reference pixels
     fft_interpolate = boolean(default=True) # Turn on or off the FFT interpolation
     # of the reference pixel padded values.
+    weight_mode = string(default='dynamic') # Toggle static vs dynamic masking
+    sigma_thresh = float(default=3.5) # Outlier detection threshold
+    sigma_width = float(default=1.0) # Continuous taper width
+    smooth_sigma = float(default=12.0) # Gaussian smoothing factor
     """
 
     reference_file_types: ClassVar = ["refpix"]
@@ -69,6 +73,10 @@ class RefPixStep(RomanStep):
                 remove_trends=self.remove_trends,
                 cosine_interpolate=self.cosine_interpolate,
                 fft_interpolate=self.fft_interpolate,
+                weight_mode=self.weight_mode,
+                sigma_thresh=self.sigma_thresh,
+                sigma_width=self.sigma_width,
+                smooth_sigma=self.smooth_sigma,
             )
             # Update the step status
             datamodel.meta.cal_step["refpix"] = "COMPLETE"

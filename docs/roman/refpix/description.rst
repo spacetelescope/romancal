@@ -83,3 +83,8 @@ However, it is better to correct this effect during the
 reference pixel correction so that the dark reference images better
 represent the dark current and can be more easily used to compute
 Poisson uncertainties stemming from dark current.
+
+Dynamic Border Pixel Weighting
+------------------------------
+
+To mitigate horizontal striping and crosstalk artifacts caused by bright star impacts near the detector edges, the reference pixel correction step employs a dynamic, row-by-row weighting scheme. Rather than applying a uniform correction globally, the module evaluates the signal-to-noise ratio of the left and right border reference pixels for each resultant. Using a vectorized uniform weight linear ramp fit, it derives a continuous validity weight for each row. If a border pixel is heavily corrupted by a bright source, its weight smoothly tapers to zero, and the pipeline dynamically blends four distinct coefficient states (for example, relying solely on the left border if the right is corrupted). For standard observations unimpacted by these artifacts, the module utilizes a designated fast-path (the ``default`` weight mode) that safely skips this blending overhead. This ensures that compromised reference pixels do not inject noise into the science frame, while maintaining peak memory performance.
