@@ -35,6 +35,7 @@ from romancal.source_catalog._calibrate import (
     subtract_background,
 )
 from romancal.source_catalog._utils import copy_model_arrays
+from romancal.source_catalog.psf import _get_jitter_params
 from romancal.source_catalog.source_catalog_step import (
     SourceCatalogStep,
 )
@@ -309,6 +310,8 @@ def epsf_from_model(
 
     meta : dict or None
         The meta to use to populate the ePSF reference model meta with.
+        The jitter defaults to the image's guide star jitter, since the
+        ePSF is measured from stars that include it.
 
     Returns
     -------
@@ -329,6 +332,8 @@ def epsf_from_model(
 
     if meta is None:
         meta = dict()
+    jitter = _get_jitter_params(getattr(model.meta, "guide_star", dict()))
+    meta = jitter | meta
     epsf_model = make_epsf_reference(epsf, detector, optical_element, meta=meta)
 
     # That's all folks

@@ -8,6 +8,7 @@ from roman_datamodels.datamodels import ImageModel
 from roman_datamodels.dqflags import pixel
 
 from romancal.source_catalog import _epsf
+from romancal.source_catalog.psf import add_jitter
 
 SHAPE = (200, 200)
 
@@ -150,3 +151,16 @@ def test_pick_stars_psf_flags(image_and_catalog, flag, kept):
     model, catalog = image_and_catalog
     catalog["psf_flags"][0] = flag
     assert (1 in picked_labels(model, catalog, reject_psf_flags=8)) == kept
+
+
+def test_epsf_from_model_jitter(image_and_catalog):
+    """The reference records the image jitter, so add_jitter is a no-op."""
+    model, catalog = image_and_catalog
+    model.meta.guide_star.jitter_major = 12.0
+    model.meta.guide_star.jitter_minor = 6.0
+    model.meta.guide_star.jitter_position_angle = 30.0
+    epsf_model, _, _ = _epsf.epsf_from_model(model, catalog, kwargs_pick_stars=CUTS)
+    assert epsf_model.meta.jitter_major == 12.0
+    assert epsf_model.meta.jitter_minor == 6.0
+    assert epsf_model.meta.jitter_position_angle == 30.0
+    np.testing.assert_allclose(add_jitter(epsf_model, model), epsf_model.psf, atol=1e-6)
