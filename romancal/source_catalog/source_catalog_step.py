@@ -5,7 +5,7 @@ Module for the source catalog step.
 from __future__ import annotations
 
 import logging
-from contextlib import contextmanager
+from contextlib import nullcontext
 from typing import TYPE_CHECKING
 
 import astropy.units as u
@@ -14,22 +14,23 @@ from astropy.table import join
 from photutils.segmentation import SegmentationImage
 from roman_datamodels import datamodels
 from roman_datamodels.datamodels import ImageModel
-from roman_datamodels.dqflags import pixel
 
 from romancal.datamodels.fileio import open_dataset
-from romancal.source_catalog._background import RomanBackground
+from romancal.source_catalog._calibrate import (
+    DEFAULT_FLUX_UNIT,
+    make_catalog_model,
+    make_image_mask,
+    open_psf_model,
+    pixel_scale_arcsec,
+    subtract_background,
+)
 from romancal.source_catalog._detection import convolve_data
 from romancal.source_catalog._skyvals import compute_skyvals
-from romancal.source_catalog._source_catalog import (
-    DEFAULT_FLUX_UNIT,
-    RomanSourceCatalog,
-)
+from romancal.source_catalog._source_catalog import RomanSourceCatalog
 from romancal.source_catalog._template_detection import (
     make_segmentation_image_template,
 )
 from romancal.source_catalog._utils import copy_model_arrays, get_ee_spline
-from romancal.source_catalog._wcs_utils import pixel_area_from_wcs
-from romancal.source_catalog.psf import add_jitter
 from romancal.stpipe import RomanStep
 
 if TYPE_CHECKING:
@@ -316,42 +317,21 @@ class SourceCatalogStep(RomanStep):
             forced_detection_image = self._read_forced_detection_image(forced_segmodel)
             return SegmentationImage(forced_segimg), forced_detection_image
 
-    @contextmanager
     def _open_psf_model(self, input_model):
         """Context to open the epsf reference file or None if fit_psf is not enabled."""
-        if self.fit_psf:
-            self.ref_file = self.get_reference_file(input_model, "epsf")
-            log.info("Using ePSF reference file: %s", self.ref_file)
-            with datamodels.open(self.ref_file) as psf_model:
-                psf_model.psf = add_jitter(psf_model, input_model)
-                yield psf_model
-        else:
-            yield None
+        if not self.fit_psf:
+            return nullcontext(None)
+        self.ref_file = self.get_reference_file(input_model, "epsf")
+        return open_psf_model(self.ref_file, input_model)
 
     def process(self, dataset):
         input_model = open_dataset(dataset, update_version=self.update_version)
 
         # Define a boolean mask for pixels to be excluded
-        mask = (
-            ~np.isfinite(input_model.data)
-            | ~np.isfinite(input_model.err)
-            | (input_model.err <= 0)
-        )
+        mask = make_image_mask(input_model)
 
         # Copy the data and error arrays to avoid modifying the input model
         model = copy_model_arrays(input_model)
-
-        # Create a DQ mask for ImageModel
-        if isinstance(input_model, ImageModel):
-            if model.dq.shape != model.data.shape:
-                msg = (
-                    f"model.dq shape {model.dq.shape} does not match "
-                    f"model.data shape {model.data.shape}; expected a 2D "
-                    "DQ array."
-                )
-                raise ValueError(msg)
-            dq_mask = (model.dq & pixel.DO_NOT_USE) != 0
-            mask |= dq_mask
 
         # Initialize the source catalog model, copying the metadata
         # from the input model
@@ -381,7 +361,7 @@ class SourceCatalogStep(RomanStep):
                     cat_model, segmentation_model, input_model, model, mask
                 )
 
-        pixel_scale = _pixel_scale(model)
+        pixel_scale = pixel_scale_arcsec(model)
         kernel_fwhm_px = self.kernel_fwhm / pixel_scale
         bkg_boxsize_px = max(round(self.bkg_boxsize / pixel_scale), 1)
         log.info(
@@ -392,16 +372,7 @@ class SourceCatalogStep(RomanStep):
 
         # get the name of the psf reference file
         with self._open_psf_model(input_model) as psf_model:
-            log.info("Calculating and subtracting background")
-            # bad pixel mask rather than coverage_mask to keep finite RMS
-            # estimates in holes
-            bkg = RomanBackground(
-                model.data,
-                box_size=bkg_boxsize_px,
-                mask=mask,
-            )
-            model.data -= bkg.background
-            del bkg  # not used later; save memory
+            subtract_background(model, mask, bkg_boxsize_px)
 
             log.info("Detecting sources")
             det_template = None
@@ -540,14 +511,7 @@ class SourceCatalogStep(RomanStep):
                 cat_model_cls = datamodels.MosaicSourceCatalogModel
             segmentation_model_cls = datamodels.MosaicSegmentationMapModel
 
-        cat_model = cat_model_cls.create_minimal({"meta": model.meta})
-        cat_model.meta["image"] = {
-            "filename": model.meta.filename,
-            "file_date": model.meta.file_date,
-        }
-        # copy over the data release id since there is no association input
-        if "data_release_id" in model.meta:
-            cat_model.meta.data_release_id = model.meta.data_release_id
+        cat_model = make_catalog_model(model, cat_model_cls)
 
         # make L3 metadata
         if self.forced_segmentation:
@@ -572,16 +536,3 @@ class SourceCatalogStep(RomanStep):
         )
         segmentation_model["skyvals"] = skyvals
         segmentation_model["healpix11_cov"] = healpix11_cov
-
-
-def _pixel_scale(model):
-    """Pixel scale in arcsec per pixel, measured at the center of ``model``.
-
-    This is the area-preserving scale, sqrt of the pixel solid angle, to
-    match the convention the rest of the catalog uses.
-    """
-    ysize, xsize = model.data.shape
-    area = pixel_area_from_wcs(
-        model.meta.wcs, np.array((xsize - 1) / 2.0), np.array((ysize - 1) / 2.0)
-    )
-    return float(np.sqrt(area.to_value(u.arcsec**2)))

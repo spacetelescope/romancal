@@ -22,21 +22,23 @@ from scipy.ndimage import map_coordinates
 from romancal import __version__ as romancal_version
 from romancal.skycell import skymap
 from romancal.source_catalog._aperture import ApertureCatalog
+from romancal.source_catalog._calibrate import (
+    DEFAULT_FLUX_UNIT,
+    convert_to_flux_density,
+)
 from romancal.source_catalog._column_schema import CatalogSchema
 from romancal.source_catalog._daofind import DAOFindCatalog
 from romancal.source_catalog._neighbors import NNCatalog
 from romancal.source_catalog._segment import SegmentCatalog
-from romancal.source_catalog._unit_conversion import (
-    validate_and_convert_to_flux_density,
-)
+from romancal.source_catalog._utils import flag_column
 from romancal.source_catalog._wcs_utils import pixel_area_at, pixel_area_map
 from romancal.source_catalog.psf import _PSFCatalog
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
-# The flux density unit of the catalog and of the saved detection image
-DEFAULT_FLUX_UNIT = "nJy"
+# Bit of flagged_spatial_id set for sources outside their skycell core
+SKYCELL_OVERLAP_BIT = 2**59
 
 
 @dataclass(frozen=True)
@@ -191,12 +193,6 @@ class RomanSourceCatalog:
         self.meta = {}
         self.aperture_cat = None
 
-        # Define flux unit conversion factors
-        if "photometry" in self.model.meta:
-            self.l2_to_sb = self.model.meta.photometry.conversion_megajanskys
-        else:
-            self.l2_to_sb = 1.0
-
         if self.fit_psf and self.psf_model is None:
             log.error(
                 "PSF fitting is requested but no PSF reference model is provided. Skipping PSF photometry."
@@ -326,7 +322,7 @@ class RomanSourceCatalog:
         pixel_x_idx = convert_to_pixel_idx(self.x_centroid)
         pixel_y_idx = convert_to_pixel_idx(self.y_centroid)
         spatial_id = (
-            ~in_core * 2**59
+            ~in_core * SKYCELL_OVERLAP_BIT
             + projection_idx * 2**46
             + skycell_y_idx * 2**39
             + skycell_x_idx * 2**32
@@ -392,20 +388,6 @@ class RomanSourceCatalog:
 
         return flags
 
-    def _flag_dtype(self, column):
-        """
-        The catalog dtype for a segment flag column.
-
-        Use the column's schema definition if there is one, then that of
-        ``image_flags`` (``image_flags2`` may not be in the schema yet),
-        and otherwise ``uint32`` to match the DQ arrays.
-        """
-        for name in (column, "image_flags"):
-            definition = self.cat_model.get_column_definition(name)
-            if definition is not None:
-                return np.dtype(definition["datatype"])
-        return np.dtype(np.uint32)
-
     def _segment_flags(self, dq, column):
         """
         Bitwise-or a pixel-level DQ array over each source segment.
@@ -434,12 +416,7 @@ class RomanSourceCatalog:
             index = np.searchsorted(self.segment_img.labels, labels[m])
             np.bitwise_or.at(flags, index, dq.ravel()[m].astype(np.uint32))
 
-        dtype = self._flag_dtype(column)
-        if dtype == np.int32:
-            # reinterpret rather than cast, so that a set bit 31 keeps its
-            # bit pattern (it reads as negative) rather than overflowing
-            return flags.view(np.int32)
-        return flags.astype(dtype, copy=False)
+        return flag_column(flags, self.cat_model, column)
 
     @lazyproperty
     def image_flags(self):
@@ -610,13 +587,11 @@ class RomanSourceCatalog:
         Validate that model data arrays have compatible units and
         convert them to ``self.flux_unit`` if needed.
         """
-        sb_to_flux = (self._pixel_area_map * (u.MJy / u.sr)).to(self.flux_unit)
-        self.convolved_data = validate_and_convert_to_flux_density(
+        self.convolved_data = convert_to_flux_density(
             self.model,
             self.convolved_data,
             flux_unit=self.flux_unit,
-            l2_to_sb=self.l2_to_sb,
-            sb_to_flux=sb_to_flux,
+            area_map=self._pixel_area_map,
         )
 
     @property

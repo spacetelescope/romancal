@@ -215,6 +215,11 @@ cp ${l3name_mb}_asn.json $outdir/WFI/image/
 cp ${l3name_mb}_cat.parquet $outdir/truth/WFI/image/
 cp ${l3name_mb}_segm.asdf $outdir/truth/WFI/image/
 
+# Time domain catalog: L2 photometry at the multiband catalog positions
+cp ${l3name_mb}_cat.parquet $outdir/WFI/image/
+strun romancal.step.TimeDomainCatalogStep r0000101001001001001_0001_wfi01_f158_cal.asdf --forced_catalogs=${l3name_mb}_cat.parquet
+cp r0000101001001001001_0001_wfi01_f158_fcat.parquet $outdir/truth/WFI/image/
+
 # 2nd L3 on skycell
 l3name="r00001_p_e01001001001001_0001_270p65x70y49_f158"
 asn_from_list r0000101001001001001_0001_wfi01_f158_cal.asdf -o L3_mosaic_0001_asn.json --product-name $l3name --target 270p65x70y49

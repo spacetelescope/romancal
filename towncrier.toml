@@ -151,6 +151,11 @@ directory = "multiband_catalog"
 name = "``multiband_catalog``"
 showcontent = true
 
+[[tool.towncrier.type]]
+directory = "time_domain_catalog"
+name = "``time_domain_catalog``"
+showcontent = true
+
 # other changes
 
 [[tool.towncrier.type]]

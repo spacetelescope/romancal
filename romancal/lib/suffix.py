@@ -61,6 +61,7 @@ _SUFFIXES_TO_ADD = [
     "refpix",
     "cat",
     "segm",
+    "fcat",
     "coadd",
     "wfi18_transient",
 ]
@@ -96,6 +97,7 @@ _calculated_suffixes = {
     "resamplestep",
     "sourcecatalogstep",
     "multibandcatalogstep",
+    "timedomaincatalogstep",
     "wfi18transientstep",
 }
 

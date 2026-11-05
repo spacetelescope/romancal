@@ -20,3 +20,4 @@ Pipeline Steps
    outlier_detection/index.rst
    resample/index.rst
    source_catalog/index.rst
+   time_domain_catalog/index.rst
