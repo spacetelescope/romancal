@@ -27,7 +27,11 @@ LOGLEVELS = [logging.INFO, logging.DEBUG, DEBUG_FULL]
 EXPECTED_ERRORS = (OSError, RuntimeError, ValueError)
 
 # Reference file attributes of TransformParameters
-REFS = {'bam_ref': 'bam', 'distortion_ref': 'distortion', 'distortion_target_ref': 'distortion'}
+REFS = {
+    "bam_ref": "bam",
+    "distortion_ref": "distortion",
+    "distortion_target_ref": "distortion",
+}
 
 
 def fetch_references(t_pars):
@@ -49,21 +53,21 @@ def fetch_references(t_pars):
         If fetching is needed, `t_pars.crds_pars` is used for the fetching.
     """
     for ref in REFS:
-        if ref == 'distortion_target_ref' and t_pars.target_aperture == 'WFI_CEN':
-            setattr(t_pars, ref, 'N/A')
+        if ref == "distortion_target_ref" and t_pars.target_aperture == "WFI_CEN":
+            setattr(t_pars, ref, "N/A")
         else:
             if not getattr(t_pars, ref, None):
                 crds_pars = t_pars.crds_pars.copy()
-                detector = crds_pars['roman.meta.instrument.detector']
-                if ref == 'distortion_target_ref':
+                detector = crds_pars["roman.meta.instrument.detector"]
+                if ref == "distortion_target_ref":
                     detector = t_pars.target_aperture
-                crds_pars['roman.meta.instrument.detector'] = detector[:5]
-                refpath = getreferences(crds_pars, [REFS[ref]], observatory="roman")[REFS[ref]]
+                crds_pars["roman.meta.instrument.detector"] = detector[:5]
+                refpath = getreferences(crds_pars, [REFS[ref]], observatory="roman")[
+                    REFS[ref]
+                ]
                 setattr(t_pars, ref, refpath)
 
-        logger.info(
-            "%s reference: %s", ref.upper(), getattr(t_pars, ref)
-        )
+        logger.info("%s reference: %s", ref.upper(), getattr(t_pars, ref))
 
 
 def mk_crds_pars(obstime=None, detector="WFI01", optical_element="F062"):
@@ -152,11 +156,11 @@ def update_meta(model, t_pars, wcs_meta, quality):
             setattr(section_meta, k, v)
 
     # Update CRDS information.
-    model.meta.ref_file.crds.context = get_context_used('roman')
+    model.meta.ref_file.crds.context = get_context_used("roman")
     model.meta.ref_file.crds.version = get_svn_version()
     for ref in REFS:
         refpath = getattr(t_pars, ref)
         if refpath:
-            if refpath != 'N/A':
+            if refpath != "N/A":
                 refpath = Path(refpath).name
             setattr(model.meta.ref_file, ref, refpath)
