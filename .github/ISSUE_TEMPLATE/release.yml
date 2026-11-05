@@ -88,7 +88,7 @@ body:
           - `Artifactory truth directory`: the truth directory you just copied, e.g. `roman-pipeline/build/26Q3_B22.1`
           - `INT build directory to also upload results to`: the build name, e.g. `26Q3_B22.1`
         - [ ] Okify any failures for this regression test run with `okify_regtests roman <RUN_NUMBER>`. This should be done by a pipeline maintainer.
-        - [ ] Copy truth file directory to `roman-pipeline/stable`
+        - [ ] Copy truth file directory to overwrite `roman-pipeline/stable`
         - [ ] Update stable regression tests to use the new tag and CRDS context
 
         #### publish release and deliver frozen environment
