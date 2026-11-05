@@ -99,6 +99,8 @@ def v1_calculate_over_time(obsstart, obsend, **calc_wcs_from_time_kwargs):
     )
     if not t_pars.aperture:
         t_pars.aperture = "WFI02_FULL"
+    if not t_pars.target_aperture:
+        t_pars.target_aperture = 'WFI_CEN'
     if not t_pars.velocity:
         t_pars.velocity = np.zeros(3)
 

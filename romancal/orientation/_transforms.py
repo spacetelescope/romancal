@@ -31,8 +31,10 @@ class TransformParameters:
     crds_pars: dict | None = None
     #: Default quaternion to use if engineering is not available.
     default_quaternion: tuple | None = None
-    #: The distortion reference which defines the V1 to detector transformation.
+    #: The distortion reference which defines the V1 to detector transformation for the observed aperture.
     distortion_ref: str | Path | None = None
+    #: The distortion reference which defines the V1 to detector transformation for the target aperture.
+    distortion_target_ref: str | Path | None = None
     #: Observation end time
     obsend: float | None = None
     #: Observation start time
