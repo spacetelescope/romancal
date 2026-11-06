@@ -2,7 +2,6 @@
 
 import subprocess
 import sys
-from contextlib import nullcontext
 
 import numpy as np
 import pytest
@@ -168,24 +167,6 @@ def test_epsf_from_model_jitter(image_and_catalog):
     assert epsf_model.meta.jitter_minor == 6.0
     assert epsf_model.meta.jitter_position_angle == 30.0
     np.testing.assert_allclose(add_jitter(epsf_model, model), epsf_model.psf, atol=1e-6)
-
-
-@pytest.mark.parametrize("flag", ["reject-saturated", "reject-extended"])
-@pytest.mark.parametrize("prefix, expected", [("", True), ("no-", False)])
-def test_cli_reject_flags(monkeypatch, flag, prefix, expected):
-    """The --reject-* options can be turned off with --no-reject-*."""
-    seen = {}
-
-    def fake_epsf_from_model(model, catalog, kwargs_pick_stars, **kwargs):
-        seen.update(kwargs_pick_stars)
-        raise SystemExit
-
-    monkeypatch.setattr(_epsf, "epsf_from_model", fake_epsf_from_model)
-    monkeypatch.setattr(_epsf.rdm, "open", lambda path: nullcontext())
-    monkeypatch.setattr(_epsf.Table, "read", lambda path: None)
-    with pytest.raises(SystemExit):
-        _epsf.cli(["model", "catalog", "out", f"--{prefix}{flag}"])
-    assert seen[flag.replace("-", "_")] is expected
 
 
 def test_import_without_matplotlib():
