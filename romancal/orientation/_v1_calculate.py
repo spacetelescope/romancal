@@ -3,9 +3,11 @@
 import logging
 from collections import defaultdict
 
+import numpy as np
 import roman_datamodels as rdm
 from astropy.table import Table
 
+from . import _lib as olib
 from . import _transforms as tlib
 from . import _wcs as wlib
 
@@ -47,14 +49,18 @@ def v1_calculate_from_models(sources, **calc_wcs_from_time_kwargs):
         with rdm.open(source) as model:
             t_pars = tlib.TransformParameters(**calc_wcs_from_time_kwargs)
             tlib.t_pars_from_model(model, t_pars)
-            obstimes, _, vinfos = wlib.calc_wcs_over_time(
+            olib.fetch_references(t_pars)
+            obstimes, wcs_metas = wlib.calc_wcs_over_time(
                 t_pars.obsstart, t_pars.obsend, t_pars
             )
 
         sources = [source] * len(obstimes)
         v1_dict["source"] += sources
         v1_dict["obstime"] += obstimes
-        v1_dict["v1"] += [(v.ra, v.dec, v.pa) for v in vinfos]
+        v1_dict["v1"] += [
+            (wm["pointing"]["ra_v1"], wm["pointing"]["dec_v1"], wm["pointing"]["pa_v3"])
+            for wm in wcs_metas
+        ]
 
     # Format and return.
     v1_table = Table(v1_dict, meta=t_pars.as_reprdict())
@@ -88,16 +94,31 @@ def v1_calculate_over_time(obsstart, obsend, **calc_wcs_from_time_kwargs):
         Table of V1 pointing.
     """
     # Initialize structures.
-    t_pars = tlib.TransformParameters(**calc_wcs_from_time_kwargs)
-    if len(t_pars.aperture) == 0:
+    t_pars = tlib.TransformParameters(
+        obsstart=obsstart, obsend=obsend, **calc_wcs_from_time_kwargs
+    )
+    if not t_pars.aperture:
         t_pars.aperture = "WFI02_FULL"
+    if not t_pars.target_aperture:
+        t_pars.target_aperture = "WFI_CEN"
+    if not t_pars.velocity:
+        t_pars.velocity = np.zeros(3)
+
+    if not t_pars.crds_pars:
+        t_pars.crds_pars = olib.mk_crds_pars(
+            obstime=obsstart, detector=t_pars.aperture[:5]
+        )
+    olib.fetch_references(t_pars)
 
     # Calculate V1 for all sources.
-    obstimes, _, vinfos = wlib.calc_wcs_over_time(obsstart, obsend, t_pars)
+    obstimes, wcs_metas = wlib.calc_wcs_over_time(obsstart, obsend, t_pars)
     v1_dict = {}
     v1_dict["source"] = ["time range"] * len(obstimes)
     v1_dict["obstime"] = obstimes
-    v1_dict["v1"] = [(v.ra, v.dec, v.pa) for v in vinfos]
+    v1_dict["v1"] = [
+        (wm["pointing"]["ra_v1"], wm["pointing"]["dec_v1"], wm["pointing"]["pa_v3"])
+        for wm in wcs_metas
+    ]
 
     # Format and return.
     v1_table = Table(v1_dict, meta=t_pars.as_reprdict())
