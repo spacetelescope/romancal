@@ -566,6 +566,7 @@ def test_multiband_source_injection_no_detections(
         inject_seed=50,
         save_results=False,
         save_debug_info=True,
+        inject_sources=True,
     )
 
     assert n_calls == 2

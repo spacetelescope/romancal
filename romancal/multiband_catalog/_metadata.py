@@ -7,8 +7,9 @@ from copy import deepcopy
 import numpy as np
 from astropy.time import Time
 
-# Metadata keys to skip when accumulating image metadata
-_SKIP_IMAGE_META_KEYS = {"wcs", "individual_image_meta"}
+# Metadata keys to skip when accumulating image metadata.  cal_logs are
+# left out; the L3 production logs live in the L3 files (#2510).
+_SKIP_IMAGE_META_KEYS = {"wcs", "individual_image_meta", "cal_logs"}
 
 # Metadata keys to skip when blending metadata (keep first input)
 _SKIP_BLEND_KEYS = {"wcsinfo"}
