@@ -2,13 +2,10 @@
 
 from __future__ import annotations
 
-from copy import deepcopy
-
 import numpy as np
 from astropy.time import Time
 
-# Metadata keys to skip when accumulating image metadata
-_SKIP_IMAGE_META_KEYS = {"wcs", "individual_image_meta"}
+from romancal.stpipe.cal_logs import extract_image_meta
 
 # Metadata keys to skip when blending metadata (keep first input)
 _SKIP_BLEND_KEYS = {"wcsinfo"}
@@ -51,12 +48,9 @@ def blend_image_metadata(
     exposure_times : list
         List to accumulate exposure times (modified in place).
     """
-    # Accumulate image metadata
-    image_meta = {
-        k: deepcopy(v)
-        for k, v in image_model["meta"].items()
-        if k not in _SKIP_IMAGE_META_KEYS
-    }
+    # Accumulate image metadata (exclude cal_logs so L3 production logs are not
+    # embedded in the multiband catalog / parquet metadata).
+    image_meta = extract_image_meta(image_model["meta"])
     cat_model.meta.image_metas.append(image_meta)
 
     # Blend model with catalog metadata
