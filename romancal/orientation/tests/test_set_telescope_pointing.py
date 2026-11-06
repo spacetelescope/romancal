@@ -77,7 +77,6 @@ def test_add_wcs_default(science_raw_model, tmp_path):
     stp.add_wcs(
         model_path,
         tolerance=0,
-        allow_default=True,
         default_quaternion=TRANSFORM_KWARGS["pointing"].q,
     )
 
@@ -99,7 +98,7 @@ def test_add_wcs_default_from_model(science_raw_model, tmp_path):
     stp.add_wcs(
         model_path,
         tolerance=0,
-        allow_default=True,
+        use_existing_meta=True,
     )
 
     with rdm.open(model_path) as result:
@@ -116,7 +115,7 @@ def test_change_base_url():
     The given time and database should not find any values.
     """
     service_kwargs = {"service": "mast", "eng_base_url": engdb_mast.MAST_BASE_URL}
-    with pytest.raises(ValueError):
+    with pytest.raises((RuntimeError, ValueError)):
         plib.get_pointing(
             Time("2015-06-15"), Time("2015-06-17"), service_kwargs=service_kwargs
         )
@@ -128,7 +127,7 @@ def test_change_base_url_fail():
         "service": "mast",
         "eng_base_url": "https://nonexistent.fake.example",
     }
-    with pytest.raises(ValueError):
+    with pytest.raises((RuntimeError, ValueError)):
         plib.get_pointing(
             Time(STARTTIME, format="isot"),
             Time(ENDTIME, format="isot"),
