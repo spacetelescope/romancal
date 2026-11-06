@@ -852,7 +852,8 @@ def test_multiband_catalog_column_content(
 
 
 def test_multiband_source_injection_nan_skip(
-    library_model, function_jail,
+    library_model,
+    function_jail,
 ):
     """
     Test that source injection gets skipped when all pixels are NaN.

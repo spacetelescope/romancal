@@ -97,7 +97,9 @@ def process_detection_image(self, library, example_model, ee_spline, catalog_mod
     # masked in the detection image
     if np.all(mask):
         if self.inject_sources:
-            log.warning("Skipping source injection as there are no valid pixels to inject into.")
+            log.warning(
+                "Skipping source injection as there are no valid pixels to inject into."
+            )
             self.inject_sources = False
         msg = (
             "Cannot create source catalog. All "
@@ -606,7 +608,9 @@ def make_source_injected_library(library, seed=None):
 
             # Skip source injection if all source positions fall on NaN pixels
             if np.sum(~nanmask) == 0:
-                log.warning("Image skipped for source injection library creation. All source positions fall on NaN pixels.")
+                log.warning(
+                    "Image skipped for source injection library creation. All source positions fall on NaN pixels."
+                )
 
                 # Add model without injections to list for new library
                 si_model_lst.append(si_model)
