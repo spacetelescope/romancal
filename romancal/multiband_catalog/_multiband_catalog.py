@@ -93,17 +93,12 @@ def process_detection_image(self, library, example_model, ee_spline, catalog_mod
     # threshold for source detection
     mask = ~np.isfinite(detection_image)
 
-    print("\n\n\nXXX Testing detection image.")
-    print(f"XXX mask: {mask}")
-    print(f"XXX sum(mask): {np.sum(mask)}")
-    print(f"XXX detection_image: {detection_image}")
-
     # Return image shape and empty catalog table if all pixels are
     # masked in the detection image
     if np.all(mask):
-        log.warning("Skipping source injection as there are no valid pixels to inject into.")
-        self.inject_sources = False
-        print("\n\n\nXXX Source injection skipped due to all NaN pixels.")
+        if self.inject_sources:
+            log.warning("Skipping source injection as there are no valid pixels to inject into.")
+            self.inject_sources = False
         msg = (
             "Cannot create source catalog. All "
             "pixels in the detection image are masked."
@@ -550,11 +545,9 @@ def make_source_injected_library(library, seed=None):
     si_filters = []
     si_exptimes = {}
     si_cen = None
-    all_nan_mask = False
 
     # Cycle through library images to make source injected versions
     with library:
-        # for i, model in enumerate(library):
         for model in library:
             si_model = copy.deepcopy(model)
             library.shelve(model, modify=False)
@@ -613,11 +606,7 @@ def make_source_injected_library(library, seed=None):
 
             # Skip source injection if all source positions fall on NaN pixels
             if np.sum(~nanmask) == 0:
-                # if i == 0:
-                #     all_nan_mask = nanmask
-                # else:
-                #     np.logical_and(all_nan_mask, nanmask, out=all_nan_mask)
-                log.error("Skipping image. All source positions fall on NaN pixels.")
+                log.warning("Image skipped for source injection library creation. All source positions fall on NaN pixels.")
                 continue
 
             # Temporarily set NaNs to medians for injections
@@ -644,10 +633,6 @@ def make_source_injected_library(library, seed=None):
 
             # Add model to list for new library
             si_model_lst.append(si_model)
-
-    # if len(si_model_lst) == 0:
-    #     self.inject_sources = False
-    #     log.error("Skipping source injection. All source positions fall on NaN pixels for all models.")
 
     # Return library of source injected models and injection catalog
     return ModelLibrary(si_model_lst), si_cat

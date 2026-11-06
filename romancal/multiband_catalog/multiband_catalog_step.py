@@ -109,14 +109,13 @@ class MultibandCatalogStep(RomanStep):
 
         # Set up source injection library and injection catalog
         if self.inject_sources:
-            print("\n\n\n\nXXX Source injection enabled.\n\n\n")
             si_library, si_cat = make_source_injected_library(
                 library, seed=self.inject_seed
             )
 
             if len(si_library) == 0:
                 self.inject_sources = False
-                log.error("Skipping source injection. All source positions fall on NaN pixels for all models.")
+                log.error("Skipping source injection. All source positions fall on NaN pixels for all images.")
 
         # Create the multiband catalog
         segment_img, detection_image, cat_model, msg = multiband_catalog(
@@ -145,16 +144,8 @@ class MultibandCatalogStep(RomanStep):
 
             return cat_model, segmentation_model
 
-        # # Set up source injection library and injection catalog
-        # if self.inject_sources:
-        #     print("\n\n\n\nXXX Source injection enabled.\n\n\n")
-        #     si_library, si_cat = make_source_injected_library(
-        #         library, seed=self.inject_seed
-        #     )
-
         # Source Injection
         if self.inject_sources:
-            print("\n\n\n\nXXX Performing source injection.\n\n\n")
             with si_library:
                 si_example_model = si_library.borrow(0)
                 si_library.shelve(si_example_model, modify=False)
