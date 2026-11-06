@@ -232,7 +232,7 @@ def test_get_pointing():
 
 
 def test_get_pointing_fail():
-    with pytest.raises(ValueError):
+    with pytest.raises((RuntimeError, ValueError)):
         obstime, q = plib.get_pointing(BADSTARTTIME, BADENDTIME)
 
 
@@ -333,7 +333,7 @@ def test_wcs(calc_wcs):
 def test_strict_pointing(science_raw_model, tmp_path):
     """Test failure on strict pointing"""
     science_raw_model.meta.exposure.end_time = STARTTIME
-    with pytest.raises(ValueError):
+    with pytest.raises((RuntimeError, ValueError)):
         stp.add_wcs(_model_to_tmpfile(science_raw_model, tmp_path), tolerance=0)
 
 

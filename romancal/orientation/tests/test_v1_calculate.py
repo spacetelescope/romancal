@@ -42,7 +42,7 @@ def test_from_models_mast(tmp_path):
             distortion_ref=DATA_PATH / "roman_wfi_distortion_0078.asdf",
             reduce_func=plib.all_pointings,
         )
-    except ValueError as exception:
+    except (RuntimeError, ValueError) as exception:
         pytest.skip(
             f"MAST engineering database not available, possibly no token specified: {exception}"
         )
@@ -68,7 +68,7 @@ def test_over_time_mast(tmp_path):
             distortion_ref=DATA_PATH / "roman_wfi_distortion_0078.asdf",
             reduce_func=plib.all_pointings,
         )
-    except ValueError as exception:
+    except (RuntimeError, ValueError) as exception:
         pytest.skip(
             f"MAST engineering database not available, possibly no token specified: {exception}"
         )
