@@ -33,6 +33,10 @@ from romancal.source_catalog._psf_matching import (
     get_reddest_filter,
 )
 from romancal.source_catalog._source_catalog import RomanSourceCatalog
+from romancal.stpipe.cal_logs import (
+    copy_meta_without_cal_logs,
+    strip_inherited_cal_logs,
+)
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -487,12 +491,13 @@ def initialize_catalog_model(library, example_model):
     result : `romancal.datamodels.MultibandSourceCatalogModel`
         The initialized catalog model with set metadata.
     """
-    # Initialize the source catalog model, copying the metadata
-    # from the example model. Some of this may be overwritten
+    # Initialize the source catalog model, copying the metadata from the
+    # example model without upstream cal_logs. Some fields may be overwritten
     # during metadata blending.
     catalog_model = datamodels.MultibandSourceCatalogModel.create_minimal(
-        {"meta": example_model.meta}
+        {"meta": copy_meta_without_cal_logs(example_model.meta)}
     )
+    strip_inherited_cal_logs(catalog_model)
 
     catalog_model.meta.setdefault("psf_match_reference_filter", "NOT_CONFIGURED")
 

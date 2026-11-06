@@ -120,6 +120,8 @@ class MetaBlender:
 
         self._meta = self._model.meta
 
+        # Keep each input L2's cal_logs here (not in mosaic meta.cal_logs).
+        # Mosaic meta.cal_logs is filled later from roman_mos / resample logs.
         self._model["individual_image_cal_logs"] = []
 
         # for computing mean start time
@@ -179,8 +181,10 @@ class MetaBlender:
 
         self._start_times.append(model.meta.exposure.start_time)
 
+        # Preserve L2 production logs as structured provenance on the mosaic
+        # without putting them into meta.cal_logs (see issue #2510).
         if cal_logs := model.meta.get("cal_logs"):
-            self._model["individual_image_cal_logs"].append(cal_logs)
+            self._model["individual_image_cal_logs"].append(list(cal_logs))
 
         self._meta.resample.members.append(model.meta.filename)
 
