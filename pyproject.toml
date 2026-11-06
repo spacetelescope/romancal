@@ -55,7 +55,6 @@ docs = [
     "pytest_doctestplus",
 ]
 test = [
-    "ci-watson>=0.11.0",
     "coverage",
     "pytest>=9.0",
     "pytest-cov>=2.3.1",
@@ -139,8 +138,8 @@ filterwarnings = [
     "error::DeprecationWarning",
 ]
 junit_family = "xunit2"
-inputs_root = ["roman-pipeline"]
-results_root = ["roman-pipeline-results/regression-tests/runs/"]
+inputs_root = "roman-pipeline"
+results_root = "roman-pipeline-results/regression-tests/runs/"
 doctest_plus = "enabled"
 doctest_rst = "enabled"
 text_file_format = "rst"
@@ -155,6 +154,7 @@ addopts = [
     "-ra",              # Show summary of all failures/errorsproduct_names
 ]
 markers = [
+    "bigdata: Run tests that require intranet access",
     "soctests: run only the SOC tests in the suite.",
 ]
 

@@ -1,24 +1,46 @@
+import json
 import os
-import pprint
+import shutil
+import sys
+import time
 from contextlib import chdir
 from pathlib import Path
 
 import asdf
-from ci_watson.artifactory_helpers import (
-    get_bigdata,
-    get_bigdata_root,
-)
 
 from romancal.associations._load_asn import load_asn
 from romancal.regtest._differ import Diff, DiffSettings
 
-# from romancal.lib.suffix import replace_suffix
-
-# Define location of default Artifactory API key, for Jenkins use only
-ARTIFACTORY_API_KEY_FILE = "/eng/ssb2/keys/svc_rodata.key"
-
 # Define a request timeout in seconds
-TIMEOUT = 30
+TIMEOUT = int(os.environ.get("TEST_BIGDATA_TIMEOUT", 30))
+CHUNK_SIZE = int(os.environ.get("TEST_BIGDATA_CHUNK_SIZE", 1048576))
+RETRY_MAX = int(os.environ.get("TEST_BIGDATA_RETRY_MAX", 3))
+RETRY_DELAY = int(os.environ.get("TEST_BIGDATA_RETRY_DELAY", 5))
+
+
+def _download(url, dest, timeout=TIMEOUT, chunk_size=CHUNK_SIZE):
+    """Simple HTTP/HTTPS downloader."""
+    # Optional import: requests is not needed for local big data setup.
+    import requests
+
+    dest = os.path.abspath(dest)
+
+    retries = RETRY_MAX
+
+    while retries:
+        try:
+            with requests.get(url, stream=True, timeout=timeout) as r:
+                r.raise_for_status()
+                with open(dest, "w+b") as data:
+                    for chunk in r.iter_content(chunk_size=chunk_size):
+                        data.write(chunk)
+            return dest
+        except Exception as err:
+            retries -= 1
+            if not retries:
+                raise
+            print(f"download: {url} failed({err}), trying again...", file=sys.stderr)
+            time.sleep(RETRY_DELAY)
 
 
 class RegtestData:
@@ -26,84 +48,38 @@ class RegtestData:
 
     def __init__(
         self,
-        env="dev",
-        inputs_root="roman-pipeline",
-        results_root="roman-pipeline-results/regression-tests/runs/",
-        docopy=True,
-        input=None,
-        input_remote=None,
-        output=None,
-        truth=None,
-        truth_remote=None,
-        remote_results_path=None,
-        test_name=None,
-        traceback=None,
-        **kwargs,
+        env,
+        inputs_root,
+        results_root,
     ):
         self._env = env
         self._inputs_root = inputs_root
         self._results_root = results_root
-        self._bigdata_root = get_bigdata_root()
+        self._bigdata_root = os.environ.get("TEST_BIGDATA")
+        self._bigdata_root_remote = os.environ.get("TEST_BIGDATA_REMOTE")
+        self._bigdata_refresh = bool(
+            json.loads(os.environ.get("TEST_BIGDATA_REFRESH", "False").lower())
+        )
 
-        self.docopy = docopy
+        if self._bigdata_refresh and not self._bigdata_root_remote:
+            raise ValueError(
+                "The TEST_BIGDATA_REMOTE environment variable must be defined if TEST_BIGDATA_REFRESH is enabled"
+            )
 
         # Initialize @property attributes
-        self.input = input
-        self.input_remote = input_remote
-        self.output = output
-        self.truth = truth
-        self.truth_remote = truth_remote
+        self.input = None
+        self.input_remote = None
+        self.output = None
+        self.truth = None
+        self.truth_remote = None
 
         # No @properties for the following attributes
-        self.remote_results_path = remote_results_path
-        self.test_name = test_name
-        self.traceback = traceback
+        self.remote_results_path = None
+        self.test_name = None
+        self.traceback = None
 
         # Initialize non-initialized attributes
         self.asn = None
-
-    def __repr__(self):
-        return pprint.pformat(
-            dict(
-                input=self.input,
-                output=self.output,
-                truth=self.truth,
-                input_remote=self.input_remote,
-                truth_remote=self.truth_remote,
-                remote_results_path=self.remote_results_path,
-                test_name=self.test_name,
-                traceback=self.traceback,
-            ),
-            indent=1,
-        )
-
-    @property
-    def input_remote(self):
-        if self._input_remote is not None:
-            return os.path.join(*self._input_remote)
-        else:
-            return None
-
-    @input_remote.setter
-    def input_remote(self, value):
-        if value:
-            self._input_remote = value.split(os.sep)
-        else:
-            self._input_remote = value
-
-    @property
-    def truth_remote(self):
-        if self._truth_remote is not None:
-            return os.path.join(*self._truth_remote)
-        else:
-            return None
-
-    @truth_remote.setter
-    def truth_remote(self, value):
-        if value:
-            self._truth_remote = value.split(os.sep)
-        else:
-            self._truth_remote = value
 
     @property
     def input(self):
@@ -138,12 +114,39 @@ class RegtestData:
         else:
             self._output = value
 
-    @property
-    def bigdata_root(self):
-        return self._bigdata_root
+    def _get_bigdata_remote(self, src_url, dest_url):
+        _download(src_url, dest_url)
+
+    def _get_bigdata_local(self, src_path, dest_path):
+        if src_path == dest_path:
+            raise OSError(f"Source and destination paths are identical: {src_path}")
+        shutil.copy2(src_path, dest_path)
+
+    def _get_bigdata(self, path):
+        src = os.path.join(self._bigdata_root, self._inputs_root, self._env, path)
+        filename = os.path.basename(src)
+        dest = os.path.abspath(os.path.join(os.curdir, filename))
+
+        # if src is path, if path doesn't exist OR refresh, fetch from remote
+
+        if src.startswith("https://"):
+            # when src is a url, always fetch
+            self._get_bigdata_remote(src, dest)
+        else:
+            # conditionally fetch if refresh or input doesn't exist
+            # TODO update to check if files differ?
+            if self._bigdata_refresh or (
+                self._bigdata_root_remote and (not os.path.exists(src))
+            ):
+                remote_src = os.path.join(
+                    self._bigdata_root_remote, self._inputs_root, self._env, path
+                )
+                self._get_bigdata_remote(remote_src, src)
+            self._get_bigdata_local(src, dest)
+        return dest
 
     # The methods
-    def get_data(self, path=None, docopy=None):
+    def get_data(self, path=None):
         """Copy data from Artifactory remote resource to the CWD
 
         Updates self.input and self.input_remote upon completion
@@ -152,14 +155,12 @@ class RegtestData:
             path = self.input_remote
         else:
             self.input_remote = path
-        if docopy is None:
-            docopy = self.docopy
-        self.input = get_bigdata(self._inputs_root, self._env, path, docopy=docopy)
+        self.input = self._get_bigdata(path)
         self.input_remote = os.path.join(self._inputs_root, self._env, path)
 
         return self.input
 
-    def get_truth(self, path=None, docopy=None):
+    def get_truth(self, path=None):
         """Copy truth data from Artifactory remote resource to the CWD/truth
 
         Updates self.truth and self.truth_remote on completion
@@ -168,18 +169,16 @@ class RegtestData:
             path = self.truth_remote
         else:
             self.truth_remote = path
-        if docopy is None:
-            docopy = self.docopy
 
         truth_dir = Path("truth")
         truth_dir.mkdir(exist_ok=True)
         with chdir(truth_dir):
-            self.truth = get_bigdata(self._inputs_root, self._env, path, docopy=docopy)
+            self.truth = self._get_bigdata(path)
             self.truth_remote = os.path.join(self._inputs_root, self._env, path)
 
         return self.truth
 
-    def get_asn(self, path=None, docopy=True, get_members=True):
+    def get_asn(self, path=None, get_members=True):
         """Copy association and association members from Artifactory remote
         resource to the CWD/truth.
 
@@ -190,13 +189,6 @@ class RegtestData:
         path: str
             The remote path
 
-        docopy : bool
-            Switch to control whether or not to copy a file
-            into the test output directory when running the test.
-            If you wish to open the file directly from remote
-            location or just to set path to source, set this to `False`.
-            Default: `True`
-
         get_members: bool
             If an association is the input, retrieve the members.
             Otherwise, do not.
@@ -205,11 +197,9 @@ class RegtestData:
             path = self.input_remote
         else:
             self.input_remote = path
-        if docopy is None:
-            docopy = self.docopy
 
         # Get the association JSON file
-        self.input = get_bigdata(self._inputs_root, self._env, path, docopy=docopy)
+        self.input = self._get_bigdata(path)
         with open(self.input) as fp:
             asn = load_asn(fp)
             self.asn = asn
@@ -221,19 +211,22 @@ class RegtestData:
                     fullpath = os.path.join(
                         os.path.dirname(self.input_remote), member["expname"]
                     )
-                    get_bigdata(
-                        self._inputs_root, self._env, fullpath, docopy=self.docopy
-                    )
+                    self._get_bigdata(fullpath)
 
     def to_asdf(self, path):
-        tree = eval(str(self))  # noqa: S307
-        af = asdf.AsdfFile(tree=tree)
+        af = asdf.AsdfFile(
+            {
+                "input": self.input,
+                "output": self.output,
+                "truth": self.truth,
+                "input_remote": self.input_remote,
+                "truth_remote": self.truth_remote,
+                "remote_results_path": self.remote_results_path,
+                "test_name": self.test_name,
+                "traceback": self.traceback,
+            }
+        )
         af.write_to(path)
-
-    @classmethod
-    def open(cls, filename):
-        with asdf.open(filename) as af:
-            return cls(**af.tree)
 
 
 def compare_asdf(result, truth, ignore=None, rtol=1e-05, atol=1e-08, equal_nan=True):
