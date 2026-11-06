@@ -160,20 +160,12 @@ markers = [
 
 [tool.coverage.run]
 omit = [
-    "romancal/regtest/conftest.py",
-    "romancal/setup.py",
-    "romancal/tests/test*",
-    "romancal/regtest/test*",
-    "romancal/*/tests/*",
-    "docs/*",
-    "*/romancal/regtest/conftest.py",
-    "*/romancal/setup.py",
-    "*/romancal/tests/test*",
-    "*/romancal/regtest/test*",
-    "*/romancal/*/tests/*",
     "*/docs/*",
     "*.rmap",
     "*.pmap",
+    "*/romancal/regtest/test_*",
+    "*/romancal/regtest/conftest.py",
+    "*/romancal/regtest/compatibility/*",
 ]
 
 [tool.coverage.report]
