@@ -383,9 +383,8 @@ def make_epsf_reference(epsf, detector, optical_element, meta=None):
     defaults = {"meta": final_meta}
 
     epsf_data = epsf.epsf.data
-    psf = np.zeros((3, 3, 1, epsf_data.shape[0], epsf_data.shape[1]), dtype=np.float32)
-    psf[0, 1, 0, :, :] = epsf_data
-    defaults["psf"] = psf
+    # A single in-focus ePSF for the stars' mix of spectral types.
+    defaults["psf"] = epsf_data[None, None, None].astype(np.float32)
     model = EpsfRefModel.create_minimal(defaults=defaults)
 
     # Update meta that are not defined in the model.

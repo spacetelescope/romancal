@@ -56,7 +56,7 @@ def test_epsf_values(run_epsf, dms_logger):
     # DMS 530 is to construct empirical PSFs. Check that the empirical
     # ePSF is a sensible PSF.
     oversample = epsf_model.meta.oversample
-    psf = epsf_model.psf[0, 1, 0]
+    psf = epsf_model.psf[0, 0, 0]
     peak = np.unravel_index(np.argmax(psf), psf.shape)
     center = (np.array(psf.shape) - 1) / 2
     checks = {
