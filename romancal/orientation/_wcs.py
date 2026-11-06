@@ -423,18 +423,18 @@ def update_wcs_from_telem(model, t_pars: tlib.TransformParameters):
     # Get the pointing information
     try:
         t_pars.update_from_engdb()
-    except ValueError as exception:
+    except (RuntimeError, ValueError):
         logger.error("Cannot retrieve valid engineering orientation data")
+        logger.exception("Detailed trace: ")
         if t_pars.default_quaternion is None or not t_pars.allow_default:
             logger.error("Use of default orientation has been disabled. Aborting.")
             raise
         else:
-            logger.warning("Exception is %s", exception)
             obstime = Time(
                 (t_pars.obsstart.mjd + t_pars.obsend.mjd) / 2.0, format="mjd"
             )
             logger.warning(
-                "Using provided default quaternion: %s", t_pars.default_quaternion
+                "Using provided default quaternion: %s", list(t_pars.default_quaternion)
             )
             logger.warning("    at time %s", obstime.iso)
             logger.info("Setting pointing quality to PLANNED")
@@ -452,7 +452,7 @@ def update_wcs_from_telem(model, t_pars: tlib.TransformParameters):
         wcs_meta = calc_wcs(t_pars)
         logger.info("Setting pointing quality to %s", quality)
     except olib.EXPECTED_ERRORS:
-        logger.error("WCS calculation has failed")
+        logger.exception("WCS calculation has failed. Detailed trace:")
         raise
 
     # Update model meta.

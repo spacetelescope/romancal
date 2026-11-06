@@ -200,7 +200,7 @@ def _main():
             )
         except (TypeError, ValueError) as exception:
             logger.warning("Cannot determine pointing information: %s", str(exception))
-            logger.debug("Full exception:", exc_info=exception)
+            logger.exception("Full trace:")
 
 
 if __name__ == "__main__":
