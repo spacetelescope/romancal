@@ -1096,6 +1096,7 @@ def test_do_psf_photometry_column_names(function_jail, image_model, fit_psf):
 
     if fit_psf:
         assert len(psf_colnames) > 0
+        assert "psf_cfit" in psf_colnames
     else:
         assert len(psf_colnames) == 0
 
