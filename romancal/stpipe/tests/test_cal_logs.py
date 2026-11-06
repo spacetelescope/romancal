@@ -158,18 +158,50 @@ def test_meta_blender_keeps_l2_logs_off_meta_cal_logs():
 
 def test_finalize_result_respects_member_scoped_logs(base_image):
     """
-    Purpose: ExposurePipeline.finalize_result keeps member-scoped cal_logs
-    instead of replacing them with the full multi-member stream.
+    Purpose: ExposurePipeline.finalize_result restores member-scoped cal_logs
+    by library index instead of replacing them with the full stream.
     """
     model = base_image()
-    set_product_cal_logs(model, ["member-only"])
+    set_product_cal_logs(model, ["stale-on-model"])
 
     pipeline = ExposurePipeline()
-    pipeline._member_scoped_ids = {id(model)}
+    pipeline._member_cal_logs = {0: ["member-only"]}
     pipeline._log_records = ["full", "pipeline", "stream"]
     pipeline.finalize_result(model, [])
 
     assert get_cal_logs(model) == ["member-only"]
+
+
+def test_finalize_result_library_restores_logs_by_index(base_image):
+    """
+    Purpose: ModelLibrary finalize restores each member's logs by index so
+    reloaded on_disk objects (new id) still keep per-member slices.
+    """
+    m0 = base_image()
+    m1 = base_image()
+    m0.meta.filename = "det0.asdf"
+    m1.meta.filename = "det1.asdf"
+    set_product_cal_logs(m0, ["wrong0"])
+    set_product_cal_logs(m1, ["wrong1"])
+
+    library = ModelLibrary([m0, m1])
+    pipeline = ExposurePipeline()
+    pipeline._member_cal_logs = {
+        0: ["MEMBER_MARKER det0"],
+        1: ["MEMBER_MARKER det1"],
+    }
+    pipeline._log_records = ["full", "pipeline", "stream", "all-detectors"]
+    pipeline.finalize_result(library, [])
+
+    with library:
+        out = list(library)
+        for member in out:
+            library.shelve(member, modify=False)
+
+    assert get_cal_logs(out[0]) == ["MEMBER_MARKER det0"]
+    assert get_cal_logs(out[1]) == ["MEMBER_MARKER det1"]
+    assert "all-detectors" not in get_cal_logs(out[0])
+    assert "all-detectors" not in get_cal_logs(out[1])
 
 
 def test_elp_member_scoped_cal_logs(function_jail, tmp_path):
