@@ -106,6 +106,9 @@ class SourceCatalogStep(RomanStep):
     class_alias = "source_catalog"
 
     reference_file_types: ClassVar = ["apcorr", "epsf"]
+    # epsf has no CRDS rule for grism exposures, which skip this step only
+    # after the pipeline prefetches; fetch references when the step runs.
+    prefetch_references = False
 
     spec = """
         bkg_boxsize = float(default=55.0)     # background mesh box size in arcsec
