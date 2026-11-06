@@ -214,10 +214,21 @@ def run_steps(
             standard.data[:] = _get_corrected_state(standard, coeffs_default, orig_data)
         else:
             # Generate the 4 coefficient states and blend via dynamic validity weights
-            left_data = _get_corrected_state(standard, coeffs_left, orig_data)
-            right_data = _get_corrected_state(standard, coeffs_right, orig_data)
-            amp33_data = _get_corrected_state(standard, coeffs_amp33, orig_data)
             default_data = _get_corrected_state(standard, coeffs_default, orig_data)
+
+            # Only compute the weights for the other cases if they will be used.
+            if np.any(weights["left_only"] != 0):
+                left_data = _get_corrected_state(standard, coeffs_left, orig_data)
+            else:
+                left_data = np.zeros_like(default_data)
+            if np.any(weights["right_only"] != 0):
+                right_data = _get_corrected_state(standard, coeffs_right, orig_data)
+            else:
+                right_data = np.zeros_like(default_data)
+            if np.any(weights["amp33_only"] != 0):
+                amp33_data = _get_corrected_state(standard, coeffs_amp33, orig_data)
+            else:
+                amp33_data = np.zeros_like(default_data)
 
             # Dictionary unpacked directly into the blend
             standard.data[:] = (
