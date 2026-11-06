@@ -15,7 +15,6 @@ import argparse
 import logging
 import math
 import os
-import random
 
 import numpy as np
 import roman_datamodels as rdm
@@ -279,8 +278,9 @@ def cli(argv=None):
     if args.plot_epsf:
         plot_epsfstar(epsf.epsf.data, finalize=True)
     if args.plot_stamps:
-        to_plot = random.choices(stars, k=args.plot_stamps)
-        plot_epsfstars(to_plot)
+        rng = np.random.default_rng()
+        idx = rng.choice(len(stars), min(args.plot_stamps, len(stars)), replace=False)
+        plot_epsfstars([stars[i] for i in idx])
 
     # That's all folks.
     output = args.output_epsf_reffile
@@ -600,7 +600,9 @@ def plot_epsfstars(stars, ncols=5, title_func=None, **kwargs_simple_norm):
     import matplotlib.pyplot as plt
 
     if title_func is None:
-        title_func = lambda axis, idx, star: f"Star {idx}"
+
+        def title_func(axis, idx, star):
+            return f"Star {idx}"
 
     nrows = math.ceil(len(stars) / ncols)
     fig, ax = plt.subplots(
