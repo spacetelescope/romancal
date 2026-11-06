@@ -12,6 +12,7 @@ for a list of exposures.
 
 import argparse
 import logging
+import warnings
 
 import romancal.orientation._lib as olib
 import romancal.orientation.set_telescope_pointing as stp
@@ -33,7 +34,7 @@ def _main():
     parser.add_argument(
         "--allow-default",
         action="store_true",
-        help="If pointing information cannot be determine, use header information.",
+        help="DEPRECATED See `--use-existing-meta`",
     )
     parser.add_argument(
         "--dry-run",
@@ -76,6 +77,11 @@ def _main():
         type=int,
         default=60,
         help="Seconds beyond the observation time to search for telemetry. Default: %(default)s",
+    )
+    parser.add_argument(
+        "--use-existing-meta",
+        action="store_true",
+        help="If pointing information cannot be determine, use the quaternion from the meta, if present.",
     )
     parser.add_argument(
         "-v",
@@ -163,6 +169,12 @@ def _main():
         logger_handler.setFormatter(logger_format_debug)
     logger.info("set_telescope_pointing called with args %s", args)
 
+    # Deprecate allow-default
+    if args.allow_default:
+        warnings.warn('`--allow-default` has been deprecated. See `--use-existing-meta`', DeprecationWarning, stacklevel=2)
+        warnings.warn('Will set --use-existing-meta', stacklevel=2)
+        args.use_existing_meta = args.allow_default
+
     # Gather the service-specific args
     service_kwargs = {"service": args.service}
     for arg in [
@@ -191,11 +203,11 @@ def _main():
                 dry_run=args.dry_run,
                 # all keyword arguments below are defined in
                 # set_telescope_pointing.TransformParameters
-                allow_default=args.allow_default,
                 bam_ref=args.bam_ref,
                 default_quaternion=args.default_quaternion,
                 distortion_ref=args.distortion_ref,
                 service_kwargs=service_kwargs,
+                use_existing_meta=args.use_existing_meta,
                 tolerance=args.tolerance,
             )
         except (TypeError, ValueError) as exception:

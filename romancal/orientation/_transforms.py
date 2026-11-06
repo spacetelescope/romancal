@@ -21,8 +21,6 @@ LOGLEVELS = [logging.INFO, logging.DEBUG, olib.DEBUG_FULL]
 class TransformParameters:
     """Parameters required for the calculations."""
 
-    #: If telemetry cannot be determined, use existing information in the observation's header.
-    allow_default: bool = False
     #: Detector aperture
     aperture: str | None = None
     #: FGS Boresite Adjustment Matrix (BAM) reference file path
@@ -48,6 +46,8 @@ class TransformParameters:
     service_kwargs: dict | None = None
     #: Target aperture
     target_aperture: str | None = None
+    #: If telemetry cannot be determined, use existing information in the observation's header.
+    use_existing_meta: bool = False
     #: If no telemetry can be found during the observation,
     #: the time, in seconds, beyond the observation time to search for telemetry.
     tolerance: float = 60.0
@@ -104,7 +104,3 @@ def t_pars_from_model(model, t_pars):
     t_pars.obsend = model.meta.exposure.end_time
     ephem = model.meta.ephemeris
     t_pars.velocity = (ephem.velocity_x, ephem.velocity_y, ephem.velocity_z)
-
-    # Retrieve previously calculated orientation items only if they are currently not defined.
-    if t_pars.default_quaternion is None:
-        t_pars.default_quaternion = getattr(model.meta.pointing, "quaternion", None)
