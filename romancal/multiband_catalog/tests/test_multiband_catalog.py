@@ -575,56 +575,6 @@ def test_multiband_source_injection_no_detections(
     assert "si_detection_image" not in segm
 
 
-
-
-def test_multiband_source_injection_nan_skip(
-    library_model2, function_jail,
-):
-    """
-    Test that source injection gets skipped when all pixels are NaN.
-    """
-
-    with library_model2:
-        for input_model in library_model2:
-            input_model.data[:] = np.nan
-            library_model2.shelve(input_model, modify=True)
-
-    result, segm = MultibandCatalogStep.call(
-        library_model2,
-        bkg_boxsize=30,
-        snr_threshold=7,
-        npixels=5,
-        fit_psf=False,
-        deblend=True,
-        inject_sources=True,
-        inject_seed=50,
-        save_results=False,
-        save_debug_info=True,
-    )
-
-    print(f"\nXXX segm: {segm}")
-    for key in segm:
-        print(f"XXX key: {key}")
-        # print(f"XXX segm[{key}]: {segm[key]}")
-    print(f"XXX result: {result}")
-    for key in result:
-        print(f"XXX key: {key}")
-        # print(f"XXX result[{key}]: {result[key]}")
-
-    # with library_model2:
-    #     for input_model in library_model2:
-    #         print(f"XXX input_model.data: {input_model.data}")
-    #         library_model2.shelve(input_model, modify=False)
-
-
-    # assert len(result.source_catalog) > 0
-    # assert "injected_sources" in segm
-    # assert "si_data" not in segm
-    # assert "si_detection_image" not in segm
-
-
-
-
 @pytest.mark.parametrize("fit_psf", (True, False))
 @pytest.mark.parametrize(
     "snr_threshold, npixels, save_results",
@@ -899,3 +849,36 @@ def test_multiband_catalog_column_content(
     assert len(cat) == 112
 
     check_psf_matched_catalog(cat, ["f062", "f129", "f213"], "f129")
+
+
+def test_multiband_source_injection_nan_skip(
+    library_model, function_jail,
+):
+    """
+    Test that source injection gets skipped when all pixels are NaN.
+    """
+
+    with library_model:
+        for input_model in library_model:
+            input_model.data[:] = np.nan
+            library_model.shelve(input_model, modify=True)
+
+    result, segm = MultibandCatalogStep.call(
+        library_model,
+        bkg_boxsize=30,
+        snr_threshold=7,
+        npixels=5,
+        fit_psf=False,
+        deblend=True,
+        inject_sources=True,
+        inject_seed=50,
+        save_results=False,
+        save_debug_info=True,
+    )
+
+    # Ensure that no source injection products are present since all pixels were NaN
+    assert "injected_sources" not in segm
+    assert "recovered_sources" not in segm
+    assert "si_data" not in segm
+    assert "si_detection_image" not in segm
+    assert "source_injection_catalog" not in result
