@@ -1,0 +1,1 @@
+Added skip of source injection in ``MultibandCatalogStep`` if there are no valid pixels to inject into.

@@ -113,6 +113,12 @@ class MultibandCatalogStep(RomanStep):
                 library, seed=self.inject_seed
             )
 
+            if len(si_library) == 0:
+                self.inject_sources = False
+                log.warning(
+                    "Skipping source injection. All source positions fall on NaN pixels for all images."
+                )
+
         # Create the multiband catalog
         segment_img, detection_image, cat_model, msg = multiband_catalog(
             self, library, example_model, cat_model, ee_spline
