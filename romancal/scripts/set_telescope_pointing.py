@@ -171,8 +171,12 @@ def _main():
 
     # Deprecate allow-default
     if args.allow_default:
-        warnings.warn('`--allow-default` has been deprecated. See `--use-existing-meta`', DeprecationWarning, stacklevel=2)
-        warnings.warn('Will set --use-existing-meta', stacklevel=2)
+        warnings.warn(
+            "`--allow-default` has been deprecated. See `--use-existing-meta`",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        warnings.warn("Will set --use-existing-meta", stacklevel=2)
         args.use_existing_meta = args.allow_default
 
     # Gather the service-specific args

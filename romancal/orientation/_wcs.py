@@ -428,26 +428,29 @@ def update_wcs_from_telem(model, t_pars: tlib.TransformParameters):
         logger.exception("Detailed trace: ")
 
         # See if any other source of quaternion has been supplied.
-        source_message = 'Using default quaternion'
+        source_message = "Using default quaternion"
         quaternion = t_pars.default_quaternion
         if quaternion is None and t_pars.use_existing_meta:
-            source_message = 'Using pre-existing quaternion from model meta'
-            quaternion = getattr(model.meta.pointing, 'quaternion', None)
+            source_message = "Using pre-existing quaternion from model meta"
+            quaternion = getattr(model.meta.pointing, "quaternion", None)
         if quaternion is None:
-            logger.error("No default orientation was given using `--quaternion` and pre-existing meta information is not present or `--allow-existing-meta` was not specified.")
-            logger.error('Without a quaternion, calculation cannot proceed. Aborting...')
+            logger.error(
+                "No default orientation was given using `--quaternion` and pre-existing meta information is not present or `--allow-existing-meta` was not specified."
+            )
+            logger.error(
+                "Without a quaternion, calculation cannot proceed. Aborting..."
+            )
             raise
 
         # A quaternion has been provided. Continue.
-        obstime = Time(
-            (t_pars.obsstart.mjd + t_pars.obsend.mjd) / 2.0, format="mjd"
-        )
-        t_pars.pointing = plib.Pointing(
-            q=quaternion, obstime=obstime
-        )
+        obstime = Time((t_pars.obsstart.mjd + t_pars.obsend.mjd) / 2.0, format="mjd")
+        t_pars.pointing = plib.Pointing(q=quaternion, obstime=obstime)
         quality = "PLANNED"
         logger.warning(
-            "%s: %s at time %s", source_message, list(t_pars.pointing.q), t_pars.pointing.obstime.iso
+            "%s: %s at time %s",
+            source_message,
+            list(t_pars.pointing.q),
+            t_pars.pointing.obstime.iso,
         )
     else:
         logger.info("Successful read of engineering quaternions:")
