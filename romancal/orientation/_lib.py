@@ -163,4 +163,4 @@ def update_meta(model, t_pars, wcs_meta, quality):
         if refpath:
             if refpath != "N/A":
                 refpath = Path(refpath).name
-            setattr(model.meta.ref_file, ref, refpath)
+            setattr(model.meta.ref_file, REFS[ref], refpath)

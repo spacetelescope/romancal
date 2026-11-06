@@ -366,6 +366,8 @@ def test_strict_pointing(science_raw_model, tmp_path):
                 0.6822922576514541,
             ],
         ),
+        ('meta.ref_file.bam', 'roman_wfi_bam_0007.asdf'),
+        ('meta.ref_file.distortion', 'roman_wfi_distortion_0078.asdf'),
         ("meta.wcsinfo.aperture_name", "WFI01_FULL"),
         ("meta.wcsinfo.v2_ref", 1454.084),
         ("meta.wcsinfo.v3_ref", -1163.304),
