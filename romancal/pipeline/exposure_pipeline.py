@@ -27,6 +27,7 @@ from romancal.tweakreg import TweakRegStep
 from romancal.wfi18_transient import WFI18TransientStep
 
 from ..stpipe import RomanPipeline
+from ..stpipe.cal_logs import get_cal_logs, set_product_cal_logs, slice_log_records
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -104,9 +105,14 @@ class ExposurePipeline(RomanPipeline):
 
         catalogs = []
         segmentations = []
+        # Per-member log slices so each detector product does not inherit the
+        # full multi-detector ELP log stream (issue #2510).
+        member_log_starts = []
+        self._member_scoped_ids = set()
 
         with lib:
             for model_index, model in enumerate(lib):
+                member_log_starts.append(len(self.log_records))
                 result, run_source_catalog = self._process_model(model)
 
                 # now handle source_catalog
@@ -124,14 +130,24 @@ class ExposurePipeline(RomanPipeline):
                         result.meta["source_catalog"] = {}
                     result.meta.source_catalog.tweakreg_catalog = catalog.source_catalog
 
+                # Capture logs emitted while processing this association member.
+                self._apply_member_cal_logs(
+                    result, member_log_starts[model_index], len(self.log_records)
+                )
+
                 lib.shelve(result, model_index)
                 catalogs.append(catalog)
                 segmentations.append(segmentation)
 
         # Now that all the exposures are collated, run tweakreg
+        tweakreg_log_start = len(self.log_records)
         self.tweakreg.run(lib)
+        tweakreg_logs = slice_log_records(
+            self.log_records, tweakreg_log_start, len(self.log_records)
+        )
 
-        # tweakreg was run, update catalog positions
+        # tweakreg was run, update catalog positions and append shared tweakreg
+        # logs onto members that were successfully aligned.
         with lib:
             for model_index, model in enumerate(lib):
                 if model.meta.cal_step.tweakreg == "COMPLETE":
@@ -148,6 +164,10 @@ class ExposurePipeline(RomanPipeline):
                             model.meta.source_catalog.tweakreg_catalog_name = (
                                 catalog_filename
                             )
+                    if tweakreg_logs:
+                        existing = get_cal_logs(model)
+                        set_product_cal_logs(model, existing + tweakreg_logs)
+                        self._member_scoped_ids.add(id(model))
                 lib.shelve(model)
 
         log.info("Roman exposure calibration pipeline ending...")
@@ -167,6 +187,28 @@ class ExposurePipeline(RomanPipeline):
             segmentation = segmentations[0]
             lib.shelve(model, modify=False)
         return model, catalog, segmentation
+
+    def _apply_member_cal_logs(self, model, start, end):
+        """Assign pipeline log records from [start, end) to one ELP member."""
+        set_product_cal_logs(model, slice_log_records(self.log_records, start, end))
+        # Track ids so finalize_result does not replace these with the full
+        # multi-member pipeline log stream.
+        if not hasattr(self, "_member_scoped_ids"):
+            self._member_scoped_ids = set()
+        self._member_scoped_ids.add(id(model))
+
+    def finalize_result(self, model, reference_files_used):
+        """Preserve per-member cal_logs on association products."""
+        scoped_ids = getattr(self, "_member_scoped_ids", set())
+        preserve = None
+        if id(model) in scoped_ids:
+            preserve = get_cal_logs(model)
+
+        super().finalize_result(model, reference_files_used)
+
+        if preserve is not None:
+            set_product_cal_logs(model, preserve)
+            scoped_ids.add(id(model))
 
     def _process_model(self, model):
         """
