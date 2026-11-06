@@ -423,7 +423,7 @@ def _epsf_ref(nfocus, nspectral, size=17, oversample=4):
     ],
 )
 def test_get_gridded_psf_model_slice(shape, kwargs, index):
-    """The default spectral type depends on how many the file has."""
+    """The default spectral type depends on whether the reference file has multiple spectral types."""
     ref = _epsf_ref(*shape)
     model = get_gridded_psf_model(ref, **kwargs)
     np.testing.assert_allclose(model.data[0], ref.psf[index][0])
