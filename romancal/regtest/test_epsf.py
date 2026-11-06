@@ -27,7 +27,8 @@ def run_epsf(rtdata_module, resource_tracker):
     # Make the catalog here so that it has the columns pick_stars uses.
     RomanStep.from_cmdline(["romancal.step.SourceCatalogStep", INPUT])
     with resource_tracker.track():
-        _epsf.cli([INPUT, CATALOG, OUTPUT])
+        # The output name defaults to OUTPUT.
+        _epsf.cli([INPUT, CATALOG])
     with rdm.open(rtdata.output) as model, rdm.open(rtdata.truth) as truth:
         yield model, truth
 
