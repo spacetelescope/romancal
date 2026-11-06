@@ -92,11 +92,9 @@ def build_epsf(stars, **kwargs_epsfbuilder):
     if kwargs_epsfbuilder is None:
         kwargs_epsfbuilder = dict()
     epsfbuilder_final_kwargs.update(kwargs_epsfbuilder)
+    # The CLI passes center_accuracy=None to mean the EPSFBuilder default.
     if epsfbuilder_final_kwargs.get("center_accuracy") is None:
-        try:
-            del epsfbuilder_final_kwargs["center_accuracy"]
-        except KeyError:
-            pass
+        epsfbuilder_final_kwargs.pop("center_accuracy", None)
 
     epsfbuilder = EPSFBuilder(**epsfbuilder_final_kwargs)
     epsf_result = epsfbuilder(stars)
