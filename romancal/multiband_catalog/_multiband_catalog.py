@@ -607,6 +607,10 @@ def make_source_injected_library(library, seed=None):
             # Skip source injection if all source positions fall on NaN pixels
             if np.sum(~nanmask) == 0:
                 log.warning("Image skipped for source injection library creation. All source positions fall on NaN pixels.")
+
+                # Add model without injections to list for new library
+                si_model_lst.append(si_model)
+
                 continue
 
             # Temporarily set NaNs to medians for injections
