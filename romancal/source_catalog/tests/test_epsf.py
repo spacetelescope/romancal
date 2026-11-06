@@ -1,5 +1,7 @@
 """Unit tests for the ePSF star selection."""
 
+import subprocess
+import sys
 from contextlib import nullcontext
 
 import numpy as np
@@ -184,3 +186,40 @@ def test_cli_reject_flags(monkeypatch, flag, prefix, expected):
     with pytest.raises(SystemExit):
         _epsf.cli(["model", "catalog", "out", f"--{prefix}{flag}"])
     assert seen[flag.replace("-", "_")] is expected
+
+
+@pytest.mark.parametrize(
+    "argv, expected",
+    [
+        (
+            ["dir/r0001_wfi01_f158_cal.asdf", "cat.parquet"],
+            "r0001_wfi01_f158_epsf.asdf",
+        ),
+        (["r0001_cal.asdf", "cat.parquet", "out.asdf"], "out.asdf"),
+    ],
+)
+def test_cli_output_name(monkeypatch, argv, expected):
+    """The output defaults to the model name with suffix _epsf."""
+    saved = []
+
+    class FakeRef:
+        def save(self, path):
+            saved.append(path)
+
+    monkeypatch.setattr(
+        _epsf, "epsf_from_model", lambda *args, **kwargs: (FakeRef(), None, [])
+    )
+    monkeypatch.setattr(_epsf.rdm, "open", lambda path: nullcontext())
+    monkeypatch.setattr(_epsf.Table, "read", lambda path: None)
+    _epsf.cli(argv)
+    assert saved == [expected]
+
+
+def test_import_without_matplotlib():
+    """matplotlib is optional; it is only imported for plotting."""
+    # A None entry in sys.modules makes the import raise ImportError.
+    code = (
+        "import sys; sys.modules['matplotlib'] = None; "
+        "import romancal.source_catalog._epsf"
+    )
+    subprocess.run([sys.executable, "-c", code], check=True)  # noqa: S603

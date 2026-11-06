@@ -14,19 +14,19 @@ and flux/position analysis.
 import argparse
 import logging
 import math
+import os
 import random
 
-import matplotlib.pyplot as plt
 import numpy as np
 import roman_datamodels as rdm
 from astropy.nddata import NDData, StdDevUncertainty
 from astropy.table import Table
 from astropy.time import Time
-from astropy.visualization import simple_norm
 from photutils.psf import EPSFBuilder, extract_stars
 from photutils.psf.flags import PSF_FLAGS
 from roman_datamodels.datamodels import EpsfRefModel
 
+from romancal.lib.suffix import replace_suffix
 from romancal.resample._utils import compute_var_sky
 from romancal.source_catalog._calibrate import (
     make_image_mask,
@@ -125,7 +125,11 @@ def cli(argv=None):
     parser.add_argument(
         "output_epsf_reffile",
         type=str,
-        help="Path to write the newly created ePSF reference file.",
+        nargs="?",
+        default=None,
+        help="""Path to write the newly created ePSF reference file.
+                Default: the model's name with suffix _epsf, in the
+                current directory.""",
     )
     parser.add_argument("--plot-epsf", action="store_true", help="Plot the ePSF.")
     parser.add_argument(
@@ -279,8 +283,12 @@ def cli(argv=None):
         plot_epsfstars(to_plot)
 
     # That's all folks.
-    logger.info("Saving ePSF to %s", args.output_epsf_reffile)
-    epsf_model.save(args.output_epsf_reffile)
+    output = args.output_epsf_reffile
+    if output is None:
+        root = os.path.splitext(os.path.basename(args.model))[0]
+        output = replace_suffix(root, "epsf") + ".asdf"
+    logger.info("Saving ePSF to %s", output)
+    epsf_model.save(output)
 
 
 def epsf_from_model(
@@ -556,6 +564,9 @@ def plot_epsfstar(star, ax=None, title=None, finalize=False, **kwargs_simple_nor
     kwargs_simple_norm : dict
         Arguments for the `astropy.visualization.simple_norm` function. If None, the "log" stretch with "percent=99.0" is used.
     """
+    import matplotlib.pyplot as plt
+    from astropy.visualization import simple_norm
+
     if not len(kwargs_simple_norm):
         kwargs_simple_norm = {"stretch": "log", "percent": 99.0}
     norm = simple_norm(star, **kwargs_simple_norm)
@@ -586,6 +597,8 @@ def plot_epsfstars(stars, ncols=5, title_func=None, **kwargs_simple_norm):
     kwargs_simple_norm : dict
         Arguments for the `simple_norm` function. If None, the "log" stretch with "percent=99.0" is used.
     """
+    import matplotlib.pyplot as plt
+
     if title_func is None:
         title_func = lambda axis, idx, star: f"Star {idx}"
 
