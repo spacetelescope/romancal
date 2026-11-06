@@ -171,3 +171,27 @@ def test_wcsinfo_keeps_first_input():
     # Per-image wcsinfo is still preserved on image_metas
     assert cat_model.meta.image_metas[0]["wcsinfo"]["ra_ref"] == 10.0
     assert cat_model.meta.image_metas[1]["wcsinfo"]["ra_ref"] == 99.0
+
+
+def test_image_metas_exclude_cal_logs(tmp_path):
+    """
+    Purpose: L3 cal_logs must not be copied into image_metas, and so must
+    not end up in the multiband parquet metadata (#2510).
+    """
+    import pyarrow.parquet as pq
+
+    models = [_make_mosaic(optical_element=f) for f in ("F184", "F158")]
+    for model in models:
+        model.meta.cal_logs = ["L3 log line"] * 5
+
+    cat_model = _blend_models(models)
+
+    for image_meta in cat_model.meta.image_metas:
+        assert "cal_logs" not in image_meta
+    assert "cal_logs" not in cat_model.meta
+
+    cat_model.source_catalog = cat_model.create_empty_catalog()
+    fn = tmp_path / "cat.parquet"
+    cat_model.to_parquet(fn)
+    keys = pq.read_schema(fn).metadata.keys()
+    assert not [k for k in keys if b"cal_logs" in k]
