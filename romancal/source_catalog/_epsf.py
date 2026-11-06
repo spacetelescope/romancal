@@ -159,10 +159,9 @@ def cli(argv=None):
     )
     pick_star_parser.add_argument(
         "--reject-saturated",
-        type=_str2bool,
+        action=argparse.BooleanOptionalAction,
         default=True,
-        help="""Reject stars with saturated pixels in their stamps (True or
-                False). Default: %(default)s""",
+        help="Reject stars with saturated pixels in their stamps. Default: %(default)s",
     )
     pick_star_parser.add_argument(
         "--max-psf-cfit",
@@ -192,10 +191,9 @@ def cli(argv=None):
     )
     pick_star_parser.add_argument(
         "--reject-extended",
-        type=_str2bool,
+        action=argparse.BooleanOptionalAction,
         default=True,
-        help="""Reject sources flagged is_extended in the catalog (True or
-                False). Default: %(default)s""",
+        help="Reject sources flagged is_extended in the catalog. Default: %(default)s",
     )
     pick_star_parser.add_argument(
         "--bkg-boxsize",
@@ -540,15 +538,6 @@ def pick_stars(
     # That's all folks
     logger.info("Found %s valid stars", len(stars))
     return stars
-
-
-def _str2bool(value):
-    """Parse a True/False command-line value."""
-    if value.lower() in ("true", "t", "yes", "1"):
-        return True
-    if value.lower() in ("false", "f", "no", "0"):
-        return False
-    raise argparse.ArgumentTypeError(f"expected True or False, got {value!r}")
 
 
 def plot_epsfstar(star, ax=None, title=None, finalize=False, **kwargs_simple_norm):

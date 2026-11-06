@@ -169,9 +169,9 @@ def test_epsf_from_model_jitter(image_and_catalog):
 
 
 @pytest.mark.parametrize("flag", ["reject-saturated", "reject-extended"])
-@pytest.mark.parametrize("value, expected", [("True", True), ("false", False)])
-def test_cli_reject_flags(monkeypatch, flag, value, expected):
-    """The --reject-* options take an explicit True or False."""
+@pytest.mark.parametrize("prefix, expected", [("", True), ("no-", False)])
+def test_cli_reject_flags(monkeypatch, flag, prefix, expected):
+    """The --reject-* options can be turned off with --no-reject-*."""
     seen = {}
 
     def fake_epsf_from_model(model, catalog, kwargs_pick_stars, **kwargs):
@@ -182,5 +182,5 @@ def test_cli_reject_flags(monkeypatch, flag, value, expected):
     monkeypatch.setattr(_epsf.rdm, "open", lambda path: nullcontext())
     monkeypatch.setattr(_epsf.Table, "read", lambda path: None)
     with pytest.raises(SystemExit):
-        _epsf.cli(["model", "catalog", "out", f"--{flag}={value}"])
+        _epsf.cli(["model", "catalog", "out", f"--{prefix}{flag}"])
     assert seen[flag.replace("-", "_")] is expected
