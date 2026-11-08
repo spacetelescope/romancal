@@ -113,7 +113,7 @@ class MultibandCatalogStep(RomanStep):
                 library, seed=self.inject_seed
             )
 
-            if len(si_library) == 0:
+            if len(si_cat) == 0:
                 self.inject_sources = False
                 log.warning("Skipping source injection. All source positions fall on NaN pixels for all images.")
 
@@ -165,6 +165,10 @@ class MultibandCatalogStep(RomanStep):
             recovered_sources = match_recovered_sources(
                 cat_model.source_catalog, si_cat, si_cat_model.source_catalog
             )
+
+            if recovered_sources is None:
+                log.warning("No recovered sources found.")
+                return cat_model, segmentation_model
 
             # Put the source injected multiband catalog in the model
             cat_model.source_injection_catalog = si_cat_model.source_catalog

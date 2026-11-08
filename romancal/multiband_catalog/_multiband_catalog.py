@@ -695,6 +695,11 @@ def match_recovered_sources(original, injected, si_catalogs):
     m = dist < max_sep_injected[mi] * u.arcsec
     keep = np.zeros(len(rcoord), dtype="bool")
     keep[mr[m]] = True
+
+    if np.sum(keep) == 0:
+        log.warning("Skipping source injection as there are no recovered sources near injected sources.")
+        return None
+
     recovered = recovered[keep]
     rcoord = rcoord[keep]
 
