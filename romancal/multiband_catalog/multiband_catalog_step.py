@@ -167,7 +167,7 @@ class MultibandCatalogStep(RomanStep):
             )
 
             if recovered_sources is None:
-                log.warning("No recovered sources found.")
+                log.warning("No recovered sources found. No source injection output.")
                 return cat_model, segmentation_model
 
             # Put the source injected multiband catalog in the model

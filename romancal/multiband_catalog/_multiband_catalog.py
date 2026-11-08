@@ -697,7 +697,7 @@ def match_recovered_sources(original, injected, si_catalogs):
     keep[mr[m]] = True
 
     if np.sum(keep) == 0:
-        log.warning("Skipping source injection as there are no recovered sources near injected sources.")
+        log.warning("Skipping source injection as there are no recovered sources.")
         return None
 
     recovered = recovered[keep]
