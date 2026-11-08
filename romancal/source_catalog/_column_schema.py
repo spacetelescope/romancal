@@ -210,6 +210,7 @@ class CatalogSchema:
         psf_flags_colnames = [
             "psf_flags",
             "psf_gof",
+            "psf_cfit",
         ]
         dust_colnames = [
             "dust_ebv",
@@ -301,7 +302,7 @@ class CatalogSchema:
 
         # Prefix the band_colnames with "forced_"
         if self.cat_type == "forced_full":
-            for colname in [*self.band_colnames, "warning_flags"]:
+            for colname in [*self.band_colnames, "warning_flags", "psf_cfit"]:
                 if colname in catalog.colnames and colname != "label":
                     catalog.rename_column(colname, f"forced_{colname}")
 
