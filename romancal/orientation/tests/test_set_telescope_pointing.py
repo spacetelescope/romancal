@@ -450,17 +450,15 @@ def updated_model(calc_wcs):
         {
             "meta": {
                 "ephemeris": {
-                    "velocity_x": TRANSFORM_KWARGS["velocity"][0],
-                    "velocity_y": TRANSFORM_KWARGS["velocity"][1],
-                    "velocity_z": TRANSFORM_KWARGS["velocity"][2],
+                    "velocity_x": t_pars.velocity[0],
+                    "velocity_y": t_pars.velocity[1],
+                    "velocity_z": t_pars.velocity[2],
                 },
                 "exposure": {"start_time": STARTTIME, "end_time": ENDTIME},
                 "pointing": {
-                    "target_aperture": "WFI_CEN",
-                    "target_ra": TARG_RA,
-                    "target_dec": TARG_DEC,
+                    "target_aperture": t_pars.target_aperture,
                 },
-                "wcsinfo": {"aperture_name": "WFI02_FULL"},
+                "wcsinfo": {"aperture_name": t_pars.aperture},
             }
         }
     )
