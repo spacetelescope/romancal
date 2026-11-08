@@ -775,9 +775,11 @@ def test_match_recovered_sources():
     assert "empty" not in rec_table.colnames
 
     # Test graceful exit if if no objects recovered
-    rec_table = match_recovered_sources(orig_table[orig_table["x"] > 2500],
-                                        injected_table[injected_table["x"] < 1500],
-                                        si_cat_table[si_cat_table["x"] > 2500])
+    rec_table = match_recovered_sources(
+        orig_table[orig_table["x"] > 2500],
+        injected_table[injected_table["x"] < 1500],
+        si_cat_table[si_cat_table["x"] > 2500],
+    )
 
     # Ensure that there is no recovered catalog
     assert rec_table is None
@@ -861,7 +863,8 @@ def test_multiband_catalog_column_content(
 
 
 def test_multiband_source_injection_nan_skip(
-    library_model, function_jail,
+    library_model,
+    function_jail,
 ):
     """
     Test that source injection gets skipped when all pixels are NaN.
@@ -886,11 +889,11 @@ def test_multiband_source_injection_nan_skip(
     )
 
     # Ensure that source injection products are present since only one image has all NaN pixels
-    assert "injected_sources"  in segm
-    assert "recovered_sources"  in segm
-    assert "si_data"  in segm
-    assert "si_detection_image"  in segm
-    assert "source_injection_catalog"  in result
+    assert "injected_sources" in segm
+    assert "recovered_sources" in segm
+    assert "si_data" in segm
+    assert "si_detection_image" in segm
+    assert "source_injection_catalog" in result
 
     with library_model:
         for input_model in library_model:
