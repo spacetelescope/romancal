@@ -2,7 +2,6 @@
 Test suite for set_telescope_pointing
 """
 
-import dataclasses
 import logging
 from pathlib import Path
 
@@ -11,6 +10,7 @@ import numpy as np
 import pytest
 import roman_datamodels as rdm
 from astropy.time import Time
+from stcal.alignment.util import sregion_to_footprint
 
 from romancal.lib.engdb import engdb_mast, engdb_tools
 from romancal.orientation import _lib as olib
@@ -19,19 +19,19 @@ from romancal.orientation import _transforms as tlib
 from romancal.orientation import _wcs as wlib
 from romancal.orientation import set_telescope_pointing as stp
 
-# pysiaf is not a required dependency. If not present, ignore all this.
-pysiaf = pytest.importorskip("pysiaf")
-
 # Ensure that `set_telescope_pointing` logs.
 stp.logger.setLevel(logging.DEBUG)
 stp.logger.addHandler(logging.StreamHandler())
 
+# Get the mock databases
+DATA_PATH = Path(__file__).parent / "data"
+
 # Setup for some times
-STARTTIME = Time("2025-09-12T12:33:28", format="isot")
-ENDTIME = Time("2025-09-12T12:34:28", format="isot")
+STARTTIME = Time("2026-09-22T06:18:21.121", format="isot")
+ENDTIME = Time("2026-09-22T06:19:30.696", format="isot")
 BADSTARTTIME = Time("2020-02-02T02:02:02", format="isot")
 BADENDTIME = Time("2020-02-02T02:12:02", format="isot")
-DEFAULT_RADECREF = (266.59060641987423, -30.664532676056954)
+DEFAULT_RADECREF = (80.73771580167708, -69.37882680328173)
 
 # Header defaults
 TARG_RA = 270.0
@@ -43,24 +43,22 @@ TARG_DEC = 66.0
 # in the truth file `data/transforms.asdf` and the resulting WCS results in `data/wcs.asdf`
 TRANSFORM_KWARGS = {
     "aperture": "WFI01_FULL",
-    "gscommanded": (916.4728835141, -186.8939737044),
+    "bam_ref": DATA_PATH / "roman_wfi_bam_0007.asdf",
+    "distortion_ref": DATA_PATH / "roman_wfi_distortion_0078.asdf",
     "pointing": plib.Pointing(
-        fgs_q=np.array(
+        obstime=Time(1790057901.121, format="unix"),
+        q=np.array(
             [
-                -0.18596734175399293,
-                0.6837984564491885,
-                -0.1800546332580956,
-                0.6822141509826322,
+                -0.7118218303725413,
+                -0.1163575361747678,
+                0.6786490188532825,
+                0.13858612769623332,
             ]
         ),
-        obstime=Time(1757680438.0280416, format="unix"),
-        q=np.array([-0.33879082, 0.62326573, -0.36611627, 0.60226181]),
     ),
-    "velocity": (-5.473753741352352, -27.480586797035414, -11.875972151015253),
+    "target_aperture": "WFI_CEN",
+    "velocity": (0.35121860071119626, 27.235876615565928, 11.79987217049065),
 }
-
-# Get the mock databases
-DATA_PATH = Path(__file__).parent / "data"
 
 # Some tests depend on the default engineering database to be available. Check now.
 NO_ENGDB = False
@@ -79,9 +77,7 @@ def test_add_wcs_default(science_raw_model, tmp_path):
     stp.add_wcs(
         model_path,
         tolerance=0,
-        allow_default=True,
         default_quaternion=TRANSFORM_KWARGS["pointing"].q,
-        gscommanded=TRANSFORM_KWARGS["gscommanded"],
     )
 
     with rdm.open(model_path) as result:
@@ -89,46 +85,6 @@ def test_add_wcs_default(science_raw_model, tmp_path):
         assert np.isclose(result.meta.wcsinfo.dec_ref, DEFAULT_RADECREF[1])
         assert np.allclose(
             result.meta.pointing.quaternion, TRANSFORM_KWARGS["pointing"].q
-        )
-        assert np.allclose(
-            result.meta.guide_star.hv_position, TRANSFORM_KWARGS["gscommanded"]
-        )
-
-
-def test_alternate_siaf(tmp_path_factory):
-    """Test alternate siaf"""
-    t_pars = _make_t_pars(**TRANSFORM_KWARGS)
-    t_pars.siaf_path = Path(__file__).parent / "data" / "siaf"
-
-    # Calculate the transforms and WCS information
-    wcsinfo, vinfo, transforms = wlib.calc_wcs(t_pars)
-
-    # Save all for later examination.
-    transforms_path = tmp_path_factory.mktemp("transforms")
-    transforms.write_to_asdf(transforms_path / "altsiaf_transforms.asdf")
-    wcs_asdf_file = asdf.AsdfFile(
-        {"wcsinfo": wcsinfo._asdict(), "vinfo": vinfo._asdict()}
-    )
-    wcs_asdf_file.write_to(transforms_path / "altsiaf_wcs.asdf")
-
-    # Test the wcs results
-    wcs = {"wcsinfo": wcsinfo, "vinfo": vinfo}
-    with asdf.open(DATA_PATH / "altsiaf_wcs.asdf") as af:
-        expected = af.tree
-    for wcs_type in ["wcsinfo", "vinfo"]:
-        wcs_dict = wcs[wcs_type]._asdict()
-        for key in wcs_dict:
-            if key != "s_region":
-                assert np.isclose(expected[wcs_type][key], wcs_dict[key]), (
-                    f"wcs_type: {wcs_type} Key {key} differs expected {expected[wcs_type][key]} calculated {wcs_dict[key]}"
-                )
-            else:
-                assert expected[wcs_type][key] == wcs_dict[key]
-
-    # Test the transforms
-    for matrix in dataclasses.fields(tlib.Transforms()):
-        _test_transforms(
-            transforms, t_pars, matrix.name, expected_fname="altsiaf_transforms.asdf"
         )
 
 
@@ -138,12 +94,11 @@ def test_add_wcs_default_from_model(science_raw_model, tmp_path):
     m.meta.exposure.start_time = Time("2022-01-01T00:00:00")
     m.meta.exposure.end_time = Time("2022-01-01T01:00:00")
     m.meta.pointing.quaternion = tuple(TRANSFORM_KWARGS["pointing"].q)
-    m.meta.guide_star.hv_position = TRANSFORM_KWARGS["gscommanded"]
     model_path = _model_to_tmpfile(m, tmp_path)
     stp.add_wcs(
         model_path,
         tolerance=0,
-        allow_default=True,
+        use_existing_meta=True,
     )
 
     with rdm.open(model_path) as result:
@@ -151,9 +106,6 @@ def test_add_wcs_default_from_model(science_raw_model, tmp_path):
         assert np.isclose(result.meta.wcsinfo.dec_ref, DEFAULT_RADECREF[1])
         assert np.allclose(
             result.meta.pointing.quaternion, TRANSFORM_KWARGS["pointing"].q
-        )
-        assert np.allclose(
-            result.meta.guide_star.hv_position, TRANSFORM_KWARGS["gscommanded"]
         )
 
 
@@ -163,7 +115,7 @@ def test_change_base_url():
     The given time and database should not find any values.
     """
     service_kwargs = {"service": "mast", "eng_base_url": engdb_mast.MAST_BASE_URL}
-    with pytest.raises(ValueError):
+    with pytest.raises((RuntimeError, ValueError)):
         plib.get_pointing(
             Time("2015-06-15"), Time("2015-06-17"), service_kwargs=service_kwargs
         )
@@ -175,12 +127,83 @@ def test_change_base_url_fail():
         "service": "mast",
         "eng_base_url": "https://nonexistent.fake.example",
     }
-    with pytest.raises(ValueError):
+    with pytest.raises((RuntimeError, ValueError)):
         plib.get_pointing(
             Time(STARTTIME, format="isot"),
             Time(ENDTIME, format="isot"),
             service_kwargs=service_kwargs,
         )
+
+
+@pytest.mark.parametrize(
+    "override, detector, target_aperture, partial_result",
+    [
+        # All references pulled from CRDS with nothing for WFI_CEN target.
+        (
+            {"bam_ref": None, "distortion_ref": None, "distortion_target_ref": None},
+            "WFI01",
+            "WFI_CEN",
+            {
+                "bam_ref": "roman",
+                "distortion_ref": "roman",
+                "distortion_target_ref": "A",
+            },
+        ),
+        # Overrides.
+        (
+            {
+                "bam_ref": "bam_local",
+                "distortion_ref": "dist_local",
+                "distortion_target_ref": "targ_local",
+            },
+            "WFI01",
+            "WFI_CEN",
+            {"bam_ref": "bam", "distortion_ref": "dist", "distortion_target_ref": "A"},
+        ),
+        # Different target aperture.
+        (
+            {
+                "bam_ref": "bam_local",
+                "distortion_ref": "dist_local",
+                "distortion_target_ref": None,
+            },
+            "WFI01",
+            "WFI18_FULL",
+            {
+                "bam_ref": "bam",
+                "distortion_ref": "dist",
+                "distortion_target_ref": "roman",
+            },
+        ),
+        # Different target aperture with override.
+        (
+            {
+                "bam_ref": "bam_local",
+                "distortion_ref": "dist_local",
+                "distortion_target_ref": "targ_local",
+            },
+            "WFI01",
+            "WFI18_FULL",
+            {
+                "bam_ref": "bam",
+                "distortion_ref": "dist",
+                "distortion_target_ref": "targ",
+            },
+        ),
+    ],
+)
+def test_fetch_references(override, detector, target_aperture, partial_result):
+    """Test fetching references."""
+    t_pars = tlib.TransformParameters(**TRANSFORM_KWARGS)
+    t_pars.target_aperture = target_aperture
+    for ref in override:
+        setattr(t_pars, ref, override[ref])
+    t_pars.crds_pars = olib.mk_crds_pars(t_pars.pointing.obstime, detector=detector)
+
+    olib.fetch_references(t_pars)
+
+    for ref in partial_result:
+        assert Path(getattr(t_pars, ref)).name.startswith(partial_result[ref])
 
 
 @pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")
@@ -196,24 +219,20 @@ def test_get_mnemonics():
 
 @pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")
 def test_get_pointing():
-    """Ensure that the averaging works.
-
-    Note: The expected quaternion is from mastdev during Q26B21 development.
-    This will most likely change again.
-    """
+    """Ensure that the averaging works."""
     try:
         pointing = plib.get_pointing(STARTTIME, ENDTIME)
     except ValueError as exception:
         pytest.xfail(reason=str(exception))
 
-    assert np.isclose(pointing.obstime.value, 1757680438.0280416)
+    assert np.isclose(pointing.obstime.value, 1790057935.6530108)
     assert np.allclose(
-        pointing.q, np.array([-0.70264027, -0.09765787, 0.6867813, 0.1584015])
+        pointing.q, np.array([-0.71182183, -0.11635754, 0.67864902, 0.13858613])
     )
 
 
 def test_get_pointing_fail():
-    with pytest.raises(ValueError):
+    with pytest.raises((RuntimeError, ValueError)):
         obstime, q = plib.get_pointing(BADSTARTTIME, BADENDTIME)
 
 
@@ -232,20 +251,10 @@ def test_get_pointing_list():
     assert len(results) > 0
     assert np.isclose(
         results[0].q,
-        np.array([-0.70264233, -0.09766397, 0.68678001, 0.15839417]),
+        np.array([-0.71182157, -0.11635775, 0.67864924, 0.13858621]),
         rtol=1.0e-2,
     ).all()
     assert STARTTIME <= results[0].obstime <= ENDTIME
-
-
-def test_hv_to_fgs():
-    """Test conversion from HV frame to FGS frame"""
-    hv = TRANSFORM_KWARGS["gscommanded"]
-    fgs_expected = (346.06680318732685, -148.7528870949794)
-
-    fgs = olib.hv_to_fgs("WFI01_FULL", *hv)
-
-    assert np.allclose(fgs, fgs_expected)
 
 
 @pytest.mark.skipif(NO_ENGDB, reason="No engineering database available")
@@ -291,92 +300,85 @@ def test_mnemonic_list():
     assert expected == set(plib.COARSE_MNEMONICS)
 
 
-@pytest.mark.parametrize("wcs_type", ["wcsinfo", "vinfo"])
-def test_wcs(calc_wcs, wcs_type):
+def test_wcs(calc_wcs):
     """Ensure WCS information is correct
 
     Parameters
     ----------
     calc_wcs : pytest.fixture
         Equates to tuple (wcsinfo, vinfo, transforms, t_pars)
-
-    wcs_type : str
-        Which particular WCS information to test
     """
-    wcsinfo, vinfo, _, t_pars = calc_wcs
-    wcs = {"wcsinfo": wcsinfo, "vinfo": vinfo}
+    wcs_meta, t_pars = calc_wcs
     with asdf.open(DATA_PATH / "wcs.asdf") as af:
-        expected = af.tree[wcs_type]
+        expected = af.tree["wcs_meta"]
 
-    wcs_dict = wcs[wcs_type]._asdict()
-    for key in wcs_dict:
-        if key != "s_region":
-            assert np.isclose(expected[key], wcs_dict[key]), (
-                f"Key {key} differs expected {expected[key]} calculated {wcs_dict[key]}"
-            )
+    wcs_meta_flat = _flatten_dict(wcs_meta)
+    expected_flat = _flatten_dict(expected)
+    for key in wcs_meta_flat:
+        try:
+            float(wcs_meta_flat[key])
+        except (TypeError, ValueError):
+            if key == "wcsinfo.s_region":
+                expected_footprint = sregion_to_footprint(expected_flat[key])
+                wcs_meta_footprint = sregion_to_footprint(wcs_meta_flat[key])
+                assert np.allclose(expected_footprint, wcs_meta_footprint)
+            else:
+                assert expected_flat[key] == wcs_meta_flat[key]
         else:
-            assert expected[key] == wcs_dict[key]
+            assert np.isclose(expected_flat[key], wcs_meta_flat[key]), (
+                f"Key {key} differs expected {expected_flat[key]} calculated {wcs_meta_flat[key]}"
+            )
 
 
 def test_strict_pointing(science_raw_model, tmp_path):
     """Test failure on strict pointing"""
     science_raw_model.meta.exposure.end_time = STARTTIME
-    with pytest.raises(ValueError):
+    with pytest.raises((RuntimeError, ValueError)):
         stp.add_wcs(_model_to_tmpfile(science_raw_model, tmp_path), tolerance=0)
-
-
-@pytest.mark.parametrize(
-    "matrix",
-    [matrix for matrix in dataclasses.fields(tlib.Transforms())],
-    ids=[matrix.name for matrix in dataclasses.fields(tlib.Transforms())],
-)
-def test_transforms(calc_wcs, matrix):
-    """Ensure expected calculate of the specified matrix
-
-    Parameters
-    ----------
-    transforms, t_pars : Transforms, TransformParameters
-        The transforms and the parameters used to generate the transforms
-
-    matrix : str
-        The matrix to compare
-    """
-    _, _, transforms, t_pars = calc_wcs
-    _test_transforms(transforms, t_pars, matrix.name)
-
-
-def test_transform_serialize(calc_wcs, tmp_path):
-    """Test serialization of Transforms"""
-    _, _, transforms, _ = calc_wcs
-
-    path = tmp_path / "transforms.asdf"
-    transforms.write_to_asdf(path)
-    from_asdf = tlib.Transforms.from_asdf(path)
-
-    assert isinstance(from_asdf, tlib.Transforms)
-    assert str(transforms) == str(from_asdf)
 
 
 @pytest.mark.parametrize(
     "attr, expected",
     [
-        ("meta.guide_star.hv_position", (916.4728835141, -186.8939737044)),
-        ("meta.pointing.dec_v1", -30.177183927606528),
-        ("meta.pointing.pa_aperture", 90.60111674247034),
-        ("meta.pointing.pa_v3", 90.4289479321644),
+        ("meta.pointing.pa_aperture", 37.24854770366899),
+        ("meta.pointing.pointing_engineering_source", "CALCULATED"),
+        ("meta.pointing.ra_v1", 81.6686302053683),
+        ("meta.pointing.dec_v1", -69.0573058072646),
+        ("meta.pointing.pa_v3", 96.49949482075951),
+        ("meta.pointing.target_aperture", "WFI_CEN"),
+        ("meta.pointing.target_ra", 80.71805432662013),
+        ("meta.pointing.target_dec", -69.48828716074138),
         (
             "meta.pointing.quaternion",
-            [-0.33879082, 0.62326573, -0.36611627, 0.60226181],
+            [
+                -0.7118218303725413,
+                -0.1163575361747678,
+                0.6786490188532825,
+                0.13858612769623332,
+            ],
         ),
-        ("meta.pointing.ra_v1", 267.0168676146806),
-        ("meta.pointing.target_dec", -30.604540841887303),
-        ("meta.pointing.target_ra", 266.7250048091743),
-        ("meta.wcsinfo.dec_ref", -30.53927896286344),
-        ("meta.wcsinfo.ra_ref", 266.67803540698276),
-        ("meta.wcsinfo.roll_ref", 90.60111674247034),
+        (
+            "meta.pointing.bam_quaternion",
+            [
+                -0.18541749359303772,
+                0.6841636922799866,
+                -0.17893482160935997,
+                0.6822922576514541,
+            ],
+        ),
+        ("meta.ref_file.bam", "roman_wfi_bam_0007.asdf"),
+        ("meta.ref_file.distortion", "roman_wfi_distortion_0078.asdf"),
+        ("meta.wcsinfo.aperture_name", "WFI01_FULL"),
+        ("meta.wcsinfo.v2_ref", 1454.084),
+        ("meta.wcsinfo.v3_ref", -1163.304),
+        ("meta.wcsinfo.vparity", -1),
+        ("meta.wcsinfo.v3yangle", -60.17427689758176),
+        ("meta.wcsinfo.ra_ref", 80.62520113957764),
+        ("meta.wcsinfo.dec_ref", -69.41891635642607),
+        ("meta.wcsinfo.roll_ref", 97.47628097051559),
         (
             "meta.wcsinfo.s_region",
-            "POLYGON ICRS  266.704474362 -30.623991336 266.579827226 -30.560011007 266.651764709 -30.453928832 266.777049827 -30.518088819",
+            "POLYGON ICRS 80.660744006 -69.505616219 80.379384214 -69.429205499 80.590434179 -69.331579227 80.872932680 -69.407979480",
         ),
     ],
 )
@@ -388,29 +390,74 @@ def test_update_meta(attr, expected, updated_model):
         assert np.allclose(value, expected)
     elif isinstance(value, float):
         assert np.isclose(value, expected)
+    elif attr == "meta.wcsinfo.s_region":
+        expected_footprint = sregion_to_footprint(expected)
+        value_footprint = sregion_to_footprint(value)
+        assert np.allclose(expected_footprint, value_footprint)
     else:
         assert value == expected
 
 
 @pytest.mark.parametrize(
-    "velocity, is_identity",
+    "attr, expected",
     [
-        ([None, None, None], True),
-        ([0, 0, 0], True),
-        ([2000, 2000, 2000], True),
-        ([-50, 0, 50], False),
+        ("meta.pointing.pa_aperture", 37.30200408128876),
+        ("meta.pointing.pointing_engineering_source", "CALCULATED"),
+        ("meta.pointing.ra_v1", 81.66863020974597),
+        ("meta.pointing.dec_v1", -69.0573057944676),
+        ("meta.pointing.pa_v3", 96.49949481990497),
+        ("meta.pointing.target_aperture", "WFI01_FULL"),
+        ("meta.pointing.target_ra", 80.62520114541624),
+        ("meta.pointing.target_dec", -69.41891634169306),
+        (
+            "meta.pointing.quaternion",
+            [
+                -0.7118218303725413,
+                -0.1163575361747678,
+                0.6786490188532825,
+                0.13858612769623332,
+            ],
+        ),
+        (
+            "meta.pointing.bam_quaternion",
+            [
+                -0.18541749359303772,
+                0.6841636922799866,
+                -0.17893482160935997,
+                0.6822922576514541,
+            ],
+        ),
+        ("meta.ref_file.bam", "roman_wfi_bam_0007.asdf"),
+        ("meta.ref_file.distortion", "roman_wfi_distortion_0078.asdf"),
+        ("meta.ref_file.distortion_target", "roman_wfi_distortion_0078.asdf"),
+        ("meta.wcsinfo.aperture_name", "WFI01_FULL"),
+        ("meta.wcsinfo.v2_ref", 1454.084),
+        ("meta.wcsinfo.v3_ref", -1163.304),
+        ("meta.wcsinfo.vparity", -1),
+        ("meta.wcsinfo.v3yangle", -60.17427689758176),
+        ("meta.wcsinfo.ra_ref", 80.62520114541624),
+        ("meta.wcsinfo.dec_ref", -69.41891634169306),
+        ("meta.wcsinfo.roll_ref", 97.47628097887052),
+        (
+            "meta.wcsinfo.s_region",
+            "POLYGON ICRS 80.660744006 -69.505616219 80.379384214 -69.429205499 80.590434179 -69.331579227 80.872932680 -69.407979480",
+        ),
     ],
 )
-def test_velocity_check(velocity, is_identity):
-    """Test velocity check"""
-    m = np.identity(3)
+def test_update_meta_difftarget(attr, expected, updated_model_difftarget):
+    """Ensure that all the expected meta are updated"""
 
-    m_v = tlib.calc_gsapp2gs(m, velocity)
-
-    if is_identity:
-        assert np.array_equal(m_v, m)
+    value = _getattrpath(updated_model_difftarget, attr)
+    if isinstance(value, (list, tuple, np.ndarray)):
+        assert np.allclose(value, expected)
+    elif isinstance(value, float):
+        assert np.isclose(value, expected)
+    elif attr == "meta.wcsinfo.s_region":
+        expected_footprint = sregion_to_footprint(expected)
+        value_footprint = sregion_to_footprint(value)
+        assert np.allclose(expected_footprint, value_footprint)
     else:
-        assert not np.array_equal(m_v, m)
+        assert value == expected
 
 
 # ######################
@@ -426,17 +473,39 @@ def calc_wcs(tmp_path_factory):
     t_pars = _make_t_pars(**TRANSFORM_KWARGS)
 
     # Calculate the transforms and WCS information
-    wcsinfo, vinfo, transforms = wlib.calc_wcs(t_pars)
+    wcs_meta = wlib.calc_wcs(t_pars)
 
     # Save all for later examination.
-    transforms_path = tmp_path_factory.mktemp("transforms")
-    transforms.write_to_asdf(transforms_path / "transforms.asdf")
-    wcs_asdf_file = asdf.AsdfFile(
-        {"wcsinfo": wcsinfo._asdict(), "vinfo": vinfo._asdict()}
-    )
-    wcs_asdf_file.write_to(transforms_path / "wcs.asdf")
+    wcs_meta_path = tmp_path_factory.mktemp("transforms")
+    wcs_asdf_file = asdf.AsdfFile({"wcs_meta": wcs_meta})
+    wcs_asdf_file.write_to(wcs_meta_path / "wcs.asdf")
 
-    return wcsinfo, vinfo, transforms, t_pars
+    return wcs_meta, t_pars
+
+
+@pytest.fixture(scope="module")
+def calc_wcs_difftarget(tmp_path_factory):
+    """Calculate full transforms and WCS info
+
+    ***DEFINE WHERE DEFAULTS HAVE COME FROM***
+
+    """
+    transform_kwargs = TRANSFORM_KWARGS.copy()
+    transform_kwargs["distortion_target_ref"] = (
+        DATA_PATH / "roman_wfi_distortion_0078.asdf"
+    )
+    t_pars = _make_t_pars(**transform_kwargs)
+    t_pars.target_aperture = "WFI01_FULL"
+
+    # Calculate the transforms and WCS information
+    wcs_meta = wlib.calc_wcs(t_pars)
+
+    # Save all for later examination.
+    wcs_meta_path = tmp_path_factory.mktemp("transforms")
+    wcs_asdf_file = asdf.AsdfFile({"wcs_meta": wcs_meta})
+    wcs_asdf_file.write_to(wcs_meta_path / "wcs_difftarget.asdf")
+
+    return wcs_meta, t_pars
 
 
 @pytest.fixture
@@ -462,23 +531,64 @@ def science_raw_model():
 @pytest.fixture(scope="module")
 def updated_model(calc_wcs):
     """Update a model with a orientation calculation"""
-    wcsinfo, vinfo, _, t_pars = calc_wcs
+    wcs_meta, t_pars = calc_wcs
 
     m = rdm.datamodels.ScienceRawModel.create_fake_data(
         {
             "meta": {
+                "ephemeris": {
+                    "velocity_x": t_pars.velocity[0],
+                    "velocity_y": t_pars.velocity[1],
+                    "velocity_z": t_pars.velocity[2],
+                },
                 "exposure": {"start_time": STARTTIME, "end_time": ENDTIME},
                 "pointing": {
-                    "target_aperture": "WFI_CEN",
-                    "target_ra": TARG_RA,
-                    "target_dec": TARG_DEC,
+                    "target_aperture": t_pars.target_aperture,
                 },
-                "wcsinfo": {"aperture_name": "WFI02_FULL"},
+                "wcsinfo": {"aperture_name": t_pars.aperture},
             }
         }
     )
-    olib.update_meta(m, t_pars, wcsinfo, vinfo, "CALCULATED")
+    olib.update_meta(m, t_pars, wcs_meta, "CALCULATED")
     return m
+
+
+@pytest.fixture(scope="module")
+def updated_model_difftarget(calc_wcs_difftarget):
+    """Update a model with a orientation calculation"""
+    wcs_meta, t_pars = calc_wcs_difftarget
+
+    m = rdm.datamodels.ScienceRawModel.create_fake_data(
+        {
+            "meta": {
+                "ephemeris": {
+                    "velocity_x": t_pars.velocity[0],
+                    "velocity_y": t_pars.velocity[1],
+                    "velocity_z": t_pars.velocity[2],
+                },
+                "exposure": {"start_time": STARTTIME, "end_time": ENDTIME},
+                "pointing": {
+                    "target_aperture": t_pars.target_aperture,
+                },
+                "wcsinfo": {"aperture_name": t_pars.aperture},
+            }
+        }
+    )
+    olib.update_meta(m, t_pars, wcs_meta, "CALCULATED")
+    return m
+
+
+def _flatten_dict(d, parent_key="", sep="."):
+    """Flattens a nested dictionary, joining keys with a separator."""
+    items = {}
+    for key, value in d.items():
+        # Build the new key path
+        new_key = f"{parent_key}{sep}{key}" if parent_key else key
+        if isinstance(value, dict):
+            items.update(_flatten_dict(value, new_key, sep=sep))
+        else:
+            items[new_key] = value
+    return items
 
 
 def _getattrpath(obj, path, default=None):

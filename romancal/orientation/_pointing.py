@@ -104,12 +104,7 @@ def get_mnemonics(
     """
     if service_kwargs is None:
         service_kwargs = dict()
-    try:
-        engdb = engdb_service(**service_kwargs)
-    except olib.EXPECTED_ERRORS as exception:
-        raise ValueError(
-            f"Cannot open engineering DB connection\nException: {exception}"
-        ) from exception
+    engdb = engdb_service(**service_kwargs)
     logger.info("Querying engineering DB: %s", engdb)
 
     # Construct the mnemonic values structure.
@@ -130,7 +125,7 @@ def get_mnemonics(
             )
         except olib.EXPECTED_ERRORS as exception:
             logger.warning("Cannot retrieve %s from engineering.", mnemonic)
-            logger.debug("Exception %s", exception)
+            logger.warning("Exception %s", exception)
             continue
 
         # If more than two points exist, throw off the bracket values.

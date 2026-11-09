@@ -13,18 +13,18 @@ history:
     manifest_software: !core/software-1.0.0 {name: asdf_standard, version: 1.5.0}
     software: !core/software-1.0.0 {name: asdf, version: 5.3.1}
 roman:
-  bam_quaternion: !core/ndarray-1.1.0
-    data: [-0.8, 0.6, -0.4, 0.1]
-    datatype: float64
-    shape: [4]
+  bam_quaternion: [-0.18541749359303772, 0.6841636922799866, -0.17893482160935997,
+    0.6822922576514541]
   meta:
-    author: SCSB with test values
+    author: T. Desjardins, T. Sohn
     description: Quaternion values for the alignment matrix between the Roman observatory
-      boresight and fine guidance system (FGS).
+      boresight and fine guidance system (FGS). This file updates the BAM using on-orbit
+      values from Roman commissioning and is valid for observations taken starting
+      with CAR-86.17 (EP 12, Pass 13).
     instrument: {name: WFI}
     origin: STSCI/SOC
-    pedigree: GROUND
+    pedigree: INFLIGHT 2026-10-13 2026-10-13
     reftype: BAM
     telescope: ROMAN
-    useafter: '2020-01-01T00:00:00'
+    useafter: '2026-10-13T02:22:00'
 ...
