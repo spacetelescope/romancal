@@ -397,6 +397,7 @@ def test_update_meta(attr, expected, updated_model):
     else:
         assert value == expected
 
+
 @pytest.mark.parametrize(
     "attr, expected",
     [
@@ -439,7 +440,7 @@ def test_update_meta(attr, expected, updated_model):
         ("meta.wcsinfo.roll_ref", 97.47628097887052),
         (
             "meta.wcsinfo.s_region",
-            "POLYGON ICRS 80.660744006 -69.505616219 80.379384214 -69.429205499 80.590434179 -69.331579227 80.872932680 -69.407979480"
+            "POLYGON ICRS 80.660744006 -69.505616219 80.379384214 -69.429205499 80.590434179 -69.331579227 80.872932680 -69.407979480",
         ),
     ],
 )
@@ -481,6 +482,7 @@ def calc_wcs(tmp_path_factory):
 
     return wcs_meta, t_pars
 
+
 @pytest.fixture(scope="module")
 def calc_wcs_difftarget(tmp_path_factory):
     """Calculate full transforms and WCS info
@@ -489,7 +491,9 @@ def calc_wcs_difftarget(tmp_path_factory):
 
     """
     transform_kwargs = TRANSFORM_KWARGS.copy()
-    transform_kwargs["distortion_target_ref"] = DATA_PATH / "roman_wfi_distortion_0078.asdf"
+    transform_kwargs["distortion_target_ref"] = (
+        DATA_PATH / "roman_wfi_distortion_0078.asdf"
+    )
     t_pars = _make_t_pars(**transform_kwargs)
     t_pars.target_aperture = "WFI01_FULL"
 
