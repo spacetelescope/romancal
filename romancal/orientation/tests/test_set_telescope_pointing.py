@@ -397,6 +397,67 @@ def test_update_meta(attr, expected, updated_model):
     else:
         assert value == expected
 
+@pytest.mark.parametrize(
+    "attr, expected",
+    [
+        ("meta.pointing.pa_aperture", 37.30200408128876),
+        ("meta.pointing.pointing_engineering_source", "CALCULATED"),
+        ("meta.pointing.ra_v1", 81.66863020974597),
+        ("meta.pointing.dec_v1", -69.0573057944676),
+        ("meta.pointing.pa_v3", 96.49949481990497),
+        ("meta.pointing.target_aperture", "WFI01_FULL"),
+        ("meta.pointing.target_ra", 80.62520114541624),
+        ("meta.pointing.target_dec", -69.41891634169306),
+        (
+            "meta.pointing.quaternion",
+            [
+                -0.7118218303725413,
+                -0.1163575361747678,
+                0.6786490188532825,
+                0.13858612769623332,
+            ],
+        ),
+        (
+            "meta.pointing.bam_quaternion",
+            [
+                -0.18541749359303772,
+                0.6841636922799866,
+                -0.17893482160935997,
+                0.6822922576514541,
+            ],
+        ),
+        ("meta.ref_file.bam", "roman_wfi_bam_0007.asdf"),
+        ("meta.ref_file.distortion", "roman_wfi_distortion_0078.asdf"),
+        ("meta.ref_file.distortion_target", "roman_wfi_distortion_0078.asdf"),
+        ("meta.wcsinfo.aperture_name", "WFI01_FULL"),
+        ("meta.wcsinfo.v2_ref", 1454.084),
+        ("meta.wcsinfo.v3_ref", -1163.304),
+        ("meta.wcsinfo.vparity", -1),
+        ("meta.wcsinfo.v3yangle", -60.17427689758176),
+        ("meta.wcsinfo.ra_ref", 80.62520114541624),
+        ("meta.wcsinfo.dec_ref", -69.41891634169306),
+        ("meta.wcsinfo.roll_ref", 97.47628097887052),
+        (
+            "meta.wcsinfo.s_region",
+            "POLYGON ICRS 80.660744006 -69.505616219 80.379384214 -69.429205499 80.590434179 -69.331579227 80.872932680 -69.407979480"
+        ),
+    ],
+)
+def test_update_meta_difftarget(attr, expected, updated_model_difftarget):
+    """Ensure that all the expected meta are updated"""
+
+    value = _getattrpath(updated_model_difftarget, attr)
+    if isinstance(value, (list, tuple, np.ndarray)):
+        assert np.allclose(value, expected)
+    elif isinstance(value, float):
+        assert np.isclose(value, expected)
+    elif attr == "meta.wcsinfo.s_region":
+        expected_footprint = sregion_to_footprint(expected)
+        value_footprint = sregion_to_footprint(value)
+        assert np.allclose(expected_footprint, value_footprint)
+    else:
+        assert value == expected
+
 
 # ######################
 # Utilities and fixtures
@@ -417,6 +478,28 @@ def calc_wcs(tmp_path_factory):
     wcs_meta_path = tmp_path_factory.mktemp("transforms")
     wcs_asdf_file = asdf.AsdfFile({"wcs_meta": wcs_meta})
     wcs_asdf_file.write_to(wcs_meta_path / "wcs.asdf")
+
+    return wcs_meta, t_pars
+
+@pytest.fixture(scope="module")
+def calc_wcs_difftarget(tmp_path_factory):
+    """Calculate full transforms and WCS info
+
+    ***DEFINE WHERE DEFAULTS HAVE COME FROM***
+
+    """
+    transform_kwargs = TRANSFORM_KWARGS.copy()
+    transform_kwargs["distortion_target_ref"] = DATA_PATH / "roman_wfi_distortion_0078.asdf"
+    t_pars = _make_t_pars(**transform_kwargs)
+    t_pars.target_aperture = "WFI01_FULL"
+
+    # Calculate the transforms and WCS information
+    wcs_meta = wlib.calc_wcs(t_pars)
+
+    # Save all for later examination.
+    wcs_meta_path = tmp_path_factory.mktemp("transforms")
+    wcs_asdf_file = asdf.AsdfFile({"wcs_meta": wcs_meta})
+    wcs_asdf_file.write_to(wcs_meta_path / "wcs_difftarget.asdf")
 
     return wcs_meta, t_pars
 
@@ -445,6 +528,31 @@ def science_raw_model():
 def updated_model(calc_wcs):
     """Update a model with a orientation calculation"""
     wcs_meta, t_pars = calc_wcs
+
+    m = rdm.datamodels.ScienceRawModel.create_fake_data(
+        {
+            "meta": {
+                "ephemeris": {
+                    "velocity_x": t_pars.velocity[0],
+                    "velocity_y": t_pars.velocity[1],
+                    "velocity_z": t_pars.velocity[2],
+                },
+                "exposure": {"start_time": STARTTIME, "end_time": ENDTIME},
+                "pointing": {
+                    "target_aperture": t_pars.target_aperture,
+                },
+                "wcsinfo": {"aperture_name": t_pars.aperture},
+            }
+        }
+    )
+    olib.update_meta(m, t_pars, wcs_meta, "CALCULATED")
+    return m
+
+
+@pytest.fixture(scope="module")
+def updated_model_difftarget(calc_wcs_difftarget):
+    """Update a model with a orientation calculation"""
+    wcs_meta, t_pars = calc_wcs_difftarget
 
     m = rdm.datamodels.ScienceRawModel.create_fake_data(
         {

@@ -164,4 +164,4 @@ def update_meta(model, t_pars, wcs_meta, quality):
     model.meta.ref_file.bam = Path(t_pars.bam_ref).name
     model.meta.ref_file.distortion = Path(t_pars.distortion_ref).name
     if t_pars.distortion_target_ref and t_pars.distortion_target_ref != "N/A":
-        model.meta.ref_file.distorition_target = Path(t_pars.distortion_target_ref).name
+        model.meta.ref_file.distortion_target = Path(t_pars.distortion_target_ref).name
