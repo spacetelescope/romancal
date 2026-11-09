@@ -14,10 +14,10 @@ from astropy.io import fits
 from astropy.table import QTable, Table
 from astropy.utils import lazyproperty
 from astropy.wcs import WCS
-from crds import getreferences
 from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.dqflags import pixel
 from scipy.ndimage import map_coordinates
+from stpipe.crds_client import get_multiple_reference_paths
 
 from romancal import __version__ as romancal_version
 from romancal.skycell import skymap
@@ -491,8 +491,8 @@ class RomanSourceCatalog:
             ("south", self.south_galactic_pole_id),
         ):
             dm_headers = {"roman.meta.instrument.name": "wfi", "roman.field": field}
-            reference = getreferences(
-                dm_headers, reftypes=["dustmap"], observatory="roman"
+            reference = get_multiple_reference_paths(
+                dm_headers, reference_file_types=["dustmap"], observatory="roman"
             )
             map_paths[pole] = reference["dustmap"]
         return map_paths

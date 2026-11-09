@@ -6,7 +6,6 @@ from datetime import datetime
 from functools import cached_property
 from pathlib import Path
 
-import crds
 import numpy as np
 import roman_datamodels
 import spherical_geometry.great_circle_arc as sga
@@ -20,6 +19,7 @@ from gwcs import WCS, coordinate_frames, fitswcs
 from numpy.typing import NDArray
 from scipy.spatial import KDTree
 from stcal.alignment import util as wcs_util
+from stpipe.crds_client import get_multiple_reference_paths
 
 from romancal.datamodels.library import ModelLibrary
 
@@ -747,12 +747,12 @@ class SkyMap:
         """data model of skymap"""
         if self._data is None:
             if self._path is None:
-                rmap = crds.getreferences(
+                rmap = get_multiple_reference_paths(
                     {
                         "roman.meta.instrument.name": "WFI",
                         "roman.meta.exposure.start_time": f"{datetime.now():%Y-%m-%d %H:%M:%S}",
                     },
-                    reftypes=["skycells"],
+                    reference_file_types=["skycells"],
                     observatory="roman",
                 )
                 self._path = Path(rmap["skycells"])

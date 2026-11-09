@@ -1126,7 +1126,7 @@ def test_dust_ebv_property_returns_nan_on_failure(monkeypatch):
         raise RuntimeError()
 
     monkeypatch.setattr(
-        "romancal.source_catalog._source_catalog.getreferences", fail_getreferences
+        "romancal.source_catalog._source_catalog.get_multiple_reference_paths", fail_getreferences
     )
 
     cat = object.__new__(RomanSourceCatalog)
