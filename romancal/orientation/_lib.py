@@ -4,8 +4,7 @@ import logging
 from pathlib import Path
 
 from astropy.time import Time
-from crds import getreferences
-from stpipe.crds_client import get_context_used, get_svn_version
+from stpipe.crds_client import get_context_used, get_multiple_reference_paths, get_svn_version
 
 __all__ = []
 
@@ -62,7 +61,7 @@ def fetch_references(t_pars):
                 if ref == "distortion_target_ref":
                     detector = t_pars.target_aperture
                 crds_pars["roman.meta.instrument.detector"] = detector[:5]
-                refpath = getreferences(crds_pars, [REFS[ref]], observatory="roman")[
+                refpath = get_multiple_reference_paths(crds_pars, [REFS[ref]], observatory="roman")[
                     REFS[ref]
                 ]
                 setattr(t_pars, ref, refpath)
