@@ -1,32 +1,13 @@
-import copy
 import getpass
 import json
 import os
 from datetime import datetime
 
 import pytest
-from ci_watson.artifactory_helpers import UPLOAD_SCHEMA
 
 from romancal.regtest.regtestdata import RegtestData
 
 TODAYS_DATE = datetime.now().strftime("%Y-%m-%d")
-
-
-@pytest.fixture(scope="session")
-def artifactory_repos(pytestconfig):
-    """Provides Artifactory inputs_root and results_root"""
-    inputs_root = pytestconfig.getini("inputs_root")
-    if not inputs_root:
-        inputs_root = "roman-pipeline"
-    else:
-        inputs_root = inputs_root[0]
-
-    results_root = pytestconfig.getini("results_root")
-    if not results_root:
-        results_root = "roman-pipeline-results/regression-tests/runs/"
-    else:
-        results_root = results_root[0]
-    return inputs_root, results_root
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
@@ -70,13 +51,13 @@ def pytest_collection_modifyitems(config, items):
 
 
 @pytest.fixture(scope="function", autouse=True)
-def generate_artifactory_json(request, artifactory_repos):
+def generate_artifactory_json(request):
     """Pytest fixture that leaves behind JSON upload and okify specfiles
     if the rtdata or rtdata_module fixtures are used in either a test or a
     module-scoped fixture that runs a pipeline and provides the results to a
     series of test.
     """
-    inputs_root, results_root = artifactory_repos
+    results_root = request.config.getini("results_root")
 
     def artifactory_result_path():
         # Generate the Artifactory result path
@@ -169,41 +150,46 @@ def generate_upload_schema(pattern, target, recursive=False):
     upload_schema : dict
         Dictionary specifying the upload schema
     """
-    recursive = repr(recursive).lower()
+    files = []
+    default = {
+        "recursive": repr(recursive).lower(),
+        # changes from jfrog defaults
+        "props": None,
+        "flat": "true",
+        # matching jfrog defaults
+        "regexp": "false",
+        "explode": "false",
+    }
 
-    if not isinstance(pattern, str):
-        # Populate schema for this test's data
-        upload_schema = {"files": []}
-
-        for p in pattern:
-            temp_schema = copy.deepcopy(UPLOAD_SCHEMA["files"][0])
-            temp_schema.update({"pattern": p, "target": target, "recursive": recursive})
-            upload_schema["files"].append(temp_schema)
+    # Populate schema for this test's data
+    if isinstance(pattern, str):
+        files.append(default | {"pattern": pattern, "target": target})
     else:
-        # Populate schema for this test's data
-        upload_schema = copy.deepcopy(UPLOAD_SCHEMA)
-        upload_schema["files"][0].update(
-            {"pattern": pattern, "target": target, "recursive": recursive}
-        )
-    return upload_schema
+        for p in pattern:
+            files.append(default | {"pattern": p, "target": target})
+
+    return {"files": files}
 
 
-def _rtdata_fixture_implementation(artifactory_repos, envopt, request):
+def _rtdata_fixture_implementation(request):
     """Provides the RemoteResource class"""
-    inputs_root, results_root = artifactory_repos
-    rtdata = RegtestData(env=envopt, inputs_root=inputs_root, results_root=results_root)
+    rtdata = RegtestData(
+        request.config.getoption("env"),
+        request.config.getini("inputs_root"),
+        request.config.getini("results_root"),
+    )
 
     yield rtdata
 
 
 @pytest.fixture(scope="function")
-def rtdata(artifactory_repos, envopt, request, function_jail):
-    yield from _rtdata_fixture_implementation(artifactory_repos, envopt, request)
+def rtdata(request, function_jail):
+    yield from _rtdata_fixture_implementation(request)
 
 
 @pytest.fixture(scope="module")
-def rtdata_module(artifactory_repos, envopt, request, module_jail):
-    yield from _rtdata_fixture_implementation(artifactory_repos, envopt, request)
+def rtdata_module(request, module_jail):
+    yield from _rtdata_fixture_implementation(request)
 
 
 @pytest.fixture
