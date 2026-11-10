@@ -34,6 +34,11 @@ The ``source_catalog`` step has the following arguments:
 * ``--fit_psf``: A boolean value indicating whether to perform PSF
   photometry (default is ``True``)
 
+* ``--match_jitter``: A boolean value indicating whether to adjust the
+  PSF for the difference between the image's jitter and the jitter in
+  the CRDS ePSF reference file, by convolving or deconvolving the
+  reference PSF (default is ``True``)
+
 * ``--forced_segmentation``: A string value indicating the filename of
   the segmentation map to use for forced segmentation
 

@@ -19,6 +19,7 @@ from photutils.datasets import make_model_image
 from photutils.psf import GriddedPSFModel, ImagePSF
 from roman_datamodels.datamodels import EpsfRefModel, ImageModel, MosaicModel
 
+from romancal.source_catalog._calibrate import open_psf_model
 from romancal.source_catalog._wcs_utils import pixel_area_from_wcs
 from romancal.source_catalog.psf import (
     _azimuthally_average_via_fft,
@@ -433,3 +434,19 @@ def test_get_gridded_psf_model_missing_slice():
     """An explicit spectral type that the file lacks is an error."""
     with pytest.raises(IndexError):
         get_gridded_psf_model(_epsf_ref(1, 1), spectral_type=1)
+
+
+@pytest.mark.parametrize("match_jitter", [True, False])
+def test_open_psf_model_match_jitter(setup_inputs, match_jitter, tmp_path):
+    """match_jitter=False leaves the reference PSF unchanged."""
+    img = deepcopy(setup_inputs["image"])
+    psf_ref_model = setup_inputs["psf_ref_model_f087"]
+    img.meta.guide_star.jitter_major = 16
+    img.meta.guide_star.jitter_minor = 16
+    img.meta.guide_star.jitter_position_angle = 0
+    ref_path = tmp_path / "epsf.asdf"
+    psf_ref_model.save(ref_path)
+
+    with open_psf_model(ref_path, img, match_jitter=match_jitter) as psf_model:
+        same = np.allclose(psf_model.psf, psf_ref_model.psf)
+    assert same != match_jitter

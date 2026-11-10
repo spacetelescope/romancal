@@ -140,7 +140,7 @@ def convert_to_flux_density(
 
 
 @contextmanager
-def open_psf_model(ref_file, image_model):
+def open_psf_model(ref_file, image_model, match_jitter=True):
     """
     Open an ePSF reference file and add the image's jitter to its PSF.
 
@@ -152,13 +152,21 @@ def open_psf_model(ref_file, image_model):
     image_model : `ImageModel` or `MosaicModel`
         The image whose jitter is applied.
 
+    match_jitter : bool, optional
+        If `True`, adjust the PSF for the difference between the image's
+        jitter and the reference file's jitter.  If `False`, use the
+        reference PSF unchanged.
+
     Yields
     ------
     psf_model : ePSF reference model
     """
     log.info("Using ePSF reference file: %s", ref_file)
     with datamodels.open(ref_file) as psf_model:
-        psf_model.psf = add_jitter(psf_model, image_model)
+        if match_jitter:
+            psf_model.psf = add_jitter(psf_model, image_model)
+        else:
+            log.info("Skipping jitter matching; using reference PSF as is.")
         yield psf_model
 
 
