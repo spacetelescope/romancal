@@ -33,10 +33,10 @@ dependencies = [
     "crds>=13.2.7,<15",  # this version range should always match the one in sdp deps
     "drizzle>=3.0.0,<3.1.0",
     "gwcs>=1.0.1,<2",
-    # "stcal>=1.20.0,<2",
-    "stcal@git+https://github.com/spacetelescope/stcal@main",
-    # "stpipe>=2,<3",
-    "stpipe@git+https://github.com/spacetelescope/stpipe@main",
+    "stcal>=1.21.0,<2",
+    # "stcal@git+https://github.com/spacetelescope/stcal@main",
+    "stpipe>=2,<3",
+    # "stpipe@git+https://github.com/spacetelescope/stpipe@main",
     "spherical-geometry>=1.4.0,<1.5",
     "tweakwcs>=0.9.3",
 ]
