@@ -1,4 +1,0 @@
-Add ``roman_epsf_from_model``, which builds an empirical ePSF reference file
-from an L2 image and its source catalog. Add a ``psf_cfit`` column to the
-prompt source catalogs. ``get_gridded_psf_model`` now defaults to the only
-spectral type in reference files that have one.

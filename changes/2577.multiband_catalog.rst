@@ -1,1 +1,0 @@
-Do not copy L3 ``cal_logs`` into multiband catalog ``image_metas``.

@@ -1,1 +1,0 @@
-Check that each of the reference pixel corrections will be used by the IRRC before these corrections are computed in full.

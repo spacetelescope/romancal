@@ -1,1 +1,0 @@
-Allow asdf 6.x versions.
