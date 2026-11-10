@@ -1,4 +1,4 @@
-1.2.0 (2026-10-15)
+1.2.0 (2026-11-10)
 ==================
 
 Breaking Changes
@@ -6,6 +6,16 @@ Breaking Changes
 
 - Bump minimum Python version to 3.12. (`#2464
   <https://github.com/spacetelescope/romancal/issues/2464>`_)
+
+
+Scripts
+-------
+
+- Add a ``--percentile`` option to ``roman_static_preview``, defaulting to a
+  96%
+  stretch for previews and 98% for thumbnails, and fix the script passing the
+  builtin ``input`` instead of the input file. (`#2543
+  <https://github.com/spacetelescope/romancal/issues/2543>`_)
 
 
 ``skycell``
@@ -25,6 +35,11 @@ Breaking Changes
   reference
   file can be closed. (`#2509
   <https://github.com/spacetelescope/romancal/issues/2509>`_)
+- Take the handedness of skycell WCSes from the skycells reference file's
+  ``meta.vparity`` keyword, so that skycells adopt the standard orientation
+  (right ascension increasing to the left) once a reference file with
+  ``vparity = -1`` is delivered.  Deprecate ``SkyCells.from_asns``. (`#2469
+  <https://github.com/spacetelescope/romancal/issues/2469>`_)
 
 
 ``dq_init`` (WFI-Image, WFI-Prism, WFI-Grism)
@@ -35,6 +50,20 @@ Breaking Changes
   or ``meta.instrument.l1_data_encoding_offset_removed`` indicate these were
   already done when the L1 file was made. (`#2506
   <https://github.com/spacetelescope/romancal/issues/2506>`_)
+- Flag the last row and column of the guide window, treating the window stop
+  values as inclusive. (`#2539
+  <https://github.com/spacetelescope/romancal/issues/2539>`_)
+- Flag the rows spanned by the guide window as ``GW_AFFECTED_DATA``, in
+  addition to the columns. (`#2561
+  <https://github.com/spacetelescope/romancal/issues/2561>`_)
+
+
+``saturation`` (WFI-Image, WFI-Prism, WFI-Grism)
+------------------------------------------------
+
+- Changed the default behavior to mask pixels feeling charge migration after a
+  central pixel saturates to True. (`#2532
+  <https://github.com/spacetelescope/romancal/issues/2532>`_)
 
 
 ``refpix`` (WFI-Image, WFI-Prism, WFI-Grism)
@@ -50,6 +79,13 @@ Breaking Changes
   position. (`#2427 <https://github.com/spacetelescope/romancal/issues/2427>`_)
 - Use sigma clipping in the reference pixel trend fit to reject outliers.
   (`#2496 <https://github.com/spacetelescope/romancal/issues/2496>`_)
+- Fixed refpix crosstalk weighting and integrated uniform weights from ramp
+  fitting. Implement dynamic row-by-row reference pixel correction for DR15
+  voltage sags (`#2542
+  <https://github.com/spacetelescope/romancal/issues/2542>`_)
+- Check that each of the reference pixel corrections will be used by the IRRC
+  before these corrections are computed in full. (`#2571
+  <https://github.com/spacetelescope/romancal/issues/2571>`_)
 
 
 ``linearity`` (WFI-Image, WFI-Prism, WFI-Grism)
@@ -59,6 +95,13 @@ Breaking Changes
   These should be very rare and result from reference file issues/pathological
   pixels but can propagate NaNs to Level 2. (`#2489
   <https://github.com/spacetelescope/romancal/issues/2489>`_)
+
+
+``orientation``
+---------------
+
+- Implement new orientation algorithm (`#2557
+  <https://github.com/spacetelescope/romancal/issues/2557>`_)
 
 
 ``ramp_fitting`` (WFI-Image, WFI-Prism, WFI-Grism)
@@ -71,6 +114,23 @@ Breaking Changes
   keep
   ``dumo`` finite where the slope is NaN. (`#2480
   <https://github.com/spacetelescope/romancal/issues/2480>`_)
+- Integrated uniform weights from ramp fitting into refpix. (`#2542
+  <https://github.com/spacetelescope/romancal/issues/2542>`_)
+
+
+``tweakreg`` (WFI-Image)
+------------------------
+
+- Raise an informative error when an image has placeholder ``meta.wcsinfo``
+  (``vparity`` = +1) left by a failed ``set_telescope_pointing``, instead of
+  querying the reference catalog over an enormous area and timing out. (`#2523
+  <https://github.com/spacetelescope/romancal/issues/2523>`_)
+- Add a ``sigma_stat`` parameter to choose the statistic used for clipping in
+  the relative and absolute fits, and make the default ``"mad"`` (previously
+  ``"rmse"``), which is more robust to mismatched pairs in crowded fields.
+  Raise the default ``nclip`` and ``abs_nclip`` from 3 to 10; clipping stops
+  early once it converges. (`#2541
+  <https://github.com/spacetelescope/romancal/issues/2541>`_)
 
 
 ``skymatch``
@@ -78,6 +138,20 @@ Breaking Changes
 
 - Reorder to not load all models into memory if ``on_disk=True``. (`#2497
   <https://github.com/spacetelescope/romancal/issues/2497>`_)
+
+
+``resample``
+------------
+
+- Build the skycell WCS directly from the association's ``skycell_wcs_info``,
+  which now records ``vparity``, instead of looking the skycell up by name.
+  (`#2469 <https://github.com/spacetelescope/romancal/issues/2469>`_)
+- Stop using deprecated (in python 3.15) os.path.commonprefix for determining
+  output_filename based on a common prefix. (`#2512
+  <https://github.com/spacetelescope/romancal/issues/2512>`_)
+- Fix ``compute_var_sky`` for images with NaN data and for pixels near or below
+  zero, where ``var_poisson`` is clipped. (`#2529
+  <https://github.com/spacetelescope/romancal/issues/2529>`_)
 
 
 ``source_catalog``
@@ -126,6 +200,57 @@ Breaking Changes
 - Reduced peak memory in ``source_catalog`` skyvals by converting image
   coordinates to HEALPix in row chunks instead of the full image at once.
   (`#2502 <https://github.com/spacetelescope/romancal/issues/2502>`_)
+- Overhaul source detection in the SourceCatalogStep, broadly aiming to
+  improve depth while not damaging purity.  The new approach blends
+  matched filter detection using a range of different sized kernels
+  and watershed deblending.
+
+  The ``kernel_fwhm`` parameter is now given in arcseconds rather than
+  pixels, with a new default of 0.2, and the larger detection templates are
+  configurable angular sizes as well
+  (``template_fwhm``, default 0.6).  The bank therefore searches the same
+  physical
+  scales whatever the pixel scale of the image.  ``bkg_boxsize`` is likewise
+  now in arcseconds, with a default of 55 (1000 pixels at the L3 pixel scale).
+
+  ``snr_threshold`` now applies to the matched-filter significance of the
+  best-fitting template rather than to the per-pixel signal-to-noise ratio of
+  the convolved image.
+
+  New det_template, det_significance, kron_nomask_flux, kron_nomask_flux_err
+  catalog columns.  The first two identify the template that led to the
+  detection
+  of each source and its corresponding SNR.  The second two give the
+  Kron fluxes without masking regions contaminated by neighbors; kron_flux /
+  kron_nomask_flux can be used as a blending estimate.
+
+  The new ``max_sources`` option keeps only that many of the most significant
+  detections; by default there is no limit. (`#2435
+  <https://github.com/spacetelescope/romancal/issues/2435>`_)
+- Raise the background ``exclude_percentile`` in crowded fields, where sigma
+  clipping removes stars from every box, so that the background mesh is used
+  instead of falling back to a single box. (`#2505
+  <https://github.com/spacetelescope/romancal/issues/2505>`_)
+- Drop the romanisim ``source_id`` column from the source injection catalog.
+  (`#2518 <https://github.com/spacetelescope/romancal/issues/2518>`_)
+- Populate ``ra_psf_err`` and ``dec_psf_err`` from the PSF fit position
+  errors instead of zero-valued placeholders. (`#2525
+  <https://github.com/spacetelescope/romancal/issues/2525>`_)
+- Populate the ``image_flags`` column by combining the ``dq`` bits of every
+  pixel
+  in a source segment, and add the corresponding ``image_flags2`` column for
+  ``dq2``. Columns without a schema definition no longer raise when the catalog
+  is built. (`#2526 <https://github.com/spacetelescope/romancal/issues/2526>`_)
+- Add ``roman_epsf_from_model``, which builds an empirical ePSF reference file
+  from an L2 image and its source catalog. Add a ``psf_cfit`` column to the
+  prompt source catalogs. ``get_gridded_psf_model`` now defaults to the only
+  spectral type in reference files that have one. (`#2529
+  <https://github.com/spacetelescope/romancal/issues/2529>`_)
+- Factor shared image calibration into a module used by both the source catalog
+  and time domain catalog steps. (`#2566
+  <https://github.com/spacetelescope/romancal/issues/2566>`_)
+- Add ``match_jitter`` parameter to allow skipping the ePSF jitter
+  matching. (`#2586 <https://github.com/spacetelescope/romancal/issues/2586>`_)
 
 
 ``multiband_catalog``
@@ -156,6 +281,23 @@ Breaking Changes
   <https://github.com/spacetelescope/romancal/issues/2456>`_)
 - Close epsf reference file after use. (`#2473
   <https://github.com/spacetelescope/romancal/issues/2473>`_)
+- Set the default value of Source Injection to true in Multiband Catalog and
+  updates the related tests. (`#2531
+  <https://github.com/spacetelescope/romancal/issues/2531>`_)
+- Turns default setting of source injection in ``MultibandCatalogStep`` to
+  false. (`#2574 <https://github.com/spacetelescope/romancal/issues/2574>`_)
+- Do not copy L3 ``cal_logs`` into multiband catalog ``image_metas``. (`#2577
+  <https://github.com/spacetelescope/romancal/issues/2577>`_)
+
+
+``time_domain_catalog``
+-----------------------
+
+- Add TimeDomainCatalogStep, which measures PSF and forced aperture photometry
+  on L2 images at the positions of sources in one or more input catalogs.
+  (`#2566 <https://github.com/spacetelescope/romancal/issues/2566>`_)
+- Add ``match_jitter`` parameter to allow skipping the ePSF jitter
+  matching. (`#2586 <https://github.com/spacetelescope/romancal/issues/2586>`_)
 
 
 Other Changes
@@ -177,6 +319,10 @@ Other Changes
   <https://github.com/spacetelescope/romancal/issues/2475>`_)
 - Added migration support for the ACM keyword and BAM reference file entry.
   (`#2498 <https://github.com/spacetelescope/romancal/issues/2498>`_)
+- Pin scipy to not allow version 2. (`#2563
+  <https://github.com/spacetelescope/romancal/issues/2563>`_)
+- Allow asdf 6.x versions. (`#2564
+  <https://github.com/spacetelescope/romancal/issues/2564>`_)
 
 
 1.1.0 (2026-08-10)

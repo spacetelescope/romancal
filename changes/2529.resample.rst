@@ -1,2 +1,0 @@
-Fix ``compute_var_sky`` for images with NaN data and for pixels near or below
-zero, where ``var_poisson`` is clipped.

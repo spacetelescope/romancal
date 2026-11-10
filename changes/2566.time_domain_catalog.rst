@@ -1,2 +1,0 @@
-Add TimeDomainCatalogStep, which measures PSF and forced aperture photometry
-on L2 images at the positions of sources in one or more input catalogs.
