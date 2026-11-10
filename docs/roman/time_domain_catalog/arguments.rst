@@ -13,6 +13,11 @@ The ``time_domain_catalog`` step has the following arguments:
 * ``--bkg_boxsize``: A float value giving the background mesh box
   size in arcsec (default is 55.0, as in the source catalog step).
 
+* ``--match_jitter``: A boolean value indicating whether to adjust the
+  PSF for the difference between the image's jitter and the jitter in
+  the CRDS ePSF reference file, by convolving or deconvolving the
+  reference PSF (default is ``True``)
+
 * ``--data_release_id``: The data release identifier to record in the
   catalog metadata (``meta.data_release_id``).  Not recorded if not given.
 
