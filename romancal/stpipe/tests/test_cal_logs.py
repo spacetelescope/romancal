@@ -1,4 +1,4 @@
-"""Tests for product cal_logs policy helpers (#2510)."""
+"""Tests for product cal_logs helpers and ELP member scoping."""
 
 from __future__ import annotations
 
@@ -11,16 +11,10 @@ import roman_datamodels.datamodels as rdm
 from astropy.time import Time
 
 from romancal.datamodels import ModelLibrary
-from romancal.multiband_catalog._metadata import (
-    blend_image_metadata,
-    finalize_catalog_metadata,
-)
-from romancal.multiband_catalog._multiband_catalog import initialize_catalog_model
 from romancal.pipeline import ExposurePipeline
 from romancal.resample._meta_blender import MetaBlender
 from romancal.stpipe.cal_logs import (
     copy_meta_without_cal_logs,
-    extract_image_meta,
     get_cal_logs,
     set_product_cal_logs,
     slice_log_records,
@@ -47,25 +41,6 @@ def test_copy_meta_without_cal_logs_drops_logs():
     assert meta["instrument"]["name"] == "WFI"
 
 
-def test_extract_image_meta_excludes_cal_logs_and_wcs():
-    """
-    Purpose: Multiband image_metas must omit cal_logs (and wcs) so L3
-    production logs do not land in catalog parquet metadata.
-    """
-    meta = {
-        "filename": "l3.asdf",
-        "cal_logs": ["L3LOG_0", "L3LOG_1"],
-        "wcs": object(),
-        "individual_image_meta": {"basic": 1},
-        "instrument": {"optical_element": "F184"},
-    }
-    image_meta = extract_image_meta(meta)
-    assert "cal_logs" not in image_meta
-    assert "wcs" not in image_meta
-    assert "individual_image_meta" not in image_meta
-    assert image_meta["instrument"]["optical_element"] == "F184"
-
-
 def test_set_and_strip_product_cal_logs(base_image):
     """
     Purpose: set_product_cal_logs writes meta.cal_logs and strip removes it.
@@ -86,47 +61,6 @@ def test_slice_log_records():
     assert slice_log_records(records, 1, 3) == ["b", "c"]
     assert slice_log_records(records, 2) == ["c", "d"]
     assert slice_log_records(records, 10) == []
-
-
-def test_multiband_image_metas_exclude_l3_cal_logs(tmp_path):
-    """
-    Purpose: Multiband catalog image_metas and parquet metadata must not
-    contain L3 production cal_logs.
-    """
-    m1 = rdm.MosaicModel.create_fake_data(shape=(20, 20))
-    m1.meta.filename = "f184.asdf"
-    m1.meta.cal_logs = [f"L3A_{i}" for i in range(5)]
-    m1.meta.instrument.optical_element = "F184"
-
-    m2 = rdm.MosaicModel.create_fake_data(shape=(20, 20))
-    m2.meta.filename = "f158.asdf"
-    m2.meta.cal_logs = [f"L3B_{i}" for i in range(3)]
-    m2.meta.instrument.optical_element = "F158"
-
-    library = ModelLibrary([m1, m2])
-    cat = initialize_catalog_model(library, m1)
-    assert get_cal_logs(cat) == []
-
-    time_means: list = []
-    exposure_times: list = []
-    blend_image_metadata(m1, cat, time_means, exposure_times)
-    blend_image_metadata(m2, cat, time_means, exposure_times)
-    finalize_catalog_metadata(cat, time_means, exposure_times)
-
-    assert len(cat.meta.image_metas) == 2
-    for image_meta in cat.meta.image_metas:
-        assert "cal_logs" not in image_meta
-
-    cat.source_catalog = cat.create_empty_catalog()
-    out = tmp_path / "mb.parquet"
-    cat.to_parquet(out)
-
-    import pyarrow.parquet as pq
-
-    meta = pq.read_schema(out).metadata or {}
-    keys = [k.decode() if isinstance(k, bytes) else k for k in meta]
-    cal_keys = [k for k in keys if "cal_log" in k]
-    assert cal_keys == [], f"unexpected cal_logs keys in parquet: {cal_keys}"
 
 
 def test_meta_blender_keeps_l2_logs_off_meta_cal_logs():

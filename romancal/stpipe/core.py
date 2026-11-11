@@ -14,7 +14,6 @@ from romancal.datamodels.library import ModelLibrary
 
 from ..lib.statistics import populate_statistics
 from ..lib.suffix import remove_suffix
-from .cal_logs import set_product_cal_logs
 
 _LOG_FORMATTER = logging.Formatter(
     "%(asctime)s.%(msecs)03dZ :: %(name)s :: %(levelname)s :: %(message)s",
@@ -117,10 +116,10 @@ class RomanStep(Step):
         model.meta.calibration_software_version = importlib.metadata.version("romancal")
 
         if isinstance(model, ImageModel | MosaicModel):
-            # Image/Mosaic products get this step/pipeline's log records only.
-            # ExposurePipeline may already have written member-scoped logs and
-            # overrides finalize_result to preserve them.
-            set_product_cal_logs(model, self.log_records)
+            # Same as assigning the step/pipeline log stream collected by stpipe.
+            # ExposurePipeline may override finalize_result to restore per-member
+            # slices for multi-detector associations after this assignment.
+            model.meta.cal_logs = list(self.log_records)
             populate_statistics(model)
 
         if len(reference_files_used) > 0:

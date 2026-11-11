@@ -1,3 +1,2 @@
-Limit product ``cal_logs`` to the step/pipeline that produced the file.
-Multiband catalogs no longer embed L3 production logs in ``image_metas`` /
-parquet metadata, and ELP association members keep per-detector log slices.
+Optionally scope ELP association ``cal_logs`` per detector member, and avoid
+inheriting upstream image logs when seeding source-catalog metadata.
