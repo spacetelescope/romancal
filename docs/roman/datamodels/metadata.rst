@@ -51,7 +51,7 @@ is called, when the data model is saved or when a file is read.
 The set of available metadata elements is defined in a YAML Schema
 that is installed with `roman_datamodels <https://github.com/spacetelescope/roman_datamodels>`_
 from the
-`RAD <https://github.com/spacetelescope/RAD>`_ (Roman Attribute Dictionary).
+`RAD <https://github.com/spacetelescope/RAD>`_ (Roman Attribute Dictionary) package dependency.
 
 There is also a utility method for finding the schema associated with a given
 model.
