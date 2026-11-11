@@ -17,8 +17,9 @@ from astropy.time import Time
 from numpy.testing import assert_allclose
 from photutils.datasets import make_model_image
 from photutils.psf import GriddedPSFModel, ImagePSF
-from roman_datamodels.datamodels import ImageModel, MosaicModel
+from roman_datamodels.datamodels import EpsfRefModel, ImageModel, MosaicModel
 
+from romancal.source_catalog._calibrate import open_psf_model
 from romancal.source_catalog._wcs_utils import pixel_area_from_wcs
 from romancal.source_catalog.psf import (
     _azimuthally_average_via_fft,
@@ -395,3 +396,57 @@ def test_psf_model_type(setup_inputs):
     mosaic.err = setup_inputs["image"].err
     catalog2 = _PSFCatalog(mosaic, psf_ref_model, center)
     assert isinstance(catalog2.psf_model, ImagePSF)
+
+
+def _epsf_ref(nfocus, nspectral, size=17, oversample=4):
+    """An ePSF reference whose slices are distinguishable by their values."""
+    psf = np.ones((nfocus, nspectral, 1, size, size), dtype=np.float32)
+    psf *= oversample**2 / size**2
+    psf *= (1 + np.arange(nfocus * nspectral)).reshape(nfocus, nspectral, 1, 1, 1)
+    meta = {
+        "pixel_x": [2047.5],
+        "pixel_y": [2047.5],
+        "jitter_major": 0.0,
+        "jitter_minor": 0.0,
+        "jitter_position_angle": 0.0,
+    }
+    model = EpsfRefModel.create_minimal({"meta": meta, "psf": psf})
+    model.meta["oversample"] = oversample
+    return model
+
+
+@pytest.mark.parametrize(
+    "shape, kwargs, index",
+    [
+        ((3, 3), {}, (0, 1)),  # CRDS files default to in focus, G2V
+        ((1, 1), {}, (0, 0)),  # empirical files have one ePSF
+        ((3, 3), {"focus": 1, "spectral_type": 2}, (1, 2)),
+    ],
+)
+def test_get_gridded_psf_model_slice(shape, kwargs, index):
+    """The default spectral type depends on whether the reference file has multiple spectral types."""
+    ref = _epsf_ref(*shape)
+    model = get_gridded_psf_model(ref, **kwargs)
+    np.testing.assert_allclose(model.data[0], ref.psf[index][0])
+
+
+def test_get_gridded_psf_model_missing_slice():
+    """An explicit spectral type that the file lacks is an error."""
+    with pytest.raises(IndexError):
+        get_gridded_psf_model(_epsf_ref(1, 1), spectral_type=1)
+
+
+@pytest.mark.parametrize("match_jitter", [True, False])
+def test_open_psf_model_match_jitter(setup_inputs, match_jitter, tmp_path):
+    """match_jitter=False leaves the reference PSF unchanged."""
+    img = deepcopy(setup_inputs["image"])
+    psf_ref_model = setup_inputs["psf_ref_model_f087"]
+    img.meta.guide_star.jitter_major = 16
+    img.meta.guide_star.jitter_minor = 16
+    img.meta.guide_star.jitter_position_angle = 0
+    ref_path = tmp_path / "epsf.asdf"
+    psf_ref_model.save(ref_path)
+
+    with open_psf_model(ref_path, img, match_jitter=match_jitter) as psf_model:
+        same = np.allclose(psf_model.psf, psf_ref_model.psf)
+    assert same != match_jitter

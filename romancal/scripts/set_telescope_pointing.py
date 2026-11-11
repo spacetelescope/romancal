@@ -12,7 +12,7 @@ for a list of exposures.
 
 import argparse
 import logging
-from pathlib import Path
+import warnings
 
 import romancal.orientation._lib as olib
 import romancal.orientation.set_telescope_pointing as stp
@@ -34,7 +34,7 @@ def _main():
     parser.add_argument(
         "--allow-default",
         action="store_true",
-        help="If pointing information cannot be determine, use header information.",
+        help="DEPRECATED See `--use-existing-meta`",
     )
     parser.add_argument(
         "--dry-run",
@@ -42,19 +42,18 @@ def _main():
         help="Perform all actions but do not save the results",
     )
     parser.add_argument(
-        "--gscommanded",
-        type=float,
-        nargs=2,
-        metavar=("H", "V"),
-        default=None,
-        help="Commanded position of the guide start in (H,V) space",
-    )
-    parser.add_argument(
         "--override-bam",
         dest="bam_ref",
         type=str,
         default=None,
         help="Use specified file instead of retrieving the BAM reference from CRDS",
+    )
+    parser.add_argument(
+        "--override-distortion",
+        dest="distortion_ref",
+        type=str,
+        default=None,
+        help="Use specified file instead of retrieving the DISTORTION reference from CRDS",
     )
     parser.add_argument(
         "-q",
@@ -67,9 +66,6 @@ def _main():
         help="Default orientation quaternion if no engineering database information is found.",
     )
     parser.add_argument(
-        "--save-transforms", action="store_true", help="Save transforms."
-    )
-    parser.add_argument(
         "--service",
         type=str,
         default="mast",
@@ -77,17 +73,15 @@ def _main():
         help="Database service to use. Default: %(default)s",
     )
     parser.add_argument(
-        "--siaf",
-        dest="siaf_path",
-        type=str,
-        default=None,
-        help="Folder for alternate pysiaf XML files",
-    )
-    parser.add_argument(
         "--tolerance",
         type=int,
         default=60,
         help="Seconds beyond the observation time to search for telemetry. Default: %(default)s",
+    )
+    parser.add_argument(
+        "--use-existing-meta",
+        action="store_true",
+        help="If pointing information cannot be determine, use the quaternion from the meta, if present.",
     )
     parser.add_argument(
         "-v",
@@ -175,6 +169,16 @@ def _main():
         logger_handler.setFormatter(logger_format_debug)
     logger.info("set_telescope_pointing called with args %s", args)
 
+    # Deprecate allow-default
+    if args.allow_default:
+        warnings.warn(
+            "`--allow-default` has been deprecated. See `--use-existing-meta`",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        warnings.warn("Will set --use-existing-meta", stacklevel=2)
+        args.use_existing_meta = args.allow_default
+
     # Gather the service-specific args
     service_kwargs = {"service": args.service}
     for arg in [
@@ -197,30 +201,22 @@ def _main():
         logger.info("------")
         logger.info(f"Setting pointing for {filename}")
 
-        # Create path for saving the transforms.
-        transform_path = None
-        if args.save_transforms:
-            path = Path(filename)
-            transform_path = path.with_name(f"{path.stem}_transforms.asdf")
-
         try:
             stp.add_wcs(
                 filename,
                 dry_run=args.dry_run,
-                save_transforms=transform_path,
                 # all keyword arguments below are defined in
                 # set_telescope_pointing.TransformParameters
-                allow_default=args.allow_default,
                 bam_ref=args.bam_ref,
                 default_quaternion=args.default_quaternion,
-                gscommanded=args.gscommanded,
+                distortion_ref=args.distortion_ref,
                 service_kwargs=service_kwargs,
-                siaf_path=args.siaf_path,
+                use_existing_meta=args.use_existing_meta,
                 tolerance=args.tolerance,
             )
         except (TypeError, ValueError) as exception:
             logger.warning("Cannot determine pointing information: %s", str(exception))
-            logger.debug("Full exception:", exc_info=exception)
+            logger.exception("Full trace:")
 
 
 if __name__ == "__main__":

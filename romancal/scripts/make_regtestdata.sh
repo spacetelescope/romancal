@@ -254,6 +254,10 @@ out = test_psf_library.render_psfs_for_filename(
 asdf.dump(out, open('psf_render.asdf', 'wb'))"
 cp psf_render.asdf $outdir/truth/WFI/image/
 
+# empirical ePSF from the L2 image and its catalog
+roman_epsf_from_model r0000101001001001001_0001_wfi01_f158_cal.asdf r0000101001001001001_0001_wfi01_f158_cat.parquet r0000101001001001001_0001_wfi01_f158_epsf.asdf
+cp r0000101001001001001_0001_wfi01_f158_epsf.asdf $outdir/truth/WFI/image/
+
 # tests for wfi18_transient step: uses WFI18 TVAC data
 jf rt dl roman-pipeline/dev/WFI/image/TVAC2_NOMOPS_TTNOISE_20240418084515_WFI18_uncal.asdf --flat
 cp TVAC2_NOMOPS_TTNOISE_20240418084515_WFI18_uncal.asdf $outdir/WFI/image/

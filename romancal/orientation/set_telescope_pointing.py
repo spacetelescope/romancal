@@ -25,43 +25,42 @@ Programmatically, the command line is implemented by the function
 `~roman.orientation.set_telescope_pointing.add_wcs`, which calls the basic function
 `~roman.orientation.set_telescope_pointing.calc_wcs`.
 
-There are two data structures used to maintain the state of the transformation.
+There are data structure used to maintain the state of the transformation.
 `~roman.orientation.set_telescope_pointing.TransformParameters` contains the parameters
 needed to perform the transformations.
-`~roman.orientation.set_telescope_pointing.Transforms` contains the calculated
-transformation matrices.
-
-**Transformation Matrices**
-
-All the transformation matrices, as defined by
-`~roman.orientation.set_telescope_pointing.Transforms`, are Direction Cosine Matrices
-(DCM). A DCM contains the Euler rotation angles that represent the sky
-coordinates for a particular frame-of-reference. The initial DCM is provided
-through the engineering telemetry and represents how the observatory is orientated.
 
 **META Affected**
 
 The following meta values are populated:
 
-    - meta.guide_star.hv_position
-    - meta.pointing.dec_v1
-    - meta.pointing.pa_aperture
-    - meta.pointing.pa_v3
     - meta.pointing.quaternion
+    - meta.pointing.bam_quaternion
     - meta.pointing.ra_v1
-    - meta.pointing.target_dec
+    - meta.pointing.dec_v1
+    - meta.pointing.pa_v3
+    - meta.pointing.target_aperture
     - meta.pointing.target_ra
-    - meta.wcsinfo.dec_ref
+    - meta.pointing.target_dec
+    - meta.pointing.pa_aperture
+    - meta.velocity_aberration.ra_reference
+    - meta.velocity_aberration.dec_reference
+    - meta.velocity_aberration.scale_factor
+    - meta.wcsinfo.aperture_name": aperture_name,
+    - meta.wcsinfo.v2_ref
+    - meta.wcsinfo.v3_ref
+    - meta.wcsinfo.v3yangle
+    - meta.wcsinfo.vparity
     - meta.wcsinfo.ra_ref
+    - meta.wcsinfo.dec_ref
     - meta.wcsinfo.roll_ref
     - meta.wcsinfo.s_region
-
 """
 
 import logging
 
 import roman_datamodels as rdm
 
+from . import _lib as olib
 from . import _transforms as tlib
 from . import _wcs as wlib
 
@@ -83,7 +82,6 @@ EXPECTED_MODELS = rdm.datamodels.ScienceRawModel
 def add_wcs(
     filename,
     dry_run=False,
-    save_transforms=None,
     **transform_kwargs,
 ):
     """Add WCS information to a Roman DataModel.
@@ -101,9 +99,6 @@ def add_wcs(
 
     dry_run : bool
         Run through the calculations but do not modify the file.
-
-    save_transforms : Path-like or None
-        File to save the calculated transforms to.
 
     transform_kwargs : dict
         dict to use to initialize the `TransformParameters` object.
@@ -135,16 +130,13 @@ def add_wcs(
                 "\n\tFailing WCS processing."
             )
 
-        t_pars, transforms = update_wcs(model, **transform_kwargs)
+        t_pars, wcs_meta = update_wcs(model, **transform_kwargs)
 
         if dry_run:
             logger.info("Dry run requested; results are not saved.")
         else:
             logger.info("Saving updated model %s", filename)
             model.save(filename)
-            if transforms and save_transforms:
-                logger.info("Saving transform matrices to %s", save_transforms)
-                transforms.write_to_asdf(save_transforms)
 
     logger.info("...update completed")
 
@@ -171,19 +163,20 @@ def update_wcs(
         dict to use to initialize the `TransformParameters` object.
         See `TransformParameters` for more information.`
 
+
     Returns
     -------
-    t_pars, transforms : TransformParameters, Transforms
-        The parameters and transforms calculated. May be
-        None for either if telemetry calculations were not
-        performed.
+    t_pars, wcs_meta : `TransformParameters`, dict
+        A 2-tuple containing the transform parameters used to calculate the WCS information
+        and the various wcs-related meta keywords that have been calculated.
     """
     # Configure transformation parameters.
     t_pars = tlib.TransformParameters(**transform_kwargs)
     tlib.t_pars_from_model(model, t_pars)
+    olib.fetch_references(t_pars)
     logger.log(DEBUG_FULL, "TransformParameters: %s", t_pars)
 
     # Calculate WCS.
-    transforms = wlib.update_wcs_from_telem(model, t_pars)
+    wcs_meta = wlib.update_wcs_from_telem(model, t_pars)
 
-    return t_pars, transforms
+    return t_pars, wcs_meta

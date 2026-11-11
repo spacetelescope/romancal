@@ -4,16 +4,31 @@
 %TAG ! tag:stsci.edu:asdf/
 --- !core/asdf-1.1.0
 asdf_library: !core/software-1.0.0 {author: The ASDF Developers, homepage: 'http://github.com/asdf-format/asdf',
-  name: asdf, version: 5.1.0}
+  name: asdf, version: 5.4.0}
 history:
   extensions:
   - !core/extension_metadata-1.0.0
     extension_class: asdf.extension._manifest.ManifestExtension
     extension_uri: asdf://asdf-format.org/core/extensions/core-1.6.0
     manifest_software: !core/software-1.0.0 {name: asdf_standard, version: 1.5.0}
-    software: !core/software-1.0.0 {name: asdf, version: 5.1.0}
-vinfo: {dec: -30.177183927606528, pa: 90.4289479321644, ra: 267.0168676146806, s_region: ''}
-wcsinfo: {dec: -30.53927896286344, pa: 90.60111674247034, ra: 266.67803540698276,
-  s_region: POLYGON ICRS  266.704474362 -30.623991336 266.579827226 -30.560011007
-    266.651764709 -30.453928832 266.777049827 -30.518088819}
+    software: !core/software-1.0.0 {name: asdf, version: 5.4.0}
+wcs_meta:
+  pointing:
+    bam_quaternion: [-0.18541749359303772, 0.6841636922799866, -0.17893482160935997,
+      0.6822922576514541]
+    dec_v1: -69.0573058072646
+    pa_aperture: 37.24854770366899
+    pa_v3: 96.49949482075951
+    pointing_engineering_source: CALCULATED
+    quaternion: [-0.7118218303725413, -0.1163575361747678, 0.6786490188532825, 0.13858612769623332]
+    ra_v1: 81.6686302053683
+    target_aperture: WFI_CEN
+    target_dec: -69.48828716074138
+    target_ra: 80.71805432662013
+  velocity_aberration: {dec_reference: -69.4826753420784, ra_reference: 80.72026075294426,
+    scale_factor: 0.9999946180992892}
+  wcsinfo: {aperture_name: WFI01_FULL, dec_ref: -69.41891635642607, ra_ref: 80.62520113957764,
+    roll_ref: 97.47628097051559,
+    s_region: POLYGON ICRS 80.660744006 -69.505616219 80.379384214 -69.429205499 80.590434179 -69.331579227 80.872932680 -69.407979480,
+    v2_ref: 1454.084, v3_ref: -1163.304, v3yangle: -60.17427689758176, vparity: -1}
 ...

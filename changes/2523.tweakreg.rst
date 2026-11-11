@@ -1,3 +1,0 @@
-Raise an informative error when an image has placeholder ``meta.wcsinfo``
-(``vparity`` = +1) left by a failed ``set_telescope_pointing``, instead of
-querying the reference catalog over an enormous area and timing out.

@@ -69,6 +69,12 @@ class TimeDomainCatalogStep(RomanStep):
     bkg_boxsize : float, optional
         Edge length, in arcsec, of the background mesh boxes.
 
+    match_jitter : bool, optional
+        If `True`, adjust the PSF for the difference between the image's
+        jitter and the jitter in the ePSF reference file, by convolving
+        or deconvolving the reference PSF.  If `False`, use the
+        reference PSF unchanged.
+
     data_release_id : str, optional
         The data release identifier recorded in the catalog metadata.
         Not recorded if not given.
@@ -85,6 +91,7 @@ class TimeDomainCatalogStep(RomanStep):
         forced_catalogs = force_list(default=list())  # catalogs of positions
         id_columns = force_list(default=list("flagged_spatial_id"))  # id column of each catalog
         bkg_boxsize = float(default=55.0)     # background mesh box size in arcsec
+        match_jitter = boolean(default=True)  # match ref PSF jitter to image?
         data_release_id = string(default=None)  # data release identifier
         suffix = string(default='fcat')       # Default suffix for output files
     """
@@ -133,7 +140,9 @@ class TimeDomainCatalogStep(RomanStep):
         convert_to_flux_density(model, area_map=area_map)
 
         ref_file = self.get_reference_file(input_model, "epsf")
-        with open_psf_model(ref_file, input_model) as psf_ref:
+        with open_psf_model(
+            ref_file, input_model, match_jitter=self.match_jitter
+        ) as psf_ref:
             columns = measure_sources(model, mask, sources, psf_ref, area_map)
 
         cat_model.source_catalog = assemble_catalog(cat_model, columns)

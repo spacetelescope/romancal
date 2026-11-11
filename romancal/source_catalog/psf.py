@@ -247,14 +247,16 @@ def _create_convolution_kernel(
     return kernel
 
 
-def get_gridded_psf_model(psf_ref_model, focus=0, spectral_type=1):
+def get_gridded_psf_model(psf_ref_model, focus=0, spectral_type=None):
     """Function to generate gridded PSF model from psf reference file
 
     Compute a gridded PSF model for one SCA using the
     reference files in CRDS.
-    The input reference files have 3 focus positions and this is using
+    The CRDS reference files have 3 focus positions and this is using
     the in-focus images. There are also three spectral types that are
-    available and this code uses the G2V spectral type.
+    available and this code uses the G2V spectral type by default.
+    Empirical reference files have a single focus position and spectral
+    type, which is used by default.
 
     Parameters
     ----------
@@ -262,17 +264,18 @@ def get_gridded_psf_model(psf_ref_model, focus=0, spectral_type=1):
         PSF reference data model
     focus : integer
         index of slice into focus dimension of reference model.  0 for in focus
-    spectral_type : integer
+    spectral_type : integer or None
         index of slice into spectral type dimension of reference model.  1 for
-        G2V.
+        G2V.  If None, use 1 (G2V) if the reference model has more than one
+        spectral type, and otherwise its only spectral type.
 
     Returns
     -------
     photutils.psf.GriddedPSFModel of desired slice of ePSF reference file
     """
-    # Open the reference file data model
-    # select the infocus images (0) and we have a selection of spectral types
-    # A0V, G2V, and M6V, pick G2V (1)
+    if spectral_type is None:
+        # G2V in files with spectral types A0V, G2V, and M6V
+        spectral_type = 1 if psf_ref_model.psf.shape[1] > 1 else 0
     psf_images = psf_ref_model.psf[focus, spectral_type, :, :, :].copy()
     # get the central position of the cutouts in a list
     psf_positions_x = psf_ref_model.meta.pixel_x
@@ -702,6 +705,7 @@ class _PSFCatalog:
         name_map["flux_fit"] = "psf_flux"
         name_map["flux_err"] = "psf_flux_err"
         name_map["reduced_chi2"] = "psf_gof"
+        name_map["cfit"] = "psf_cfit"
         name_map["flags"] = "psf_flags"
 
         return name_map

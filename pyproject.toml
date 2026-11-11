@@ -27,7 +27,7 @@ dependencies = [
     # roman_datamodels release.
     "roman_datamodels>=1.2,<1.3",
     # "roman_datamodels@git+https://github.com/spacetelescope/roman_datamodels@main",
-    "romanisim>=0.14,<0.16",
+    "romanisim>=0.14,<0.17",
     # "romanisim@git+https://github.com/spacetelescope/romanisim@main",
     "asdf>=4.1.0,<7",
     "crds>=13.2.7,<15",  # this version range should always match the one in sdp deps
@@ -87,6 +87,7 @@ romancal = "romancal.stpipe.integration:get_steps"
 
 [project.scripts]
 asn_from_list = "romancal.associations.asn_from_list:_cli"
+roman_epsf_from_model = "romancal.source_catalog._epsf:cli"
 roman_pointing_summary = "romancal.scripts.pointing_summary:_main"
 roman_set_telescope_pointing = "romancal.scripts.set_telescope_pointing:_main"
 roman_set_velocity_aberration = "romancal.scripts.set_velocity_aberration:_main"

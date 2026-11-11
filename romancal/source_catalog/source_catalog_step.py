@@ -98,6 +98,12 @@ class SourceCatalogStep(RomanStep):
     fit_psf : bool, optional
         If `True`, fit source PSFs.
 
+    match_jitter : bool, optional
+        If `True`, adjust the PSF for the difference between the image's
+        jitter and the jitter in the ePSF reference file, by convolving
+        or deconvolving the reference PSF.  If `False`, use the
+        reference PSF unchanged.
+
     forced_segmentation : str, optional
         If non-empty, path to a pre-computed segmentation image to use
         in place of fresh source detection (forced photometry mode).
@@ -105,7 +111,10 @@ class SourceCatalogStep(RomanStep):
 
     class_alias = "source_catalog"
 
-    reference_file_types: ClassVar = ["apcorr"]
+    reference_file_types: ClassVar = ["apcorr", "epsf"]
+    # epsf has no CRDS rule for grism exposures, which skip this step only
+    # after the pipeline prefetches; fetch references when the step runs.
+    prefetch_references = False
 
     spec = """
         bkg_boxsize = float(default=55.0)     # background mesh box size in arcsec
@@ -117,6 +126,7 @@ class SourceCatalogStep(RomanStep):
         max_sources = integer(default=0)  # keep this many most significant (0 = no limit)
         suffix = string(default='cat')        # Default suffix for output files
         fit_psf = boolean(default=True)       # fit source PSFs for accurate astrometry?
+        match_jitter = boolean(default=True)  # match ref PSF jitter to image?
         forced_segmentation = string(default='')  # force the use of this segmentation map
         compute_skyvals = boolean(default=True)  # compute healpix sky summary arrays
     """
@@ -322,7 +332,9 @@ class SourceCatalogStep(RomanStep):
         if not self.fit_psf:
             return nullcontext(None)
         self.ref_file = self.get_reference_file(input_model, "epsf")
-        return open_psf_model(self.ref_file, input_model)
+        return open_psf_model(
+            self.ref_file, input_model, match_jitter=self.match_jitter
+        )
 
     def process(self, dataset):
         input_model = open_dataset(dataset, update_version=self.update_version)
