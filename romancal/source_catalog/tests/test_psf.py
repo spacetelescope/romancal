@@ -4,7 +4,6 @@ Unit tests for the Roman source detection step code
 
 from copy import deepcopy
 
-import crds
 import numpy as np
 import pytest
 import roman_datamodels as rdm
@@ -18,6 +17,7 @@ from numpy.testing import assert_allclose
 from photutils.datasets import make_model_image
 from photutils.psf import GriddedPSFModel, ImagePSF
 from roman_datamodels.datamodels import EpsfRefModel, ImageModel, MosaicModel
+from stpipe.crds_client import get_multiple_reference_paths
 
 from romancal.source_catalog._calibrate import open_psf_model
 from romancal.source_catalog._wcs_utils import pixel_area_from_wcs
@@ -66,8 +66,8 @@ def setup_inputs(
     mod.dq = np.zeros(shape, dtype=np.uint32)
 
     crds_parameters = mod.get_crds_parameters()
-    crds_ref_file = crds.getreferences(
-        crds_parameters, reftypes=["epsf"], observatory="roman"
+    crds_ref_file = get_multiple_reference_paths(
+        crds_parameters, reference_file_types=["epsf"], observatory="roman"
     )
     psf_ref_file = crds_ref_file["epsf"]
     psf_ref_model_f087 = rdm.open(psf_ref_file)
@@ -76,8 +76,8 @@ def setup_inputs(
     psf_model = get_gridded_psf_model(psf_ref_model_f087)
 
     crds_parameters["meta.instrument.optical_element"] = "F184"
-    crds_ref_file = crds.getreferences(
-        crds_parameters, reftypes=["epsf"], observatory="roman"
+    crds_ref_file = get_multiple_reference_paths(
+        crds_parameters, reference_file_types=["epsf"], observatory="roman"
     )
     psf_ref_file = crds_ref_file["epsf"]
     psf_ref_model_f184 = rdm.open(psf_ref_file)
