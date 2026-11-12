@@ -1,0 +1,1 @@
+Fix the exposure pipeline docs to list the raw science model as the input, and correct the data model references on that page.
