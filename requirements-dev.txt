@@ -7,7 +7,7 @@ git+https://github.com/spacetelescope/stcal.git
 git+https://github.com/spacetelescope/stpipe.git
 
 # Other important upstream packages
-git+https://github.com/spacetelescope/crds.git
+crds[aws] @ git+https://github.com/spacetelescope/crds.git
 git+https://github.com/spacetelescope/gwcs.git
 git+https://github.com/spacetelescope/tweakwcs.git
 git+https://github.com/spacetelescope/spherical_geometry.git
