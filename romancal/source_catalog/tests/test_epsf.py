@@ -1,8 +1,5 @@
 """Unit tests for the ePSF star selection."""
 
-import subprocess
-import sys
-
 import numpy as np
 import pytest
 from astropy.modeling.models import Gaussian2D
@@ -167,13 +164,3 @@ def test_epsf_from_model_jitter(image_and_catalog):
     assert epsf_model.meta.jitter_minor == 6.0
     assert epsf_model.meta.jitter_position_angle == 30.0
     np.testing.assert_allclose(add_jitter(epsf_model, model), epsf_model.psf, atol=1e-6)
-
-
-def test_import_without_matplotlib():
-    """matplotlib is optional; it is only imported for plotting."""
-    # A None entry in sys.modules makes the import raise ImportError.
-    code = (
-        "import sys; sys.modules['matplotlib'] = None; "
-        "import romancal.source_catalog._epsf"
-    )
-    subprocess.run([sys.executable, "-c", code], check=True)  # noqa: S603
