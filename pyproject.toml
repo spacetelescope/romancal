@@ -157,6 +157,7 @@ addopts = [
 ]
 markers = [
     "soctests: run only the SOC tests in the suite.",
+    "filterwarnings: filter warnings.",
 ]
 
 [tool.coverage.run]
