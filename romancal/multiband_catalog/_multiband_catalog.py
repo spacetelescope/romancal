@@ -489,7 +489,8 @@ def initialize_catalog_model(library, example_model):
     """
     # Initialize the source catalog model, copying the metadata
     # from the example model. Some of this may be overwritten
-    # during metadata blending.
+    # during metadata blending. L3 cal_logs are not carried into
+    # image_metas (see blend_image_metadata skip list).
     catalog_model = datamodels.MultibandSourceCatalogModel.create_minimal(
         {"meta": example_model.meta}
     )

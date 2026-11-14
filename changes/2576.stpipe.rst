@@ -1,0 +1,2 @@
+Optionally scope ELP association ``cal_logs`` per detector member, and avoid
+inheriting upstream image logs when seeding source-catalog metadata.

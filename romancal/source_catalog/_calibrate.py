@@ -22,6 +22,10 @@ from romancal.source_catalog._unit_conversion import (
 from romancal.source_catalog._utils import make_model_mask
 from romancal.source_catalog._wcs_utils import pixel_area_from_wcs, pixel_area_map
 from romancal.source_catalog.psf import add_jitter
+from romancal.stpipe.cal_logs import (
+    copy_meta_without_cal_logs,
+    strip_inherited_cal_logs,
+)
 
 log = logging.getLogger(__name__)
 
@@ -174,6 +178,9 @@ def make_catalog_model(model, cat_model_cls):
     """
     Create a catalog model with metadata copied from an image.
 
+    Upstream ``cal_logs`` are not copied; those remain on the parent
+    image product (see issue #2510).
+
     Parameters
     ----------
     model : `ImageModel` or `MosaicModel`
@@ -187,7 +194,10 @@ def make_catalog_model(model, cat_model_cls):
     cat_model : data model
         The new catalog model.
     """
-    cat_model = cat_model_cls.create_minimal({"meta": model.meta})
+    cat_model = cat_model_cls.create_minimal(
+        {"meta": copy_meta_without_cal_logs(model.meta)}
+    )
+    strip_inherited_cal_logs(cat_model)
     cat_model.meta["image"] = {
         "filename": model.meta.filename,
         "file_date": model.meta.file_date,

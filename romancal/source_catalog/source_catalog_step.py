@@ -32,6 +32,12 @@ from romancal.source_catalog._template_detection import (
 )
 from romancal.source_catalog._utils import copy_model_arrays, get_ee_spline
 from romancal.stpipe import RomanStep
+from romancal.stpipe.cal_logs import (
+    copy_meta_without_cal_logs,
+    get_cal_logs,
+    set_product_cal_logs,
+    strip_inherited_cal_logs,
+)
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -281,6 +287,7 @@ class SourceCatalogStep(RomanStep):
         if isinstance(input_model, datamodels.ImageModel):
             self.finalize_result(input_model, self._reference_files_used)
             input_model.meta.cal_step.source_catalog = "COMPLETE"
+        self._attach_catalog_cal_logs(input_model, cat_model)
         return cat_model, segmentation_model
 
     def _load_forced_segmentation(self, mask):
@@ -507,7 +514,21 @@ class SourceCatalogStep(RomanStep):
             if isinstance(input_model, datamodels.ImageModel):
                 self.finalize_result(input_model, self._reference_files_used)
                 input_model.meta.cal_step.source_catalog = "COMPLETE"
+
+            # Attach logs after catalog work so step messages are complete.
+            # Prompt/forced policy allows parent image logs plus this step.
+            self._attach_catalog_cal_logs(input_model, cat_model)
             return cat_model, segmentation_model
+
+    def _attach_catalog_cal_logs(self, input_model, cat_model):
+        """Best-effort cal_logs on catalog products (schema may omit the field)."""
+        parent_logs = get_cal_logs(input_model)
+        step_logs = list(self.log_records) if self.log_records else []
+        combined = parent_logs + step_logs
+        if not combined:
+            strip_inherited_cal_logs(cat_model)
+            return
+        set_product_cal_logs(cat_model, combined)
 
     def _make_catalog_and_segmentation_models(self, model):
         if isinstance(model, ImageModel):
@@ -523,6 +544,7 @@ class SourceCatalogStep(RomanStep):
                 cat_model_cls = datamodels.MosaicSourceCatalogModel
             segmentation_model_cls = datamodels.MosaicSegmentationMapModel
 
+        # make_catalog_model seeds meta without upstream cal_logs (#2510).
         cat_model = make_catalog_model(model, cat_model_cls)
 
         # make L3 metadata
@@ -530,8 +552,9 @@ class SourceCatalogStep(RomanStep):
             cat_model.meta.image.forced_segmentation = self.forced_segmentation
 
         segmentation_model = segmentation_model_cls.create_minimal(
-            {"meta": cat_model.meta}
+            {"meta": copy_meta_without_cal_logs(cat_model.meta)}
         )
+        strip_inherited_cal_logs(segmentation_model)
 
         return cat_model, segmentation_model
 

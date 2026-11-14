@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 import roman_datamodels.datamodels as rdm
+from roman_datamodels.datamodels import ImageModel, MosaicModel
 from roman_datamodels.dqflags import group, pixel
 
 # step imports
@@ -27,6 +28,8 @@ from romancal.tweakreg import TweakRegStep
 from romancal.wfi18_transient import WFI18TransientStep
 
 from ..stpipe import RomanPipeline
+from ..stpipe.cal_logs import get_cal_logs, set_product_cal_logs, slice_log_records
+from ..stpipe.core import RomanStep
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -104,9 +107,15 @@ class ExposurePipeline(RomanPipeline):
 
         catalogs = []
         segmentations = []
+        # Per-member log slices keyed by library index so each detector product
+        # does not inherit the full multi-detector ELP log stream (issue #2510).
+        # Index (not id(model)) survives on_disk shelve/borrow reloads.
+        member_log_starts = []
+        self._member_cal_logs = {}
 
         with lib:
             for model_index, model in enumerate(lib):
+                member_log_starts.append(len(self.log_records))
                 result, run_source_catalog = self._process_model(model)
 
                 # now handle source_catalog
@@ -124,14 +133,27 @@ class ExposurePipeline(RomanPipeline):
                         result.meta["source_catalog"] = {}
                     result.meta.source_catalog.tweakreg_catalog = catalog.source_catalog
 
+                # Capture logs emitted while processing this association member.
+                self._apply_member_cal_logs(
+                    result,
+                    model_index,
+                    member_log_starts[model_index],
+                    len(self.log_records),
+                )
+
                 lib.shelve(result, model_index)
                 catalogs.append(catalog)
                 segmentations.append(segmentation)
 
         # Now that all the exposures are collated, run tweakreg
+        tweakreg_log_start = len(self.log_records)
         self.tweakreg.run(lib)
+        tweakreg_logs = slice_log_records(
+            self.log_records, tweakreg_log_start, len(self.log_records)
+        )
 
-        # tweakreg was run, update catalog positions
+        # tweakreg was run, update catalog positions and append shared tweakreg
+        # logs onto members that were successfully aligned.
         with lib:
             for model_index, model in enumerate(lib):
                 if model.meta.cal_step.tweakreg == "COMPLETE":
@@ -148,6 +170,13 @@ class ExposurePipeline(RomanPipeline):
                             model.meta.source_catalog.tweakreg_catalog_name = (
                                 catalog_filename
                             )
+                    if tweakreg_logs:
+                        existing = list(
+                            self._member_cal_logs.get(model_index, get_cal_logs(model))
+                        )
+                        combined = existing + tweakreg_logs
+                        set_product_cal_logs(model, combined)
+                        self._member_cal_logs[model_index] = combined
                 lib.shelve(model)
 
         log.info("Roman exposure calibration pipeline ending...")
@@ -167,6 +196,45 @@ class ExposurePipeline(RomanPipeline):
             segmentation = segmentations[0]
             lib.shelve(model, modify=False)
         return model, catalog, segmentation
+
+    def _apply_member_cal_logs(self, model, index, start, end):
+        """Assign pipeline log records from [start, end) to one ELP member."""
+        logs = slice_log_records(self.log_records, start, end)
+        set_product_cal_logs(model, logs)
+        # Store by library index so finalize_result can restore after on_disk
+        # shelve/borrow reloads (new object identity).
+        if not hasattr(self, "_member_cal_logs"):
+            self._member_cal_logs = {}
+        self._member_cal_logs[index] = logs
+
+    def finalize_result(self, model, reference_files_used):
+        """Preserve per-member cal_logs on association products.
+
+        ``stpipe`` finalizes ``ModelLibrary`` results by re-borrowing members.
+        With ``on_disk=True`` that yields new objects, so member log slices are
+        restored by library index rather than ``id(model)``.
+        """
+        member_logs = getattr(self, "_member_cal_logs", {})
+
+        if isinstance(model, ModelLibrary):
+            # Handle the library here so each member keeps its index. Calling
+            # super() would re-enter without indexes (RomanStep iterates only).
+            with model:
+                for index, member in enumerate(model):
+                    RomanStep.finalize_result(self, member, reference_files_used)
+                    # Only science image/mosaic members were scoped; do not
+                    # apply those slices to catalog/segmentation libraries.
+                    if index in member_logs and isinstance(
+                        member, ImageModel | MosaicModel
+                    ):
+                        set_product_cal_logs(member, member_logs[index])
+                    model.shelve(member)
+            return model
+
+        RomanStep.finalize_result(self, model, reference_files_used)
+        # Single-file ELP returns one model (index 0), not a library.
+        if 0 in member_logs and isinstance(model, ImageModel | MosaicModel):
+            set_product_cal_logs(model, member_logs[0])
 
     def _process_model(self, model):
         """
