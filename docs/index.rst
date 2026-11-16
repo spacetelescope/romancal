@@ -1,14 +1,18 @@
-:ref:`genindex`  |  :ref:`modindex`
-
-.. image:: _static/stsci_pri_combo_mark_horizonal_white_bkgd.png
+.. image:: https://github.com/spacetelescope/branding/blob/81b7021231e885bda9c022e6c082b3cf26009b3b/stsci_pri_combo_mark_horizonal_light_bkgd.svg?raw=true
    :width: 83%
-   :alt: Space Telescope Science Institute
    :target: https://stsci.edu
+   :class: only-light
+.. image:: https://github.com/spacetelescope/branding/blob/81b7021231e885bda9c022e6c082b3cf26009b3b/stsci_pri_combo_mark_horizonal_dark_bkgd.svg?raw=true
+   :width: 83%
+   :target: https://stsci.edu
+   :class: only-dark
 
 .. image:: _static/A_Rst_1020_Logo_Box_Color_Seafoamondarkblue_Logo_Full_Color_RGB_850px@72ppi.png
    :width: 15%
    :alt: Nancy Grace Roman Space Telescope
    :target: https://science.nasa.gov/mission/roman-space-telescope/
+
+:ref:`genindex`  |  :ref:`modindex`
 
 .. _roman-pipeline-doc-index:
 

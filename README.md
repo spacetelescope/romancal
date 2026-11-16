@@ -1,5 +1,9 @@
 <a href="https://stsci.edu">
-  <img src="docs/_static/stsci_pri_combo_mark_horizonal_white_bkgd.png" alt="Space Telescope Science Institute" width="83%" style="margin-left: auto;"/>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://github.com/spacetelescope/branding/blob/81b7021231e885bda9c022e6c082b3cf26009b3b/stsci_pri_combo_mark_horizonal_dark_bkgd.svg">
+    <source media="(prefers-color-scheme: light)" srcset="https://github.com/spacetelescope/branding/blob/81b7021231e885bda9c022e6c082b3cf26009b3b/stsci_pri_combo_mark_horizonal_light_bkgd.svg">
+    <img src="https://github.com/spacetelescope/branding/blob/81b7021231e885bda9c022e6c082b3cf26009b3b/stsci_pri_combo_mark_horizonal_white_bkgd.svg" alt="Space Telescope Science Institute" width="83%" style="margin-left: auto;"/>
+  </picture>
 </a>
 <a href="https://science.nasa.gov/mission/roman-space-telescope/">
   <img src="docs/_static/A_Rst_1020_Logo_Box_Color_Seafoamondarkblue_Logo_Full_Color_RGB_850px@72ppi.png" alt="Roman Telescope Logo" width="15%" style="margin-right: auto;"/>
