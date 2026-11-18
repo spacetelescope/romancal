@@ -2,4 +2,5 @@ Add a HEALPix sky-level solver and parquet I/O for L3 skymatch. New
 ``skymethod='offset_file'`` applies precomputed levels from a top-level ASN
 ``skymatch_offsets_file`` (or step ``offset_file``). CLIs
 ``roman_export_skyvals_parquet`` and ``roman_match_skyvals_parquet`` export
-L2 skyvals and solve levels (including photom scaling and a weak zero prior).
+L2 skyvals and solve levels (photom scaling via ``conversion_megajanskys`` and
+a fixed diagonal prior ``A += 0.01*I``; no biweight recenter).
