@@ -48,7 +48,9 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
         description="Solve skymatch levels from skyval parquet files."
     )
-    parser.add_argument("inputs", nargs="+", help="Skyval parquet files, dirs, or globs")
+    parser.add_argument(
+        "inputs", nargs="+", help="Skyval parquet files, dirs, or globs"
+    )
     parser.add_argument(
         "-o",
         "--output",
