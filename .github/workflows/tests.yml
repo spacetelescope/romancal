@@ -121,6 +121,7 @@ jobs:
         - name: run tests with coverage (latest supported Python, ubuntu-latest)
           linux: py3-cov-xdist
           python-version: ${{ needs.supported-pythons.outputs.latest }}
+          runs-on: ubuntu-26.04-arm
           pytest-results-summary: true
           coverage: codecov-oidc
         - name: run tests (latest supported Python, macos-latest)
