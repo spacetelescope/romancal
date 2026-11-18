@@ -86,13 +86,9 @@ def test_match_healpix_min_overlap_cells():
         {"pixel": pix, "value": sky1, "unc": unc},
     ]
     # threshold above overlap -> no pairs; prior pulls levels ~ 0
-    lev_hi, _ = match_healpix_skyvals(
-        samples, names=["a", "b"], min_overlap_cells=101
-    )
+    lev_hi, _ = match_healpix_skyvals(samples, names=["a", "b"], min_overlap_cells=101)
     assert np.allclose(lev_hi, 0.0, atol=1e-6)
-    lev_ok, _ = match_healpix_skyvals(
-        samples, names=["a", "b"], min_overlap_cells=100
-    )
+    lev_ok, _ = match_healpix_skyvals(samples, names=["a", "b"], min_overlap_cells=100)
     assert abs(lev_ok[1] - lev_ok[0]) == pytest.approx(0.25, abs=1e-4)
 
 
