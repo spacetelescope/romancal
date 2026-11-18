@@ -1,12 +1,12 @@
 """
-HEALPix-based multi-exposure sky offset solver.
+HEALPix-based multi-exposure sky level solver.
 
-Romancal-native reimplementation of the pairwise inverse-variance
-least-squares approach used by ``wfiskymatch.pixmatch``, operating on
-in-memory skyval samples rather than depending on the wfiskymatch package.
+Romancal-native port of the pairwise inverse-variance least-squares approach
+used by ``wfiskymatch.pixmatch``, operating on in-memory skyval samples.
 
 Given overlapping HEALPix sky measurements from multiple exposures, solve for
-one additive constant per exposure that equalizes shared-cell differences.
+one sky level per exposure. Downstream outlier/resample **subtract**
+``meta.background.level``, so returned values are those levels.
 """
 
 from __future__ import annotations
@@ -20,22 +20,10 @@ from scipy.sparse import csc_array
 
 log = logging.getLogger(__name__)
 
-__all__ = [
-    "match_healpix_skyvals",
-    "pipeline_level_from_epsilon",
-]
+__all__ = ["match_healpix_skyvals"]
 
-
-def pipeline_level_from_epsilon(epsilon: float | np.ndarray) -> float | np.ndarray:
-    """
-    Convert solver epsilon to ``meta.background.level``.
-
-    The solver defines corrected sky as ``value + epsilon``. Downstream
-    outlier/resample **subtract** ``meta.background.level``, so::
-
-        data - level == data + epsilon  =>  level = -epsilon
-    """
-    return -np.asarray(epsilon, dtype=np.float64)
+# Weak prior: level ~ 0 +/- PRIOR_SIGMA_DN (before photom scaling).
+PRIOR_SIGMA_DN = 10.0
 
 
 def match_healpix_skyvals(
@@ -44,9 +32,10 @@ def match_healpix_skyvals(
     names: Sequence[str] | None = None,
     min_overlap_cells: int = 1,
     recenter: bool = True,
+    prior_sigma_dn: float = PRIOR_SIGMA_DN,
 ) -> tuple[np.ndarray, list[str]]:
     """
-    Solve per-exposure additive sky offsets from HEALPix skyval samples.
+    Solve per-exposure sky levels from HEALPix skyval samples.
 
     Parameters
     ----------
@@ -54,27 +43,36 @@ def match_healpix_skyvals(
         One mapping per exposure with keys:
 
         * ``pixel`` : (N,) int — nested HEALPix indices (e.g. nside=2**17)
-        * ``value`` : (N,) float — sky estimates
+        * ``value`` : (N,) float — sky estimates (DN/s unless already scaled)
         * ``unc`` : (N,) float — uncertainties (must be > 0 for used cells)
 
-        Optional ``coverage`` : coarse indices used only to skip pairs with
-        no coarse overlap (performance). If omitted, all pairs are compared
-        at fine resolution.
+        Optional:
+
+        * ``coverage`` : coarse indices used to skip pairs with no coarse
+          overlap (performance).
+        * ``conversion_megajanskys`` : float — L2 photom factor DN/s → MJy/sr.
+          Applied to ``value`` and ``unc`` before solving so returned levels
+          match flux-calibrated image units.
+
     names
         Optional exposure labels (length ``len(samples)``). Defaults to
         ``exp000``, ``exp001``, ...
     min_overlap_cells
         Minimum shared fine healpix cells required to form a pair constraint.
     recenter
-        If True (default), subtract biweight location so offsets are centered
+        If True (default), subtract biweight location so levels are centered
         (``wfiskymatch.pixmatch`` behavior).
+    prior_sigma_dn
+        Weak Gaussian prior width in DN/s toward zero level. After photom
+        scaling, exposure *i* gets diagonal weight
+        ``1/(prior_sigma_dn * conversion_i)**2``. Set ``<= 0`` to disable.
 
     Returns
     -------
-    epsilon : ndarray of float64, shape (n_exp,)
-        Additive offsets: corrected_value = value + epsilon.
+    levels : ndarray of float64, shape (n_exp,)
+        Sky levels to store as ``meta.background.level`` (subtract from data).
     names : list of str
-        Exposure names aligned with ``epsilon``.
+        Exposure names aligned with ``levels``.
     """
     nfiles = len(samples)
     if nfiles == 0:
@@ -88,6 +86,8 @@ def match_healpix_skyvals(
     values = []
     unc2 = []
     coverage = []
+    prior_weight = np.zeros(nfiles, dtype=np.float64)
+
     for i, sample in enumerate(samples):
         pix = np.asarray(sample["pixel"], dtype=np.int64).reshape(-1)
         val = np.asarray(sample["value"], dtype=np.float64).reshape(-1)
@@ -97,6 +97,18 @@ def match_healpix_skyvals(
                 f"sample {names[i]!r}: pixel/value/unc length mismatch "
                 f"({pix.size}, {val.size}, {unc.size})"
             )
+
+        conv = float(sample.get("conversion_megajanskys", 1.0) or 1.0)
+        if not np.isfinite(conv) or conv <= 0:
+            raise ValueError(
+                f"sample {names[i]!r}: conversion_megajanskys must be finite and > 0"
+            )
+        val = val * conv
+        unc = unc * conv
+        if prior_sigma_dn and prior_sigma_dn > 0:
+            sigma = prior_sigma_dn * conv
+            prior_weight[i] = 1.0 / (sigma * sigma)
+
         order = np.argsort(pix, kind="mergesort")
         pix, val, unc = pix[order], val[order], unc[order]
         bad = ~np.isfinite(unc) | (unc <= 0) | ~np.isfinite(val)
@@ -119,6 +131,8 @@ def match_healpix_skyvals(
                 if np.intersect1d(coverage[i], coverage[j], assume_unique=True).size:
                     xcorr[i, j] = xcorr[j, i] = True
 
+    # Pairwise system in pixmatch "epsilon" gauge: corrected = value + epsilon.
+    # Convert to subtractive levels at the end (level = -epsilon).
     row: list[int] = []
     col: list[int] = []
     data: list[float] = []
@@ -142,7 +156,6 @@ def match_healpix_skyvals(
             if common.size < min_overlap_cells:
                 continue
             w = 1.0 / (aunc2[aidx] + bunc2[bidx])
-            # Sign conventions aligned with wfiskymatch.pixmatch.
             a_ij = -np.sum(w)
             I_ij = -np.sum((aval[aidx] - bval[bidx]) * w)
             col.extend([i, j])
@@ -156,9 +169,9 @@ def match_healpix_skyvals(
 
     log.info("healpix sky match: %d exposures, %d pairwise overlaps", nfiles, n_pairs)
 
-    if n_pairs == 0:
+    if n_pairs == 0 and not np.any(prior_weight > 0):
         log.warning(
-            "No overlapping HEALPix skyval pairs; returning zero offsets for all exposures"
+            "No overlapping HEALPix skyval pairs; returning zero levels for all exposures"
         )
         return np.zeros(nfiles, dtype=np.float64), list(names)
 
@@ -168,13 +181,14 @@ def match_healpix_skyvals(
     data.extend(D.tolist())
     A = csc_array((data, (row, col)), shape=(nfiles, nfiles))
 
-    # The pairwise system is gauge-invariant (common additive constant).
-    # Replace the last equation with sum(epsilon)=0 so the solve is unique;
-    # optional biweight recenter below still applies for robust centering.
     A_solve = A.toarray()
     B_solve = B.copy()
-    A_solve[-1, :] = 1.0
-    B_solve[-1] = 0.0
+    if np.any(prior_weight > 0):
+        A_solve = A_solve + np.diag(prior_weight)
+    else:
+        A_solve[-1, :] = 1.0
+        B_solve[-1] = 0.0
+
     try:
         epsilon = np.linalg.solve(A_solve, B_solve)
     except np.linalg.LinAlgError as err:
@@ -194,4 +208,5 @@ def match_healpix_skyvals(
         epsilon = epsilon + delta
         log.debug("healpix sky match biweight recenter delta=%s", delta)
 
-    return epsilon, list(names)
+    levels = -epsilon
+    return levels, list(names)

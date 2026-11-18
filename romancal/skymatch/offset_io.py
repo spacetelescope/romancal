@@ -8,6 +8,7 @@ import logging
 import re
 from collections.abc import Mapping, Sequence
 from pathlib import Path
+from urllib.parse import urlparse
 
 import numpy as np
 from astropy.table import Table
@@ -20,14 +21,15 @@ __all__ = [
     "load_skyval_parquet",
     "lookup_offset",
     "normalize_exposure_key",
-    "resolve_offsets_path_from_asn",
+    "offsets_path_from_asn",
     "write_offset_table",
     "write_skyval_parquet",
 ]
 
-# Product-level ASN key for the offsets parquet path.
+# Top-level ASN key for the offsets parquet path (one file per L3 ASN).
 ASN_OFFSETS_KEY = "skymatch_offsets_file"
 
+# Strip a single known product suffix + extension for offset-table keys.
 _SUFFIX_RE = re.compile(
     r"(?i)(_segm|_cal|_skymatch|_cat|_i2d|_crf)?(\.asdf|\.parquet|\.h5|\.fits)?$"
 )
@@ -37,15 +39,14 @@ def normalize_exposure_key(name: str | Path) -> str:
     """
     Normalize an exposure filename/stem for offset table lookup.
 
-    Strips directories and common Roman product suffixes so ``..._cal.asdf``,
-    ``..._segm.asdf``, and bare stems map to the same key.
+    Strips the final path component's extension and a single trailing Roman
+    product suffix so ``..._cal.asdf``, ``..._segm.asdf``, and bare stems map
+    to the same key.
     """
     stem = Path(str(name)).name
-    prev = None
-    while prev != stem:
-        prev = stem
-        stem = _SUFFIX_RE.sub("", stem)
-    stem = Path(stem).stem
+    stem = _SUFFIX_RE.sub("", stem)
+    if "." in stem:
+        stem = Path(stem).stem
     return stem
 
 
@@ -57,27 +58,34 @@ def write_skyval_parquet(
     unc: np.ndarray,
     coverage: np.ndarray | None = None,
     filename: str | None = None,
+    conversion_megajanskys: float | None = None,
 ) -> Path:
     """
     Write one exposure's HEALPix skyval samples to a parquet file.
 
-    Columns: ``healpix17``, ``data``, ``err``. Coarse coverage is stored in a
-    sidecar ``*_cov.parquet`` when provided.
+    Columns: ``healpix17``, ``data``, ``err`` (DN/s). Optional constant
+    ``conversion_megajanskys`` (DN/s → MJy/sr) is stored as a column.
+    Coarse coverage is stored in a sidecar ``*_cov.parquet`` when provided.
+
+    ``outfile`` is written exactly as given (caller supplies ``.parquet``).
     """
     outfile = Path(outfile)
-    if outfile.suffix.lower() != ".parquet":
-        outfile = outfile.with_suffix(".parquet")
     outfile.parent.mkdir(parents=True, exist_ok=True)
 
+    n = len(np.asarray(pixel).reshape(-1))
     table = Table(
         {
-            "healpix17": np.asarray(pixel, dtype=np.int64),
-            "data": np.asarray(value, dtype=np.float32),
-            "err": np.asarray(unc, dtype=np.float32),
+            "healpix17": np.asarray(pixel, dtype=np.int64).reshape(-1),
+            "data": np.asarray(value, dtype=np.float32).reshape(-1),
+            "err": np.asarray(unc, dtype=np.float32).reshape(-1),
         }
     )
     if filename is not None:
-        table["filename"] = np.full(len(table), normalize_exposure_key(filename))
+        table["filename"] = np.full(n, normalize_exposure_key(filename))
+    if conversion_megajanskys is not None:
+        table["conversion_megajanskys"] = np.full(
+            n, float(conversion_megajanskys), dtype=np.float64
+        )
     table.write(outfile, format="parquet", overwrite=True)
 
     if coverage is not None:
@@ -89,175 +97,96 @@ def write_skyval_parquet(
     return outfile
 
 
-def load_skyval_parquet(path: str | Path) -> dict[str, np.ndarray]:
+def load_skyval_parquet(path: str | Path) -> dict[str, np.ndarray | float]:
     """
     Load skyval samples from a parquet file.
 
-    Returns
-    -------
-    sample : dict
-        Keys ``pixel``, ``value``, ``unc``, and optional ``coverage``.
+    Requires columns ``healpix17``, ``data``, ``err``.
     """
-    path = Path(path)
-    table = Table.read(path, format="parquet")
-    if "healpix17" in table.colnames:
-        pixel = np.asarray(table["healpix17"], dtype=np.int64)
-    elif "pixel" in table.colnames:
-        pixel = np.asarray(table["pixel"], dtype=np.int64)
-    else:
-        raise ValueError(f"{path} missing healpix17/pixel column")
+    path_str = str(path)
+    table = Table.read(path_str, format="parquet")
+    for col in ("healpix17", "data", "err"):
+        if col not in table.colnames:
+            raise ValueError(f"{path_str} missing required column {col!r}")
 
-    if "data" in table.colnames:
-        value = np.asarray(table["data"], dtype=np.float64)
-    elif "value" in table.colnames:
-        value = np.asarray(table["value"], dtype=np.float64)
-    else:
-        raise ValueError(f"{path} missing data/value column")
+    sample: dict[str, np.ndarray | float] = {
+        "pixel": np.asarray(table["healpix17"], dtype=np.int64),
+        "value": np.asarray(table["data"], dtype=np.float64),
+        "unc": np.asarray(table["err"], dtype=np.float64),
+    }
+    if "conversion_megajanskys" in table.colnames:
+        conv = np.asarray(table["conversion_megajanskys"], dtype=np.float64)
+        sample["conversion_megajanskys"] = float(conv.flat[0])
 
-    if "err" in table.colnames:
-        unc = np.asarray(table["err"], dtype=np.float64)
-    elif "unc" in table.colnames:
-        unc = np.asarray(table["unc"], dtype=np.float64)
-    else:
-        raise ValueError(f"{path} missing err/unc column")
-
-    sample: dict[str, np.ndarray] = {"pixel": pixel, "value": value, "unc": unc}
-
-    cov_path = path.with_name(path.stem + "_cov.parquet")
-    if cov_path.exists():
-        cov = Table.read(cov_path, format="parquet")
-        col = "healpix11" if "healpix11" in cov.colnames else cov.colnames[0]
-        sample["coverage"] = np.asarray(cov[col], dtype=np.int64)
+    cov_path = Path(path_str).with_name(Path(path_str).stem + "_cov.parquet")
+    if not urlparse(path_str).scheme and cov_path.exists():
+        cov = Table.read(str(cov_path), format="parquet")
+        sample["coverage"] = np.asarray(cov["healpix11"], dtype=np.int64)
     return sample
 
 
 def write_offset_table(
     outfile: str | Path,
     filenames: Sequence[str],
-    offsets: Sequence[float],
-    *,
-    as_pipeline_level: bool = False,
+    levels: Sequence[float],
 ) -> Path:
     """
     Write a skymatch offsets parquet table.
 
-    Parameters
-    ----------
-    outfile
-        Destination ``.parquet`` path.
-    filenames
-        Exposure keys (will be normalized).
-    offsets
-        Solver epsilon (additive) or pipeline levels if ``as_pipeline_level``.
-    as_pipeline_level
-        If True, store values as ``level`` (to subtract). If False (default),
-        store solver ``epsilon`` (to add to skyvals) and also ``level=-epsilon``.
+    Columns: ``filename``, ``level`` (values for ``meta.background.level``).
+    ``outfile`` is written exactly as given.
     """
     outfile = Path(outfile)
-    if outfile.suffix.lower() != ".parquet":
-        outfile = outfile.with_suffix(".parquet")
     outfile.parent.mkdir(parents=True, exist_ok=True)
 
     keys = [normalize_exposure_key(f) for f in filenames]
-    offs = np.asarray(offsets, dtype=np.float64)
-    if offs.shape[0] != len(keys):
-        raise ValueError("filenames and offsets must have the same length")
+    level_arr = np.asarray(levels, dtype=np.float64)
+    if level_arr.shape[0] != len(keys):
+        raise ValueError("filenames and levels must have the same length")
 
-    if as_pipeline_level:
-        level = offs
-        epsilon = -offs
-    else:
-        epsilon = offs
-        level = -offs
-
-    table = Table(
-        {
-            "filename": keys,
-            "epsilon": np.asarray(epsilon, dtype=np.float64),
-            "level": np.asarray(level, dtype=np.float64),
-        }
-    )
+    table = Table({"filename": keys, "level": level_arr})
     table.write(outfile, format="parquet", overwrite=True)
-    log.info("Wrote skymatch offsets for %d exposures to %s", len(keys), outfile)
+    log.info("Wrote skymatch levels for %d exposures to %s", len(keys), outfile)
     return outfile
 
 
 def load_offset_table(path: str | Path) -> dict[str, float]:
     """
-    Load offsets parquet into ``{normalized_filename: pipeline level}``.
+    Load offsets parquet into ``{normalized_filename: level}``.
 
-    Accepts columns:
-
-    * ``level`` — used directly as ``meta.background.level``
-    * else ``epsilon`` / ``offset`` / ``offsets`` — converted with ``level = -epsilon``
-    * ``filename`` / ``file`` / ``files`` / ``name`` for keys
+    Requires columns ``filename`` and ``level``.
     """
-    path = Path(path)
-    table = Table.read(path, format="parquet")
-
-    name_col = next(
-        (c for c in ("filename", "file", "files", "name") if c in table.colnames),
-        None,
-    )
-    if name_col is None:
-        raise ValueError(f"{path} missing filename column")
-
-    if "level" in table.colnames:
-        levels = np.asarray(table["level"], dtype=np.float64)
-    else:
-        eps_col = next(
-            (c for c in ("epsilon", "offset", "offsets") if c in table.colnames),
-            None,
-        )
-        if eps_col is None:
-            raise ValueError(f"{path} missing level/epsilon/offset column")
-        levels = -np.asarray(table[eps_col], dtype=np.float64)
+    path_str = str(path)
+    table = Table.read(path_str, format="parquet")
+    if "filename" not in table.colnames:
+        raise ValueError(f"{path_str} missing filename column")
+    if "level" not in table.colnames:
+        raise ValueError(f"{path_str} missing level column")
 
     out: dict[str, float] = {}
-    for name, level in zip(table[name_col], levels, strict=True):
-        key = normalize_exposure_key(str(name))
-        out[key] = float(level)
+    for name, level in zip(table["filename"], table["level"], strict=True):
+        out[normalize_exposure_key(str(name))] = float(level)
     return out
 
 
 def lookup_offset(filename: str | Path, table: Mapping[str, float]) -> float:
     """Look up pipeline level for an exposure name; raise if missing."""
     key = normalize_exposure_key(filename)
-    if key in table:
-        return table[key]
-    raw = Path(str(filename)).stem
-    if raw in table:
-        return table[raw]
-    raise KeyError(
-        f"No skymatch offset for {filename!r} (key={key!r}); have {len(table)} entries"
-    )
+    if key not in table:
+        raise KeyError(
+            f"No skymatch offset for {filename!r} (key={key!r}); have {len(table)} entries"
+        )
+    return table[key]
 
 
-def resolve_offsets_path_from_asn(
-    asn: Mapping,
-    *,
-    asn_path: str | Path | None = None,
-) -> Path | None:
+def offsets_path_from_asn(asn: Mapping) -> str | None:
     """
-    Resolve ``skymatch_offsets_file`` from an ASN dict if present.
+    Return the top-level ``skymatch_offsets_file`` string from an ASN, if set.
 
-    Checks product-level then top-level. Relative paths are resolved against
-    the ASN file's directory when ``asn_path`` is given.
+    Path joining / URL handling is left to ``ModelLibrary._member_to_filename``
+    (same rules as association science members).
     """
-    candidates: list[str] = []
-    products = asn.get("products") or []
-    if products:
-        prod = products[0]
-        if isinstance(prod, Mapping) and prod.get(ASN_OFFSETS_KEY):
-            candidates.append(str(prod[ASN_OFFSETS_KEY]))
-    if asn.get(ASN_OFFSETS_KEY):
-        candidates.append(str(asn[ASN_OFFSETS_KEY]))
-    if not candidates:
+    raw = asn.get(ASN_OFFSETS_KEY)
+    if not raw:
         return None
-
-    path = Path(candidates[0])
-    if path.is_absolute():
-        return path
-    if asn_path is not None:
-        return (Path(asn_path).parent / path).resolve()
-    return path.resolve()
+    return str(raw)

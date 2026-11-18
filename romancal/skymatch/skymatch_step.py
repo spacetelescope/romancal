@@ -6,8 +6,8 @@ from __future__ import annotations
 
 import logging
 from copy import deepcopy
-from pathlib import Path
 from typing import TYPE_CHECKING
+from urllib.parse import urlparse
 
 import numpy as np
 from astropy.nddata.bitmask import bitfield_to_boolean_mask, interpret_bit_flags
@@ -18,7 +18,7 @@ from romancal.datamodels.fileio import open_dataset
 from romancal.skymatch.offset_io import (
     load_offset_table,
     lookup_offset,
-    resolve_offsets_path_from_asn,
+    offsets_path_from_asn,
 )
 from romancal.stpipe import RomanStep
 
@@ -39,12 +39,12 @@ class SkyMatchStep(RomanStep):
 
     spec = """
         # General sky matching parameters:
-        skymethod = option('local', 'global', 'match', 'global+match', default='match') # sky computation method
+        skymethod = option('local', 'global', 'match', 'global+match', 'offset_file', default='match') # sky computation method
         match_down = boolean(default=True) # adjust sky to lowest measured value?
         subtract = boolean(default=False) # subtract computed sky from image data?
 
-        # User / ASN offset table (parquet). When set, stcal skymatch is skipped.
-        offset_file = string(default='')  # parquet offsets table; overrides ASN field when set
+        # Precomputed levels parquet (used only when skymethod='offset_file'):
+        offset_file = string(default='')  # parquet levels table; overrides ASN field when set
 
         # Image's bounding polygon parameters:
         stepsize = integer(default=None) # Max vertex separation
@@ -67,13 +67,25 @@ class SkyMatchStep(RomanStep):
             dataset, update_version=self.update_version, as_library=True
         )
 
-        offsets_path = self._resolve_offset_file(library)
-        if offsets_path is not None:
+        if self.skymethod == "offset_file":
+            offsets_path = self._resolve_offset_file(library)
+            if not offsets_path:
+                raise ValueError(
+                    "skymethod='offset_file' requires offset_file or ASN "
+                    "skymatch_offsets_file"
+                )
             return self._process_from_offset_file(library, offsets_path)
+
+        if self.offset_file:
+            log.info(
+                "Ignoring offset_file=%r because skymethod=%r (use "
+                "skymethod='offset_file' to apply precomputed levels)",
+                self.offset_file,
+                self.skymethod,
+            )
 
         self._dqbits = interpret_bit_flags(self.dqbits, flag_name_map=pixel)
 
-        # set sky statistics:
         self._skystat = SkyStats(
             skystat=self.skystat,
             lower=self.lower,
@@ -84,14 +96,12 @@ class SkyMatchStep(RomanStep):
             binwidth=self.binwidth,
         )
 
-        # create a list of "Sky" Images and/or Groups:
         sky_images = []
         with library:
             for index, model in enumerate(library):
                 sky_images.append(self._imodel2skyim(model, index))
                 library.shelve(model, index, modify=False)
 
-            # match/compute sky values:
             skymatch(
                 sky_images,
                 skymethod=self.skymethod,
@@ -99,7 +109,6 @@ class SkyMatchStep(RomanStep):
                 subtract=self.subtract,
             )
 
-            # set sky background value in each image's meta:
             for sky_image in sky_images:
                 index = sky_image.meta["index"]
                 image = library.borrow(index)
@@ -114,50 +123,63 @@ class SkyMatchStep(RomanStep):
 
         return library
 
-    def _resolve_offset_file(self, library) -> Path | None:
-        """Return parquet offsets path from step param or ASN, if any."""
+    def _resolve_offset_file(self, library) -> str | None:
+        """Return offsets path from step param or top-level ASN field.
+
+        Uses ``ModelLibrary._member_to_filename`` so relative paths and URLs
+        follow the same rules as association science members.
+        """
         if self.offset_file:
-            path = Path(str(self.offset_file)).expanduser()
-            if not path.is_file():
-                raise FileNotFoundError(f"offset_file not found: {path}")
-            return path.resolve()
+            raw = str(self.offset_file).strip()
+        else:
+            asn = getattr(library, "asn", None)
+            if not asn:
+                return None
+            raw = offsets_path_from_asn(asn)
+            if not raw:
+                return None
 
-        asn = getattr(library, "asn", None)
-        if not asn:
-            return None
-        # AbstractModelLibrary stores the ASN directory for member path joins.
-        asn_dir = getattr(library, "_asn_dir", None)
-        asn_path = Path(asn_dir) / "asn.json" if asn_dir else None
-        path = resolve_offsets_path_from_asn(asn, asn_path=asn_path)
-        if path is None:
-            return None
-        if not path.is_file():
-            raise FileNotFoundError(f"ASN skymatch_offsets_file not found: {path}")
-        return path
+        return library._member_to_filename({"expname": raw})
 
-    def _process_from_offset_file(self, library, offsets_path: Path):
+    def _process_from_offset_file(self, library, offsets_path: str):
         """Apply pipeline levels from a parquet offsets table."""
-        log.info("Using skymatch offsets from %s", offsets_path)
-        table = load_offset_table(offsets_path)
-        method = "file"
+        # Path is already library-resolved in _resolve_offset_file.
+        path = str(offsets_path)
+        log.info("Using skymatch offsets from %s", path)
+
+        try:
+            table = load_offset_table(path)
+        except FileNotFoundError as err:
+            raise FileNotFoundError(f"offset_file not found: {path}") from err
+        except OSError as err:
+            if not urlparse(str(path)).scheme:
+                raise FileNotFoundError(f"offset_file not found: {path}") from err
+            raise
 
         with library:
             for index, model in enumerate(library):
+                background_meta = model.meta.get("background", {}) or {}
+                if background_meta.get("subtracted", False):
+                    raise ValueError(
+                        "skymethod='offset_file' cannot run when background was "
+                        f"already subtracted on {model.meta.filename!r}"
+                    )
+
                 filename = getattr(model.meta, "filename", None) or f"model_{index}"
                 try:
                     level = lookup_offset(filename, table)
                 except KeyError as err:
                     raise ValueError(
-                        f"No offset entry for library member {filename!r} "
-                        f"in {offsets_path}"
+                        f"No offset entry for library member {filename!r} in {path}"
                     ) from err
 
                 self._set_sky_background(
                     model,
                     level=float(level),
-                    method=method,
+                    method="offset_file",
                     complete=True,
                     data=None,
+                    offset_file=str(path),
                 )
                 if self.subtract:
                     model.data = np.asarray(model.data) - float(level)
@@ -175,8 +197,6 @@ class SkyMatchStep(RomanStep):
                 image_model.dq, self._dqbits, good_mask_value=True, dtype="bool"
             ) & np.isfinite(image_model.data)
 
-        # see if 'skymatch' was previously run and raise an exception
-        # if 'subtract' mode has changed compared to the previous pass:
         if background_meta.get("subtracted", False):
             if "level" not in background_meta:
                 raise ValueError(
@@ -208,13 +228,17 @@ class SkyMatchStep(RomanStep):
 
         return sky_im
 
-    def _set_sky_background(self, image, *, level, method, complete, data=None):
+    def _set_sky_background(
+        self, image, *, level, method, complete, data=None, offset_file=None
+    ):
         if "background" not in image.meta:
             image.meta["background"] = {}
 
         image.meta.background.method = str(method)
         image.meta.background.subtracted = self.subtract
         image.meta.background.level = float(level)
+        if offset_file is not None:
+            image.meta.background["offset_file"] = str(offset_file)
 
         if complete and self.subtract and data is not None:
             image.data[...] = data[...]

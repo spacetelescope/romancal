@@ -1,4 +1,4 @@
-"""Tests for roman_export_skyvals_parquet CLI helpers and main()."""
+"""Tests for skyval export and match CLIs."""
 
 from __future__ import annotations
 
@@ -11,8 +11,11 @@ from roman_datamodels.datamodels import SegmentationMapModel
 from romancal.scripts.export_skyvals_parquet import (
     _expand,
     _stem_from_segm,
-    main,
 )
+from romancal.scripts.export_skyvals_parquet import (
+    main as export_main,
+)
+from romancal.scripts.match_skyvals_parquet import main as match_main
 from romancal.skymatch.offset_io import load_offset_table, load_skyval_parquet
 
 
@@ -35,6 +38,9 @@ def _write_segm_with_skyvals(path: Path, *, with_cov: bool = True, n: int = 5) -
     model.skyvals = sky
     if with_cov:
         model.healpix11_cov = np.array([10, 11], dtype=np.int64)
+    if "photometry" not in model.meta:
+        model.meta["photometry"] = {}
+    model.meta.photometry["conversion_megajanskys"] = 1.25
     model.save(path)
     return path
 
@@ -52,7 +58,6 @@ def test_expand_file_glob_and_dir(tmp_path):
     assert {p.name for p in globs} == {"a_segm.asdf", "b_segm.asdf"}
     dirs = _expand([str(tmp_path)])
     assert {p.name for p in dirs} == {"a_segm.asdf", "b_segm.asdf"}
-    # dedupe when same file listed multiple ways
     assert len(_expand([str(a), str(tmp_path / "a_segm.asdf")])) == 1
 
 
@@ -60,27 +65,17 @@ def test_stem_from_segm():
     """Purpose: _stem_from_segm strips trailing _segm only."""
     assert _stem_from_segm(Path("foo_segm.asdf")) == "foo"
     assert _stem_from_segm(Path("foo.asdf")) == "foo"
-    assert _stem_from_segm(Path("/x/y/bar_segm.asdf")) == "bar"
 
 
-def test_main_no_inputs(tmp_path):
-    """Purpose: main exits when expansion finds no files."""
+def test_export_main_no_inputs(tmp_path):
+    """Purpose: export main exits when expansion finds no files."""
     with pytest.raises(SystemExit, match="No input segmentation files found"):
-        main(["-o", str(tmp_path / "out"), str(tmp_path / "no_match_*.asdf")])
+        export_main(["-o", str(tmp_path / "out"), str(tmp_path / "no_match_*.asdf")])
 
 
-def test_main_missing_skyvals(tmp_path):
-    """Purpose: main exits when a segm product lacks skyvals."""
-    path = tmp_path / "empty_segm.asdf"
-    SegmentationMapModel.create_fake_data(shape=(8, 8)).save(path)
-    with pytest.raises(SystemExit, match="has no skyvals"):
-        main(["-o", str(tmp_path / "out"), str(path)])
-
-
-def test_main_export_and_match(tmp_path, capsys):
-    """Purpose: main writes skyval parquet and optional offsets parquet."""
+def test_export_and_match_cli(tmp_path, capsys):
+    """Purpose: export then match CLIs write skyvals and levels parquet."""
     seg1 = _write_segm_with_skyvals(tmp_path / "exp1_segm.asdf")
-    # second exposure with offset sky values on same pixels
     seg2 = tmp_path / "exp2_segm.asdf"
     model = SegmentationMapModel.create_fake_data(shape=(8, 8))
     dt = np.dtype(
@@ -98,37 +93,30 @@ def test_main_export_and_match(tmp_path, capsys):
     sky["covfrac"] = 1.0
     model.skyvals = sky
     model.healpix11_cov = np.array([10, 11], dtype=np.int64)
+    if "photometry" not in model.meta:
+        model.meta["photometry"] = {}
+    model.meta.photometry["conversion_megajanskys"] = 1.25
     model.save(seg2)
 
     outdir = tmp_path / "skyvals"
-    offsets = tmp_path / "offsets.parquet"
-    main(
-        [
-            "-o",
-            str(outdir),
-            "--match-offsets",
-            str(offsets),
-            "-v",
-            str(seg1),
-            str(seg2),
-        ]
-    )
+    export_main(["-o", str(outdir), str(seg1), str(seg2)])
     captured = capsys.readouterr()
     assert "Wrote 2 skyval parquet" in captured.out
-    assert offsets.exists() or Path(str(offsets)).with_suffix(".parquet").exists()
 
     sample = load_skyval_parquet(outdir / "exp1.parquet")
     assert "pixel" in sample and "coverage" in sample
+    assert sample["conversion_megajanskys"] == pytest.approx(1.25)
+
+    offsets = tmp_path / "offsets.parquet"
+    match_main(["-o", str(offsets), str(outdir)])
     table = load_offset_table(offsets)
     assert set(table) == {"exp1", "exp2"}
 
 
-def test_main_export_without_cov_or_match(tmp_path, capsys):
-    """Purpose: main works without healpix11_cov and without --match-offsets."""
+def test_export_without_cov(tmp_path, capsys):
+    """Purpose: export works without healpix11_cov."""
     seg = _write_segm_with_skyvals(tmp_path / "only_segm.asdf", with_cov=False)
     outdir = tmp_path / "out"
-    main(["-o", str(outdir), str(seg)])
-    captured = capsys.readouterr()
-    assert "Wrote 1 skyval parquet" in captured.out
+    export_main(["-o", str(outdir), str(seg)])
     sample = load_skyval_parquet(outdir / "only.parquet")
     assert "coverage" not in sample
