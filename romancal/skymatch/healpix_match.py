@@ -15,15 +15,16 @@ import logging
 from collections.abc import Mapping, Sequence
 
 import numpy as np
-from astropy.stats import biweight_location
 from scipy.sparse import csc_array
 
 log = logging.getLogger(__name__)
 
 __all__ = ["match_healpix_skyvals"]
 
-# Weak prior: level ~ 0 +/- PRIOR_SIGMA_DN (before photom scaling).
-PRIOR_SIGMA_DN = 10.0
+# Weak diagonal prior on the epsilon system (A += PRIOR_DIAGONAL * I).
+# Matches wfiskymatch.pixmatch: anchors each connected component near eps=0
+# without a global biweight recenter (weight 0.01 <=> sigma ~ 10 in native units).
+PRIOR_DIAGONAL = 0.01
 
 
 def match_healpix_skyvals(
@@ -31,8 +32,7 @@ def match_healpix_skyvals(
     *,
     names: Sequence[str] | None = None,
     min_overlap_cells: int = 1,
-    recenter: bool = True,
-    prior_sigma_dn: float = PRIOR_SIGMA_DN,
+    prior_diagonal: float = PRIOR_DIAGONAL,
 ) -> tuple[np.ndarray, list[str]]:
     """
     Solve per-exposure sky levels from HEALPix skyval samples.
@@ -59,13 +59,11 @@ def match_healpix_skyvals(
         ``exp000``, ``exp001``, ...
     min_overlap_cells
         Minimum shared fine healpix cells required to form a pair constraint.
-    recenter
-        If True (default), subtract biweight location so levels are centered
-        (``wfiskymatch.pixmatch`` behavior).
-    prior_sigma_dn
-        Weak Gaussian prior width in DN/s toward zero level. After photom
-        scaling, exposure *i* gets diagonal weight
-        ``1/(prior_sigma_dn * conversion_i)**2``. Set ``<= 0`` to disable.
+    prior_diagonal
+        Value added to each diagonal element of the normal matrix before
+        solving. A small positive prior anchors disconnected components near
+        zero offset without a global recenter. Set ``<= 0`` to disable (then
+        the last exposure is fixed to epsilon = 0 when pairs exist).
 
     Returns
     -------
@@ -86,7 +84,6 @@ def match_healpix_skyvals(
     values = []
     unc2 = []
     coverage = []
-    prior_weight = np.zeros(nfiles, dtype=np.float64)
 
     for i, sample in enumerate(samples):
         pix = np.asarray(sample["pixel"], dtype=np.int64).reshape(-1)
@@ -105,9 +102,6 @@ def match_healpix_skyvals(
             )
         val = val * conv
         unc = unc * conv
-        if prior_sigma_dn and prior_sigma_dn > 0:
-            sigma = prior_sigma_dn * conv
-            prior_weight[i] = 1.0 / (sigma * sigma)
 
         order = np.argsort(pix, kind="mergesort")
         pix, val, unc = pix[order], val[order], unc[order]
@@ -169,7 +163,8 @@ def match_healpix_skyvals(
 
     log.info("healpix sky match: %d exposures, %d pairwise overlaps", nfiles, n_pairs)
 
-    if n_pairs == 0 and not np.any(prior_weight > 0):
+    use_prior = prior_diagonal is not None and prior_diagonal > 0
+    if n_pairs == 0 and not use_prior:
         log.warning(
             "No overlapping HEALPix skyval pairs; returning zero levels for all exposures"
         )
@@ -183,11 +178,14 @@ def match_healpix_skyvals(
 
     A_solve = A.toarray()
     B_solve = B.copy()
-    if np.any(prior_weight > 0):
-        A_solve = A_solve + np.diag(prior_weight)
-    else:
+    if use_prior:
+        A_solve = A_solve + prior_diagonal * np.eye(nfiles)
+    elif n_pairs > 0:
+        # Gauge fix when prior is disabled: pin last exposure to epsilon = 0.
         A_solve[-1, :] = 1.0
         B_solve[-1] = 0.0
+    else:
+        return np.zeros(nfiles, dtype=np.float64), list(names)
 
     try:
         epsilon = np.linalg.solve(A_solve, B_solve)
@@ -202,11 +200,6 @@ def match_healpix_skyvals(
             "healpix sky match failed: non-finite solution "
             f"(n_pairs={n_pairs}). Check overlaps and uncertainties."
         )
-
-    if recenter:
-        delta = -float(biweight_location(epsilon))
-        epsilon = epsilon + delta
-        log.debug("healpix sky match biweight recenter delta=%s", delta)
 
     levels = -epsilon
     return levels, list(names)

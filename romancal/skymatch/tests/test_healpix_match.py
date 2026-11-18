@@ -42,7 +42,7 @@ def test_normalize_exposure_key(name, expected):
 def test_match_healpix_two_exposures_constant_offset():
     """
     Purpose: two exposures with shared healpix cells and a constant sky delta
-    recover that delta as subtractive levels (up to overall recenter).
+    recover that delta as subtractive levels (diagonal prior anchors absolute scale).
     """
     pix = np.arange(100, 200, dtype=np.int64)
     unc = np.full(pix.shape, 0.01, dtype=np.float64)
@@ -61,26 +61,18 @@ def test_match_healpix_two_exposures_constant_offset():
     )
 
 
-def test_match_healpix_recenter_changes_solution():
-    """Purpose: recenter=True vs False can change absolute levels (3-exp case)."""
-    pix = np.arange(100, 200, dtype=np.int64)
-    unc = np.full(pix.shape, 0.01, dtype=np.float64)
-    # Asymmetric sky values so biweight center differs from sum(eps)=0 alone
-    # when prior is disabled.
+def test_match_healpix_diagonal_prior_anchors_disjoint():
+    """Purpose: diagonal prior keeps disjoint components near zero level."""
+    pix0 = np.arange(0, 50, dtype=np.int64)
+    pix1 = np.arange(100, 150, dtype=np.int64)
+    unc = np.full(50, 0.01, dtype=np.float64)
     samples = [
-        {"pixel": pix, "value": np.full(pix.shape, 1.0), "unc": unc},
-        {"pixel": pix, "value": np.full(pix.shape, 1.1), "unc": unc},
-        {"pixel": pix, "value": np.full(pix.shape, 3.0), "unc": unc},
+        {"pixel": pix0, "value": np.full(50, 5.0), "unc": unc},
+        {"pixel": pix1, "value": np.full(50, -3.0), "unc": unc},
     ]
-    lev_on, _ = match_healpix_skyvals(
-        samples, names=["a", "b", "c"], recenter=True, prior_sigma_dn=0.0
-    )
-    lev_off, _ = match_healpix_skyvals(
-        samples, names=["a", "b", "c"], recenter=False, prior_sigma_dn=0.0
-    )
-    assert not np.allclose(lev_on, lev_off, atol=1e-8)
-    # pairwise relative differences are gauge-invariant
-    assert (lev_on[1] - lev_on[0]) == pytest.approx(lev_off[1] - lev_off[0], abs=1e-6)
+    levels, _ = match_healpix_skyvals(samples, names=["a", "b"])
+    # No pair constraints; prior alone => levels ~ 0
+    assert np.allclose(levels, 0.0, atol=1e-6)
 
 
 def test_match_healpix_min_overlap_cells():
@@ -95,11 +87,11 @@ def test_match_healpix_min_overlap_cells():
     ]
     # threshold above overlap -> no pairs; prior pulls levels ~ 0
     lev_hi, _ = match_healpix_skyvals(
-        samples, names=["a", "b"], min_overlap_cells=101, recenter=False
+        samples, names=["a", "b"], min_overlap_cells=101
     )
     assert np.allclose(lev_hi, 0.0, atol=1e-6)
     lev_ok, _ = match_healpix_skyvals(
-        samples, names=["a", "b"], min_overlap_cells=100, recenter=False
+        samples, names=["a", "b"], min_overlap_cells=100
     )
     assert abs(lev_ok[1] - lev_ok[0]) == pytest.approx(0.25, abs=1e-4)
 
