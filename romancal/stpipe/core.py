@@ -6,7 +6,18 @@ import importlib.metadata
 import logging
 import time
 
-from roman_datamodels.datamodels import ImageModel, MosaicModel
+from roman_datamodels.datamodels import (
+    ForcedImageSourceCatalogModel,
+    ForcedMosaicSourceCatalogModel,
+    ImageModel,
+    ImageSourceCatalogModel,
+    MosaicModel,
+    MosaicSegmentationMapModel,
+    MosaicSourceCatalogModel,
+    MultibandSegmentationMapModel,
+    MultibandSourceCatalogModel,
+    SegmentationMapModel,
+)
 from stpipe import Pipeline, Step, crds_client
 
 from romancal.datamodels.fileio import open_dataset
@@ -14,6 +25,20 @@ from romancal.datamodels.library import ModelLibrary
 
 from ..lib.statistics import populate_statistics
 from ..lib.suffix import remove_suffix
+
+# Products that record the producing step/pipeline log stream on meta.cal_logs.
+_CAL_LOG_MODEL_TYPES = (
+    ImageModel,
+    MosaicModel,
+    ImageSourceCatalogModel,
+    MosaicSourceCatalogModel,
+    ForcedImageSourceCatalogModel,
+    ForcedMosaicSourceCatalogModel,
+    MultibandSourceCatalogModel,
+    SegmentationMapModel,
+    MosaicSegmentationMapModel,
+    MultibandSegmentationMapModel,
+)
 
 _LOG_FORMATTER = logging.Formatter(
     "%(asctime)s.%(msecs)03dZ :: %(name)s :: %(levelname)s :: %(message)s",
@@ -115,8 +140,12 @@ class RomanStep(Step):
 
         model.meta.calibration_software_version = importlib.metadata.version("romancal")
 
+        if isinstance(model, _CAL_LOG_MODEL_TYPES):
+            # Step/pipeline log stream for this product. Catalog and segmentation
+            # products get the same catalog-step records (not parent image logs).
+            model.meta.cal_logs = list(self.log_records)
+
         if isinstance(model, ImageModel | MosaicModel):
-            model.meta.cal_logs = self.log_records
             populate_statistics(model)
 
         if len(reference_files_used) > 0:

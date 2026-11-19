@@ -120,8 +120,6 @@ class MetaBlender:
 
         self._meta = self._model.meta
 
-        self._model["individual_image_cal_logs"] = []
-
         # for computing mean start time
         self._start_times = []
 
@@ -179,8 +177,9 @@ class MetaBlender:
 
         self._start_times.append(model.meta.exposure.start_time)
 
-        if cal_logs := model.meta.get("cal_logs"):
-            self._model["individual_image_cal_logs"].append(cal_logs)
+        # Do not copy input L2 cal_logs onto the mosaic. Mosaic meta.cal_logs is
+        # filled later from the mosaic/resample pipeline log stream, which already
+        # includes flux / skymatch / outlier / resample messages.
 
         self._meta.resample.members.append(model.meta.filename)
 

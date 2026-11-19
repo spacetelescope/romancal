@@ -523,6 +523,8 @@ class SourceCatalogStep(RomanStep):
                 cat_model_cls = datamodels.MosaicSourceCatalogModel
             segmentation_model_cls = datamodels.MosaicSegmentationMapModel
 
+        # make_catalog_model drops parent cal_logs; finalize_result attaches
+        # this step's log_records to both catalog and segmentation products.
         cat_model = make_catalog_model(model, cat_model_cls)
 
         # make L3 metadata
@@ -532,6 +534,8 @@ class SourceCatalogStep(RomanStep):
         segmentation_model = segmentation_model_cls.create_minimal(
             {"meta": cat_model.meta}
         )
+        if "cal_logs" in segmentation_model.meta:
+            del segmentation_model.meta["cal_logs"]
 
         return cat_model, segmentation_model
 
