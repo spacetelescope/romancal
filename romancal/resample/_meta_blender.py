@@ -176,11 +176,7 @@ class MetaBlender:
                     dst[key] = default
 
         self._start_times.append(model.meta.exposure.start_time)
-
-        # Do not copy input L2 cal_logs onto the mosaic. Mosaic meta.cal_logs is
-        # filled later from the mosaic/resample pipeline log stream, which already
-        # includes flux / skymatch / outlier / resample messages.
-
+        
         self._meta.resample.members.append(model.meta.filename)
 
         self._update_tables(model.meta)
