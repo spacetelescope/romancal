@@ -67,7 +67,7 @@ class ResampleStep(RomanStep):
         in_memory = boolean(default=True)
         good_bits = string(default='~DO_NOT_USE')  # The good bits to use for building the resampling mask.
         include_var_flat = boolean(default=False)  # include var_flat in output image
-        propagate_dq = boolean(default=False)  # propagate DQ during resampling
+        propagate_dq = string(default=None)  # DQ flag names to propagate during resampling, e.g. 'JUMP_DET | SATURATED'. If set, the output DQ is filtered to only these flags.
         pixmap_stepsize = integer(default=10)  # step size for computation of the pixel map
         pixmap_order = integer(1, 3, default=3)  # interpolating spline order (1 or 3) used when pixmap_stepsize > 1
     """

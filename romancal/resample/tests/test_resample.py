@@ -5,8 +5,9 @@ import asdf
 import numpy as np
 import pytest
 from astropy import units as u
+from astropy.nddata.bitmask import interpret_bit_flags
 from astropy.time import Time
-from roman_datamodels import datamodels
+from roman_datamodels import datamodels, dqflags
 from stcal.alignment.util import sregion_to_footprint
 from stcal.resample.utils import compute_mean_pixel_area
 
@@ -509,7 +510,7 @@ def test_custom_wcs_input_entire_field_no_rotation(multiple_exposures, tmp_path)
 
 
 @pytest.mark.parametrize("weight_type", ["ivm", "exptime", "ivm-sky"])
-@pytest.mark.parametrize("propagate_dq", [True, False])
+@pytest.mark.parametrize("propagate_dq", [None, "0", "~DO_NOT_USE"])
 def test_resampledata_do_drizzle_default_single_exposure_weight_array(
     exposure_1,
     weight_type,
@@ -524,8 +525,76 @@ def test_resampledata_do_drizzle_default_single_exposure_weight_array(
         weight_type=weight_type, propagate_dq=propagate_dq, good_bits=str(good_bits)
     ).run(input_models)
     assert np.any(output_model.weight > 0)
-    if propagate_dq:
+    if propagate_dq == "~DO_NOT_USE":
         assert np.bitwise_or.reduce(output_model.dq, axis=(0, 1)) == good_bits
+    else:
+        assert "dq" not in output_model
+
+
+@pytest.mark.parametrize("propagate_dq", [None, "JUMP_DET | SATURATED", "PERSISTENCE"])
+def test_resample_step_propagate_dq_bit_flag_names(wfi_sca1, propagate_dq):
+    """Test that a string of DQ flag names filters the output DQ to only those flags."""
+    wfi_sca1.dq[:] = 0
+    wfi_sca1.dq[10:20, 10:20] = dqflags.pixel.JUMP_DET
+    wfi_sca1.dq[30:40, 30:40] = dqflags.pixel.SATURATED
+    wfi_sca1.dq[50:60, 50:60] = dqflags.pixel.PERSISTENCE
+
+    input_models = ModelLibrary([wfi_sca1])
+    output_model = ResampleStep(propagate_dq=propagate_dq).run(input_models)
+
+    if propagate_dq is None:
+        # DQ propagation is disabled when no flag string is provided
+        assert "dq" not in output_model
+    else:
+        expected = interpret_bit_flags(propagate_dq, flag_name_map=dqflags.pixel)
+        # all requested flags survive resampling...
+        assert np.bitwise_or.reduce(output_model.dq, axis=None) == expected
+        # ...and no other flags are present
+        assert np.all(output_model.dq & ~np.uint32(expected) == 0)
+
+
+@pytest.mark.parametrize(
+    "propagate_dq, expected_bool, expected_bitmask",
+    [
+        (None, False, None),
+        (False, False, None),
+        (True, True, None),
+        (
+            "JUMP_DET | SATURATED",
+            True,
+            dqflags.pixel.JUMP_DET | dqflags.pixel.SATURATED,
+        ),
+        ("8", True, 8),
+    ],
+)
+def test_resampledata_propagate_dq_parent_receives_bool(
+    exposure_1, propagate_dq, expected_bool, expected_bitmask
+):
+    """Test that the stcal Resample base class always receives an appropriate boolean propagate_dq."""
+    input_models = ModelLibrary(exposure_1)
+
+    resamp = ResampleData(
+        input_models,
+        output_wcs=None,
+        pixfrac=1.0,
+        kernel="square",
+        fillval="INDEF",
+        weight_type="ivm",
+        good_bits="~DO_NOT_USE",
+        enable_ctx=False,
+        enable_var=False,
+        compute_err=None,
+        compute_exptime=False,
+        blend_meta=False,
+        resample_on_skycell=False,
+        propagate_dq=propagate_dq,
+    )
+
+    assert resamp.propagate_dq is expected_bool
+    if expected_bitmask is None:
+        assert resamp._propagate_dq_bitmask is None
+    else:
+        assert resamp._propagate_dq_bitmask == expected_bitmask
 
 
 def test_l3_wcsinfo(multiple_exposures):

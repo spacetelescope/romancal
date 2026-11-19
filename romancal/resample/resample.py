@@ -3,6 +3,7 @@ import math
 from collections.abc import Mapping
 
 import numpy as np
+from astropy.nddata.bitmask import interpret_bit_flags
 from roman_datamodels import datamodels, dqflags
 from stcal.alignment.util import compute_scale, wcs_from_sregions
 from stcal.resample import Resample
@@ -174,7 +175,7 @@ class ResampleData(Resample):
         resample_on_skycell,
         wcs_kwargs=None,
         variance_array_names=None,
-        propagate_dq=False,
+        propagate_dq=None,
         pixmap_stepsize=1,
         pixmap_order=1,
     ):
@@ -238,10 +239,13 @@ class ResampleData(Resample):
             `romancal.resample.make_output_wcs`
             for supported options.
 
-        propagate_dq : bool
+        propagate_dq : str, bool, None
             If `True`, propagate DQ during resampling. DQ flags are propagated
             by bitwise OR of all input DQ flags that contribute
-            to a given output pixel.
+            to a given output pixel. If a string of DQ flag names (e.g.
+            ``"JUMP_DET | SATURATED"``), the output DQ array is filtered to
+            keep only the listed flags. The base class
+            `stcal.resample.resample.Resample` always receives a boolean.
 
         pixmap_stepsize : float
             If ``pixmap_stepsize>1``, when computing pixel map used for
@@ -305,6 +309,20 @@ class ResampleData(Resample):
         if variance_array_names:
             self.variance_array_names = variance_array_names
 
+        # A string value is interpreted as DQ flag names used to filter the
+        # output DQ array; the parent class must receive a boolean.
+        self._propagate_dq_bitmask = None
+        if isinstance(propagate_dq, str):
+            bitmask = interpret_bit_flags(
+                propagate_dq, flag_name_map=self.dq_flag_name_map
+            )
+            if bitmask is not None:
+                # & 0xFFFFFFFF maps negative masks from inverted flag specs
+                # (e.g. "~DO_NOT_USE" -> -2) to their unsigned 32-bit
+                # equivalent so the value is valid as np.uint32.
+                self._propagate_dq_bitmask = np.uint32(bitmask & 0xFFFFFFFF)
+            propagate_dq = bitmask is not None and bitmask != 0
+
         super().__init__(
             output_wcs,
             n_input_models=len(input_models),
@@ -316,7 +334,7 @@ class ResampleData(Resample):
             enable_ctx=enable_ctx,
             enable_var=enable_var,
             compute_err=compute_err,
-            propagate_dq=propagate_dq,
+            propagate_dq=bool(propagate_dq),
             pixmap_stepsize=pixmap_stepsize,
             pixmap_order=pixmap_order,
         )
@@ -458,7 +476,10 @@ class ResampleData(Resample):
             output_model.context = self.output_model["con"].astype(np.uint32)
 
         if self.propagate_dq:
-            output_model.dq = self.output_model["dq"].astype(np.uint32)
+            output_dq = self.output_model["dq"]
+            if self._propagate_dq_bitmask is not None:
+                output_dq = output_dq & self._propagate_dq_bitmask
+            output_model.dq = output_dq.astype(np.uint32)
 
         for arr_name in ["err", *self.variance_array_names]:
             if arr_name in self.output_model:
