@@ -174,6 +174,10 @@ def make_catalog_model(model, cat_model_cls):
     """
     Create a catalog model with metadata copied from an image.
 
+    Parent-image ``cal_logs`` are not copied. The catalog step's
+    ``finalize_result`` writes the producing step log stream onto the
+    catalog (and matching segmentation) product.
+
     Parameters
     ----------
     model : `ImageModel` or `MosaicModel`
@@ -188,6 +192,8 @@ def make_catalog_model(model, cat_model_cls):
         The new catalog model.
     """
     cat_model = cat_model_cls.create_minimal({"meta": model.meta})
+    if "cal_logs" in cat_model.meta:
+        del cat_model.meta["cal_logs"]
     cat_model.meta["image"] = {
         "filename": model.meta.filename,
         "file_date": model.meta.file_date,

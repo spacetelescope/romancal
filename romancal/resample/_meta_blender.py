@@ -120,8 +120,6 @@ class MetaBlender:
 
         self._meta = self._model.meta
 
-        self._model["individual_image_cal_logs"] = []
-
         # for computing mean start time
         self._start_times = []
 
@@ -178,9 +176,6 @@ class MetaBlender:
                     dst[key] = default
 
         self._start_times.append(model.meta.exposure.start_time)
-
-        if cal_logs := model.meta.get("cal_logs"):
-            self._model["individual_image_cal_logs"].append(cal_logs)
 
         self._meta.resample.members.append(model.meta.filename)
 

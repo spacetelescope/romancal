@@ -1,0 +1,3 @@
+Drop unused ``individual_image_cal_logs`` from mosaics and record
+``meta.cal_logs`` on source-catalog and segmentation products (including
+multiband/forced) from the producing step log stream.

@@ -94,11 +94,17 @@ class MultibandCatalogStep(RomanStep):
 
         # Initialize the source catalog model
         cat_model = initialize_catalog_model(library, example_model)
+        # Parent mosaic logs stay on L3 images; this step's logs are attached in
+        # finalize_result for both catalog and segmentation products.
+        if "cal_logs" in cat_model.meta:
+            del cat_model.meta["cal_logs"]
 
         # Initialize the segmentation map model
         segmentation_model = rdm.MultibandSegmentationMapModel.create_minimal(
             {"meta": cat_model.meta}
         )
+        if "cal_logs" in segmentation_model.meta:
+            del segmentation_model.meta["cal_logs"]
         # carry over image_metas if it exists (since it's not required in the schemas)
         if image_metas := cat_model.meta.get("image_metas"):
             segmentation_model.meta.image_metas = image_metas
