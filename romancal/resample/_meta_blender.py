@@ -176,7 +176,7 @@ class MetaBlender:
                     dst[key] = default
 
         self._start_times.append(model.meta.exposure.start_time)
-        
+
         self._meta.resample.members.append(model.meta.filename)
 
         self._update_tables(model.meta)

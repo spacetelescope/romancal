@@ -43,7 +43,7 @@ def test_finalize_result_sets_catalog_and_segmentation_cal_logs():
     logger = logging.getLogger(logger_name)
 
     class CatalogLoggingStep(RomanStep):
-        def process(self, dataset):  # noqa: ARG002
+        def process(self, dataset):
             logger.info("CATALOG_STEP_MARKER")
             cat = rdm.ImageSourceCatalogModel.create_minimal()
             seg = rdm.SegmentationMapModel.create_minimal()
@@ -73,7 +73,7 @@ def test_finalize_result_sets_multiband_catalog_cal_logs():
     logger = logging.getLogger(logger_name)
 
     class MultibandLoggingStep(RomanStep):
-        def process(self, dataset):  # noqa: ARG002
+        def process(self, dataset):
             logger.info("MULTIBAND_STEP_MARKER")
             cat = rdm.MultibandSourceCatalogModel.create_minimal()
             seg = rdm.MultibandSegmentationMapModel.create_minimal()
