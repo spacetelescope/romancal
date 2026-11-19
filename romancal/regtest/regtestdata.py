@@ -7,6 +7,7 @@ from contextlib import chdir
 from pathlib import Path
 
 import asdf
+import requests
 
 from romancal.associations._load_asn import load_asn
 from romancal.regtest._differ import Diff, DiffSettings
@@ -20,10 +21,9 @@ RETRY_DELAY = int(os.environ.get("TEST_BIGDATA_RETRY_DELAY", 5))
 
 def _download(url, dest, timeout=TIMEOUT, chunk_size=CHUNK_SIZE):
     """Simple HTTP/HTTPS downloader."""
-    # Optional import: requests is not needed for local big data setup.
-    import requests
 
     dest = os.path.abspath(dest)
+    os.makedirs(os.path.dirname(dest), exist_ok=True)
 
     retries = RETRY_MAX
 
