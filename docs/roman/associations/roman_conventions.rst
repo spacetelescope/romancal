@@ -9,79 +9,175 @@ Roman Conventions
 Association Naming
 ==================
 
-.. note:: Much of this is notional at the moment and will be refined in the
-          upcoming meetings.
+Association files produced by ``romancal`` are JSON files whose names end in
+``_asn.json``. Two association generators live in the package and define the
+naming conventions below:
 
-When produced through the ground processing, all association files are
-named according to the following scheme::
+* :ref:`skycell_asn` — single-band, skycell-based Level 3 associations
+* :ref:`multiband_asn` — multi-filter associations per skycell
 
-  rPPPPP-TNNNN_YYYYMMDDtHHMMSS_ATYPE_MMM_asn.json
+Associations that group the 18 WFI detectors for exposure-level processing are
+produced by SDP and are not controlled by ``romancal``; their naming is outside
+the scope of this page.
+
+Skycell associations
+--------------------
+
+``skycell_asn`` builds one association per unique combination of program root,
+data release ID, product type, skycell, and filter. The association file name
+follows::
+
+  rPPPPP_<data_release_id>_<product_type>_<skycell>_<filter>_asn.json
 
 where:
 
   * ``r``: All Roman-related products begin with ``r``
-  * ``PPPPP``: 5 digit proposal number
-  * ``TNNNN``: Candidate Identifier. Can be one of the following:
+  * ``PPPPP``: 5-digit program number
+  * ``data_release_id``: Data release identifier (default ``p`` for prompt;
+    e.g. ``dr01`` for a numbered release). Override with
+    ``--data-release-id``.
+  * ``product_type``: Product granularity requested via ``--product-type``.
+    Values used in the file name are:
 
-    * ``oNNN``: Observation candidate specified by the letter ``o`` followed
-      by a 3 digit number.
-    * ``c1NNN``: Association candidate, specified by the letter 'c',
-      followed by a
-      number starting at 1001.
-    * ``a3NNN``: Discovered whole program associations, specified by the
-      letter 'a', followed by a number starting at 3001
-    * ``rNNNN``: Reserved for future use. If you see this in practice,
-      file an issue to have this document updated.
+    * ``visit`` → ``v`` followed by execution plan, pass, segment, observation,
+      and visit IDs (for example ``v01001001003001``)
+    * ``pass`` → ``p`` followed by execution plan and pass IDs
+    * ``full`` → ``full``
+    * ``daily`` → ``d`` followed by execution plan, pass, and segment IDs
+    * ``user`` → ``user``
 
-  * ``YYYYMMDDtHHMMSS``: This is generically referred to as the ``version_id``.
-    DMS specifies this as a  timestamp. Note:
-    When used outside the workflow, this field is user-specifiable.
-  * ``ATYPE``: The type of association. See
-    :ref:`asn-roman-association-types`
-  * ``MMM``: A counter for each type of association created.
+  * ``skycell``: Skycell name on the celestial sphere (for example
+    ``270p65x48y69``)
+  * ``filter``: Optical element in lower case (for example ``f158``, ``f146``)
+
+Example (visit-level, prompt release)::
+
+  r00991_p_v01001001003001_270p65x48y69_f158_asn.json
+
+Another visit-level example::
+
+  r01055_p_v02001001008001_249p38x31y66_f146_asn.json
+
+See :ref:`skycell_asn` for command-line usage and input file selection.
+
+Multiband associations
+----------------------
+
+``multiband_asn`` groups coadd products that share a skycell (and program /
+release / product-type prefix) across filters. Multiband association file names
+**omit the filter**, which distinguishes them from single-band skycell
+associations::
+
+  rPPPPP_<data_release_id>_<product_type>_<skycell>_asn.json
+
+Example inputs::
+
+  r00001_p_full_270p65x48y69_f184_coadd.asdf
+  r00001_p_full_270p65x48y69_f213_coadd.asdf
+
+produce::
+
+  r00001_p_full_270p65x48y69_asn.json
+
+See :ref:`multiband_asn` for further examples and the optional
+``psf_match_reference_filter`` association key.
 
 .. _asn-roman-association-types:
 
 Association Types
 =================
 
-Each association is intended to make a specific science
-product. The type of science product is indicated by the ``ATYPE`` field
-in the association file name (see :ref:`asn-roman-naming`), and in the ``asn_type`` meta
-keyword of the association itself.
+Each association carries an ``asn_type`` meta keyword that describes the kind of
+science product the association is intended to produce. Pipeline steps and
+tools use this value together with the association member list to decide how to
+process the set.
 
-The pipeline uses this type as the key to indicate which Level 2 or
-Level 3 pipeline module to use to process this association.
+Common values set by ``romancal`` tools include:
 
-The current association types are:
+  * ``image``: Set by :ref:`skycell_asn` for single-band mosaic / Level 3 image
+    associations.
+  * ``user_built``: Default for associations created with
+    :ref:`asn_from_list <asn-from-list>` when no type is supplied.
 
-  * ``guider``: Intended for :ref:`dq_init <dq_init_step>` processing
+Other ``asn_type`` values may appear in associations constructed outside
+``romancal`` (for example by SDP).
+
+.. _asn-roman-field-guide:
 
 Field Guide to File Names
 =========================
 
-The high-level distinctions between stage 2, stage 3, exposure-centric, and
-target-centric files can be determined by the following file patterns. These
-patterns are not intended to fully define all the specific types of files there
-are. However, these are the main classifications, from which the documentation
-for the individual calibrations steps and pipelines will describe any further
-details.
+The patterns below identify the main classes of Roman pipeline products.
+They are not a full catalog of every suffix; individual step and pipeline pages
+document additional product types. Exposure-level naming is also described in
+:ref:`file_naming_schemes`.
 
-The most general regex matches all files that have been produced by Stage 3 processing::
+Exposure-level (Level 1 / Level 2) products
+-------------------------------------------
 
-    .+[aocr][0-9]{3:4}.+
+Calibrated and uncalibrated detector products use ASDF and follow::
 
-The following regexes differentiate between exposure-centric and target-centric files.
+  rPPPPPCCAAASSSOOOVVV_eeee_wfiDD[_<filter>]_<prodType>.asdf
 
-- Files containing exposure-centric data
+where ``PPPPPCCAAASSSOOOVVV`` is the 19-digit visit identifier, ``eeee`` is the
+exposure number, ``wfiDD`` is the detector (``wfi01`` … ``wfi18``), the optional
+``filter`` token is the optical element in lower case (for example ``f146``),
+and ``prodType`` is the product suffix (for example ``uncal`` or ``cal``).
 
-  The following regex matches files names produced by either Stage 2 or 3
-  calibration and containing exposure-centric data::
+A compact regular expression for these names is::
 
-    r[0-9]{11}_[0-9]{5}_[0-9]{5}_.+\.fits
+  r[0-9]{19}_[0-9]{4}_wfi[0-9]{2}(?:_f[0-9]+)?_[A-Za-z0-9]+\.asdf
 
-- Files containing target-centric data
+Examples::
 
-  The following regex matches file names produced by Stage 3 calibration and containing target-centric data::
+  r0000101001001001001_0001_wfi01_uncal.asdf
+  r0105502001001008001_0069_wfi11_f146_cal.asdf
 
-    r[0-9]{5}-[aocr][0-9]{3:4}_.+
+Intermediate optional step suffixes are listed under
+:ref:`pipeline_step_suffix_definitions`.
+
+Association files
+-----------------
+
+Association JSON files produced by ``romancal`` end in ``_asn.json`` and match
+one of:
+
+* Skycell (single-band)::
+
+    r[0-9]{5}_.+_.+_.+_f[0-9]+_asn\.json
+
+* Multiband (no filter token)::
+
+    r[0-9]{5}_.+_.+_.+_asn\.json
+
+  where the final underscore-delimited field before ``_asn.json`` is a skycell
+  id rather than a filter.
+
+Examples::
+
+  r00991_p_v01001001003001_270p65x48y69_f158_asn.json
+  r00001_p_full_270p65x48y69_asn.json
+
+Level 3 / mosaic coadd products
+-------------------------------
+
+Resampled skycell products from high-level processing typically look like::
+
+  rPPPPP_<data_release_id>_<product_type>_<skycell>_<filter>_coadd.asdf
+
+Example::
+
+  r00001_p_full_270p65x48y69_f184_coadd.asdf
+
+A compact regular expression is::
+
+  r[0-9]{5}_.+_.+_.+_f[0-9]+_coadd\.asdf
+
+Related documentation
+=====================
+
+* :ref:`file_naming_schemes` — exposure file name fields
+* :ref:`pipeline_step_suffix_definitions` — calibration step output suffixes
+* :ref:`skycell_asn` — creating skycell associations
+* :ref:`multiband_asn` — creating multiband associations
+* :ref:`association-commands` — association command reference
