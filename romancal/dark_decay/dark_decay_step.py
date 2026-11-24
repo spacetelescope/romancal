@@ -9,6 +9,7 @@ from roman_datamodels import datamodels as rdd
 from romancal.dark_decay.dark_decay import subtract_dark_decay
 from romancal.datamodels.fileio import open_dataset
 from romancal.stpipe import RomanStep
+from romancal.stpipe.utilities import record_step_status
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -60,6 +61,6 @@ class DarkDecayStep(RomanStep):
             read_pattern,
             sca,
         )
-        input_model.meta.cal_step.dark_decay = "COMPLETE"
+        record_step_status(input_model, "dark_decay", status="COMPLETE")
 
         return input_model

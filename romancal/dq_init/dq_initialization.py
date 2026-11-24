@@ -8,6 +8,7 @@ from roman_datamodels.datamodels import FpsModel, RampModel, ScienceRawModel, Tv
 from roman_datamodels.dqflags import pixel
 
 from romancal.lib.dqutils import update_dq
+from romancal.stpipe.utilities import record_step_status
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -168,11 +169,11 @@ def do_dqinit(model, mask, expand_gw_flagging=0):
 
     if mask is not None and output_model.pixeldq.shape == mask.dq.shape:
         update_dq(output_model, mask)
-        output_model.meta.cal_step.dq_init = "COMPLETE"
+        record_step_status(output_model, "dq_init", status="COMPLETE")
     else:
         log.warning("Mask data array is None or not the same shape as the science data")
         log.warning("Mask is not updated and step is marked skipped")
-        output_model.meta.cal_step.dq_init = "SKIPPED"
+        record_step_status(output_model, "dq_init", status="SKIPPED")
 
     output_model.border_ref_pix_right = output_model.data[:, :, -4:].copy()
     output_model.border_ref_pix_left = output_model.data[:, :, :4].copy()

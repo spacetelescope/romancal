@@ -15,6 +15,7 @@ from stcal.linearity.linearity import linearity_correction
 from romancal.datamodels.fileio import open_dataset
 from romancal.lib.dqutils import update_dq
 from romancal.stpipe import RomanStep
+from romancal.stpipe.utilities import record_step_status
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -96,7 +97,7 @@ class LinearityStep(RomanStep):
         if self.lin_name == "N/A" or self.ilin_name == "N/A":
             log.warning("No LINEARITY or INVERSELINEARITY reference file found")
             log.warning("Linearity step will be skipped")
-            input_model.meta.cal_step["linearity"] = "SKIPPED"
+            record_step_status(input_model, "linearity", status="SKIPPED")
             return input_model
 
         # INL correction is optional
@@ -160,7 +161,7 @@ class LinearityStep(RomanStep):
         log.warning(f"Flagged {nbad} spurious values outside remotely plausible range.")
 
         # Update the step status
-        input_model.meta.cal_step["linearity"] = "COMPLETE"
+        record_step_status(input_model, "linearity", status="COMPLETE")
 
         if self.save_results:
             try:

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from romancal.datamodels.fileio import open_dataset
 from romancal.stpipe import RomanStep
+from romancal.stpipe.utilities import record_step_status
 from romancal.wfi18_transient.wfi18_transient import correct_anomaly
 
 if TYPE_CHECKING:
@@ -41,11 +42,11 @@ class WFI18TransientStep(RomanStep):
 
         # Ignore any data that is not WFI18
         if input_model.meta.instrument.detector != "WFI18":
-            input_model.meta.cal_step.wfi18_transient = "N/A"
+            record_step_status(input_model, "wfi18_transient", status="N/A")
             return input_model
 
         log.info("Correcting the first read transient anomaly for WFI18")
         correct_anomaly(input_model, mask_rows=self.mask_rows)
-        input_model.meta.cal_step.wfi18_transient = "COMPLETE"
+        record_step_status(input_model, "wfi18_transient", status="COMPLETE")
 
         return input_model

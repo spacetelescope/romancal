@@ -9,6 +9,7 @@ import roman_datamodels as rdm
 from romancal.datamodels.fileio import open_dataset
 from romancal.photom import photom
 from romancal.stpipe import RomanStep
+from romancal.stpipe.utilities import record_step_status
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -55,14 +56,14 @@ class PhotomStep(RomanStep):
 
             # Do the correction
             photom.apply_photom(input_model, photom_model)
-            input_model.meta.cal_step.photom = "COMPLETE"
+            record_step_status(input_model, "photom", status="COMPLETE")
             photom_model.close()
 
         else:
             # Skip Photom step if no photom file
             log.warning("No PHOTOM reference file found")
             log.warning("Photom step will be skipped")
-            input_model.meta.cal_step.photom = "SKIPPED"
+            record_step_status(input_model, "photom", status="SKIPPED")
 
         if self.save_results:
             try:

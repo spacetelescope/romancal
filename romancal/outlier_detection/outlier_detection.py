@@ -14,6 +14,7 @@ from stcal.outlier_detection.utils import (
 from stcal.resample.utils import build_driz_weight
 
 from romancal.resample.resample import ResampleData
+from romancal.stpipe.utilities import record_step_status
 
 from . import _fileio
 
@@ -324,7 +325,7 @@ def detect_outliers(
                 _flag_model_crs(image, median_data, snr1)
 
             # mark step as complete
-            image.meta.cal_step["outlier_detection"] = "COMPLETE"
+            record_step_status(image, "outlier_detection", status="COMPLETE")
 
             library.shelve(image, modify=True)
 

@@ -19,6 +19,7 @@ from stcal.ramp_fitting.ols_cas22 import Parameter, Variance
 from romancal.datamodels.fileio import open_dataset
 from romancal.lib.dqutils import update_dq
 from romancal.stpipe import RomanStep
+from romancal.stpipe.utilities import query_step_status, record_step_status
 
 SQRT2 = np.sqrt(2)
 
@@ -114,7 +115,7 @@ class RampFitStep(RomanStep):
         else:
             log.error("Algorithm %s is not supported. Skipping step.")
             out_model = input_model
-            out_model.meta.cal_step.ramp_fit = "SKIPPED"
+            record_step_status(out_model, "ramp_fit", status="SKIPPED")
 
         return out_model
 
@@ -214,7 +215,7 @@ def ols_cas22(
     image_model = _create_image_model(
         input_model, image_info, include_var_rnoise=include_var_rnoise
     )
-    image_model.meta.cal_step.ramp_fit = "COMPLETE"
+    record_step_status(image_model, "ramp_fit", status="COMPLETE")
 
     # That's all folks
     return image_model
@@ -316,7 +317,7 @@ def likely(
     if record_jumps:
         out_model["jump_indices"] = _jump_indices(input_model.groupdq[0])
 
-    out_model.meta.cal_step.ramp_fit = "COMPLETE"
+    record_step_status(out_model, "ramp_fit", status="COMPLETE")
 
     return out_model
 
@@ -466,9 +467,8 @@ def _create_image_model(input_model, image_info, include_var_rnoise=False):
     for step_name in im.schema_info("required")["roman"]["meta"]["cal_step"][
         "required"
     ].info:
-        im.meta.cal_step[step_name] = input_model.meta.cal_step.get(
-            step_name, "INCOMPLETE"
-        )
+        # query_step_status tolerates missing meta.cal_step on older inputs
+        im.meta.cal_step[step_name] = query_step_status(input_model, step_name)
     im.meta.cal_logs = []
     im.meta.photometry = {
         "conversion_megajanskys": -999999,

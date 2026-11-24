@@ -141,7 +141,7 @@ class RomanStep(Step):
                         f"Results used CRDS context: {model.meta.ref_file.crds.context}"
                     )
 
-    def record_step_status(self, model, step_name, success=True):
+    def record_step_status(self, model, step_name, success=True, status=None):
         """
         Record step completion status in the model's metadata.
 
@@ -152,13 +152,25 @@ class RomanStep(Step):
         step_name : str
             Calibration step name.
         success : bool
-            If True, then the step was run successfully.
+            If ``status`` is not given, records ``"COMPLETE"`` when True.
+            When False, ``status`` must be provided explicitly (for example
+            ``"SKIPPED"``, ``"FAILED"``, or ``"N/A"``) to match Roman
+            ``cal_step_flag`` conventions.
+        status : str, optional
+            Explicit Roman status: ``"INCOMPLETE"``, ``"COMPLETE"``,
+            ``"SKIPPED"``, ``"FAILED"``, or ``"N/A"``. Overrides ``success``
+            when provided.
         """
-        # JWST sets model.meta.cal_step.<step name> here.  Roman
-        # may do the same, depending on how the metadata format
-        # turns out.  Seems like we might be able to combine this
-        # with finalize_result somehow.
-        pass
+        from romancal.stpipe.utilities import record_step_status
+
+        if status is None:
+            if not success:
+                raise ValueError(
+                    "status must be set explicitly when success is False "
+                    "(use SKIPPED, FAILED, or N/A per Roman conventions)"
+                )
+            status = "COMPLETE"
+        record_step_status(model, step_name, status=status)
 
     def remove_suffix(self, name):
         """

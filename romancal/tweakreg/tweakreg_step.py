@@ -21,6 +21,7 @@ from tweakwcs import RomanWCSCorrector
 from romancal.assign_wcs.assign_wcs import add_s_region
 from romancal.datamodels.fileio import open_dataset
 from romancal.lib.save_wcs import save_wfiwcs
+from romancal.stpipe.utilities import record_step_status
 
 # LOCAL
 from ..datamodels import ModelLibrary
@@ -118,7 +119,7 @@ class TweakRegStep(RomanStep):
                         f"Skipping TweakReg for {image_model.meta.filename}: "
                         "no source catalog available."
                     )
-                    image_model.meta.cal_step.tweakreg = "SKIPPED"
+                    record_step_status(image_model, "tweakreg", status="SKIPPED")
                 else:
                     # set_telescope_pointing sets vparity = -1 from the SIAF
                     # for all WFI apertures; +1 means it never ran or failed.
@@ -239,7 +240,7 @@ class TweakRegStep(RomanStep):
 
                     # retrieve fit status and update wcs if fit is successful:
                     if fit_succeeded:
-                        image_model.meta.cal_step.tweakreg = "COMPLETE"
+                        record_step_status(image_model, "tweakreg", status="COMPLETE")
                         # Update/create the WCS .name attribute with information
                         # on this astrometric fit as the only record that it was
                         # successful:
@@ -272,7 +273,7 @@ class TweakRegStep(RomanStep):
                                 )
                                 raise e
                     else:
-                        image_model.meta.cal_step.tweakreg = "FAILED"
+                        record_step_status(image_model, "tweakreg", status="FAILED")
 
                     images.shelve(image_model, imcat.meta["model_index"])
 

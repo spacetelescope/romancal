@@ -8,6 +8,7 @@ import asdf
 from roman_datamodels import datamodels
 
 from romancal.datamodels.fileio import open_dataset
+from romancal.stpipe.utilities import record_step_status
 
 from ..datamodels import ModelLibrary
 from ..stpipe import RomanStep
@@ -169,7 +170,7 @@ class ResampleStep(RomanStep):
         return result
 
     def _final_updates(self, model):
-        model.meta.cal_step["resample"] = "COMPLETE"
+        record_step_status(model, "resample", status="COMPLETE")
 
     @staticmethod
     def _load_custom_wcs(asdf_wcs_file, output_shape):

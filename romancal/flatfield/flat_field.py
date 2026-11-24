@@ -8,6 +8,7 @@ import numpy as np
 from roman_datamodels.dqflags import pixel
 
 from romancal.lib.dqutils import update_dq
+from romancal.stpipe.utilities import record_step_status
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -31,14 +32,14 @@ def do_flat_field(output_model, flat_model, include_var_flat=False):
         # Check to see if flat data array is smaller than science data
         log.warning("Flat data array is not the same shape as the science data")
         log.warning("Step will be skipped")
-        output_model.meta.cal_step.flat_field = "SKIPPED"
+        record_step_status(output_model, "flat_field", status="SKIPPED")
     elif flat_model is None:
         # Check to see if attempt to flatten non-Image data
         log.info("Skipping flat field - no flat reference file.")
-        output_model.meta.cal_step.flat_field = "SKIPPED"
+        record_step_status(output_model, "flat_field", status="SKIPPED")
     else:
         _apply_flat_field(output_model, flat_model, include_var_flat=include_var_flat)
-        output_model.meta.cal_step.flat_field = "COMPLETE"
+        record_step_status(output_model, "flat_field", status="COMPLETE")
 
 
 def _apply_flat_field(science, flat, include_var_flat=False):

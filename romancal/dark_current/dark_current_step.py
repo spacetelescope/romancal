@@ -8,6 +8,7 @@ from roman_datamodels import datamodels as rdm
 from romancal.datamodels.fileio import open_dataset
 from romancal.lib.dqutils import update_dq
 from romancal.stpipe import RomanStep
+from romancal.stpipe.utilities import record_step_status
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -35,7 +36,7 @@ class DarkCurrentStep(RomanStep):
         if self.dark_name == "N/A":
             log.warning("No DARK reference file found")
             log.warning("Dark current step will be skipped")
-            input_model.meta.cal_step.dark = "SKIPPED"
+            record_step_status(input_model, "dark", status="SKIPPED")
             return input_model
 
         log.info("Using DARK reference file: %s", self.dark_name)
@@ -71,4 +72,4 @@ def subtract_dark_current(input_model, dark_model):
     # Do the dark correction
     input_model.data -= dark_slope
     update_dq(input_model, dark_model)
-    input_model.meta.cal_step.dark = "COMPLETE"
+    record_step_status(input_model, "dark", status="COMPLETE")

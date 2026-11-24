@@ -7,6 +7,7 @@ from roman_datamodels.dqflags import pixel
 from stcal.saturation.saturation import flag_saturated_pixels
 
 from romancal.lib.dqutils import update_dq
+from romancal.stpipe.utilities import record_step_status
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -89,6 +90,6 @@ def flag_saturation(input_model, ref_model, n_pix_grow_sat=0, backup=0):
                     input_model.groupdq[i + 1, :, :] & pixel.SATURATED
                 )
 
-    input_model.meta.cal_step.saturation = "COMPLETE"
+    record_step_status(input_model, "saturation", status="COMPLETE")
 
     return input_model
