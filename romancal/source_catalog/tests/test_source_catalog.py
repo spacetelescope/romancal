@@ -775,9 +775,7 @@ def test_nested_metadata_propagated_to_catalog_and_segmentation(
         ("mosaic_model", MosaicSegmentationMapModel),
     ),
 )
-def test_segmentation_includes_wcs(
-    model_fixture, segm_cls, request, function_jail
-):
+def test_segmentation_includes_wcs(model_fixture, segm_cls, request, function_jail):
     """
     Purpose: L2 and L3 segmentation products include meta.wcs from the input
     image so world coordinates can be read without reconstructing from wcsinfo.
