@@ -26,6 +26,7 @@ def _download(url, dest, timeout=TIMEOUT, chunk_size=CHUNK_SIZE):
     os.makedirs(os.path.dirname(dest), exist_ok=True)
 
     retries = RETRY_MAX
+    retry_delay = RETRY_DELAY
 
     while retries:
         try:
@@ -40,7 +41,9 @@ def _download(url, dest, timeout=TIMEOUT, chunk_size=CHUNK_SIZE):
             if not retries:
                 raise
             print(f"download: {url} failed({err}), trying again...", file=sys.stderr)
-            time.sleep(RETRY_DELAY)
+            time.sleep(retry_delay)
+            # extend retry delay for each retry
+            retry_delay += RETRY_DELAY
 
 
 class RegtestData:
