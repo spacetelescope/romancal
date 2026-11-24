@@ -556,8 +556,18 @@ class SourceCatalogStep(RomanStep):
         segmentation_model = segmentation_model_cls.create_minimal(
             {"meta": cat_model.meta}
         )
+        # create_minimal keeps only schema-defined meta keys, so copy the
+        # input WCS explicitly for segmentation products (L2 and L3).
+        self._copy_wcs_to_segmentation(model, segmentation_model)
 
         return cat_model, segmentation_model
+
+    @staticmethod
+    def _copy_wcs_to_segmentation(model, segmentation_model):
+        """Attach ``model.meta.wcs`` to a segmentation product when present."""
+        wcs = getattr(model.meta, "wcs", None)
+        if wcs is not None:
+            segmentation_model.meta["wcs"] = wcs
 
     def _attach_skyvals_if_enabled(self, input_model, segmentation_model, mask):
         if not (
