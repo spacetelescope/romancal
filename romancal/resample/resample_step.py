@@ -12,6 +12,7 @@ from romancal.datamodels.fileio import open_dataset
 from ..datamodels import ModelLibrary
 from ..stpipe import RomanStep
 from .resample import ResampleData
+from romancal.stpipe.utilities import record_step_status
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -169,7 +170,7 @@ class ResampleStep(RomanStep):
         return result
 
     def _final_updates(self, model):
-        model.meta.cal_step["resample"] = "COMPLETE"
+        record_step_status(model, "resample", status="COMPLETE")
 
     @staticmethod
     def _load_custom_wcs(asdf_wcs_file, output_shape):

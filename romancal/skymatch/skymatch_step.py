@@ -15,6 +15,7 @@ from stcal.skymatch import SkyImage, SkyStats, skymatch
 
 from romancal.datamodels.fileio import open_dataset
 from romancal.stpipe import RomanStep
+from romancal.stpipe.utilities import record_step_status
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -159,6 +160,6 @@ class SkyMatchStep(RomanStep):
         if sky_image.is_sky_valid and self.subtract:
             image.data[...] = sky_image.image[...]
 
-        image.meta.cal_step.skymatch = (
+        record_step_status(image, "skymatch", status=(
             "COMPLETE" if sky_image.is_sky_valid else "SKIPPED"
-        )
+        ))

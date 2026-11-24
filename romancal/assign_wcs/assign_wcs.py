@@ -14,6 +14,7 @@ from gwcs.geometry import CartesianToSpherical, SphericalToCartesian
 from gwcs.wcs import WCS, Step
 from roman_datamodels import datamodels as rdm
 from stcal.alignment.util import compute_s_region_keyword, wcs_bbox_from_shape
+from romancal.stpipe.utilities import record_step_status
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -94,7 +95,7 @@ def load_wcs(input_model, reference_files=None):
     # update S_REGION
     add_s_region(output_model)
 
-    output_model.meta.cal_step["assign_wcs"] = "COMPLETE"
+    record_step_status(output_model, "assign_wcs", status="COMPLETE")
 
     return output_model
 

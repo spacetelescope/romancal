@@ -8,6 +8,7 @@ import roman_datamodels as rdm
 from romancal.datamodels.fileio import open_dataset
 from romancal.refpix import refpix
 from romancal.stpipe import RomanStep
+from romancal.stpipe.utilities import record_step_status
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -59,7 +60,7 @@ class RefPixStep(RomanStep):
         if ref_file == "N/A":
             log.warning("No REFPIX reference file found")
             log.warning("Reference pixel correction step will be skipped")
-            datamodel.meta.cal_step.refpix = "SKIPPED"
+            record_step_status(datamodel, "refpix", status="SKIPPED")
             return datamodel
 
         log.debug(f"Opening the reference file: {ref_file}")
@@ -79,7 +80,7 @@ class RefPixStep(RomanStep):
                 smooth_sigma=self.smooth_sigma,
             )
             # Update the step status
-            datamodel.meta.cal_step["refpix"] = "COMPLETE"
+            record_step_status(datamodel, "refpix", status="COMPLETE")
             if self.save_results:
                 try:
                     self.suffix = "refpix"

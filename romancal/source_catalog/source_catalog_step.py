@@ -31,6 +31,7 @@ from romancal.source_catalog._utils import copy_model_arrays, get_ee_spline
 from romancal.source_catalog._wcs_utils import pixel_area_from_wcs
 from romancal.source_catalog.psf import add_jitter
 from romancal.stpipe import RomanStep
+from romancal.stpipe.utilities import record_step_status
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -269,7 +270,7 @@ class SourceCatalogStep(RomanStep):
         # Match the non-empty path: only ImageModel records this cal_step.
         if isinstance(input_model, datamodels.ImageModel):
             self.finalize_result(input_model, self._reference_files_used)
-            input_model.meta.cal_step.source_catalog = "COMPLETE"
+            record_step_status(input_model, "source_catalog", status="COMPLETE")
         return cat_model, segmentation_model
 
     def _load_forced_segmentation(self, mask):
@@ -523,7 +524,7 @@ class SourceCatalogStep(RomanStep):
             # and was not previously recorded
             if isinstance(input_model, datamodels.ImageModel):
                 self.finalize_result(input_model, self._reference_files_used)
-                input_model.meta.cal_step.source_catalog = "COMPLETE"
+                record_step_status(input_model, "source_catalog", status="COMPLETE")
             return cat_model, segmentation_model
 
     def _make_catalog_and_segmentation_models(self, model):

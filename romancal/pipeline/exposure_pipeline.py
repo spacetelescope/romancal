@@ -27,6 +27,7 @@ from romancal.tweakreg import TweakRegStep
 from romancal.wfi18_transient import WFI18TransientStep
 
 from ..stpipe import RomanPipeline
+from romancal.stpipe.utilities import query_step_status, record_step_status
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -112,7 +113,7 @@ class ExposurePipeline(RomanPipeline):
                 # now handle source_catalog
                 if not run_source_catalog or self.source_catalog.skip:
                     # WFI_WFSC doesn't get a source catalog (and therefore also no tweakreg)
-                    result.meta.cal_step.source_catalog = "SKIPPED"
+                    record_step_status(result, "source_catalog", status="SKIPPED")
                     catalog, segmentation = None, None
                 else:
                     # WFI_IMAGE and WFI_LOLO get source catalog
@@ -134,7 +135,7 @@ class ExposurePipeline(RomanPipeline):
         # tweakreg was run, update catalog positions
         with lib:
             for model_index, model in enumerate(lib):
-                if model.meta.cal_step.tweakreg == "COMPLETE":
+                if query_step_status(model, "tweakreg") == "COMPLETE":
                     catalog = catalogs[model_index]
                     if catalog is not None:
                         self.tweakreg._update_catalog_coordinates(
@@ -198,8 +199,8 @@ class ExposurePipeline(RomanPipeline):
 
         # WFI_FLAT, WFI_SPECTRAL, WFI_IM_DARK, WFI_SP_DARK stop here
         if result.meta.exposure.type not in ("WFI_IMAGE", "WFI_LOLO", "WFI_WFSC"):
-            result.meta.cal_step.flat_field = "SKIPPED"
-            result.meta.cal_step.source_catalog = "SKIPPED"
+            record_step_status(result, "flat_field", status="SKIPPED")
+            record_step_status(result, "source_catalog", status="SKIPPED")
             return result, False
 
         return self.flatfield.run(result), result.meta.exposure.type in (
@@ -272,7 +273,7 @@ class ExposurePipeline(RomanPipeline):
             "photom",
             "source_catalog",
         ]:
-            fully_saturated_model.meta.cal_step[step_str] = "SKIPPED"
+            record_step_status(fully_saturated_model, step_str, status="SKIPPED")
 
         # Return zeroed-out image file
         return fully_saturated_model

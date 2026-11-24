@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from romancal.datamodels.fileio import open_dataset
 
 from ..stpipe import RomanStep
+from romancal.stpipe.utilities import query_step_status, record_step_status
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -60,7 +61,7 @@ class FluxStep(RomanStep):
         with input_models:
             for index, model in enumerate(input_models):
                 apply_flux_correction(model)
-                model.meta.cal_step.flux = "COMPLETE"
+                record_step_status(model, "flux", status="COMPLETE")
                 input_models.shelve(model, index)
 
         if return_lib:
@@ -96,7 +97,7 @@ def apply_flux_correction(model):
         if hasattr(model, field):
             variances.append(field)
 
-    if model.meta.cal_step["flux"] == "COMPLETE":
+    if query_step_status(model, "flux") == "COMPLETE":
         message = (
             "Input data is already in flux units of MJy/sr."
             "\nFlux correction already applied."

@@ -1,0 +1,1 @@
+Add ``record_step_status`` / ``query_step_status`` helpers using Roman ``cal_step_flag`` values so steps no longer assume ``meta.cal_step`` already exists.

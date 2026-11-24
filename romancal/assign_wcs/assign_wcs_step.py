@@ -12,6 +12,7 @@ from romancal.datamodels.fileio import open_dataset
 
 from ..stpipe import RomanStep
 from .assign_wcs import load_wcs
+from romancal.stpipe.utilities import record_step_status
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -42,7 +43,7 @@ class AssignWcsStep(RomanStep):
                 log.warning("No DISTORTION reference file found")
                 log.warning("Assign WCS step will be skipped")
                 result = input_model.copy()
-                result.meta.cal_step.assign_wcs = "SKIPPED"
+                record_step_status(result, "assign_wcs", status="SKIPPED")
                 return result
 
             reference_file_names[reftype] = reffile if reffile else ""

@@ -9,6 +9,7 @@ from roman_datamodels.datamodels import SaturationRefModel
 from romancal.datamodels.fileio import open_dataset
 from romancal.saturation import saturation
 from romancal.stpipe import RomanStep
+from romancal.stpipe.utilities import record_step_status
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -42,7 +43,7 @@ class SaturationStep(RomanStep):
         if self.ref_name == "N/A":
             log.warning("No SATURATION reference file found")
             log.warning("Saturation step will be skipped")
-            input_model.meta.cal_step.saturation = "SKIPPED"
+            record_step_status(input_model, "saturation", status="SKIPPED")
             return input_model
 
         # Open the reference file data model
