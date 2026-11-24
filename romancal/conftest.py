@@ -20,6 +20,7 @@ from gwcs import wcs
 from roman_datamodels import datamodels as rdm
 from stpipe.crds_client import get_context_used
 
+from romancal._pytest.resource_tracker import ResourceTracker
 from romancal.assign_wcs.assign_wcs import add_s_region, v23tosky
 
 if TYPE_CHECKING:
@@ -27,14 +28,6 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 collect_ignore = ["lib/dqflags.py"]
-
-
-@pytest.fixture
-def slow(request):
-    """Setup slow fixture for tests to identify if --slow
-    has been specified
-    """
-    return request.config.getoption("--slow")
 
 
 @pytest.fixture(scope="session")
@@ -69,7 +62,7 @@ def function_jail(tmp_path) -> Generator[Path, None, None]:
 def module_jail(request, tmp_path_factory):
     """Run test in a pristine temporary working directory, scoped to module.
 
-    This fixture is the same as _jail in ci_watson, but scoped to module
+    This fixture is the same as function_jail, but scoped to module
     instead of function.  This allows a fixture using it to produce files in a
     temporary directory, and then have the tests access them.
     """
@@ -331,3 +324,84 @@ def ignore_parquet_metadata_paths(ignore_metadata_paths):
         "roman.meta.image",
         "roman.meta.forced_segmentation",
     ]
+
+
+def pytest_addoption(parser):
+    """
+    These pytest hooks allow us to mark tests and run the marked tests with
+    specific command line options.
+    """
+    # Add option to use big data sets
+    parser.addoption(
+        "--bigdata", action="store_true", help="use big data sets (intranet)"
+    )
+
+    # Choose to test under dev or stable
+    parser.addoption("--env", default="dev", help="specify what environment to test")
+
+    # Data file input/output source/destination customization.
+    parser.addini(
+        "inputs_root",
+        "Root dir (or data repository name) for test input files.",
+        default=None,
+    )
+
+    parser.addini(
+        "results_root",
+        "Root dir (or data repository name) for test result/output files.",
+        default=None,
+    )
+
+
+def pytest_runtest_setup(item):
+    if "bigdata" in item.keywords and not item.config.getvalue("bigdata"):
+        pytest.skip("need --bigdata option to run")
+
+
+@pytest.fixture(scope="module")
+def resource_tracker():
+    """Fixture to return the current module-scoped ResourceTracker.
+
+    Use by calling ``track`` to generate a context in which resource
+    usage will be tracked.
+
+    .. code-block:: python
+
+        with resource_tracker.track():
+            # do stuff
+
+    For resources used during tests providing a function-scoped
+    request fixture result as the log argument will also log the
+    used resources to the junit results.xml.
+
+    .. code-block:: python
+
+        def test_something(resource_tracker, request):
+            with resource_tracker.track(log=request):
+                # do stuff
+
+    For resources used during fixtures the tracked resources
+    can be logged in a separate test using ``log_tracked_resources``.
+    """
+    return ResourceTracker()
+
+
+@pytest.fixture()
+def log_tracked_resources(resource_tracker, request):
+    """Fixture to log resources tracked by ``resource_tracker``.
+
+    .. code-block:: python
+
+        @pytest.fixture
+        def my_fixture(resource_tracker):
+            with resource_tracker.track():
+                # do stuff
+
+        def test_write_log(log_tracked_resources, my_fixture):
+            log_tracked_resources()
+    """
+
+    def callback():
+        resource_tracker.log(request)
+
+    yield callback
