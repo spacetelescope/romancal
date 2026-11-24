@@ -290,6 +290,17 @@ def test_multiband_catalog(
     assert hasattr(segm, "detection_image")
     assert segm.detection_image.shape == SHAPE
 
+    # Purpose: multiband segmentation products carry meta.wcs from the input.
+    with library_model:
+        example = library_model.borrow(0)
+        input_wcs = example.meta.wcs
+        library_model.shelve(example, modify=False)
+    assert segm.meta.get("wcs") is not None
+    assert_allclose(
+        segm.meta.wcs.pixel_to_world_values(0, 0),
+        input_wcs.pixel_to_world_values(0, 0),
+    )
+
     shared_tests(result, cat, library_model, save_results, function_jail)
 
 

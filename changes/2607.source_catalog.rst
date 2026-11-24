@@ -1,0 +1,1 @@
+Copy ``meta.wcs`` from the input image onto L2 and L3 segmentation map products.

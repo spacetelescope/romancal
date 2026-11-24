@@ -768,6 +768,48 @@ def test_nested_metadata_propagated_to_catalog_and_segmentation(
         assert [list(r) for r in result.meta.exposure.read_pattern] == read_pattern
 
 
+@pytest.mark.parametrize(
+    "model_fixture, segm_cls",
+    (
+        ("image_model", SegmentationMapModel),
+        ("mosaic_model", MosaicSegmentationMapModel),
+    ),
+)
+def test_segmentation_includes_wcs(model_fixture, segm_cls, request, function_jail):
+    """
+    Purpose: L2 and L3 segmentation products include meta.wcs from the input
+    image so world coordinates can be read without reconstructing from wcsinfo.
+    """
+    model = request.getfixturevalue(model_fixture)
+    input_wcs = model.meta.wcs
+    assert input_wcs is not None
+
+    _, result_segmentation_map = SourceCatalogStep.call(
+        model,
+        bkg_boxsize=5.0,
+        kernel_fwhm=0.2,
+        snr_threshold=5,
+        npixels=10,
+        save_results=True,
+        fit_psf=False,
+        output_file="wcs_test_cat.asdf",
+    )
+
+    assert isinstance(result_segmentation_map, segm_cls)
+    assert result_segmentation_map.meta.get("wcs") is not None
+    assert_allclose(
+        result_segmentation_map.meta.wcs.pixel_to_world_values(0, 0),
+        input_wcs.pixel_to_world_values(0, 0),
+    )
+
+    with rdm.open("wcs_test_segm.asdf") as saved_segm:
+        assert saved_segm.meta.get("wcs") is not None
+        assert_allclose(
+            saved_segm.meta.wcs.pixel_to_world_values(0, 0),
+            input_wcs.pixel_to_world_values(0, 0),
+        )
+
+
 def test_l2_input_model_unchanged(image_model, function_jail):
     """
     Test that the input model data and error arrays are unchanged after

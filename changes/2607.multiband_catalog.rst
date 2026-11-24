@@ -1,0 +1,1 @@
+Copy ``meta.wcs`` from the input mosaic onto multiband segmentation map products.

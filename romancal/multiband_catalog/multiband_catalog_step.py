@@ -99,6 +99,11 @@ class MultibandCatalogStep(RomanStep):
         segmentation_model = rdm.MultibandSegmentationMapModel.create_minimal(
             {"meta": cat_model.meta}
         )
+        # create_minimal keeps only schema-defined meta keys, so copy the
+        # input WCS explicitly onto the multiband segmentation product.
+        wcs = getattr(example_model.meta, "wcs", None)
+        if wcs is not None:
+            segmentation_model.meta["wcs"] = wcs
         # carry over image_metas if it exists (since it's not required in the schemas)
         if image_metas := cat_model.meta.get("image_metas"):
             segmentation_model.meta.image_metas = image_metas
