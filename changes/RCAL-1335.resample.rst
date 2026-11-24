@@ -1,0 +1,1 @@
+Leave association name blank when unknown and treat null photometry like missing sentinel values.

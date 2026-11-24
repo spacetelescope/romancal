@@ -33,6 +33,7 @@ def get_pixel_area_sr(model):
         and "pixel_area" in model.meta.photometry
         and model.meta.photometry.pixel_area is not None
         and model.meta.photometry.pixel_area > 0
+        and model.meta.photometry.pixel_area != -999999
     ):
         return float(model.meta.photometry.pixel_area)
 
@@ -40,9 +41,10 @@ def get_pixel_area_sr(model):
 
 
 def copy_mosaic_meta(model, cat_model):
-    # TODO some junk values here
-    cat_model.meta.prd_version = "8.8.8"
-    cat_model.meta.sdf_software_version = "7.7.7"
+    # Prefer values from the input product when present. Do not invent fake
+    # version/survey strings (see issue #2199 / RCAL-1335).
+    cat_model.meta.prd_version = model.meta.get("prd_version") or ""
+    cat_model.meta.sdf_software_version = model.meta.get("sdf_software_version") or ""
     cat_model.meta.basic.time_first_mjd = model.meta.coadd_info.time_first.mjd
     cat_model.meta.basic.time_last_mjd = model.meta.coadd_info.time_last.mjd
     cat_model.meta.basic.time_mean_mjd = model.meta.coadd_info.time_mean.mjd
@@ -54,7 +56,11 @@ def copy_mosaic_meta(model, cat_model):
     cat_model.meta.basic.segment = model.meta.observation.segment
     cat_model.meta.basic["pass"] = model.meta.observation["pass"]
     cat_model.meta.basic.program = model.meta.observation.program
-    cat_model.meta.basic.survey = "?"
+    # Survey is often unknown for simulated data; leave blank rather than "?".
+    survey = model.meta.get("survey")
+    if survey in (None, "?"):
+        survey = ""
+    cat_model.meta.basic.survey = survey
 
     # TODO handle optical element with multiple values
     cat_model.meta.basic.optical_element = model.meta.instrument.optical_element
@@ -63,7 +69,8 @@ def copy_mosaic_meta(model, cat_model):
     cat_model.meta.basic.location_name = model.meta.wcsinfo.skycell_name
     cat_model.meta.basic.product_type = model.meta.product_type
 
-    # TODO can we fill these in?
+    # Photometry may be unknown for mosaic catalogs; null is preferred over
+    # sentinel values such as -999999.
     cat_model.meta.photometry.conversion_megajanskys = None
     cat_model.meta.photometry.conversion_megajanskys_uncertainty = None
     cat_model.meta.photometry.pixel_area = None

@@ -346,3 +346,26 @@ def fit_ramps(request):
     )
 
     return out_model, expected
+
+
+def test_create_image_model_photometry_not_sentinel():
+    """
+    Purpose: L2 models from ramp fit use null photometry placeholders, not
+    generic -999999 fake values (issue #2199 / RCAL-1335).
+    """
+    from romancal.ramp_fitting.ramp_fit_step import _create_image_model
+
+    ramp = model_from_resultants(SIMPLE_RESULTANTS)
+    shape = ramp.data.shape[1:]
+    image_info = {
+        "slope": np.ones(shape, dtype=np.float32),
+        "dq": np.zeros(shape, dtype=np.uint32),
+        "err": np.ones(shape, dtype=np.float32),
+        "var_poisson": np.ones(shape, dtype=np.float32),
+        "var_rnoise": np.ones(shape, dtype=np.float32),
+    }
+    image = _create_image_model(ramp, image_info)
+    assert image.meta.photometry.conversion_megajanskys is None
+    assert image.meta.photometry.conversion_megajanskys_uncertainty is None
+    assert image.meta.photometry.pixel_area is None
+    assert image.meta.photometry.conversion_megajanskys != -999999
