@@ -23,11 +23,11 @@ from romancal.ramp_fitting import ramp_fit_step
 from romancal.refpix import RefPixStep
 from romancal.saturation import SaturationStep
 from romancal.source_catalog import SourceCatalogStep
+from romancal.stpipe.utilities import query_step_status, record_step_status
 from romancal.tweakreg import TweakRegStep
 from romancal.wfi18_transient import WFI18TransientStep
 
 from ..stpipe import RomanPipeline
-from romancal.stpipe.utilities import query_step_status, record_step_status
 
 if TYPE_CHECKING:
     from typing import ClassVar

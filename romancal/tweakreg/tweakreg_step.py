@@ -21,11 +21,11 @@ from tweakwcs import RomanWCSCorrector
 from romancal.assign_wcs.assign_wcs import add_s_region
 from romancal.datamodels.fileio import open_dataset
 from romancal.lib.save_wcs import save_wfiwcs
+from romancal.stpipe.utilities import record_step_status
 
 # LOCAL
 from ..datamodels import ModelLibrary
 from ..stpipe import RomanStep
-from romancal.stpipe.utilities import record_step_status
 
 if TYPE_CHECKING:
     from typing import ClassVar

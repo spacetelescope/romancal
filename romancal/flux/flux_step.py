@@ -6,9 +6,9 @@ import logging
 from typing import TYPE_CHECKING
 
 from romancal.datamodels.fileio import open_dataset
+from romancal.stpipe.utilities import query_step_status, record_step_status
 
 from ..stpipe import RomanStep
-from romancal.stpipe.utilities import query_step_status, record_step_status
 
 if TYPE_CHECKING:
     from typing import ClassVar

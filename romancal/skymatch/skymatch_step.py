@@ -160,6 +160,8 @@ class SkyMatchStep(RomanStep):
         if sky_image.is_sky_valid and self.subtract:
             image.data[...] = sky_image.image[...]
 
-        record_step_status(image, "skymatch", status=(
-            "COMPLETE" if sky_image.is_sky_valid else "SKIPPED"
-        ))
+        record_step_status(
+            image,
+            "skymatch",
+            status=("COMPLETE" if sky_image.is_sky_valid else "SKIPPED"),
+        )

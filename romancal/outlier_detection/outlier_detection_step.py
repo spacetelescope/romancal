@@ -5,9 +5,9 @@ from functools import partial
 
 from romancal.datamodels.fileio import open_dataset
 from romancal.outlier_detection.outlier_detection import detect_outliers
+from romancal.stpipe.utilities import record_step_status
 
 from ..stpipe import RomanStep
-from romancal.stpipe.utilities import record_step_status
 
 __all__ = ["OutlierDetectionStep"]
 

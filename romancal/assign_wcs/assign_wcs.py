@@ -14,6 +14,7 @@ from gwcs.geometry import CartesianToSpherical, SphericalToCartesian
 from gwcs.wcs import WCS, Step
 from roman_datamodels import datamodels as rdm
 from stcal.alignment.util import compute_s_region_keyword, wcs_bbox_from_shape
+
 from romancal.stpipe.utilities import record_step_status
 
 log = logging.getLogger(__name__)

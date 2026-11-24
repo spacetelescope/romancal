@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 
 from romancal.datamodels.fileio import open_dataset
 from romancal.stpipe import RomanStep
-from romancal.wfi18_transient.wfi18_transient import correct_anomaly
 from romancal.stpipe.utilities import record_step_status
+from romancal.wfi18_transient.wfi18_transient import correct_anomaly
 
 if TYPE_CHECKING:
     from typing import ClassVar

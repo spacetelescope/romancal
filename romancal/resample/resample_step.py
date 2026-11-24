@@ -8,11 +8,11 @@ import asdf
 from roman_datamodels import datamodels
 
 from romancal.datamodels.fileio import open_dataset
+from romancal.stpipe.utilities import record_step_status
 
 from ..datamodels import ModelLibrary
 from ..stpipe import RomanStep
 from .resample import ResampleData
-from romancal.stpipe.utilities import record_step_status
 
 if TYPE_CHECKING:
     from typing import ClassVar
