@@ -419,9 +419,7 @@ class ResampleData(Resample):
             output_model = datamodels.MosaicModel.create_minimal()
 
         # copy over asn information; leave blank when unknown rather than "?"
-        output_model.meta.association.name = self.input_models.asn.get(
-            "table_name", ""
-        )
+        output_model.meta.association.name = self.input_models.asn.get("table_name", "")
 
         # resample parameters
         output_model.meta.resample.good_bits = self.good_bits
