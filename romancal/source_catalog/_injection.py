@@ -58,16 +58,16 @@ def inject_sources(model, si_cat, seed=None, **kwargs):
     from romanisim.image import inject_sources_into_l2
     from romanisim.l3 import inject_sources_into_l3
 
+    # Default to ePSF (CRDS) for production injection; callers may override
+    # (e.g. unit tests using psftype="galsim" to avoid CRDS).
+    kwargs.setdefault("psftype", "epsf")
+
     if isinstance(model, ImageModel):
         #  inject_sources_into_l2
-        new_model = inject_sources_into_l2(
-            model, si_cat, psftype="epsf", seed=seed, **kwargs
-        )
+        new_model = inject_sources_into_l2(model, si_cat, seed=seed, **kwargs)
     elif isinstance(model, MosaicModel):
         #  inject_sources_into_l3
-        new_model = inject_sources_into_l3(
-            model, si_cat, psftype="epsf", seed=seed, **kwargs
-        )
+        new_model = inject_sources_into_l3(model, si_cat, seed=seed, **kwargs)
     else:
         raise ValueError("The input model must be an ImageModel or MosaicModel.")
 
