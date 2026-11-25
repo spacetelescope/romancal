@@ -1,0 +1,1 @@
+Stop inventing fake catalog ``prd_version`` / ``sdf_software_version`` / ``survey`` placeholders; copy real values or leave blank.

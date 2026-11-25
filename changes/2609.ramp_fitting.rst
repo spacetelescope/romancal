@@ -1,0 +1,1 @@
+Initialize L2 photometry metadata with nulls instead of generic ``-999999`` placeholders.

@@ -470,10 +470,12 @@ def _create_image_model(input_model, image_info, include_var_rnoise=False):
             step_name, "INCOMPLETE"
         )
     im.meta.cal_logs = []
+    # Photometry is filled by the photom step. Use null placeholders rather
+    # than generic -999999 sentinels so L2 products do not look like fake data.
     im.meta.photometry = {
-        "conversion_megajanskys": -999999,
-        "conversion_megajanskys_uncertainty": -999999,
-        "pixel_area": -999999,
+        "conversion_megajanskys": None,
+        "conversion_megajanskys_uncertainty": None,
+        "pixel_area": None,
     }
     im.amp33 = input_model.amp33.copy()
     im.border_ref_pix_left = input_model.border_ref_pix_left.copy()

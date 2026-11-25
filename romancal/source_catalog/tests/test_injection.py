@@ -154,7 +154,8 @@ def test_inject_sources(image_model, mosaic_model):
 
         data_orig = si_model.copy()
 
-        si_model = inject_sources(si_model, cat, seed=RNG_SEED)
+        # Use galsim PSFs in unit tests so CRDS ePSF lookup is not required.
+        si_model = inject_sources(si_model, cat, seed=RNG_SEED, psftype="galsim")
 
         # Ensure that sources were actually injected
         for x_val, y_val in zip(XPOS_IDX, YPOS_IDX, strict=False):
@@ -405,7 +406,8 @@ def test_grid_injection(image_model, mosaic_model):
             cen, ra, dec, exptimes, filters=FILTERS, seed=RNG_SEED
         )
 
-        si_model = inject_sources(si_model, cat, seed=RNG_SEED)
+        # Use galsim PSFs in unit tests so CRDS ePSF lookup is not required.
+        si_model = inject_sources(si_model, cat, seed=RNG_SEED, psftype="galsim")
 
         # Ensure that sources were actually injected along the specified grid
         ngrt = 0

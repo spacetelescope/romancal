@@ -334,10 +334,11 @@ class ResampleData(Resample):
     def _input_model_to_dict(self, model):
         """Convert an input datamodel to a dictionary suitable for the base class"""
         pixel_area = model.meta.photometry.pixel_area
-        if pixel_area == -999999:
+        # Treat historical sentinel values and nulls as missing photometry.
+        if pixel_area is None or pixel_area == -999999:
             pixel_area = None
         exposure_time = model.meta.exposure.exposure_time
-        if exposure_time == -999999:
+        if exposure_time is None or exposure_time == -999999:
             exposure_time = 1
         if "background" in model.meta:
             level = model.meta.background.level
@@ -417,10 +418,8 @@ class ResampleData(Resample):
         else:
             output_model = datamodels.MosaicModel.create_minimal()
 
-        # copy over asn information
-        output_model.meta.association.name = self.input_models.asn.get(
-            "table_name", "?"
-        )
+        # copy over asn information; leave blank when unknown rather than "?"
+        output_model.meta.association.name = self.input_models.asn.get("table_name", "")
 
         # resample parameters
         output_model.meta.resample.good_bits = self.good_bits
