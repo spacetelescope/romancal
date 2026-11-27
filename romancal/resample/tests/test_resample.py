@@ -510,7 +510,7 @@ def test_custom_wcs_input_entire_field_no_rotation(multiple_exposures, tmp_path)
 
 
 @pytest.mark.parametrize("weight_type", ["ivm", "exptime", "ivm-sky"])
-@pytest.mark.parametrize("propagate_dq", [None, "0", "~DO_NOT_USE"])
+@pytest.mark.parametrize("propagate_dq", [None, "0", "~0"])
 def test_resampledata_do_drizzle_default_single_exposure_weight_array(
     exposure_1,
     weight_type,
@@ -525,14 +525,14 @@ def test_resampledata_do_drizzle_default_single_exposure_weight_array(
         weight_type=weight_type, propagate_dq=propagate_dq, good_bits=str(good_bits)
     ).run(input_models)
     assert np.any(output_model.weight > 0)
-    if propagate_dq == "~DO_NOT_USE":
+    if propagate_dq == "~0":
         assert np.bitwise_or.reduce(output_model.dq, axis=(0, 1)) == good_bits
     else:
         assert "dq" not in output_model
 
 
 @pytest.mark.parametrize(
-    "propagate_dq", [None, "JUMP_DET | SATURATED", "PERSISTENCE"]
+    "propagate_dq", [None, "JUMP_DET|SATURATED", "PERSISTENCE"]
 )
 def test_resample_step_propagate_dq_bit_flag_names(wfi_sca1, propagate_dq):
     """Test that a string of DQ flag names filters the output DQ to only those flags."""
@@ -561,7 +561,7 @@ def test_resample_step_propagate_dq_bit_flag_names(wfi_sca1, propagate_dq):
         (None, False, None),
         (False, False, None),
         (True, True, None),
-        ("JUMP_DET | SATURATED", True, dqflags.pixel.JUMP_DET | dqflags.pixel.SATURATED),
+        ("JUMP_DET|SATURATED", True, dqflags.pixel.JUMP_DET | dqflags.pixel.SATURATED),
         ("8", True, 8),
     ],
 )
