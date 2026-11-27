@@ -150,4 +150,3 @@ image.
         Adding a tilde (~) to the beginning of the string will flip the
         flag(s) and actually `exclude` the provided flag(s). This is the same
         as providing the bad flag(s) instead of the good flag(s).
-

@@ -531,9 +531,7 @@ def test_resampledata_do_drizzle_default_single_exposure_weight_array(
         assert "dq" not in output_model
 
 
-@pytest.mark.parametrize(
-    "propagate_dq", [None, "JUMP_DET|SATURATED", "PERSISTENCE"]
-)
+@pytest.mark.parametrize("propagate_dq", [None, "JUMP_DET|SATURATED", "PERSISTENCE"])
 def test_resample_step_propagate_dq_bit_flag_names(wfi_sca1, propagate_dq):
     """Test that a string of DQ flag names filters the output DQ to only those flags."""
     wfi_sca1.dq[:] = 0
