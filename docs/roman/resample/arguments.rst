@@ -109,7 +109,7 @@ image.
 ``--good_bits``
     Specifies the bits to use when creating the resampling mask.
     Either a single bit value or a combination of them can be provided.
-    If the string starts with a tilde (`~`), then the provided bit(s)
+    If the string starts with a tilde (~), then the provided bit(s)
     will be excluded when creating the resampling mask.
     A value of ``~DO_NOT_USE`` will exclude pixels flagged with ``DO_NOT_USE``.
 
@@ -124,6 +124,29 @@ image.
     - ``good_bits = '73728'`` (sum of DQ flag bit values).
 
     .. note::
-        Adding a tilde (`~`) to the beginning of the string will flip the
+        Adding a tilde (~) to the beginning of the string will flip the
         bit(s) and actually `exclude` the provided bit(s). This is the same
-        as providing the bad bits instead of the good bits.
+        as providing the bad bit(s) instead of the good bit(s).
+
+``--propagate_dq``
+    Specifies the data quality (DQ) flag names to propagate during
+    resampling, e.g. 'SATURATED'. If set, the output DQ array is
+    filtered to only these flags. If not, no output DQ array is created.
+    Either a single flag or a combination of them can be provided. The bit
+    values can be provided instead of the flag names. If the string starts
+    with a tilde (~), then the provided flag(s) will be excluded when creating
+    the dq array.
+    A value of ``~0`` will propagate all flags.
+
+    The flag value can be provided in a few different ways, but always as
+    a string type. For example, if the user wants a DQ array indicating jumps or
+    saturation, then any of the ways listed below will work:
+
+    - ``propagate_dq = 'JUMP_DET|SATURATED'`` (concatenated DQ flag labels);
+    - ``propagate_dq = '4|2'`` (concatenated DQ flag bit values);
+    - ``propagate_dq = '6'`` (sum of DQ flag bit values).
+
+    .. note::
+        Adding a tilde (~) to the beginning of the string will flip the
+        flag(s) and actually `exclude` the provided flag(s). This is the same
+        as providing the bad flag(s) instead of the good flag(s).
